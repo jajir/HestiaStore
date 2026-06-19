@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import org.hestiastore.index.BusyRetryPolicy;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
@@ -10,16 +12,39 @@ import org.hestiastore.index.segmentindex.wal.WalRuntime;
  * @param <K> key type
  * @param <V> value type
  */
-public interface StorageService<K, V> {
+public final class StorageService<K, V> {
+
+    private final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector;
+    private final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover;
+    private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
+    private final BusyRetryPolicy walBackpressureRetryPolicy;
+    private IndexWalCoordinatorDelegate<K, V> walCoordinator;
+
+    StorageService(
+            final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector,
+            final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover,
+            final IndexConsistencyCoordinator<K, V> consistencyCoordinator,
+            final BusyRetryPolicy walBackpressureRetryPolicy) {
+        this.segmentDirectoryInspector = Vldtn.requireNonNull(
+                segmentDirectoryInspector, "segmentDirectoryInspector");
+        this.orphanedSegmentDirectoryRemover = Vldtn.requireNonNull(
+                orphanedSegmentDirectoryRemover,
+                "orphanedSegmentDirectoryRemover");
+        this.consistencyCoordinator = Vldtn.requireNonNull(
+                consistencyCoordinator, "consistencyCoordinator");
+        this.walBackpressureRetryPolicy = Vldtn.requireNonNull(
+                walBackpressureRetryPolicy, "walBackpressureRetryPolicy");
+        walCoordinator = new DisabledIndexWalCoordinator<>();
+    }
 
     /**
      * Creates a builder for storage services.
      *
-     * @param <K> key type
-     * @param <V> value type
+     * @param <M> key type
+     * @param <N> value type
      * @return storage service builder
      */
-    static <K, V> StorageServiceBuilder<K, V> builder() {
+    public static <M, N> StorageServiceBuilder<M, N> builder() {
         return new StorageServiceBuilder<>();
     }
 
@@ -27,7 +52,10 @@ public interface StorageService<K, V> {
      * Deletes physical segment directories that are no longer referenced by the
      * persisted route map.
      */
-    void cleanupOrphanedSegmentDirectories();
+    public void cleanupOrphanedSegmentDirectories() {
+        segmentDirectoryInspector.discoverOrphanedSegmentDirectories()
+                .forEach(orphanedSegmentDirectoryRemover::remove);
+    }
 
     /**
      * Checks whether a segment still has its physical lock file.
@@ -35,17 +63,24 @@ public interface StorageService<K, V> {
      * @param segmentId segment id
      * @return true when the segment lock file exists
      */
-    boolean hasSegmentLockFile(SegmentId segmentId);
+    public boolean hasSegmentLockFile(final SegmentId segmentId) {
+        return segmentDirectoryInspector.hasSegmentLockFile(
+                Vldtn.requireNonNull(segmentId, "segmentId"));
+    }
 
     /**
      * Validates and repairs persisted route-map-to-segment consistency.
      */
-    void checkAndRepairConsistency();
+    public void checkAndRepairConsistency() {
+        consistencyCoordinator.checkAndRepairConsistency();
+    }
 
     /**
      * Runs startup consistency validation with recovery lock-file filtering.
      */
-    void runStartupConsistencyCheck();
+    public void runStartupConsistencyCheck() {
+        consistencyCoordinator.runStartupConsistencyCheck();
+    }
 
     /**
      * Initializes WAL coordination for this storage service. Disabled WAL
@@ -53,19 +88,34 @@ public interface StorageService<K, V> {
      *
      * @param initialization named WAL runtime initialization collaborators
      */
-    void initializeWal(WalRuntimeInitialization<K, V> initialization);
+    public void initializeWal(
+            final WalRuntimeInitialization<K, V> initialization) {
+        final WalRuntimeInitialization<K, V> walInitialization =
+                Vldtn.requireNonNull(initialization, "initialization");
+        if (!walInitialization.configuration().wal().isEnabled()) {
+            walCoordinator = new DisabledIndexWalCoordinator<>();
+            return;
+        }
+        walCoordinator = ActiveIndexWalCoordinator.create(walInitialization,
+                walBackpressureRetryPolicy);
+    }
 
     /**
      * Replays unapplied WAL entries into the runtime.
      *
      * @param replayConsumer replay consumer invoked for each recovered entry
      */
-    void recoverFromWal(WalRuntime.ReplayConsumer<K, V> replayConsumer);
+    public void recoverFromWal(
+            final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
+        walCoordinator.recover(replayConsumer);
+    }
 
     /**
      * Runs a WAL checkpoint.
      */
-    void checkpointWal();
+    public void checkpointWal() {
+        walCoordinator.checkpoint();
+    }
 
     /**
      * Appends one put entry to the WAL.
@@ -74,7 +124,9 @@ public interface StorageService<K, V> {
      * @param value entry value
      * @return appended WAL LSN or {@code 0} when WAL is disabled
      */
-    long appendWalPut(K key, V value);
+    public long appendWalPut(final K key, final V value) {
+        return walCoordinator.appendPut(key, value);
+    }
 
     /**
      * Appends one delete entry to the WAL.
@@ -82,17 +134,23 @@ public interface StorageService<K, V> {
      * @param key deleted key
      * @return appended WAL LSN or {@code 0} when WAL is disabled
      */
-    long appendWalDelete(K key);
+    public long appendWalDelete(final K key) {
+        return walCoordinator.appendDelete(key);
+    }
 
     /**
      * Records the highest WAL LSN already applied to durable runtime state.
      *
      * @param walLsn applied WAL LSN
      */
-    void recordAppliedWalLsn(long walLsn);
+    public void recordAppliedWalLsn(final long walLsn) {
+        walCoordinator.recordAppliedLsn(walLsn);
+    }
 
     /**
      * Closes WAL coordination resources.
      */
-    void closeWal();
+    public void closeWal() {
+        walCoordinator.close();
+    }
 }

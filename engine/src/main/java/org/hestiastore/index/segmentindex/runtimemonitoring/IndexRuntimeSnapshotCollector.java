@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStats;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
-import org.hestiastore.index.segmentindex.core.split.SplitStatsView;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
@@ -31,7 +31,7 @@ final class IndexRuntimeSnapshotCollector<K, V>
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector;
-    private final SplitStatsView splitStatsView;
+    private final SplitService<K, V> splitService;
     private final ExecutorRegistry executorRegistry;
     private final RuntimeTuningState runtimeTuningState;
     private final ChunkStoreCache<K, V> chunkStoreCache;
@@ -48,7 +48,7 @@ final class IndexRuntimeSnapshotCollector<K, V>
     private IndexRuntimeSnapshotCollector(
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector,
-            final SplitStatsView splitStatsView,
+            final SplitService<K, V> splitService,
             final ExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final ChunkStoreCache<K, V> chunkStoreCache,
@@ -65,8 +65,8 @@ final class IndexRuntimeSnapshotCollector<K, V>
                 PROPERTY_SEGMENT_REGISTRY);
         this.stableSegmentRuntimeCollector = Vldtn.requireNonNull(
                 stableSegmentRuntimeCollector, "stableSegmentRuntimeCollector");
-        this.splitStatsView = Vldtn.requireNonNull(splitStatsView,
-                "splitStatsView");
+        this.splitService = Vldtn.requireNonNull(splitService,
+                "splitService");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
@@ -95,7 +95,7 @@ final class IndexRuntimeSnapshotCollector<K, V>
             final EffectiveIndexConfiguration<K, V> conf,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SplitStatsView splitStatsView,
+            final SplitService<K, V> splitService,
             final ExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final ChunkStoreCache<K, V> chunkStoreCache,
@@ -106,7 +106,7 @@ final class IndexRuntimeSnapshotCollector<K, V>
             final AtomicLong flushRequestHighWaterMark,
             final AtomicLong lastAppliedWalLsn,
             final SegmentIndexStateView stateView) {
-        return create(conf, keyToSegmentMap, segmentRegistry, splitStatsView,
+        return create(conf, keyToSegmentMap, segmentRegistry, splitService,
                 executorRegistry, runtimeTuningState, chunkStoreCache,
                 walMonitoringView, indexOperationStatsRecorder,
                 maintenanceStatsRecorder, compactRequestHighWaterMark,
@@ -118,7 +118,7 @@ final class IndexRuntimeSnapshotCollector<K, V>
             final EffectiveIndexConfiguration<K, V> conf,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SplitStatsView splitStatsView,
+            final SplitService<K, V> splitService,
             final ExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final ChunkStoreCache<K, V> chunkStoreCache,
@@ -138,7 +138,7 @@ final class IndexRuntimeSnapshotCollector<K, V>
                                 "keyToSegmentMap"),
                         Vldtn.requireNonNull(segmentRegistry,
                                 PROPERTY_SEGMENT_REGISTRY)),
-                Vldtn.requireNonNull(splitStatsView, "splitStatsView"),
+                Vldtn.requireNonNull(splitService, "splitService"),
                 Vldtn.requireNonNull(executorRegistry, "executorRegistry"),
                 Vldtn.requireNonNull(runtimeTuningState, "runtimeTuningState"),
                 Vldtn.requireNonNull(chunkStoreCache, "chunkStoreCache"),
@@ -171,7 +171,7 @@ final class IndexRuntimeSnapshotCollector<K, V>
                         indexOperationStatsRecorder.statsSnapshot(),
                         segmentRegistry.metricsSnapshot(), chunkStoreCache.stats(),
                         stableSegmentRuntime, executorSnapshot,
-                        splitStatsView.statsSnapshot(),
+                        splitService.statsSnapshot(),
                         walMonitoringView.statsSnapshot(), maintenanceStats,
                         resolveRequestCount(
                                 maintenanceStats.getCompactRequestCount(),

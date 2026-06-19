@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -43,8 +42,8 @@ class IndexConsistencyCheckerTest {
     @BeforeEach
     void setUp() {
         when(keyToSegmentMap.snapshot()).thenReturn(snapshot);
-        checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
-                new TypeDescriptorInteger());
+        checker = new IndexConsistencyChecker<>(keyToSegmentMap,
+                segmentRegistry);
     }
 
     @AfterEach
@@ -80,7 +79,7 @@ class IndexConsistencyCheckerTest {
                 .thenReturn(segmentHandle);
 
         checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
-                new TypeDescriptorInteger(), segmentId -> true);
+                segmentId -> true);
 
         checker.checkAndRepairConsistency();
     }
@@ -93,7 +92,7 @@ class IndexConsistencyCheckerTest {
                 new IndexException("loadSegmentForConsistency timed out"));
 
         checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
-                new TypeDescriptorInteger(), segmentId -> true);
+                segmentId -> true);
 
         final IndexException ex = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());

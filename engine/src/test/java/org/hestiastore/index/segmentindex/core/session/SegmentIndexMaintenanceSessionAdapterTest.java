@@ -28,7 +28,7 @@ class SegmentIndexMaintenanceSessionAdapterTest {
     private SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime;
 
     @Mock
-    private SegmentIndexTrackedOperationRunner<Integer, String> trackedRunner;
+    private SegmentIndexTrackedOperationRunner trackedRunner;
 
     @Test
     void maintenanceCommandsRunThroughTrackingAndInvalidateIterators() {
@@ -56,6 +56,7 @@ class SegmentIndexMaintenanceSessionAdapterTest {
         inOrder.verify(delegate).flushAndWait();
         inOrder.verify(topologyRuntime).invalidateSegmentIterators();
         inOrder.verify(delegate).checkAndRepairConsistency();
+        inOrder.verify(topologyRuntime).requestFullSplitScan();
         inOrder.verify(topologyRuntime).invalidateSegmentIterators();
         verifyNoMoreInteractions(delegate, topologyRuntime, trackedRunner);
     }

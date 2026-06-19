@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -30,14 +31,15 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(SegmentsIterator.class);
-    private static final StreamingRetryPolicy DEFAULT_RETRY_POLICY = new StreamingRetryPolicy(
+    private static final BusyRetryPolicy DEFAULT_RETRY_POLICY = new BusyRetryPolicy(
             IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS,
-            IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
+            IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS,
+            "Streaming operation");
     private static final String OPEN_ITERATOR_OPERATION = "openIterator";
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentIteratorIsolation isolation;
-    private final StreamingRetryPolicy retryPolicy;
+    private final BusyRetryPolicy retryPolicy;
     private final List<SegmentId> ids;
     private Entry<K, V> currentEntry = null;
     private Entry<K, V> nextEntry = null;

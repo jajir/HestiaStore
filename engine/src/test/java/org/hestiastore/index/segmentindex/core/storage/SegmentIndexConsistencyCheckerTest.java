@@ -13,8 +13,6 @@ import java.util.List;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -32,7 +30,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SegmentIndexConsistencyCheckerTest {
 
-    private static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
     private static final SegmentId SEGMENT_ID = SegmentId.of(13);
     private static final Integer SEGMENT_MAX_KEY = 73;
 
@@ -147,7 +144,7 @@ class SegmentIndexConsistencyCheckerTest {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SEGMENT_ID));
         checker = new IndexConsistencyChecker<>(keyToSegmentMap,
-                segmentRegistry, TYPE_DESCRIPTOR_INTEGER, segmentId -> false);
+                segmentRegistry, segmentId -> false);
 
         checker.checkAndRepairConsistency();
 
@@ -159,8 +156,8 @@ class SegmentIndexConsistencyCheckerTest {
     @BeforeEach
     void setUp() {
         when(keyToSegmentMap.snapshot()).thenReturn(snapshot);
-        checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
-                TYPE_DESCRIPTOR_INTEGER);
+        checker = new IndexConsistencyChecker<>(keyToSegmentMap,
+                segmentRegistry);
     }
 
     @AfterEach

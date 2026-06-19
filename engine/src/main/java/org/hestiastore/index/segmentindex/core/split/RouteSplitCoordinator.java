@@ -19,12 +19,10 @@ final class RouteSplitCoordinator<K, V> {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(RouteSplitCoordinator.class);
-    private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final RouteSplitPreparationService<K, V> preparationService;
 
-    RouteSplitCoordinator(final SegmentIndexSplitPolicy<K, V> splitPolicy,
+    RouteSplitCoordinator(
             final RouteSplitPreparationService<K, V> preparationService) {
-        this.splitPolicy = Vldtn.requireNonNull(splitPolicy, "splitPolicy");
         this.preparationService = Vldtn.requireNonNull(preparationService,
                 "preparationService");
     }
@@ -36,8 +34,8 @@ final class RouteSplitCoordinator<K, V> {
                 segmentHandle);
         final long estimatedVisibleKeys = estimatedVisibleKeys(
                 nonNullBlockingSegment);
-        if (!isSplitEligible(nonNullBlockingSegment, estimatedVisibleKeys,
-                splitThreshold, isSplitFeasible(estimatedVisibleKeys))) {
+        if (!isSplitEligible(estimatedVisibleKeys, splitThreshold,
+                isSplitFeasible(estimatedVisibleKeys))) {
             logSkippedSplit(nonNullBlockingSegment, estimatedVisibleKeys,
                     splitThreshold);
             return null;
@@ -45,11 +43,6 @@ final class RouteSplitCoordinator<K, V> {
         logStartedSplit(nonNullBlockingSegment, splitThreshold);
         return preparationService.prepare(nonNullBlockingSegment.getSegment(),
                 splitThreshold);
-    }
-
-    private boolean shouldSplit(final BlockingSegment<K, V> segmentHandle,
-            final long splitThreshold) {
-        return splitPolicy.shouldSplit(segmentHandle, splitThreshold);
     }
 
     private BlockingSegment<K, V> requireBlockingSegment(
@@ -81,12 +74,10 @@ final class RouteSplitCoordinator<K, V> {
                 segmentHandle.getId(), splitThreshold);
     }
 
-    private boolean isSplitEligible(final BlockingSegment<K, V> segmentHandle,
-            final long estimatedVisibleKeys, final long splitThreshold,
-            final boolean splitFeasible) {
-        if (estimatedVisibleKeys < splitThreshold || !splitFeasible) {
-            return false;
-        }
-        return shouldSplit(segmentHandle, splitThreshold);
+    private boolean isSplitEligible(final long estimatedVisibleKeys,
+            final long splitThreshold, final boolean splitFeasible) {
+        return splitThreshold >= 1L
+                && estimatedVisibleKeys >= splitThreshold
+                && splitFeasible;
     }
 }

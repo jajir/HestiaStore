@@ -11,13 +11,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
@@ -33,9 +33,6 @@ class RouteSplitCoordinatorTest {
     private static final SegmentId PARENT_SEGMENT_ID = SegmentId.of(1);
     private static final SegmentId LOWER_SEGMENT_ID = SegmentId.of(2);
     private static final SegmentId UPPER_SEGMENT_ID = SegmentId.of(3);
-
-    @Mock
-    private IndexConfiguration<Integer, String> conf;
 
     @Mock
     private IndexMaintenanceConfiguration maintenance;
@@ -60,9 +57,8 @@ class RouteSplitCoordinatorTest {
         when(maintenance.busyBackoffMillis()).thenReturn(1);
         when(maintenance.busyTimeoutMillis()).thenReturn(1);
         coordinator = new RouteSplitCoordinator<>(
-                new SegmentIndexSplitPolicyThreshold<>(),
                 new RouteSplitPreparationService<>(materializationService,
-                        new SplitRetryPolicy(maintenance.busyBackoffMillis(),
+                        new BusyRetryPolicy(maintenance.busyBackoffMillis(),
                                 maintenance.busyTimeoutMillis())));
         splitPlan = new SegmentRouteSplit<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
                 UPPER_SEGMENT_ID, 2, null);
@@ -99,6 +95,18 @@ class RouteSplitCoordinatorTest {
 
         final SegmentRouteSplit<Integer> prepared = coordinator
                 .tryPrepareSplit(parentHandle, 2L);
+
+        assertNull(prepared);
+        verifyNoInteractions(materializationService);
+    }
+
+    @Test
+    void tryPrepareSplitReturnsNullWhenThresholdIsNonPositive() {
+        when(parentHandle.getRuntime()).thenReturn(parentRuntime);
+        when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
+
+        final SegmentRouteSplit<Integer> prepared = coordinator
+                .tryPrepareSplit(parentHandle, 0L);
 
         assertNull(prepared);
         verifyNoInteractions(materializationService);

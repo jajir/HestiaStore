@@ -6,9 +6,9 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 
@@ -22,15 +22,15 @@ import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitori
  */
 public final class SegmentIndexMdcLoggingAdapter<K, V>
         extends AbstractCloseableResource
-        implements SegmentIndexSessionResource<K, V> {
-    private final SegmentIndexSessionResource<K, V> delegate;
+        implements SegmentIndex<K, V> {
+    private final SegmentIndex<K, V> delegate;
     private final IndexMdcCallWrapper contextCallWrapper;
     private final RuntimeTuning runtimeConfiguration;
     private final IndexRuntimeMonitoring runtimeMonitoring;
     private final SegmentIndexMaintenance maintenance;
 
     public SegmentIndexMdcLoggingAdapter(
-            final SegmentIndexSessionResource<K, V> delegate,
+            final SegmentIndex<K, V> delegate,
             final IndexMdcCallWrapper contextCallWrapper) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
         this.contextCallWrapper = Vldtn.requireNonNull(contextCallWrapper,

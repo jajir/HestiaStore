@@ -84,9 +84,9 @@ class SegmentCompacterTest {
 
         final SegmentCompacter.CompactionPlan<Integer, String> plan = sc
                 .prepareCompactionPlan(segment);
-        final Runnable cleanup = sc.buildCleanupTask(plan);
+
         assertTrue(tempDir.delete());
 
-        assertDoesNotThrow(cleanup::run);
+        assertDoesNotThrow(() -> sc.cleanupCompaction(plan));
     }
 }

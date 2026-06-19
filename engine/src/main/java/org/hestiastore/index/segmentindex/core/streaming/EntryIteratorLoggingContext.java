@@ -17,7 +17,7 @@ import org.slf4j.MDC;
  * @param <K> key type
  * @param <V> value type
  */
-final class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
+public final class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
     private static final String INDEX_NAME_MDC_KEY = "index.name";
@@ -25,7 +25,13 @@ final class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
     private final EntryIterator<K, V> entryIterator;
     private final String indexName;
 
-    EntryIteratorLoggingContext(final EntryIterator<K, V> entryIterator,
+    /**
+     * Creates a context-logging iterator wrapper.
+     *
+     * @param entryIterator wrapped iterator
+     * @param indexConf index configuration supplying the MDC index name
+     */
+    public EntryIteratorLoggingContext(final EntryIterator<K, V> entryIterator,
             final EffectiveIndexConfiguration<K, V> indexConf) {
         this.entryIterator = Vldtn.requireNonNull(entryIterator, "entryIterator");
         final EffectiveIndexConfiguration<K, V> configuration = Vldtn

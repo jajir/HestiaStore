@@ -32,13 +32,10 @@ class ExecutorTopologyTest {
                         "registry", shutdownOrder);
         final ExecutorTopology topology = new ExecutorTopology(
                 indexMaintenance, splitMaintenance,
-                new LazyExecutorReference<>(() -> splitPolicyScheduler),
+                splitPolicyScheduler,
                 stableSegmentMaintenance,
-                new LazyExecutorReference<>(() -> registryMaintenance),
+                registryMaintenance,
                 1_000);
-
-        topology.splitPolicyScheduler();
-        topology.registryMaintenanceExecutor();
 
         final RuntimeException failure = topology.shutdownExecutorsInCloseOrder();
 
@@ -64,11 +61,15 @@ class ExecutorTopologyTest {
         final ExecutorTestSupport.RecordingExecutorService stableSegmentMaintenance =
                 new ExecutorTestSupport.RecordingExecutorService(
                         "stable", shutdownOrder);
+        final ScheduledExecutorService splitPolicyScheduler =
+                new ExecutorTestSupport.RecordingScheduledExecutorService(
+                        "scheduler", shutdownOrder);
+        final ExecutorTestSupport.RecordingExecutorService registryMaintenance =
+                new ExecutorTestSupport.RecordingExecutorService(
+                        "registry", shutdownOrder);
         final ExecutorTopology topology = new ExecutorTopology(
-                indexMaintenance, splitMaintenance,
-                new LazyExecutorReference<>(() -> null),
-                stableSegmentMaintenance,
-                new LazyExecutorReference<>(() -> null), 1);
+                indexMaintenance, splitMaintenance, splitPolicyScheduler,
+                stableSegmentMaintenance, registryMaintenance, 1);
 
         final RuntimeException failure = topology.shutdownExecutorsInCloseOrder();
 
@@ -76,7 +77,8 @@ class ExecutorTopologyTest {
         assertTrue(failure.getMessage().contains("indexMaintenance"));
         assertTrue(failure.getMessage().contains("1 ms"));
         assertTrue(indexMaintenance.shutdownNowCalled());
-        assertEquals(List.of("index", "index", "split", "stable"),
+        assertEquals(List.of("index", "index", "split", "scheduler",
+                "stable", "registry"),
                 shutdownOrder);
     }
 

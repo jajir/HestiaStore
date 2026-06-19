@@ -1,0 +1,30 @@
+package org.hestiastore.index.segmentindex.core.streaming;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.junit.jupiter.api.Test;
+
+class DirectSegmentCoordinatorFactoryTest {
+
+    @Test
+    void createReturnsDirectSegmentCoordinator() {
+        final DirectSegmentCoordinator<Integer, String> access =
+                DirectSegmentCoordinator.create(mockKeyToSegmentMap(),
+                        mockSegmentRegistry(), 1, 10);
+
+        assertNotNull(access);
+    }
+
+    @SuppressWarnings("unchecked")
+    private KeyToSegmentMap<Integer> mockKeyToSegmentMap() {
+        return mock(KeyToSegmentMap.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private SegmentRegistry<Integer, String> mockSegmentRegistry() {
+        return mock(SegmentRegistry.class);
+    }
+}

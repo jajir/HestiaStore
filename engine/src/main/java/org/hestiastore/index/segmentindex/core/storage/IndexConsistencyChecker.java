@@ -5,7 +5,6 @@ import java.util.function.Predicate;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -35,21 +34,17 @@ final class IndexConsistencyChecker<K, V> {
     private final Predicate<SegmentId> segmentFilter;
 
     IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry,
-            final TypeDescriptor<K> keyTypeDescriptor) {
-        this(keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
-                segmentId -> true);
+            final SegmentRegistry<K, V> segmentRegistry) {
+        this(keyToSegmentMap, segmentRegistry, segmentId -> true);
     }
 
     IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final TypeDescriptor<K> keyTypeDescriptor,
             final Predicate<SegmentId> segmentFilter) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
-        Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.segmentFilter = Vldtn.requireNonNull(segmentFilter,
                 "segmentFilter");
     }

@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
@@ -13,11 +14,6 @@ import org.hestiastore.index.segmentindex.core.storage.WalRuntimeFailureHandler;
 /**
  * Holds package-private session resources while bootstrap steps live outside
  * the session package.
- * <p>
- * A future bootstrap model can replace this holder with
- * SegmentIndexBootstrapRequest and SegmentIndexBootstrapState builders that
- * enforce resource initialization order and availability.
- * </p>
  *
  * @param <K> key type
  * @param <V> value type
@@ -25,8 +21,20 @@ import org.hestiastore.index.segmentindex.core.storage.WalRuntimeFailureHandler;
 public final class SegmentIndexSessionResources<K, V>
         implements SegmentIndexStateView, WalRuntimeFailureHandler {
 
+    private final SegmentIndexStateMachine stateMachine =
+            new SegmentIndexStateMachine();
+    private final IndexOperationStatsRecorder operationStatsRecorder =
+            new IndexOperationStatsRecorder();
+    private final MaintenanceStatsRecorder maintenanceStatsRecorder =
+            new MaintenanceStatsRecorder();
+    private final SplitStatsRecorder splitStatsRecorder =
+            new SplitStatsRecorder();
+    private final SegmentIndexOperationGate operationGate =
+            SegmentIndexOperationGate.create();
+    private final SegmentIndexTrackedOperationRunner trackedRunner =
+            new SegmentIndexTrackedOperationRunner(stateMachine, operationGate);
+
     private IndexDirectoryLock directoryLock;
-    private SegmentIndexSessionInfrastructure<K, V> sessionInfrastructure;
     private ExecutorRegistry executorRegistry;
 
     public void acquireDirectoryLock(final Directory directory) {
@@ -38,19 +46,7 @@ public final class SegmentIndexSessionResources<K, V>
     }
 
     public void markReady() {
-        sessionInfrastructure().markReady();
-    }
-
-    /**
-     * Installs the immutable session infrastructure created by the bootstrap
-     * step.
-     *
-     * @param sessionInfrastructure state, stats, gate, and tracking resources
-     */
-    public void setSessionInfrastructure(
-            final SegmentIndexSessionInfrastructure<K, V> sessionInfrastructure) {
-        this.sessionInfrastructure = Vldtn.requireNonNull(
-                sessionInfrastructure, "sessionInfrastructure");
+        stateMachine.markReady();
     }
 
     /**
@@ -70,11 +66,11 @@ public final class SegmentIndexSessionResources<K, V>
      */
     @Override
     public SegmentIndexState currentState() {
-        return sessionInfrastructure().currentState();
+        return stateMachine.getState();
     }
 
     public void markRuntimeFailure(final RuntimeException failure) {
-        sessionInfrastructure().markRuntimeFailure(failure);
+        stateMachine.markRuntimeFailure(failure);
     }
 
     /**
@@ -91,17 +87,12 @@ public final class SegmentIndexSessionResources<K, V>
         return Vldtn.requireNonNull(directoryLock, "directoryLock");
     }
 
-    SegmentIndexSessionInfrastructure<K, V> sessionInfrastructure() {
-        return Vldtn.requireNonNull(sessionInfrastructure,
-                "sessionInfrastructure");
-    }
-
     public IndexOperationStatsRecorder operationStatsRecorder() {
-        return sessionInfrastructure().operationStatsRecorder();
+        return operationStatsRecorder;
     }
 
     public MaintenanceStatsRecorder maintenanceStatsRecorder() {
-        return sessionInfrastructure().maintenanceStatsRecorder();
+        return maintenanceStatsRecorder;
     }
 
     ExecutorRegistry executorRegistry() {
@@ -109,7 +100,19 @@ public final class SegmentIndexSessionResources<K, V>
     }
 
     public SplitStatsRecorder splitStatsRecorder() {
-        return sessionInfrastructure().splitStatsRecorder();
+        return splitStatsRecorder;
+    }
+
+    SegmentIndexStateMachine stateMachine() {
+        return stateMachine;
+    }
+
+    SegmentIndexOperationGate operationGate() {
+        return operationGate;
+    }
+
+    SegmentIndexTrackedOperationRunner trackedRunner() {
+        return trackedRunner;
     }
 
 }

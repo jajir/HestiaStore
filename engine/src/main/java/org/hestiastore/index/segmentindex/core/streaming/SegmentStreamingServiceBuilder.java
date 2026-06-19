@@ -1,7 +1,8 @@
 package org.hestiastore.index.segmentindex.core.streaming;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationGateway;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -15,7 +16,7 @@ public final class SegmentStreamingServiceBuilder<K, V> {
 
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
-    private StableSegmentOperationAccess<K, V> stableSegmentGateway;
+    private StableSegmentOperationGateway<K, V> stableSegmentGateway;
     private Integer busyBackoffMillis;
     private Integer busyTimeoutMillis;
 
@@ -55,7 +56,7 @@ public final class SegmentStreamingServiceBuilder<K, V> {
      * @return this builder
      */
     public SegmentStreamingServiceBuilder<K, V> stableSegmentGateway(
-            final StableSegmentOperationAccess<K, V> stableSegmentGateway) {
+            final StableSegmentOperationGateway<K, V> stableSegmentGateway) {
         this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
                 "stableSegmentGateway");
         return this;
@@ -93,14 +94,15 @@ public final class SegmentStreamingServiceBuilder<K, V> {
      * @return segment streaming service
      */
     public SegmentStreamingService<K, V> build() {
-        return new SegmentStreamingServiceImpl<>(
+        return new SegmentStreamingService<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
                 Vldtn.requireNonNull(stableSegmentGateway,
                         "stableSegmentGateway"),
-                new StreamingRetryPolicy(Vldtn.requireNonNull(
+                new BusyRetryPolicy(Vldtn.requireNonNull(
                         busyBackoffMillis, "busyBackoffMillis"),
                         Vldtn.requireNonNull(busyTimeoutMillis,
-                                "busyTimeoutMillis")));
+                                "busyTimeoutMillis"),
+                        "Streaming operation"));
     }
 }

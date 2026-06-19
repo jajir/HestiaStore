@@ -13,13 +13,13 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningValidation;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
@@ -35,7 +35,7 @@ import org.slf4j.MDC;
 class SegmentIndexMdcLoggingAdapterTest {
 
     @Mock
-    private SegmentIndexSessionResource<String, String> delegate;
+    private SegmentIndex<String, String> delegate;
 
     @Mock
     private SegmentIndexMaintenance maintenance;

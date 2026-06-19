@@ -20,9 +20,12 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationCoordinator;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.junit.jupiter.api.AfterEach;
@@ -209,11 +212,19 @@ class SegmentIndexSessionTest {
         private SegmentIteratorIsolation lastIsolation;
 
         private RecordingIndex(final EntryIterator<Integer, String> iterator) {
-            super(new TypeDescriptorInteger(), mockPointOperationFacade(),
-                    mockReadFacade(), mock(RuntimeTuning.class),
+            this(iterator, newReadyStateMachine());
+        }
+
+        private RecordingIndex(final EntryIterator<Integer, String> iterator,
+                final SegmentIndexStateMachine stateMachine) {
+            super(new TypeDescriptorInteger(),
+                    new SegmentIndexTrackedOperationRunner(stateMachine,
+                            SegmentIndexOperationGate.create()),
+                    mockOperationAccess(), mockTopologyRuntime(),
+                    recordingConfiguration(), mock(RuntimeTuning.class),
                     mock(IndexRuntimeMonitoring.class),
                     mock(SegmentIndexMaintenance.class),
-                    mockSessionOwner());
+                    stateMachine, mockCloseCoordinator());
             this.iterator = iterator;
         }
 
@@ -227,6 +238,11 @@ class SegmentIndexSessionTest {
 
         SegmentIteratorIsolation getLastIsolation() {
             return lastIsolation;
+        }
+
+        @Override
+        protected void doClose() {
+            // no-op test index
         }
 
     }
@@ -268,18 +284,60 @@ class SegmentIndexSessionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static SegmentIndexPointOperationFacade<Integer, String>
-            mockPointOperationFacade() {
-        return mock(SegmentIndexPointOperationFacade.class);
+    private static IndexOperationCoordinator<Integer, String>
+            mockOperationAccess() {
+        return mock(IndexOperationCoordinator.class);
     }
 
     @SuppressWarnings("unchecked")
-    private static SegmentIndexReadFacade<Integer, String> mockReadFacade() {
-        return mock(SegmentIndexReadFacade.class);
+    private static SegmentTopologyRuntimeAccess<Integer, String>
+            mockTopologyRuntime() {
+        return mock(SegmentTopologyRuntimeAccess.class);
+    }
+
+    private static EffectiveIndexConfiguration<Integer, String>
+            recordingConfiguration() {
+        return effective(recordingIndexConf());
+    }
+
+    private static IndexConfiguration<Integer, String> recordingIndexConf() {
+        return IndexConfiguration.<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class))
+                .identity(identity -> identity.valueClass(String.class))
+                .identity(identity -> identity
+                        .keyTypeDescriptor(new TypeDescriptorInteger()))
+                .identity(identity -> identity.valueTypeDescriptor(
+                        new TypeDescriptorShortString()))
+                .identity(identity -> identity.name("recording-index"))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath
+                        .maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2))
+                .segment(segment -> segment.maxKeys(100))
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .filters(filters -> filters.encodingFilters(
+                        List.of(new ChunkFilterDoNothing())))
+                .filters(filters -> filters.decodingFilters(
+                        List.of(new ChunkFilterDoNothing())))
+                .build();
     }
 
     @SuppressWarnings("unchecked")
-    private static SegmentIndexSessionOwner<Integer, String> mockSessionOwner() {
-        return mock(SegmentIndexSessionOwner.class);
+    private static IndexCloseCoordinator<Integer, String> mockCloseCoordinator() {
+        return mock(IndexCloseCoordinator.class);
+    }
+
+    private static SegmentIndexStateMachine newReadyStateMachine() {
+        final SegmentIndexStateMachine stateMachine =
+                new SegmentIndexStateMachine();
+        stateMachine.markReady();
+        return stateMachine;
     }
 }

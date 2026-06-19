@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
-import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -27,7 +26,6 @@ class StorageServiceBuilderTest {
                 StorageService.<Integer, String>builder()
                         .withKeyToSegmentMap(mockKeyToSegmentMap())
                         .withSegmentRegistry(mockSegmentRegistry())
-                        .withKeyTypeDescriptor(mockKeyTypeDescriptor())
                         .withStorageCleanupBusyBackoffMillis(1)
                         .withStorageCleanupBusyTimeoutMillis(10)
                         .withWalBackpressureBusyBackoffMillis(1)
@@ -45,7 +43,6 @@ class StorageServiceBuilderTest {
                 .withDirectoryFacade(mock(Directory.class))
                 .withKeyToSegmentMap(mockKeyToSegmentMap())
                 .withSegmentRegistry(mockSegmentRegistry())
-                .withKeyTypeDescriptor(mockKeyTypeDescriptor())
                 .withStorageCleanupBusyBackoffMillis(1)
                 .withStorageCleanupBusyTimeoutMillis(10)
                 .withWalBackpressureBusyBackoffMillis(1)
@@ -62,8 +59,4 @@ class StorageServiceBuilderTest {
         return mock(SegmentRegistry.class);
     }
 
-    @SuppressWarnings("unchecked")
-    private TypeDescriptor<Integer> mockKeyTypeDescriptor() {
-        return mock(TypeDescriptor.class);
-    }
 }

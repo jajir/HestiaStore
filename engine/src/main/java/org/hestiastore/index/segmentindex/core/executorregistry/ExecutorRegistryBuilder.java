@@ -143,22 +143,19 @@ public final class ExecutorRegistryBuilder {
         final ObservedThreadPool stableSegmentMaintenanceThreadPool =
                 createStableSegmentMaintenanceThreadPool(threadPoolFactory,
                         segmentMaintenanceThreadCount);
-        return new ExecutorRegistryImpl(
+        return new ExecutorRegistry(
                 new ExecutorTopology(
                         contextAwareObservedExecutor(contextDecorator,
                                 indexMaintenanceThreadPool),
                         contextAwareObservedExecutor(contextDecorator,
                                 splitMaintenanceThreadPool),
-                        new LazyExecutorReference<>(
-                                () -> createSplitPolicyScheduler(
-                                        threadPoolFactory)),
+                        createSplitPolicyScheduler(threadPoolFactory),
                         contextAwareObservedExecutor(contextDecorator,
                                 stableSegmentMaintenanceThreadPool),
-                        new LazyExecutorReference<>(
-                                () -> contextDecorator.decorate(
-                                        createRegistryMaintenanceExecutor(
-                                                threadPoolFactory,
-                                                registryMaintenanceThreadCount))),
+                        contextDecorator.decorate(
+                                createRegistryMaintenanceExecutor(
+                                        threadPoolFactory,
+                                        registryMaintenanceThreadCount)),
                         shutdownTimeoutMillis()),
                 new ExecutorRuntimeMonitor(indexMaintenanceThreadPool,
                         splitMaintenanceThreadPool,

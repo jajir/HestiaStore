@@ -161,7 +161,7 @@ class ExecutorRegistryTest {
     }
 
     @Test
-    void closeDoesNotNeedLazyExecutorsToBeRequestedFirst() {
+    void closeDoesNotNeedEveryExecutorGetterToBeCalledFirst() {
         final ExecutorRegistry registry = newRegistry(1, 1, 1);
 
         final ExecutorService indexMaintenance = registry

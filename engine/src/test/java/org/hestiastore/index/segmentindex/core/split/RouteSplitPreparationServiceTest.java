@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.OperationResult;
@@ -38,7 +39,7 @@ class RouteSplitPreparationServiceTest {
     @BeforeEach
     void setUp() {
         preparationService = new RouteSplitPreparationService<>(
-                materializationService, new SplitRetryPolicy(1, 1));
+                materializationService, new BusyRetryPolicy(1, 1));
     }
 
     @Test

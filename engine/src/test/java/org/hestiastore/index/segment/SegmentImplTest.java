@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -457,6 +458,40 @@ class SegmentImplTest {
 
             assertEquals(SegmentState.READY, segment.getState());
             verify(segment, times(1)).compact();
+        } finally {
+            segment.close();
+        }
+    }
+
+    @Test
+    void maintenance_schedules_follow_up_after_completion() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final AtomicInteger evaluations = new AtomicInteger();
+        final SegmentMaintenancePolicy<Integer, String> policy = segment -> evaluations
+                .getAndIncrement() < 2
+                        ? SegmentMaintenanceDecision.flushOnly()
+                        : SegmentMaintenanceDecision.none();
+        final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
+                versionController);
+        final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
+                createCore(versionController), compacter, executor, policy);
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "A").getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+
+            assertEquals(OperationStatus.OK,
+                    segment.put(2, "B").getStatus());
+
+            executor.runTask();
+
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+            assertTrue(executor.hasTask());
+
+            executor.runTask();
+
+            assertEquals(SegmentState.READY, segment.getState());
+            assertEquals(0, segment.getNumberOfKeysInWriteCache());
         } finally {
             segment.close();
         }

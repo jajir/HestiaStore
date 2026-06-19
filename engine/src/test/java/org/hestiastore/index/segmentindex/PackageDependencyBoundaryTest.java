@@ -20,62 +20,34 @@ class PackageDependencyBoundaryTest {
 
     private static final String SEGMENT_INDEX_PACKAGES = "org.hestiastore.index.segmentindex..";
     private static final String SEGMENT_REGISTRY_PACKAGES = "org.hestiastore.index.segmentregistry..";
-    private static final String SEGMENT_INDEX_CORE_STORAGE_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.storage..";
-    private static final String SEGMENT_INDEX_CORE_TOPOLOGY_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.topology..";
-    private static final String SEGMENT_INDEX_CORE_SESSION_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.session..";
-    private static final String SEGMENT_INDEX_CORE_SEGMENT_LEASE_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.segmentlease..";
-    private static final String SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.bootstrap..";
-    private static final String SEGMENT_INDEX_CORE_OPERATIONS_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.operations..";
-    private static final String SEGMENT_INDEX_CORE_MAINTENANCE_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.maintenance..";
-    private static final String SEGMENT_INDEX_MAINTENANCE_PACKAGES =
-            "org.hestiastore.index.segmentindex.maintenance..";
-    private static final String SEGMENT_INDEX_CORE_SPLIT_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.split..";
-    private static final String SEGMENT_INDEX_CORE_STABLE_SEGMENT_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.stablesegment..";
-    private static final String SEGMENT_INDEX_CORE_STREAMING_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.streaming..";
-    private static final String SEGMENT_INDEX_CORE_EXECUTOR_REGISTRY_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.executorregistry..";
-    private static final String SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES =
-            "org.hestiastore.index.segmentindex.runtimemonitoring..";
-    private static final String SEGMENT_INDEX_LOGGING_PACKAGES =
-            "org.hestiastore.index.segmentindex.logging..";
-    private static final String SEGMENT_INDEX_MONITORING_PACKAGES =
-            "org.hestiastore.index.monitoring..";
-    private static final String SEGMENT_INDEX_CORE_PACKAGES =
-            "org.hestiastore.index.segmentindex.core..";
-    private static final String SEGMENT_INDEX_MAPPING_PACKAGES =
-            "org.hestiastore.index.segmentindex.mapping..";
-    private static final String SEGMENT_INDEX_EFFECTIVE_CONFIGURATION_PACKAGES =
-            "org.hestiastore.index.segmentindex.configuration.effective..";
-    private static final String SEGMENT_INDEX_TUNING_CONFIGURATION_PACKAGES =
-            "org.hestiastore.index.segmentindex.configuration.tuning..";
-    private static final String REMOVED_SEGMENT_INDEX_CONFIG_PACKAGES =
-            "org.hestiastore.index.segmentindex.config..";
-    private static final String REMOVED_SEGMENT_INDEX_RUNTIME_CONFIG_PACKAGES =
-            "org.hestiastore.index.segmentindex.runtimeconfiguration..";
-    private static final String REMOVED_SEGMENT_INDEX_CORE_CONTROL_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.control..";
-    private static final String SEGMENT_INDEX_PUBLIC_API_PACKAGE =
-            "org.hestiastore.index.segmentindex";
-    private static final String SEGMENT_INDEX_FACTORY_CLASS =
-            "org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory";
-    private static final String STORAGE_CONSISTENCY_CHECKER_CLASS =
-            "org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker";
-    private static final String STORAGE_CONSISTENCY_COORDINATOR_CLASS =
-            "org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator";
-    private static final String STORAGE_CONSISTENCY_INTERNAL_CLASS_PATTERN =
-            ".*\\.core\\.storage\\.IndexConsistency(Checker|Coordinator)";
-    private static final String STORAGE_WAL_COORDINATOR_CLASS =
-            "org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator";
+    private static final String SEGMENT_INDEX_CORE_STORAGE_PACKAGES = "org.hestiastore.index.segmentindex.core.storage..";
+    private static final String SEGMENT_INDEX_CORE_TOPOLOGY_PACKAGES = "org.hestiastore.index.segmentindex.core.topology..";
+    private static final String SEGMENT_INDEX_CORE_SESSION_PACKAGES = "org.hestiastore.index.segmentindex.core.session..";
+    private static final String SEGMENT_INDEX_CORE_SEGMENT_LEASE_PACKAGES = "org.hestiastore.index.segmentindex.core.segmentlease..";
+    private static final String SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES = "org.hestiastore.index.segmentindex.core.bootstrap..";
+    private static final String SEGMENT_INDEX_CORE_OPERATIONS_PACKAGES = "org.hestiastore.index.segmentindex.core.operations..";
+    private static final String SEGMENT_INDEX_CORE_MAINTENANCE_PACKAGES = "org.hestiastore.index.segmentindex.core.maintenance..";
+    private static final String SEGMENT_INDEX_MAINTENANCE_PACKAGES = "org.hestiastore.index.segmentindex.maintenance..";
+    private static final String SEGMENT_INDEX_CORE_SPLIT_PACKAGES = "org.hestiastore.index.segmentindex.core.split..";
+    private static final String SEGMENT_INDEX_CORE_STABLE_SEGMENT_PACKAGES = "org.hestiastore.index.segmentindex.core.stablesegment..";
+    private static final String SEGMENT_INDEX_CORE_STREAMING_PACKAGES = "org.hestiastore.index.segmentindex.core.streaming..";
+    private static final String SEGMENT_INDEX_CORE_EXECUTOR_REGISTRY_PACKAGES = "org.hestiastore.index.segmentindex.core.executorregistry..";
+    private static final String SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES = "org.hestiastore.index.segmentindex.runtimemonitoring..";
+    private static final String SEGMENT_INDEX_LOGGING_PACKAGES = "org.hestiastore.index.segmentindex.logging..";
+    private static final String SEGMENT_INDEX_MONITORING_PACKAGES = "org.hestiastore.index.monitoring..";
+    private static final String SEGMENT_INDEX_MAPPING_PACKAGES = "org.hestiastore.index.segmentindex.mapping..";
+    private static final String SEGMENT_INDEX_EFFECTIVE_CONFIGURATION_PACKAGES = "org.hestiastore.index.segmentindex.configuration.effective..";
+    private static final String SEGMENT_INDEX_TUNING_CONFIGURATION_PACKAGES = "org.hestiastore.index.segmentindex.configuration.tuning..";
+    private static final String REMOVED_SEGMENT_INDEX_CONFIG_PACKAGES = "org.hestiastore.index.segmentindex.config..";
+    private static final String REMOVED_SEGMENT_INDEX_RUNTIME_CONFIG_PACKAGES = "org.hestiastore.index.segmentindex.runtimeconfiguration..";
+    private static final String REMOVED_SEGMENT_INDEX_CORE_CONTROL_PACKAGES = "org.hestiastore.index.segmentindex.core.control..";
+    private static final String SEGMENT_INDEX_PUBLIC_API_PACKAGE = "org.hestiastore.index.segmentindex";
+    private static final String SEGMENT_INDEX_FACTORY_CLASS = "org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory";
+    private static final String SEGMENT_INDEX_BOOTSTRAP_OPERATION_CLASS = "org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexBootstrapOperation";
+    private static final String SEGMENT_INDEX_BOOTSTRAP_STATE_CLASS = "org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexBootstrapState";
+    private static final String STORAGE_CONSISTENCY_CHECKER_CLASS = "org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker";
+    private static final String STORAGE_CONSISTENCY_COORDINATOR_CLASS = "org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator";
+    private static final String STORAGE_CONSISTENCY_INTERNAL_CLASS_PATTERN = ".*\\.core\\.storage\\.IndexConsistency(Checker|Coordinator)";
 
     @ArchTest
     static final ArchRule only_segment_index_packages_depend_on_segment_registry = noClasses()//
@@ -109,7 +81,8 @@ class PackageDependencyBoundaryTest {
                     SEGMENT_INDEX_CORE_STREAMING_PACKAGES,
                     SEGMENT_INDEX_CORE_STABLE_SEGMENT_PACKAGES,
                     SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES)
-            .because("storage owns persisted state, WAL, recovery, and consistency work; it must not depend on runtime orchestration packages.");
+            .because(
+                    "storage owns persisted state, WAL, recovery, and consistency work; it must not depend on runtime orchestration packages.");
 
     @ArchTest
     static final ArchRule segment_index_topology_does_not_depend_on_session = noClasses()//
@@ -136,7 +109,8 @@ class PackageDependencyBoundaryTest {
             .resideInAnyPackage(SEGMENT_INDEX_CORE_STORAGE_PACKAGES,
                     SEGMENT_INDEX_CORE_SPLIT_PACKAGES,
                     SEGMENT_REGISTRY_PACKAGES)
-            .because("topology owns route state only; physical segment storage, recovery cleanup, and split orchestration belong elsewhere.");
+            .because(
+                    "topology owns route state only; physical segment storage, recovery cleanup, and split orchestration belong elsewhere.");
 
     @ArchTest
     static final ArchRule removed_segment_index_packages_are_not_used_by_internal_code = noClasses()//
@@ -165,21 +139,16 @@ class PackageDependencyBoundaryTest {
             .resideInAPackage(SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES)//
             .and()//
             .doNotHaveFullyQualifiedName(SEGMENT_INDEX_FACTORY_CLASS)//
+            .and()//
+            .doNotHaveFullyQualifiedName(
+                    SEGMENT_INDEX_BOOTSTRAP_OPERATION_CLASS)//
+            .and()//
+            .doNotHaveFullyQualifiedName(SEGMENT_INDEX_BOOTSTRAP_STATE_CLASS)//
             .should()//
             .dependOnClassesThat()//
             .resideInAPackage(SEGMENT_INDEX_PUBLIC_API_PACKAGE)
-            .because("bootstrap composes runtime internals and must not reach through the public SegmentIndex API package for helper objects; SegmentIndexFactory is the public bootstrap facade.");
-
-    @ArchTest
-    static final ArchRule concrete_retry_policies_are_package_private = classes()//
-            .that()//
-            .resideInAnyPackage(SEGMENT_INDEX_CORE_PACKAGES,
-                    SEGMENT_REGISTRY_PACKAGES)//
-            .and()//
-            .haveSimpleNameEndingWith("RetryPolicy")//
-            .should()//
-            .bePackagePrivate()
-            .because("retry policies are package-local implementation details; dependent packages pass retry settings to the package entry point instead of sharing policy objects.");
+            .because(
+                    "bootstrap composes runtime internals and must not reach through the public SegmentIndex API package for helper objects; only the factory and the opened-handle owner should see SegmentIndex directly.");
 
     @ArchTest
     static final ArchRule mapping_does_not_depend_on_split = noClasses()//
@@ -204,7 +173,8 @@ class PackageDependencyBoundaryTest {
             .should()//
             .dependOnClassesThat()//
             .resideInAnyPackage(SEGMENT_INDEX_CORE_STORAGE_PACKAGES)
-            .because("split may materialize and delete segments through the registry, but map-to-directory recovery belongs to StorageService.");
+            .because(
+                    "split may materialize and delete segments through the registry, but map-to-directory recovery belongs to StorageService.");
 
     @ArchTest
     static final ArchRule segment_index_operations_do_not_bypass_route_state = noClasses()//
@@ -214,7 +184,8 @@ class PackageDependencyBoundaryTest {
             .dependOnClassesThat()//
             .resideInAnyPackage(SEGMENT_INDEX_CORE_TOPOLOGY_PACKAGES,
                     SEGMENT_INDEX_MAPPING_PACKAGES)
-            .because("foreground operations should resolve route state through SegmentLeaseService, not by combining route maps and topology directly.");
+            .because(
+                    "foreground operations should resolve route state through SegmentLeaseService, not by combining route maps and topology directly.");
 
     @ArchTest
     static final ArchRule segment_index_operations_do_not_load_segments_directly_from_registry = noClasses()//
@@ -223,7 +194,8 @@ class PackageDependencyBoundaryTest {
             .should()//
             .dependOnClassesThat()//
             .areAssignableTo(SegmentRegistry.class)
-            .because("foreground operations may use the leased BlockingSegment, but segment loading must stay behind SegmentLeaseService.");
+            .because(
+                    "foreground operations may use the leased BlockingSegment, but segment loading must stay behind SegmentLeaseService.");
 
     @ArchTest
     static final ArchRule only_storage_session_bootstrap_operations_and_maintenance_use_storage_service = noClasses()//
@@ -231,12 +203,14 @@ class PackageDependencyBoundaryTest {
             .resideOutsideOfPackages(SEGMENT_INDEX_CORE_STORAGE_PACKAGES,
                     SEGMENT_INDEX_CORE_SESSION_PACKAGES,
                     SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES,
+                    SEGMENT_INDEX_CORE_MAINTENANCE_PACKAGES,
                     SEGMENT_INDEX_CORE_OPERATIONS_PACKAGES,
                     SEGMENT_INDEX_MAINTENANCE_PACKAGES)//
             .should()//
             .dependOnClassesThat()//
             .areAssignableTo(StorageService.class)
-            .because("StorageService is the storage boundary used by controlled runtime, bootstrap, operation, and maintenance entry points; broad direct use would turn it into a service locator.");
+            .because(
+                    "StorageService is the storage boundary used by controlled runtime, bootstrap, operation, and maintenance entry points; broad direct use would turn it into a service locator.");
 
     @ArchTest
     static final ArchRule only_storage_and_bootstrap_build_storage_service = noClasses()//
@@ -246,7 +220,8 @@ class PackageDependencyBoundaryTest {
             .should()//
             .dependOnClassesThat()//
             .areAssignableTo(StorageServiceBuilder.class)
-            .because("bootstrap owns startup composition and storage owns storage internals; other packages should use StorageService instead of constructing storage services directly.");
+            .because(
+                    "bootstrap owns startup composition and storage owns storage internals; other packages should use StorageService instead of constructing storage services directly.");
 
     @ArchTest
     static final ArchRule storage_consistency_internals_are_package_private = classes()//
@@ -256,7 +231,8 @@ class PackageDependencyBoundaryTest {
             .haveFullyQualifiedName(STORAGE_CONSISTENCY_COORDINATOR_CLASS)//
             .should()//
             .bePackagePrivate()
-            .because("consistency checking couples the key-to-segment map with physical segments, so callers outside storage must use StorageService.");
+            .because(
+                    "consistency checking couples the key-to-segment map with physical segments, so callers outside storage must use StorageService.");
 
     @ArchTest
     static final ArchRule only_storage_package_uses_storage_consistency_internals = noClasses()//
@@ -265,24 +241,8 @@ class PackageDependencyBoundaryTest {
             .should()//
             .dependOnClassesThat()//
             .haveNameMatching(STORAGE_CONSISTENCY_INTERNAL_CLASS_PATTERN)
-            .because("StorageService is the package entry point for consistency checks; external code must not wire checker/coordinator internals directly.");
-
-    @ArchTest
-    static final ArchRule storage_wal_coordinator_is_package_private = classes()//
-            .that()//
-            .haveFullyQualifiedName(STORAGE_WAL_COORDINATOR_CLASS)//
-            .should()//
-            .bePackagePrivate()
-            .because("WAL replay, append, checkpoint, and applied-LSN tracking belong behind StorageService.");
-
-    @ArchTest
-    static final ArchRule only_storage_package_uses_wal_coordinator = noClasses()//
-            .that()//
-            .resideOutsideOfPackages(SEGMENT_INDEX_CORE_STORAGE_PACKAGES)//
-            .should()//
-            .dependOnClassesThat()//
-            .haveFullyQualifiedName(STORAGE_WAL_COORDINATOR_CLASS)
-            .because("StorageService is the package entry point for WAL coordination; external code must not depend on IndexWalCoordinator directly.");
+            .because(
+                    "StorageService is the package entry point for consistency checks; external code must not wire checker/coordinator internals directly.");
 
     @ArchTest
     static final ArchRule operational_runtime_packages_do_not_depend_on_metrics = noClasses()//
@@ -308,5 +268,6 @@ class PackageDependencyBoundaryTest {
             .should()//
             .dependOnClassesThat()//
             .resideInAnyPackage(SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES)
-            .because("runtime monitoring should stay behind the public SegmentIndex API, monitoring infrastructure, MDC logging adapters, bootstrap composition, and session-level API exposure.");
+            .because(
+                    "runtime monitoring should stay behind the public SegmentIndex API, monitoring infrastructure, MDC logging adapters, bootstrap composition, and session-level API exposure.");
 }

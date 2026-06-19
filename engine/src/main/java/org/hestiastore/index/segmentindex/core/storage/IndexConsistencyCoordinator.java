@@ -1,9 +1,9 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
-import java.util.function.Predicate;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
  * Owns explicit consistency checks and the startup-only lock validation mode.
@@ -13,37 +13,33 @@ import org.hestiastore.index.segment.SegmentId;
  */
 final class IndexConsistencyCoordinator<K, V> {
 
-    @FunctionalInterface
-    interface ConsistencyCheckRunner {
-
-        void run(Predicate<SegmentId> segmentFilter);
-    }
-
-    private final Runnable verifyUniqueSegmentIds;
-    private final ConsistencyCheckRunner consistencyCheckRunner;
-    private final Runnable cleanupOrphanedSegmentDirectories;
-    private final Predicate<SegmentId> startupSegmentFilter;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
+    private final SegmentRegistry<K, V> segmentRegistry;
+    private final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector;
+    private final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover;
     private boolean startupSegmentLockValidationEnabled;
 
-    IndexConsistencyCoordinator(final Runnable verifyUniqueSegmentIds,
-            final ConsistencyCheckRunner consistencyCheckRunner,
-            final Runnable cleanupOrphanedSegmentDirectories,
-            final Predicate<SegmentId> startupSegmentFilter) {
-        this.verifyUniqueSegmentIds = Vldtn
-                .requireNonNull(verifyUniqueSegmentIds, "verifyUniqueSegmentIds");
-        this.consistencyCheckRunner = Vldtn
-                .requireNonNull(consistencyCheckRunner, "consistencyCheckRunner");
-        this.cleanupOrphanedSegmentDirectories = Vldtn.requireNonNull(
-                cleanupOrphanedSegmentDirectories,
-                "cleanupOrphanedSegmentDirectories");
-        this.startupSegmentFilter = Vldtn.requireNonNull(startupSegmentFilter,
-                "startupSegmentFilter");
+    IndexConsistencyCoordinator(final KeyToSegmentMap<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector,
+            final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover) {
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
+        this.segmentDirectoryInspector = Vldtn.requireNonNull(
+                segmentDirectoryInspector, "segmentDirectoryInspector");
+        this.orphanedSegmentDirectoryRemover = Vldtn.requireNonNull(
+                orphanedSegmentDirectoryRemover,
+                "orphanedSegmentDirectoryRemover");
     }
 
     void checkAndRepairConsistency() {
-        verifyUniqueSegmentIds.run();
-        consistencyCheckRunner.run(resolveSegmentFilter());
-        cleanupOrphanedSegmentDirectories.run();
+        keyToSegmentMap.validateUniqueSegmentIds();
+        new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
+                this::shouldCheckSegment).checkAndRepairConsistency();
+        segmentDirectoryInspector.discoverOrphanedSegmentDirectories()
+                .forEach(orphanedSegmentDirectoryRemover::remove);
     }
 
     void runStartupConsistencyCheck() {
@@ -55,10 +51,8 @@ final class IndexConsistencyCoordinator<K, V> {
         }
     }
 
-    private Predicate<SegmentId> resolveSegmentFilter() {
-        if (startupSegmentLockValidationEnabled) {
-            return startupSegmentFilter;
-        }
-        return segmentId -> true;
+    private boolean shouldCheckSegment(final SegmentId segmentId) {
+        return !startupSegmentLockValidationEnabled
+                || segmentDirectoryInspector.hasSegmentLockFile(segmentId);
     }
 }

@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -27,7 +28,7 @@ final class WalRetentionPressureCoordinator<K, V> {
 
     private final EffectiveIndexConfiguration<K, V> conf;
     private final WalRuntime<K, V> walRuntime;
-    private final WalBackpressureRetryPolicy retryPolicy;
+    private final BusyRetryPolicy retryPolicy;
     private final WalRetentionPressureCheckpoint<K, V> checkpoint;
     private final AtomicLong walRetentionPressureLastWarnNanos = new AtomicLong(
             0L);
@@ -37,7 +38,7 @@ final class WalRetentionPressureCoordinator<K, V> {
     WalRetentionPressureCoordinator(
             final EffectiveIndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
-            final WalBackpressureRetryPolicy retryPolicy,
+            final BusyRetryPolicy retryPolicy,
             final WalRetentionPressureCheckpoint<K, V> checkpoint) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");

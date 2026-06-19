@@ -38,7 +38,6 @@ on policy.
 
 Relevant code:
 `segmentindex/core/maintenance/MaintenanceService.java`,
-`segmentindex/core/maintenance/MaintenanceServiceImpl.java`,
 `segmentindex/core/operations/IndexOperationCoordinator.java`,
 `segmentindex/mapping/KeyToSegmentMap.java`.
 

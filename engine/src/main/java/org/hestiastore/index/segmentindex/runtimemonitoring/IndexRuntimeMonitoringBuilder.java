@@ -10,7 +10,7 @@ import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
-import org.hestiastore.index.segmentindex.core.split.SplitStatsView;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalMonitoringView;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -27,7 +27,7 @@ public final class IndexRuntimeMonitoringBuilder<K, V> {
     private EffectiveIndexConfiguration<K, V> conf;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
-    private SplitStatsView splitStatsView;
+    private SplitService<K, V> splitService;
     private ExecutorRegistry executorRegistry;
     private RuntimeTuningState runtimeTuningState;
     private ChunkStoreCache<K, V> chunkStoreCache;
@@ -90,14 +90,14 @@ public final class IndexRuntimeMonitoringBuilder<K, V> {
     }
 
     /**
-     * Sets the split runtime stats view.
+     * Sets the split runtime service used as the stats source.
      *
-     * @param splitStatsView split runtime stats view
+     * @param splitService split runtime service
      * @return this builder
      */
-    public IndexRuntimeMonitoringBuilder<K, V> withSplitStatsView(
-            final SplitStatsView splitStatsView) {
-        this.splitStatsView = splitStatsView;
+    public IndexRuntimeMonitoringBuilder<K, V> withSplitService(
+            final SplitService<K, V> splitService) {
+        this.splitService = splitService;
         return this;
     }
 
@@ -244,7 +244,7 @@ public final class IndexRuntimeMonitoringBuilder<K, V> {
                 Vldtn.requireNonNull(conf, "conf"),
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
-                Vldtn.requireNonNull(splitStatsView, "splitStatsView"),
+                Vldtn.requireNonNull(splitService, "splitService"),
                 Vldtn.requireNonNull(executorRegistry, "executorRegistry"),
                 Vldtn.requireNonNull(runtimeTuningState, "runtimeTuningState"),
                 Vldtn.requireNonNull(chunkStoreCache, "chunkStoreCache"),

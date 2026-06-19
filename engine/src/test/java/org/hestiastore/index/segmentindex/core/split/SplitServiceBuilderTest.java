@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,7 +38,7 @@ class SplitServiceBuilderTest {
             when(maintenance.busyTimeoutMillis()).thenReturn(1);
             when(segmentRegistry.materialization())
                     .thenReturn(mock(SegmentRegistry.Materialization.class));
-            final SplitService service = SplitService
+            final SplitService<String, String> service = SplitService
                     .<String, String>builder()
                     .conf(conf)
                     .runtimeTuningState(mock(RuntimeTuningState.class))
@@ -55,7 +55,7 @@ class SplitServiceBuilderTest {
                     .statsRecorder(new SplitStatsRecorder())
                     .build();
 
-            assertSame(service, service.splitStatsView());
+            assertNotNull(service.statsSnapshot());
         } finally {
             scheduler.shutdownNow();
         }

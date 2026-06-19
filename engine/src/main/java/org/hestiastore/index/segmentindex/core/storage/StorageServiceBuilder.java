@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -17,7 +17,6 @@ public final class StorageServiceBuilder<K, V> {
     private Directory directoryFacade;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
-    private TypeDescriptor<K> keyTypeDescriptor;
     private Integer storageCleanupBusyBackoffMillis;
     private Integer storageCleanupBusyTimeoutMillis;
     private Integer walBackpressureBusyBackoffMillis;
@@ -63,19 +62,6 @@ public final class StorageServiceBuilder<K, V> {
             final SegmentRegistry<K, V> segmentRegistry) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        return this;
-    }
-
-    /**
-     * Sets the key descriptor needed for segment consistency validation.
-     *
-     * @param keyTypeDescriptor key type descriptor
-     * @return this builder
-     */
-    public StorageServiceBuilder<K, V> withKeyTypeDescriptor(
-            final TypeDescriptor<K> keyTypeDescriptor) {
-        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor");
         return this;
     }
 
@@ -143,20 +129,20 @@ public final class StorageServiceBuilder<K, V> {
                 .requireNonNull(keyToSegmentMap, "keyToSegmentMap");
         final SegmentRegistry<K, V> validatedSegmentRegistry = Vldtn
                 .requireNonNull(segmentRegistry, "segmentRegistry");
-        final TypeDescriptor<K> validatedKeyTypeDescriptor = Vldtn
-                .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
-        final StorageCleanupRetryPolicy storageCleanupRetryPolicy =
-                new StorageCleanupRetryPolicy(Vldtn.requireNonNull(
+        final BusyRetryPolicy storageCleanupRetryPolicy =
+                new BusyRetryPolicy(Vldtn.requireNonNull(
                         storageCleanupBusyBackoffMillis,
                         "storageCleanupBusyBackoffMillis"),
                         Vldtn.requireNonNull(storageCleanupBusyTimeoutMillis,
-                                "storageCleanupBusyTimeoutMillis"));
-        final WalBackpressureRetryPolicy walBackpressureRetryPolicy =
-                new WalBackpressureRetryPolicy(Vldtn.requireNonNull(
+                                "storageCleanupBusyTimeoutMillis"),
+                        "Storage cleanup operation");
+        final BusyRetryPolicy walBackpressureRetryPolicy =
+                new BusyRetryPolicy(Vldtn.requireNonNull(
                         walBackpressureBusyBackoffMillis,
                         "walBackpressureBusyBackoffMillis"),
                         Vldtn.requireNonNull(walBackpressureBusyTimeoutMillis,
-                                "walBackpressureBusyTimeoutMillis"));
+                                "walBackpressureBusyTimeoutMillis"),
+                        "WAL backpressure operation");
         final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector =
                 new RecoverySegmentDirectoryInspector<>(
                         validatedDirectoryFacade, validatedKeyToSegmentMap);
@@ -164,19 +150,13 @@ public final class StorageServiceBuilder<K, V> {
                 new OrphanedSegmentDirectoryRemover<>(
                         validatedSegmentRegistry,
                         storageCleanupRetryPolicy);
-        return new StorageServiceImpl<>(segmentDirectoryInspector,
+        return new StorageService<>(segmentDirectoryInspector,
                 orphanedSegmentDirectoryRemover,
                 new IndexConsistencyCoordinator<>(
-                        validatedKeyToSegmentMap::validateUniqueSegmentIds,
-                        segmentFilter -> new IndexConsistencyChecker<>(
-                                validatedKeyToSegmentMap,
-                                validatedSegmentRegistry,
-                                validatedKeyTypeDescriptor, segmentFilter)
-                                .checkAndRepairConsistency(),
-                        () -> segmentDirectoryInspector
-                                .discoverOrphanedSegmentDirectories()
-                                .forEach(orphanedSegmentDirectoryRemover::remove),
-                        segmentDirectoryInspector::hasSegmentLockFile),
+                        validatedKeyToSegmentMap,
+                        validatedSegmentRegistry,
+                        segmentDirectoryInspector,
+                        orphanedSegmentDirectoryRemover),
                 walBackpressureRetryPolicy);
     }
 }

@@ -7,7 +7,7 @@ import org.hestiastore.index.segmentindex.core.OperationLatencyTracker;
 /**
  * Mutable recorder for split runtime statistics.
  */
-public final class SplitStatsRecorder implements SplitTelemetry {
+public final class SplitStatsRecorder {
 
     private static final double PERCENTILE_95 = 0.95D;
 
@@ -17,20 +17,33 @@ public final class SplitStatsRecorder implements SplitTelemetry {
     private final OperationLatencyTracker splitTaskRunLatency =
             new OperationLatencyTracker();
 
+    /**
+     * Creates an empty split stats recorder.
+     */
     public SplitStatsRecorder() {
     }
 
-    @Override
+    /**
+     * Records that a split candidate was scheduled.
+     */
     public void recordSplitScheduled() {
         splitScheduleCount.increment();
     }
 
-    @Override
+    /**
+     * Records scheduler-to-start latency for a split task.
+     *
+     * @param nanos latency in nanoseconds
+     */
     public void recordSplitTaskStartDelayNanos(final long nanos) {
         splitTaskStartDelayLatency.recordNanos(nanos);
     }
 
-    @Override
+    /**
+     * Records runtime latency for a split task.
+     *
+     * @param nanos runtime in nanoseconds
+     */
     public void recordSplitTaskRunLatencyNanos(final long nanos) {
         splitTaskRunLatency.recordNanos(nanos);
     }

@@ -13,9 +13,13 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationCoordinator;
+import org.hestiastore.index.segmentindex.core.streaming.EntryIteratorLoggingContext;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.sorteddatafile.EntryComparator;
@@ -28,54 +32,71 @@ import org.hestiastore.index.sorteddatafile.EntryComparator;
  * @param <V> value type
  */
 class SegmentIndexImpl<K, V> extends AbstractCloseableResource
-        implements SegmentIndexSessionResource<K, V> {
+        implements SegmentIndex<K, V> {
 
     private final TypeDescriptor<K> keyTypeDescriptor;
-    private final SegmentIndexPointOperationFacade<K, V> pointOperationFacade;
-    private final SegmentIndexReadFacade<K, V> readFacade;
+    private final SegmentIndexTrackedOperationRunner trackedRunner;
+    private final IndexOperationCoordinator<K, V> operationAccess;
+    private final SegmentTopologyRuntimeAccess<K, V> topologyRuntime;
+    private final EffectiveIndexConfiguration<K, V> configuration;
     private final RuntimeTuning runtimeTuning;
     private final IndexRuntimeMonitoring runtimeMonitoring;
     private final SegmentIndexMaintenance maintenanceApi;
-    private final SegmentIndexSessionOwner<K, V> sessionOwner;
+    private final SegmentIndexStateMachine stateMachine;
+    private final IndexCloseCoordinator<K, V> closeCoordinator;
 
     /**
-     * Creates the session index API from already assembled operation, read,
-     * runtime view, maintenance, and lifecycle collaborators.
+     * Creates the session index API from already assembled runtime,
+     * maintenance, and lifecycle collaborators.
      *
      * @param keyTypeDescriptor key type descriptor used for stream ordering
-     * @param pointOperationFacade point operation API collaborator
-     * @param readFacade read and iterator API collaborator
+     * @param trackedRunner foreground operation tracking and readiness checks
+     * @param operationAccess foreground point operation access
+     * @param topologyRuntime topology and iterator runtime access
+     * @param configuration configuration used for optional iterator context
+     *            logging
      * @param runtimeTuning runtime tuning API view
      * @param runtimeMonitoring runtime monitoring API view
      * @param maintenanceApi maintenance API view
-     * @param sessionOwner lifecycle owner for state checks and close
-     *            coordination
+     * @param stateMachine session lifecycle state machine
+     * @param closeCoordinator ordered close sequence coordinator
      */
     SegmentIndexImpl(final TypeDescriptor<K> keyTypeDescriptor,
-            final SegmentIndexPointOperationFacade<K, V> pointOperationFacade,
-            final SegmentIndexReadFacade<K, V> readFacade,
+            final SegmentIndexTrackedOperationRunner trackedRunner,
+            final IndexOperationCoordinator<K, V> operationAccess,
+            final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
+            final EffectiveIndexConfiguration<K, V> configuration,
             final RuntimeTuning runtimeTuning,
             final IndexRuntimeMonitoring runtimeMonitoring,
             final SegmentIndexMaintenance maintenanceApi,
-            final SegmentIndexSessionOwner<K, V> sessionOwner) {
+            final SegmentIndexStateMachine stateMachine,
+            final IndexCloseCoordinator<K, V> closeCoordinator) {
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
-        this.pointOperationFacade = Vldtn.requireNonNull(pointOperationFacade,
-                "pointOperationFacade");
-        this.readFacade = Vldtn.requireNonNull(readFacade, "readFacade");
+        this.trackedRunner = Vldtn.requireNonNull(trackedRunner,
+                "trackedRunner");
+        this.operationAccess = Vldtn.requireNonNull(operationAccess,
+                "operationAccess");
+        this.topologyRuntime = Vldtn.requireNonNull(topologyRuntime,
+                "topologyRuntime");
+        this.configuration = Vldtn.requireNonNull(configuration,
+                "configuration");
         this.runtimeTuning = Vldtn.requireNonNull(runtimeTuning,
                 "runtimeTuning");
         this.runtimeMonitoring = Vldtn.requireNonNull(runtimeMonitoring,
                 "runtimeMonitoring");
         this.maintenanceApi = Vldtn.requireNonNull(maintenanceApi,
                 "maintenanceApi");
-        this.sessionOwner = Vldtn.requireNonNull(sessionOwner, "sessionOwner");
+        this.stateMachine = Vldtn.requireNonNull(stateMachine,
+                "stateMachine");
+        this.closeCoordinator = Vldtn.requireNonNull(closeCoordinator,
+                "closeCoordinator");
     }
 
     /** {@inheritDoc} */
     @Override
     public void put(final K key, final V value) {
-        pointOperationFacade.put(key, value);
+        trackedRunner.runTrackedVoid(() -> operationAccess.put(key, value));
     }
 
     /**
@@ -91,7 +112,9 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
-        return readFacade.openSegmentIterator(segmentId, isolation);
+        return trackedRunner.runTracked(() -> topologyRuntime
+                .openSegmentIterator(requireSegmentId(segmentId),
+                        requireIsolation(isolation)));
     }
 
     /**
@@ -104,7 +127,10 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     EntryIterator<K, V> openSegmentIterator(
             final SegmentWindow segmentWindows,
             final SegmentIteratorIsolation isolation) {
-        return readFacade.openWindowIterator(segmentWindows, isolation);
+        return trackedRunner.runTracked(() -> decorateIterator(
+                topologyRuntime.openWindowIterator(
+                        resolveSegmentWindow(segmentWindows),
+                        requireIsolation(isolation))));
     }
 
     /** {@inheritDoc} */
@@ -164,26 +190,37 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         };
     }
 
+    private EntryIterator<K, V> decorateIterator(
+            final EntryIterator<K, V> iterator) {
+        final EntryIterator<K, V> validatedIterator = Vldtn
+                .requireNonNull(iterator, "iterator");
+        if (!configuration.logging().contextEnabled()) {
+            return validatedIterator;
+        }
+        return new EntryIteratorLoggingContext<>(validatedIterator,
+                configuration);
+    }
+
     /** {@inheritDoc} */
     @Override
     public V get(final K key) {
-        return pointOperationFacade.get(key);
+        return trackedRunner.runTracked(() -> operationAccess.get(key));
     }
 
     /** {@inheritDoc} */
     @Override
     public void delete(final K key) {
-        pointOperationFacade.delete(key);
+        trackedRunner.runTrackedVoid(() -> operationAccess.delete(key));
     }
 
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
-        sessionOwner.close();
+        closeCoordinator.close();
     }
 
     void ensureOperational() {
-        sessionOwner.ensureOperational();
+        stateMachine.ensureOperational();
     }
 
     @Override
@@ -192,7 +229,7 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     final SegmentIndexStateMachine stateMachine() {
-        return sessionOwner.stateMachine();
+        return stateMachine;
     }
 
     /** {@inheritDoc} */
@@ -205,6 +242,20 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public IndexRuntimeMonitoring runtimeMonitoring() {
         return runtimeMonitoring;
+    }
+
+    private SegmentId requireSegmentId(final SegmentId segmentId) {
+        return Vldtn.requireNonNull(segmentId, "segmentId");
+    }
+
+    private SegmentIteratorIsolation requireIsolation(
+            final SegmentIteratorIsolation isolation) {
+        return Vldtn.requireNonNull(isolation, "isolation");
+    }
+
+    private SegmentWindow resolveSegmentWindow(final SegmentWindow segmentWindow) {
+        return segmentWindow == null ? SegmentWindow.unbounded()
+                : segmentWindow;
     }
 
 }

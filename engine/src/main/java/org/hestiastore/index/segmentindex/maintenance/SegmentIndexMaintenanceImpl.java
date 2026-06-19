@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.maintenance;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 
 /**
  * Default {@link SegmentIndexMaintenance} implementation backed by index
@@ -10,23 +11,22 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 public final class SegmentIndexMaintenanceImpl
         implements SegmentIndexMaintenance {
 
-    private final MaintenanceService maintenanceService;
-    private final IndexConsistencyRepairService consistencyRepairService;
+    private final MaintenanceService<?, ?> maintenanceService;
+    private final StorageService<?, ?> storageService;
 
     /**
      * Creates a segment-index maintenance implementation.
      *
      * @param maintenanceService segment maintenance command service
-     * @param consistencyRepairService storage repair and runtime follow-up
-     *            service
+     * @param storageService storage service used for consistency repair
      */
     public SegmentIndexMaintenanceImpl(
-            final MaintenanceService maintenanceService,
-            final IndexConsistencyRepairService consistencyRepairService) {
+            final MaintenanceService<?, ?> maintenanceService,
+            final StorageService<?, ?> storageService) {
         this.maintenanceService = Vldtn.requireNonNull(maintenanceService,
                 "maintenanceService");
-        this.consistencyRepairService = Vldtn.requireNonNull(
-                consistencyRepairService, "consistencyRepairService");
+        this.storageService = Vldtn.requireNonNull(storageService,
+                "storageService");
     }
 
     @Override
@@ -51,6 +51,6 @@ public final class SegmentIndexMaintenanceImpl
 
     @Override
     public void checkAndRepairConsistency() {
-        consistencyRepairService.checkAndRepairConsistency();
+        storageService.checkAndRepairConsistency();
     }
 }
