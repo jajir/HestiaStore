@@ -5,15 +5,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationCoordinator;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
@@ -34,18 +33,25 @@ final class SegmentIndexBootstrapState<K, V> {
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
     private final AtomicLong lastAppliedWalLsn = new AtomicLong();
-    private final BootstrapStorageState<K, V> storageState =
-            new BootstrapStorageState<>();
-    private final BootstrapRuntimeState<K, V> runtimeState =
-            new BootstrapRuntimeState<>();
     private EffectiveIndexConfiguration<K, V> configuration;
     private Boolean configurationWriteRequired;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private ExecutorRegistry executorRegistry;
-    private SegmentIndexSessionResource<K, V> indexHandle;
-    private SegmentIndexResourceClosingAdapter<K, V> index;
-    private SegmentIndexBootstrapResult<K, V> result;
+    private KeyToSegmentMap<K> keyToSegmentMap;
+    private ChunkStoreCache<K, V> chunkStoreCache;
+    private SegmentRegistry<K, V> segmentRegistry;
+    private CoreStorageRuntime<K, V> coreStorageRuntime;
+    private SegmentLeaseService<K, V> segmentLeaseService;
+    private SplitService<K, V> splitService;
+    private SegmentTopologyRuntimeAccess<K, V> topologyRuntime;
+    private WalRuntime<K, V> walRuntime;
+    private MaintenanceService<K, V> maintenanceService;
+    private IndexOperationCoordinator<K, V> operationAccess;
+    private RuntimeTuning runtimeTuning;
+    private IndexRuntimeMonitoring runtimeMonitoring;
+    private SegmentIndex<K, V> index;
+    private boolean closeOwnershipTransferred;
 
     void setConfiguration(
             final EffectiveIndexConfiguration<K, V> configuration) {
@@ -96,33 +102,16 @@ final class SegmentIndexBootstrapState<K, V> {
         return requireInitialized(executorRegistry, "executorRegistry");
     }
 
-    void setIndexHandle(
-            final SegmentIndexSessionResource<K, V> indexHandle) {
-        this.indexHandle = Vldtn.requireNonNull(indexHandle, "indexHandle");
+    boolean hasExecutorRegistry() {
+        return executorRegistry != null;
     }
 
-    SegmentIndexSessionResource<K, V> getIndexHandle() {
-        return requireInitialized(indexHandle, "indexHandle");
-    }
-
-    void setIndex(final SegmentIndexResourceClosingAdapter<K, V> index) {
+    void setIndex(final SegmentIndex<K, V> index) {
         this.index = Vldtn.requireNonNull(index, "index");
     }
 
-    SegmentIndexResourceClosingAdapter<K, V> getIndex() {
+    SegmentIndex<K, V> getIndex() {
         return requireInitialized(index, "index");
-    }
-
-    void setResult(final SegmentIndexBootstrapResult<K, V> result) {
-        this.result = Vldtn.requireNonNull(result, "result");
-    }
-
-    boolean hasResult() {
-        return result != null;
-    }
-
-    SegmentIndexBootstrapResult<K, V> getResult() {
-        return requireInitialized(result, "result");
     }
 
     AtomicLong compactRequestHighWaterMark() {
@@ -138,147 +127,153 @@ final class SegmentIndexBootstrapState<K, V> {
     }
 
     void setKeyToSegmentMap(final KeyToSegmentMap<K> keyToSegmentMap) {
-        storageState.setKeyToSegmentMap(keyToSegmentMap);
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
     }
 
     boolean hasKeyToSegmentMap() {
-        return storageState.hasKeyToSegmentMap();
+        return keyToSegmentMap != null;
     }
 
     void setChunkStoreCache(
             final ChunkStoreCache<K, V> chunkStoreCache) {
-        storageState.setChunkStoreCache(chunkStoreCache);
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
     }
 
     void setSegmentRegistry(
             final SegmentRegistry<K, V> segmentRegistry) {
-        storageState.setSegmentRegistry(segmentRegistry);
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
+    }
+
+    boolean hasSegmentRegistry() {
+        return segmentRegistry != null;
     }
 
     void setCoreStorageRuntime(
             final CoreStorageRuntime<K, V> coreStorageRuntime) {
-        storageState.setCoreStorageRuntime(coreStorageRuntime);
-    }
-
-    boolean hasCoreStorage() {
-        return storageState.hasCoreStorage();
+        this.coreStorageRuntime = Vldtn.requireNonNull(coreStorageRuntime,
+                "coreStorageRuntime");
     }
 
     RuntimeTuningState getRuntimeTuningState() {
-        return storageState.getRuntimeTuningState();
+        return getCoreStorageRuntime().getRuntimeTuningState();
     }
 
     KeyToSegmentMap<K> getKeyToSegmentMap() {
-        return storageState.getKeyToSegmentMap();
+        return requireInitialized(keyToSegmentMap, "keyToSegmentMap");
     }
 
     SegmentRegistry<K, V> getSegmentRegistry() {
-        return storageState.getSegmentRegistry();
+        return requireInitialized(segmentRegistry, "segmentRegistry");
     }
 
     ChunkStoreCache<K, V> getChunkStoreCache() {
-        return storageState.getChunkStoreCache();
+        return requireInitialized(chunkStoreCache, "chunkStoreCache");
     }
 
     StorageService<K, V> getStorageService() {
-        return storageState.getStorageService();
+        return getCoreStorageRuntime().getStorageService();
     }
 
     CoreStorageRuntime<K, V> getCoreStorageRuntime() {
-        return storageState.getCoreStorageRuntime();
+        return requireInitialized(coreStorageRuntime, "coreStorageRuntime");
     }
 
     void setRuntimeSegmentLeaseService(
             final SegmentLeaseService<K, V> runtimeSegmentLeaseService) {
-        runtimeState.setSegmentLeaseService(runtimeSegmentLeaseService);
+        segmentLeaseService = Vldtn.requireNonNull(runtimeSegmentLeaseService,
+                "runtimeSegmentLeaseService");
     }
 
     SegmentLeaseService<K, V> getRuntimeSegmentLeaseService() {
-        return runtimeState.getSegmentLeaseService();
+        return requireInitialized(segmentLeaseService,
+                "runtimeSegmentLeaseService");
     }
 
-    void setRuntimeSplitService(final SplitService runtimeSplitService) {
-        runtimeState.setSplitService(runtimeSplitService);
+    void setRuntimeSplitService(
+            final SplitService<K, V> runtimeSplitService) {
+        splitService = Vldtn.requireNonNull(runtimeSplitService,
+                "runtimeSplitService");
     }
 
     boolean hasRuntimeSplitService() {
-        return runtimeState.hasSplitService();
+        return splitService != null;
     }
 
-    SplitService getRuntimeSplitService() {
-        return runtimeState.getSplitService();
+    SplitService<K, V> getRuntimeSplitService() {
+        return requireInitialized(splitService, "runtimeSplitService");
     }
 
     void setRuntimeTopologyRuntime(
             final SegmentTopologyRuntimeAccess<K, V> runtimeTopologyRuntime) {
-        runtimeState.setTopologyRuntime(runtimeTopologyRuntime);
+        topologyRuntime = Vldtn.requireNonNull(runtimeTopologyRuntime,
+                "runtimeTopologyRuntime");
     }
 
     SegmentTopologyRuntimeAccess<K, V> getRuntimeTopologyRuntime() {
-        return runtimeState.getTopologyRuntime();
+        return requireInitialized(topologyRuntime, "runtimeTopologyRuntime");
     }
 
     void setRuntimeWalRuntime(final WalRuntime<K, V> runtimeWalRuntime) {
-        runtimeState.setWalRuntime(runtimeWalRuntime);
+        walRuntime = Vldtn.requireNonNull(runtimeWalRuntime,
+                "runtimeWalRuntime");
     }
 
     boolean hasRuntimeWalRuntime() {
-        return runtimeState.hasWalRuntime();
+        return walRuntime != null;
     }
 
     WalRuntime<K, V> getRuntimeWalRuntime() {
-        return runtimeState.getWalRuntime();
-    }
-
-    void setRuntimeMaintenanceCheckpoint(
-            final BootstrapWalCheckpoint runtimeMaintenanceCheckpoint) {
-        runtimeState.setMaintenanceCheckpoint(runtimeMaintenanceCheckpoint);
-    }
-
-    BootstrapWalCheckpoint getRuntimeMaintenanceCheckpoint() {
-        return runtimeState.getMaintenanceCheckpoint();
+        return requireInitialized(walRuntime, "runtimeWalRuntime");
     }
 
     void setRuntimeOperationAccess(
-            final SegmentIndexOperationAccess<K, V> runtimeOperationAccess) {
-        runtimeState.setOperationAccess(runtimeOperationAccess);
+            final IndexOperationCoordinator<K, V> runtimeOperationAccess) {
+        operationAccess = Vldtn.requireNonNull(runtimeOperationAccess,
+                "runtimeOperationAccess");
     }
 
-    SegmentIndexOperationAccess<K, V> getRuntimeOperationAccess() {
-        return runtimeState.getOperationAccess();
+    IndexOperationCoordinator<K, V> getRuntimeOperationAccess() {
+        return requireInitialized(operationAccess, "runtimeOperationAccess");
     }
 
     void setRuntimeMaintenanceService(
-            final MaintenanceService runtimeMaintenanceService) {
-        runtimeState.setMaintenanceService(runtimeMaintenanceService);
+            final MaintenanceService<K, V> runtimeMaintenanceService) {
+        maintenanceService = Vldtn.requireNonNull(runtimeMaintenanceService,
+                "runtimeMaintenanceService");
     }
 
-    MaintenanceService getRuntimeMaintenanceService() {
-        return runtimeState.getMaintenanceService();
+    MaintenanceService<K, V> getRuntimeMaintenanceService() {
+        return requireInitialized(maintenanceService,
+                "runtimeMaintenanceService");
     }
 
     void setRuntimeTuning(final RuntimeTuning runtimeTuning) {
-        runtimeState.setRuntimeTuning(runtimeTuning);
+        this.runtimeTuning = Vldtn.requireNonNull(runtimeTuning,
+                "runtimeTuning");
     }
 
     RuntimeTuning getRuntimeTuning() {
-        return runtimeState.getRuntimeTuning();
+        return requireInitialized(runtimeTuning, "runtimeTuning");
     }
 
     void setRuntimeMonitoring(final IndexRuntimeMonitoring runtimeMonitoring) {
-        runtimeState.setRuntimeMonitoring(runtimeMonitoring);
+        this.runtimeMonitoring = Vldtn.requireNonNull(runtimeMonitoring,
+                "runtimeMonitoring");
     }
 
     IndexRuntimeMonitoring getRuntimeMonitoring() {
-        return runtimeState.getRuntimeMonitoring();
+        return requireInitialized(runtimeMonitoring, "runtimeMonitoring");
     }
 
     void markRuntimeCloseOwnershipTransferred() {
-        runtimeState.markCloseOwnershipTransferred();
+        closeOwnershipTransferred = true;
     }
 
     boolean runtimeCloseOwnershipTransferred() {
-        return runtimeState.closeOwnershipTransferred();
+        return closeOwnershipTransferred;
     }
 
     private static <T> T requireInitialized(final T value,

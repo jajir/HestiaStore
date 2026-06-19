@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.segmentlease;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -93,13 +94,14 @@ public final class SegmentLeaseServiceBuilder<K, V> {
      * @return segment lease service
      */
     public SegmentLeaseService<K, V> build() {
-        return new SegmentLeaseServiceImpl<>(
+        return new SegmentLeaseService<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
                 Vldtn.requireNonNull(segmentTopology, "segmentTopology"),
-                new SegmentAccessRetryPolicy(Vldtn.requireNonNull(
+                new BusyRetryPolicy(Vldtn.requireNonNull(
                         busyBackoffMillis, "busyBackoffMillis"),
                         Vldtn.requireNonNull(busyTimeoutMillis,
-                                "busyTimeoutMillis")));
+                                "busyTimeoutMillis"),
+                        "Segment access operation"));
     }
 }

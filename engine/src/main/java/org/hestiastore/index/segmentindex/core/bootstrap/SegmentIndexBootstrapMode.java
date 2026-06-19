@@ -18,17 +18,5 @@ enum SegmentIndexBootstrapMode {
     /**
      * Open an existing index only when stored configuration is present.
      */
-    TRY_OPEN;
-
-    boolean isOpen() {
-        return this == OPEN;
-    }
-
-    boolean isCreate() {
-        return this == CREATE;
-    }
-
-    boolean isTryOpen() {
-        return this == TRY_OPEN;
-    }
+    TRY_OPEN
 }

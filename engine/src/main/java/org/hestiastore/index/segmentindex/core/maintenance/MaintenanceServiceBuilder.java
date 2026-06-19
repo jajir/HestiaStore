@@ -3,9 +3,11 @@ package org.hestiastore.index.segmentindex.core.maintenance;
 import java.util.concurrent.ExecutorService;
 import java.util.function.LongSupplier;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationGateway;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 
 /**
@@ -17,13 +19,13 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 public final class MaintenanceServiceBuilder<K, V> {
 
     private KeyToSegmentMap<K> keyToSegmentMap;
-    private StableSegmentOperationAccess<K, V> stableSegmentGateway;
-    private SplitService splitService;
+    private StableSegmentOperationGateway<K, V> stableSegmentGateway;
+    private SplitService<K, V> splitService;
     private Integer busyBackoffMillis;
     private Integer busyTimeoutMillis;
     private MaintenanceStatsRecorder statsRecorder;
     private ExecutorService maintenanceExecutor;
-    private MaintenanceCheckpoint checkpoint;
+    private StorageService<?, ?> storageService;
     private LongSupplier nanoTimeSupplier = System::nanoTime;
 
     MaintenanceServiceBuilder() {
@@ -49,7 +51,7 @@ public final class MaintenanceServiceBuilder<K, V> {
      * @return this builder
      */
     public MaintenanceServiceBuilder<K, V> stableSegmentGateway(
-            final StableSegmentOperationAccess<K, V> stableSegmentGateway) {
+            final StableSegmentOperationGateway<K, V> stableSegmentGateway) {
         this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
                 "stableSegmentGateway");
         return this;
@@ -63,7 +65,7 @@ public final class MaintenanceServiceBuilder<K, V> {
      * @return this builder
      */
     public MaintenanceServiceBuilder<K, V> splitService(
-            final SplitService splitService) {
+            final SplitService<K, V> splitService) {
         this.splitService = Vldtn.requireNonNull(splitService, "splitService");
         return this;
     }
@@ -122,15 +124,16 @@ public final class MaintenanceServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the collaborator that checkpoints durable state after blocking
-     * maintenance reaches a durable state.
+     * Sets the storage service checkpointed after blocking maintenance reaches
+     * a durable state.
      *
-     * @param checkpoint checkpoint collaborator
+     * @param storageService storage service owning WAL checkpointing
      * @return this builder
      */
-    public MaintenanceServiceBuilder<K, V> checkpoint(
-            final MaintenanceCheckpoint checkpoint) {
-        this.checkpoint = Vldtn.requireNonNull(checkpoint, "checkpoint");
+    public MaintenanceServiceBuilder<K, V> storageService(
+            final StorageService<?, ?> storageService) {
+        this.storageService = Vldtn.requireNonNull(storageService,
+                "storageService");
         return this;
     }
 
@@ -146,20 +149,21 @@ public final class MaintenanceServiceBuilder<K, V> {
      *
      * @return maintenance service
      */
-    public MaintenanceService build() {
-        return new MaintenanceServiceImpl<>(
+    public MaintenanceService<K, V> build() {
+        return new MaintenanceService<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(stableSegmentGateway,
                         "stableSegmentGateway"),
                 Vldtn.requireNonNull(splitService, "splitService"),
-                new MaintenanceRetryPolicy(Vldtn.requireNonNull(
+                new BusyRetryPolicy(Vldtn.requireNonNull(
                         busyBackoffMillis, "busyBackoffMillis"),
                         Vldtn.requireNonNull(busyTimeoutMillis,
-                                "busyTimeoutMillis")),
+                                "busyTimeoutMillis"),
+                        "Maintenance operation"),
                 Vldtn.requireNonNull(statsRecorder, "statsRecorder"),
                 Vldtn.requireNonNull(maintenanceExecutor,
                         "maintenanceExecutor"),
-                Vldtn.requireNonNull(checkpoint, "checkpoint"),
+                Vldtn.requireNonNull(storageService, "storageService"),
                 Vldtn.requireNonNull(nanoTimeSupplier, "nanoTimeSupplier"));
     }
 }

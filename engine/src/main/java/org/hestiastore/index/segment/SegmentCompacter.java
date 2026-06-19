@@ -1,6 +1,5 @@
 package org.hestiastore.index.segment;
 
-import java.util.concurrent.Executor;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.EntryIterator;
@@ -158,37 +157,23 @@ final class SegmentCompacter<K, V> {
         plan.segment.switchActiveVersion(plan.nextVersion);
     }
 
-    Runnable buildCleanupTask(final CompactionPlan<K, V> plan) {
+    /**
+     * Cleans files left by the previous compacted version.
+     *
+     * @param plan compaction plan
+     */
+    void cleanupCompaction(final CompactionPlan<K, V> plan) {
         if (plan == null || plan.previousVersion == plan.nextVersion) {
-            return null;
-        }
-        final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
-                plan.segment.getId());
-        final Directory directory = plan.segment.getSegmentFiles()
-                .getDirectory();
-        final long previousVersion = plan.previousVersion;
-        return () -> cleanupOldVersion(directory, layout, previousVersion);
-    }
-
-    void scheduleCleanup(final CompactionPlan<K, V> plan,
-            final Executor executor) {
-        Vldtn.requireNonNull(executor, "executor");
-        final Runnable cleanup = buildCleanupTask(plan);
-        if (cleanup == null) {
             return;
         }
-        if (logger.isDebugEnabled()) {
+        try {
             final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
                     plan.segment.getId());
-            logger.debug(
-                    "Compaction cleanup scheduled: segment='{}' previousVersion='{}' deltaPrefix='{}'",
-                    plan.segment.getId(), plan.previousVersion,
-                    layout.getDeltaCachePrefix(plan.previousVersion));
-        }
-        try {
-            executor.execute(cleanup);
+            final Directory directory = plan.segment.getSegmentFiles()
+                    .getDirectory();
+            cleanupOldVersion(directory, layout, plan.previousVersion);
         } catch (final RuntimeException e) {
-            logger.warn("Failed to schedule cleanup for segment '{}'",
+            logger.warn("Failed to cleanup compaction for segment '{}'",
                     plan.segment.getId(), e);
         }
     }

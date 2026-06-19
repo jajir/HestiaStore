@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
@@ -181,12 +182,15 @@ public final class SegmentRegistryBuilder<K, V> {
         // SegmentIndex key-map bootstraps the first logical segment with id 0.
         // Ensure its directory exists so registry loads do not fail on a fresh index.
         resolvedFileSystem.ensureSegmentDirectory(SegmentId.of(0));
-        final RegistryMaintenanceRetryPolicy resolvedCloseRetryPolicy = new RegistryMaintenanceRetryPolicy(
-                busyBackoffMillis, busyTimeoutMillis);
-        final RegistrySegmentAccessRetryPolicy resolvedBlockingRetryPolicy = new RegistrySegmentAccessRetryPolicy(
-                busyBackoffMillis, busyTimeoutMillis);
-        final RegistryMaintenanceRetryPolicy resolvedRegistryCloseRetryPolicy = new RegistryMaintenanceRetryPolicy(
-                busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS);
+        final BusyRetryPolicy resolvedCloseRetryPolicy = new BusyRetryPolicy(
+                busyBackoffMillis, busyTimeoutMillis,
+                "Maintenance operation");
+        final BusyRetryPolicy resolvedBlockingRetryPolicy = new BusyRetryPolicy(
+                busyBackoffMillis, busyTimeoutMillis,
+                "Segment access operation");
+        final BusyRetryPolicy resolvedRegistryCloseRetryPolicy = new BusyRetryPolicy(
+                busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS,
+                "Maintenance operation");
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         final SegmentLoadCloseOperations<K, V> segmentOperations = new SegmentLoadCloseOperations<>(
                 resolvedFactory, resolvedFileSystem, resolvedCloseRetryPolicy,

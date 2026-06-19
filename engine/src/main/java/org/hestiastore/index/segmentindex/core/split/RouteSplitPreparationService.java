@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.split;
 
 import java.util.NoSuchElementException;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationResult;
@@ -30,11 +31,11 @@ final class RouteSplitPreparationService<K, V> {
             .getLogger(RouteSplitPreparationService.class);
 
     private final DefaultSegmentMaterializationService<K, V> materializationService;
-    private final SplitRetryPolicy retryPolicy;
+    private final BusyRetryPolicy retryPolicy;
 
     RouteSplitPreparationService(
             final DefaultSegmentMaterializationService<K, V> materializationService,
-            final SplitRetryPolicy retryPolicy) {
+            final BusyRetryPolicy retryPolicy) {
         this.materializationService = Vldtn.requireNonNull(
                 materializationService, "materializationService");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");

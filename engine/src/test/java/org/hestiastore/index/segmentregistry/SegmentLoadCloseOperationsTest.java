@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -145,7 +146,7 @@ class SegmentLoadCloseOperationsTest {
         private final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         private final SegmentLoadCloseOperations<Integer, String> segmentOperations = new SegmentLoadCloseOperations<>(
                 segmentFactory, fileSystem,
-                new RegistryMaintenanceRetryPolicy(1, 1000),
+                new BusyRetryPolicy(1, 1000),
                 gate);
 
         private void createSegmentDirectory(final SegmentId segmentId) {

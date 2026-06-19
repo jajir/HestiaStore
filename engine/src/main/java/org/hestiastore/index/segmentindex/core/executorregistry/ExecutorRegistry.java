@@ -3,19 +3,32 @@ package org.hestiastore.index.segmentindex.core.executorregistry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Vldtn;
 
 /**
  * Owns executor lifecycle for SegmentIndex subsystems.
  */
-public interface ExecutorRegistry extends CloseableResource {
+public final class ExecutorRegistry extends AbstractCloseableResource {
+
+    private static final String MESSAGE_ALREADY_CLOSED = "ExecutorRegistry already closed";
+
+    private final ExecutorTopology topology;
+    private final ExecutorRuntimeMonitor runtimeMonitor;
+
+    ExecutorRegistry(final ExecutorTopology topology,
+            final ExecutorRuntimeMonitor runtimeMonitor) {
+        this.topology = Vldtn.requireNonNull(topology, "topology");
+        this.runtimeMonitor = Vldtn.requireNonNull(runtimeMonitor,
+                "runtimeMonitor");
+    }
 
     /**
      * Creates a builder for executor registry instances.
      *
      * @return executor registry builder
      */
-    static ExecutorRegistryBuilder builder() {
+    public static ExecutorRegistryBuilder builder() {
         return new ExecutorRegistryBuilder();
     }
 
@@ -25,7 +38,10 @@ public interface ExecutorRegistry extends CloseableResource {
      * @return segment maintenance executor service
      * @throws IllegalStateException when registry has already been closed
      */
-    ExecutorService getStableSegmentMaintenanceExecutor();
+    public ExecutorService getStableSegmentMaintenanceExecutor() {
+        ensureOpen();
+        return topology.stableSegmentMaintenanceExecutor();
+    }
 
     /**
      * Returns shared index-maintenance executor.
@@ -33,7 +49,10 @@ public interface ExecutorRegistry extends CloseableResource {
      * @return index-maintenance executor service
      * @throws IllegalStateException when registry has already been closed
      */
-    ExecutorService getIndexMaintenanceExecutor();
+    public ExecutorService getIndexMaintenanceExecutor() {
+        ensureOpen();
+        return topology.indexMaintenanceExecutor();
+    }
 
     /**
      * Returns shared split-maintenance executor.
@@ -41,7 +60,10 @@ public interface ExecutorRegistry extends CloseableResource {
      * @return split-maintenance executor service
      * @throws IllegalStateException when registry has already been closed
      */
-    ExecutorService getSplitMaintenanceExecutor();
+    public ExecutorService getSplitMaintenanceExecutor() {
+        ensureOpen();
+        return topology.splitMaintenanceExecutor();
+    }
 
     /**
      * Returns shared split-policy scheduler.
@@ -49,7 +71,10 @@ public interface ExecutorRegistry extends CloseableResource {
      * @return split-policy scheduler
      * @throws IllegalStateException when registry has already been closed
      */
-    ScheduledExecutorService getSplitPolicyScheduler();
+    public ScheduledExecutorService getSplitPolicyScheduler() {
+        ensureOpen();
+        return topology.splitPolicyScheduler();
+    }
 
     /**
      * Returns shared registry-maintenance executor.
@@ -57,13 +82,32 @@ public interface ExecutorRegistry extends CloseableResource {
      * @return registry-maintenance executor service
      * @throws IllegalStateException when registry has already been closed
      */
-    ExecutorService getRegistryMaintenanceExecutor();
+    public ExecutorService getRegistryMaintenanceExecutor() {
+        ensureOpen();
+        return topology.registryMaintenanceExecutor();
+    }
 
     /**
      * Captures current executor runtime stats.
      *
      * @return executor registry stats snapshot
-     * @throws IllegalStateException when registry has already been closed
      */
-    ExecutorRegistryStats statsSnapshot();
+    public ExecutorRegistryStats statsSnapshot() {
+        return runtimeMonitor.statsSnapshot();
+    }
+
+    private void ensureOpen() {
+        if (wasClosed()) {
+            throw new IllegalStateException(MESSAGE_ALREADY_CLOSED);
+        }
+    }
+
+    @Override
+    protected void doClose() {
+        final RuntimeException failure = topology.shutdownExecutorsInCloseOrder();
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
 }

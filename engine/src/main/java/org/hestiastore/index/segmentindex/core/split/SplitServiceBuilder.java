@@ -2,7 +2,9 @@ package org.hestiastore.index.segmentindex.core.split;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
@@ -30,7 +32,7 @@ public final class SplitServiceBuilder<K, V> {
     private Executor workerExecutor;
     private ScheduledExecutorService splitPolicyScheduler;
     private SegmentIndexStateView stateView;
-    private SplitFailureReporter failureReporter;
+    private Consumer<RuntimeException> failureReporter;
     private SplitStatsRecorder statsRecorder;
 
     SplitServiceBuilder() {
@@ -159,11 +161,11 @@ public final class SplitServiceBuilder<K, V> {
     /**
      * Sets the failure reporter used when split workers fail.
      *
-     * @param failureReporter split failure reporter
+     * @param failureReporter split failure consumer
      * @return this builder
      */
     public SplitServiceBuilder<K, V> failureReporter(
-            final SplitFailureReporter failureReporter) {
+            final Consumer<RuntimeException> failureReporter) {
         this.failureReporter = failureReporter;
         return this;
     }
@@ -186,8 +188,8 @@ public final class SplitServiceBuilder<K, V> {
      *
      * @return split service
      */
-    public SplitService build() {
-        final SplitFailureReporter validatedFailureReporter = Vldtn
+    public SplitService<K, V> build() {
+        final Consumer<RuntimeException> validatedFailureReporter = Vldtn
                 .requireNonNull(failureReporter, "failureReporter");
         final SplitStatsRecorder validatedStatsRecorder = Vldtn.requireNonNull(
                 statsRecorder, "statsRecorder");
@@ -202,27 +204,27 @@ public final class SplitServiceBuilder<K, V> {
                         Vldtn.requireNonNull(directoryFacade,
                                 "directoryFacade"),
                         validatedSegmentRegistry.materialization());
-        final SplitRetryPolicy retryPolicy = new SplitRetryPolicy(
+        final BusyRetryPolicy retryPolicy = new BusyRetryPolicy(
                 validatedConf.maintenance().busyBackoffMillis(),
-                validatedConf.maintenance().busyTimeoutMillis());
+                validatedConf.maintenance().busyTimeoutMillis(),
+                "Split operation");
         final RouteSplitPreparationService<K, V> preparationService =
                 new RouteSplitPreparationService<>(materializationService,
                         retryPolicy);
         final RouteSplitCoordinator<K, V> routeSplitCoordinator =
-                new RouteSplitCoordinator<>(
-                        new SegmentIndexSplitPolicyThreshold<>(),
-                        preparationService);
+                new RouteSplitCoordinator<>(preparationService);
         final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator =
                 new RouteSplitPublishCoordinator<>(
                         Vldtn.requireNonNull(keyToSegmentMap,
                                 "keyToSegmentMap"),
                         validatedSegmentRegistry, materializationService);
         final SplitExecutionCoordinator<K, V> splitCoordinator =
-                new SplitExecutionCoordinatorImpl<>(keyToSegmentMap,
+                new SplitExecutionCoordinator<>(keyToSegmentMap,
                         validatedSegmentLeaseService,
                         routeSplitCoordinator, routeSplitPublishCoordinator,
                         Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
-                        validatedFailureReporter, validatedStatsRecorder);
+                        validatedFailureReporter, validatedStatsRecorder,
+                        System::nanoTime);
         final SplitPolicyCoordinator<K, V> splitPolicyCoordinator =
                 new SplitPolicyCoordinator<>(validatedConf,
                         Vldtn.requireNonNull(runtimeTuningState,
@@ -238,7 +240,7 @@ public final class SplitServiceBuilder<K, V> {
         final ManagedSplitRuntimeState managedState =
                 new ManagedSplitRuntimeState();
         managedState.markRunning();
-        return new SplitServiceImpl<>(splitCoordinator, splitPolicyCoordinator,
+        return new SplitService<>(splitCoordinator, splitPolicyCoordinator,
                 managedState, validatedStatsRecorder);
     }
 }

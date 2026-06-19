@@ -14,7 +14,10 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +32,16 @@ class IndexCloseCoordinatorTest {
     private Runnable awaitOperationDrain;
 
     @Mock
-    private IndexRuntimeCloseResources<Integer, String> closeResources;
+    private SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime;
+
+    @Mock
+    private MaintenanceService<Integer, String> maintenance;
+
+    @Mock
+    private CoreStorageRuntime<Integer, String> coreStorageRuntime;
+
+    @Mock
+    private StorageService<Integer, String> storageService;
 
     @Mock
     private SegmentIndexStateMachine stateMachine;
@@ -59,7 +71,8 @@ class IndexCloseCoordinatorTest {
         }).when(operationGate).awaitOperationDrain();
         closeCoordinator = new IndexCloseCoordinator<>("test-index",
                 stateMachine, operationGate, new IndexOperationStatsRecorder(),
-                closeResources, executorRegistry,
+                topologyRuntime, maintenance, coreStorageRuntime,
+                storageService, executorRegistry,
                 new IndexDirectoryLock(directory));
     }
 
@@ -67,15 +80,16 @@ class IndexCloseCoordinatorTest {
     void close_runsShutdownStepsInOrder() {
         closeCoordinator.close();
 
-        final InOrder inOrder = inOrder(awaitOperationDrain, closeResources,
-                stateMachine, executorRegistry, fileLock);
+        final InOrder inOrder = inOrder(awaitOperationDrain, topologyRuntime,
+                maintenance, coreStorageRuntime, storageService, stateMachine,
+                executorRegistry, fileLock);
         inOrder.verify(stateMachine).beginClose();
         inOrder.verify(awaitOperationDrain).run();
-        inOrder.verify(closeResources).closeSplitRuntime();
-        inOrder.verify(closeResources).sealAsyncMaintenanceAndWait();
-        inOrder.verify(closeResources).flushAndWait();
-        inOrder.verify(closeResources).closeCoreStorage();
-        inOrder.verify(closeResources).closeWal();
+        inOrder.verify(topologyRuntime).closeSplitRuntime();
+        inOrder.verify(maintenance).sealAsyncMaintenanceAndWait();
+        inOrder.verify(maintenance).flushAndWait();
+        inOrder.verify(coreStorageRuntime).closeCoreStorage();
+        inOrder.verify(storageService).closeWal();
         inOrder.verify(executorRegistry).close();
         inOrder.verify(stateMachine).completeClose();
         inOrder.verify(fileLock).unlock();
@@ -84,14 +98,14 @@ class IndexCloseCoordinatorTest {
     @Test
     void close_marksErrorAndReleasesResourcesWhenCoreStorageCloseFails() {
         final IndexException failure = new IndexException("close failed");
-        doThrow(failure).when(closeResources).closeCoreStorage();
+        doThrow(failure).when(coreStorageRuntime).closeCoreStorage();
 
         final IndexException thrown = assertThrows(IndexException.class,
                 () -> closeCoordinator.close());
 
         assertSame(failure, thrown);
-        verify(closeResources).flushAndWait();
-        verify(closeResources).closeWal();
+        verify(maintenance).flushAndWait();
+        verify(storageService).closeWal();
         verify(executorRegistry).close();
         verify(stateMachine).completeClose();
         verify(fileLock).unlock();
@@ -107,7 +121,7 @@ class IndexCloseCoordinatorTest {
                 () -> closeCoordinator.close());
 
         assertSame(failure, thrown);
-        verify(closeResources).closeWal();
+        verify(storageService).closeWal();
         verify(stateMachine).completeClose();
         verify(fileLock).unlock();
         verify(stateMachine).markRuntimeFailure(failure);
@@ -118,8 +132,8 @@ class IndexCloseCoordinatorTest {
         final IndexException firstFailure = new IndexException(
                 "core storage failed");
         final IndexException secondFailure = new IndexException("wal failed");
-        doThrow(firstFailure).when(closeResources).closeCoreStorage();
-        doThrow(secondFailure).when(closeResources).closeWal();
+        doThrow(firstFailure).when(coreStorageRuntime).closeCoreStorage();
+        doThrow(secondFailure).when(storageService).closeWal();
 
         final IndexException thrown = assertThrows(IndexException.class,
                 () -> closeCoordinator.close());

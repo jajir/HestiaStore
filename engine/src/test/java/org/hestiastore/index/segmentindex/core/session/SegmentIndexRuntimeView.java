@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 
@@ -18,8 +18,8 @@ final class SegmentIndexRuntimeView<K, V> {
 
     private final CoreStorageRuntime<K, V> coreStorageRuntime;
     private final SegmentTopologyRuntimeAccess<K, V> topologyRuntime;
-    private final SegmentIndexOperationAccess<K, V> operationAccess;
-    private final MaintenanceService maintenance;
+    private final IndexOperationCoordinator<K, V> operationAccess;
+    private final MaintenanceService<K, V> maintenance;
     private final IndexRuntimeMonitoring runtimeMonitoring;
     private final RuntimeTuning runtimeTuning;
 
@@ -35,8 +35,8 @@ final class SegmentIndexRuntimeView<K, V> {
      */
     SegmentIndexRuntimeView(final CoreStorageRuntime<K, V> coreStorageRuntime,
             final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
-            final SegmentIndexOperationAccess<K, V> operationAccess,
-            final MaintenanceService maintenance,
+            final IndexOperationCoordinator<K, V> operationAccess,
+            final MaintenanceService<K, V> maintenance,
             final IndexRuntimeMonitoring runtimeMonitoring,
             final RuntimeTuning runtimeTuning) {
         this.coreStorageRuntime = Vldtn.requireNonNull(coreStorageRuntime,
@@ -60,11 +60,11 @@ final class SegmentIndexRuntimeView<K, V> {
         return topologyRuntime;
     }
 
-    SegmentIndexOperationAccess<K, V> operationAccess() {
+    IndexOperationCoordinator<K, V> operationAccess() {
         return operationAccess;
     }
 
-    MaintenanceService maintenance() {
+    MaintenanceService<K, V> maintenance() {
         return maintenance;
     }
 

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
@@ -35,7 +36,7 @@ class BlockingSegmentRegistryAdapterTest {
                 .thenReturn(OperationResult.ok(segment));
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
-                        new RegistrySegmentAccessRetryPolicy(1, 50));
+                        new BusyRetryPolicy(1, 50));
 
         final Segment<Integer, String> loaded = adapter.loadSegment(SEGMENT_ID);
 
@@ -49,7 +50,7 @@ class BlockingSegmentRegistryAdapterTest {
                 .thenReturn(OperationResult.closed());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
-                        new RegistrySegmentAccessRetryPolicy(1, 50));
+                        new BusyRetryPolicy(1, 50));
 
         assertTrue(adapter.tryGetSegment(SEGMENT_ID).isEmpty());
         verify(registry).tryLoadSegment(SEGMENT_ID);
@@ -62,7 +63,7 @@ class BlockingSegmentRegistryAdapterTest {
                 .thenReturn(OperationResult.closed());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
-                        new RegistrySegmentAccessRetryPolicy(1, 50));
+                        new BusyRetryPolicy(1, 50));
 
         adapter.deleteSegment(SEGMENT_ID);
         verify(registry, times(2)).tryDeleteSegment(SEGMENT_ID);
@@ -75,7 +76,7 @@ class BlockingSegmentRegistryAdapterTest {
                 .thenReturn(OperationResult.closed());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
-                        new RegistrySegmentAccessRetryPolicy(1, 50));
+                        new BusyRetryPolicy(1, 50));
 
         adapter.deleteRetiredSegment(SEGMENT_ID);
 
@@ -89,7 +90,7 @@ class BlockingSegmentRegistryAdapterTest {
                 .thenReturn(OperationResult.busy());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
-                        new RegistrySegmentAccessRetryPolicy(1, 50));
+                        new BusyRetryPolicy(1, 50));
 
         assertFalse(adapter.deleteSegmentIfAvailable(SEGMENT_ID));
     }
@@ -100,7 +101,7 @@ class BlockingSegmentRegistryAdapterTest {
                 .thenReturn(OperationResult.error());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
-                        new RegistrySegmentAccessRetryPolicy(1, 50));
+                        new BusyRetryPolicy(1, 50));
 
         assertThrows(IndexException.class,
                 () -> adapter.loadSegment(SEGMENT_ID));
@@ -112,7 +113,7 @@ class BlockingSegmentRegistryAdapterTest {
                 .thenReturn(OperationResult.error());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
-                        new RegistrySegmentAccessRetryPolicy(1, 50));
+                        new BusyRetryPolicy(1, 50));
 
         assertThrows(IndexException.class,
                 () -> adapter.deleteSegment(SEGMENT_ID));
@@ -124,7 +125,7 @@ class BlockingSegmentRegistryAdapterTest {
                 .thenReturn(OperationResult.error());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
-                        new RegistrySegmentAccessRetryPolicy(1, 50));
+                        new BusyRetryPolicy(1, 50));
 
         assertThrows(IndexException.class,
                 () -> adapter.deleteRetiredSegment(SEGMENT_ID));

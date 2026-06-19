@@ -7,57 +7,42 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
-import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationGateway;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.junit.jupiter.api.Test;
 
 class MaintenanceServiceTest {
 
     @Test
-    void declaresMaintenanceOperations() {
-        final List<String> declaredMethodNames = Arrays
-                .stream(MaintenanceService.class.getDeclaredMethods())
-                .filter(method -> !Modifier.isStatic(method.getModifiers()))
-                .map(Method::getName)
-                .sorted()
-                .toList();
-
-        assertEquals(List.of("compact", "compactAndWait", "flush",
-                "flushAndWait", "sealAsyncMaintenanceAndWait"),
-                declaredMethodNames);
-    }
-
-    @Test
     @SuppressWarnings("unchecked")
     void builderCreatesMaintenanceService() throws InterruptedException {
         final KeyToSegmentMap<Integer> keyToSegmentMap = mock(
                 KeyToSegmentMap.class);
-        final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
-                StableSegmentOperationAccess.class);
-        final SplitService splitService = mock(
+        final StableSegmentOperationGateway<Integer, String> stableSegmentGateway = mock(
+                StableSegmentOperationGateway.class);
+        final SplitService<Integer, String> splitService = mock(
                 SplitService.class);
-        final MaintenanceCheckpoint checkpoint = mock(MaintenanceCheckpoint.class);
+        final StorageService<Integer, String> storageService = mock(
+                StorageService.class);
         final ExecutorService maintenanceExecutor =
                 Executors.newSingleThreadExecutor();
         final SegmentId segmentId = SegmentId.of(1);
         try {
             when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
             when(stableSegmentGateway.compact(segmentId))
-                    .thenReturn(StableSegmentOperationResult.busy());
+                    .thenReturn(OperationResult.busy());
             when(stableSegmentGateway.flush(segmentId)).thenReturn(
-                    StableSegmentOperationResult.busy());
-            final MaintenanceService maintenance = MaintenanceService
+                    OperationResult.busy());
+            final MaintenanceService<Integer, String> maintenance = MaintenanceService
                     .<Integer, String>builder()
                     .keyToSegmentMap(keyToSegmentMap)
                     .stableSegmentGateway(stableSegmentGateway)
@@ -66,7 +51,7 @@ class MaintenanceServiceTest {
                     .busyTimeoutMillis(10)
                     .statsRecorder(new MaintenanceStatsRecorder())
                     .maintenanceExecutor(maintenanceExecutor)
-                    .checkpoint(checkpoint)
+                    .storageService(storageService)
                     .build();
 
             maintenance.compact();
@@ -100,9 +85,9 @@ class MaintenanceServiceTest {
     void builderRejectsMissingMaintenanceExecutor() {
         final KeyToSegmentMap<Integer> keyToSegmentMap = mock(
                 KeyToSegmentMap.class);
-        final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
-                StableSegmentOperationAccess.class);
-        final SplitService splitService = mock(
+        final StableSegmentOperationGateway<Integer, String> stableSegmentGateway = mock(
+                StableSegmentOperationGateway.class);
+        final SplitService<Integer, String> splitService = mock(
                 SplitService.class);
         final MaintenanceServiceBuilder<Integer, String> builder = MaintenanceService
                 .<Integer, String>builder()
@@ -122,12 +107,12 @@ class MaintenanceServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void builderRejectsMissingCheckpoint() {
+    void builderRejectsMissingStorageService() {
         final KeyToSegmentMap<Integer> keyToSegmentMap = mock(
                 KeyToSegmentMap.class);
-        final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
-                StableSegmentOperationAccess.class);
-        final SplitService splitService = mock(
+        final StableSegmentOperationGateway<Integer, String> stableSegmentGateway = mock(
+                StableSegmentOperationGateway.class);
+        final SplitService<Integer, String> splitService = mock(
                 SplitService.class);
         final ExecutorService maintenanceExecutor =
                 Executors.newSingleThreadExecutor();
@@ -145,7 +130,7 @@ class MaintenanceServiceTest {
             final IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class, builder::build);
 
-            assertEquals("Property 'checkpoint' must not be null.",
+            assertEquals("Property 'storageService' must not be null.",
                     ex.getMessage());
         } finally {
             maintenanceExecutor.shutdownNow();

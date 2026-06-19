@@ -32,7 +32,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecor
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
-import org.hestiastore.index.segmentindex.core.split.SplitStatsView;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalMonitoringView;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
@@ -72,6 +72,9 @@ class IndexRuntimeSnapshotCollectorTest {
     @Mock
     private Clock clock;
 
+    @Mock
+    private SplitService<Integer, String> splitService;
+
     private IndexOperationStatsRecorder operationStatsRecorder;
     private MaintenanceStatsRecorder maintenanceStatsRecorder;
     private AtomicLong compactRequestHighWaterMark;
@@ -91,7 +94,7 @@ class IndexRuntimeSnapshotCollectorTest {
         executorRegistry = ExecutorRegistryFixture.from(conf);
         collector = IndexRuntimeSnapshotCollector.create(
                 effective(conf), keyToSegmentMap, segmentRegistry,
-                () -> new SplitStats(4L, 3, 0, 0L, 0L), executorRegistry,
+                splitService, executorRegistry,
                 RuntimeTuningState.fromConfiguration(effective(conf)),
                 new LruChunkStoreCache<>(0), WalMonitoringView.empty(),
                 operationStatsRecorder, maintenanceStatsRecorder,
@@ -120,6 +123,8 @@ class IndexRuntimeSnapshotCollectorTest {
         when(segmentRuntime.getRuntimeSnapshot()).thenReturn(
                 new SegmentRuntimeSnapshot(SegmentId.of(1), SegmentState.READY,
                         0L, 8L, 0L, 5L, 2, 3, 5L, 7L, 9L, 1L, 8L, 1L));
+        when(splitService.statsSnapshot())
+                .thenReturn(new SplitStats(4L, 3, 0, 0L, 0L));
 
         operationStatsRecorder.recordGetRequest();
         operationStatsRecorder.recordPutRequest();
@@ -167,8 +172,6 @@ class IndexRuntimeSnapshotCollectorTest {
 
     @Test
     void createRejectsNullConfiguration() {
-        final SplitStatsView splitStatsView =
-                () -> new SplitStats(0L, 0, 0, 0L, 0L);
         final RuntimeTuningState runtimeTuningState =
                 mock(RuntimeTuningState.class);
         final LruChunkStoreCache<Integer, String> chunkStoreCache =
@@ -180,7 +183,7 @@ class IndexRuntimeSnapshotCollectorTest {
                 .assertThrows(IllegalArgumentException.class,
                         () -> IndexRuntimeSnapshotCollector.create(null,
                                 keyToSegmentMap, segmentRegistry,
-                                splitStatsView, executorRegistry,
+                                splitService, executorRegistry,
                                 runtimeTuningState, chunkStoreCache,
                                 walMonitoringView,
                                 operationStatsRecorder,

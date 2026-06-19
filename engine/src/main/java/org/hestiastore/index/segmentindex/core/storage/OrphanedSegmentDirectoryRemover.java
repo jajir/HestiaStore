@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
@@ -22,11 +23,11 @@ final class OrphanedSegmentDirectoryRemover<K, V> {
             .getLogger(OrphanedSegmentDirectoryRemover.class);
 
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final StorageCleanupRetryPolicy retryPolicy;
+    private final BusyRetryPolicy retryPolicy;
 
     OrphanedSegmentDirectoryRemover(
             final SegmentRegistry<K, V> segmentRegistry,
-            final StorageCleanupRetryPolicy retryPolicy) {
+            final BusyRetryPolicy retryPolicy) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");

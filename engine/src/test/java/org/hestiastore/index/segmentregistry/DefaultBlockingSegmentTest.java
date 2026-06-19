@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,7 +39,7 @@ class DefaultBlockingSegmentTest {
     void setUp() {
         handle = new DefaultBlockingSegment<>(SEGMENT_ID,
                 () -> segmentRegistry.loadSegment(SEGMENT_ID).getSegment(),
-                new RegistrySegmentAccessRetryPolicy(1, 25));
+                new BusyRetryPolicy(1, 25));
     }
 
     @Test

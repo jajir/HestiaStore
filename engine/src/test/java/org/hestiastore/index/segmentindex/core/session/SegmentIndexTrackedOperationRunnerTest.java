@@ -3,7 +3,9 @@ package org.hestiastore.index.segmentindex.core.session;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,18 +30,18 @@ class SegmentIndexTrackedOperationRunnerTest {
     @Mock
     private Supplier<String> operation;
 
-    private SegmentIndexTrackedOperationRunner<Integer, String> runner;
+    private SegmentIndexTrackedOperationRunner runner;
 
     @BeforeEach
     void setUp() {
-        runner = new SegmentIndexTrackedOperationRunner<>(stateMachine,
-                newPassThroughOperationGate());
+        runner = new SegmentIndexTrackedOperationRunner(stateMachine,
+                SegmentIndexOperationGate.create());
     }
 
     @Test
     void runTrackedChecksStateInsideOperationTrackingBeforeOperation() {
         final List<String> events = new ArrayList<>();
-        runner = new SegmentIndexTrackedOperationRunner<>(stateMachine,
+        runner = new SegmentIndexTrackedOperationRunner(stateMachine,
                 newOperationGate(events));
         doAnswer(invocation -> {
             events.add("state");
@@ -59,13 +61,13 @@ class SegmentIndexTrackedOperationRunnerTest {
     @Test
     void constructorRejectsMissingCollaborators() {
         final SegmentIndexOperationGate operationGate =
-                newPassThroughOperationGate();
+                SegmentIndexOperationGate.create();
 
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentIndexTrackedOperationRunner<>(null,
+                () -> new SegmentIndexTrackedOperationRunner(null,
                         operationGate));
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentIndexTrackedOperationRunner<>(stateMachine,
+                () -> new SegmentIndexTrackedOperationRunner(stateMachine,
                         null));
     }
 
@@ -79,23 +81,15 @@ class SegmentIndexTrackedOperationRunnerTest {
         verify(stateMachine).ensureOperational();
     }
 
-    private SegmentIndexOperationGate newPassThroughOperationGate() {
-        return newOperationGate(new ArrayList<>());
-    }
-
     private SegmentIndexOperationGate newOperationGate(
             final List<String> events) {
-        return new SegmentIndexOperationGate() {
-
-            @Override
-            public <T> T trackOperation(final Supplier<T> task) {
-                events.add("tracked");
-                return task.get();
-            }
-
-            @Override
-            public void awaitOperationDrain() {
-            }
-        };
+        final SegmentIndexOperationGate operationGate = mock(
+                SegmentIndexOperationGate.class);
+        doAnswer(invocation -> {
+            events.add("tracked");
+            final Supplier<?> task = invocation.getArgument(0);
+            return task.get();
+        }).when(operationGate).trackOperation(any());
+        return operationGate;
     }
 }

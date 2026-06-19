@@ -6,8 +6,9 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * Backoff/timeout policy for retrying BUSY operations.
  */
-public abstract class BusyRetryPolicy {
+public class BusyRetryPolicy {
 
+    private final String operationLabel;
     private final int timeoutMillis;
     private final long backoffNanos;
     private final long maxJitterNanos;
@@ -20,9 +21,23 @@ public abstract class BusyRetryPolicy {
      * @param timeoutMillis overall timeout budget for a retry loop
      */
     public BusyRetryPolicy(final int backoffMillis, final int timeoutMillis) {
+        this(backoffMillis, timeoutMillis, "Operation");
+    }
+
+    /**
+     * Creates a retry policy for BUSY operations.
+     *
+     * @param backoffMillis  sleep duration between retries
+     * @param timeoutMillis  overall timeout budget for a retry loop
+     * @param operationLabel operation label prefix used in error messages
+     */
+    public BusyRetryPolicy(final int backoffMillis, final int timeoutMillis,
+            final String operationLabel) {
         Vldtn.requireGreaterThanZero(backoffMillis, "busyBackoffMillis");
         this.timeoutMillis = Vldtn.requireGreaterThanZero(timeoutMillis,
                 "busyTimeoutMillis");
+        this.operationLabel = Vldtn.requireNotBlank(operationLabel,
+                "operationLabel");
         this.backoffNanos = TimeUnit.MILLISECONDS.toNanos(backoffMillis);
         this.maxJitterNanos = Math.max(1L, backoffNanos / 4L);
         this.timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
@@ -128,6 +143,6 @@ public abstract class BusyRetryPolicy {
      * @return operation label prefix
      */
     protected String formatOperationLabel() {
-        return "Operation";
+        return operationLabel;
     }
 }

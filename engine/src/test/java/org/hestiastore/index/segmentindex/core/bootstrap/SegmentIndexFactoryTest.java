@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -22,7 +21,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.logging.SegmentIndexMdcLoggingAdapter;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexFactoryTest {
@@ -79,8 +77,7 @@ class SegmentIndexFactoryTest {
                 buildConf("segment-index-factory-logging-test", true),
                 ChunkFilterProviderResolverImpl.defaultResolver());
 
-        assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-        assertInstanceOf(SegmentIndexMdcLoggingAdapter.class, wrappedIndex(index));
+        assertInstanceOf(SegmentIndexMdcLoggingAdapter.class, index);
 
         index.close();
     }
@@ -92,8 +89,7 @@ class SegmentIndexFactoryTest {
                 buildConf("segment-index-factory-plain-test", false),
                 ChunkFilterProviderResolverImpl.defaultResolver());
 
-        assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-        assertFalse(wrappedIndex(index) instanceof SegmentIndexMdcLoggingAdapter);
+        assertFalse(index instanceof SegmentIndexMdcLoggingAdapter);
 
         index.close();
     }
@@ -135,16 +131,6 @@ class SegmentIndexFactoryTest {
                     .chunkFilterProviderResolver(resolver));
         }
         return builder.build();
-    }
-
-    private Object wrappedIndex(final SegmentIndex<Integer, String> index) {
-        try {
-            final Field field = index.getClass().getDeclaredField("delegate");
-            field.setAccessible(true);
-            return field.get(index);
-        } catch (final ReflectiveOperationException e) {
-            throw new AssertionError(e);
-        }
     }
 
     private static IndexConfiguration<Integer, String> buildConf(

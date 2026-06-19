@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -11,36 +12,25 @@ import org.junit.jupiter.api.Test;
 class SegmentIndexSessionResourcesTest {
 
     @Test
-    void setSessionInfrastructure_rejectsNull() {
+    void accessors_returnOwnedRuntimeObjects() {
         final SegmentIndexSessionResources<Integer, String> resources =
                 new SegmentIndexSessionResources<>();
 
-        assertThrows(IllegalArgumentException.class,
-                () -> resources.setSessionInfrastructure(null));
-    }
-
-    @Test
-    void accessors_delegateToInstalledInfrastructure() {
-        final SegmentIndexSessionResources<Integer, String> resources =
-                new SegmentIndexSessionResources<>();
-        final SegmentIndexSessionInfrastructure<Integer, String> infrastructure =
-                SegmentIndexSessionInfrastructure.create();
-
-        resources.setSessionInfrastructure(infrastructure);
-
-        assertSame(infrastructure.operationStatsRecorder(),
+        assertSame(resources.operationStatsRecorder(),
                 resources.operationStatsRecorder());
-        assertSame(infrastructure.maintenanceStatsRecorder(),
+        assertSame(resources.maintenanceStatsRecorder(),
                 resources.maintenanceStatsRecorder());
-        assertSame(infrastructure.splitStatsRecorder(),
-                resources.splitStatsRecorder());
+        assertSame(resources.splitStatsRecorder(), resources.splitStatsRecorder());
+        assertNotNull(resources.stateMachine());
+        assertNotNull(resources.operationGate());
+        assertNotNull(resources.trackedRunner());
         assertEquals(SegmentIndexState.OPENING, resources.currentState());
     }
 
     @Test
-    void markReady_delegatesToInstalledInfrastructure() {
+    void markReady_updatesOwnedStateMachine() {
         final SegmentIndexSessionResources<Integer, String> resources =
-                resourcesWithInfrastructure();
+                new SegmentIndexSessionResources<>();
 
         resources.markReady();
 
@@ -48,9 +38,9 @@ class SegmentIndexSessionResourcesTest {
     }
 
     @Test
-    void markRuntimeFailure_delegatesToInstalledInfrastructure() {
+    void markRuntimeFailure_updatesOwnedStateMachine() {
         final SegmentIndexSessionResources<Integer, String> resources =
-                resourcesWithInfrastructure();
+                new SegmentIndexSessionResources<>();
 
         resources.markRuntimeFailure(new RuntimeException("failure"));
 
@@ -58,9 +48,9 @@ class SegmentIndexSessionResourcesTest {
     }
 
     @Test
-    void handleWalRuntimeFailure_delegatesToInstalledInfrastructure() {
+    void handleWalRuntimeFailure_updatesOwnedStateMachine() {
         final SegmentIndexSessionResources<Integer, String> resources =
-                resourcesWithInfrastructure();
+                new SegmentIndexSessionResources<>();
 
         resources.handleWalRuntimeFailure(new RuntimeException("failure"));
 
@@ -84,13 +74,5 @@ class SegmentIndexSessionResourcesTest {
         resources.acquireDirectoryLock(new MemDirectory());
 
         assertSame(resources.directoryLock(), resources.directoryLock());
-    }
-
-    private SegmentIndexSessionResources<Integer, String> resourcesWithInfrastructure() {
-        final SegmentIndexSessionResources<Integer, String> resources =
-                new SegmentIndexSessionResources<>();
-        resources.setSessionInfrastructure(
-                SegmentIndexSessionInfrastructure.create());
-        return resources;
     }
 }

@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.topology;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 
@@ -60,11 +61,12 @@ public final class SegmentTopologyBuilder<K> {
      * @return segment topology
      */
     public SegmentTopology<K> build() {
-        return new SegmentTopologyImpl<>(
+        return new SegmentTopology<>(
                 Vldtn.requireNonNull(snapshot, "snapshot"),
-                new RouteDrainRetryPolicy(Vldtn.requireNonNull(
+                new BusyRetryPolicy(Vldtn.requireNonNull(
                         busyBackoffMillis, "busyBackoffMillis"),
                         Vldtn.requireNonNull(busyTimeoutMillis,
-                                "busyTimeoutMillis")));
+                                "busyTimeoutMillis"),
+                        "Route drain operation"));
     }
 }

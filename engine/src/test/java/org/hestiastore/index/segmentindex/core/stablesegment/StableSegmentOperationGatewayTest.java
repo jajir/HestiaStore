@@ -9,9 +9,10 @@ import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ class StableSegmentOperationGatewayTest {
 
     @BeforeEach
     void setUp() {
-        stableSegmentGateway = new StableSegmentOperationGateway<>(
+        stableSegmentGateway = StableSegmentOperationGateway.create(
                 segmentRegistry);
     }
 
@@ -47,11 +48,11 @@ class StableSegmentOperationGatewayTest {
         when(segmentHandle.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(OperationResult.ok(iterator));
 
-        final StableSegmentOperationResult<EntryIterator<String, String>> result =
+        final OperationResult<EntryIterator<String, String>> result =
                 stableSegmentGateway.openIterator(segmentId,
                         SegmentIteratorIsolation.FAIL_FAST);
 
-        assertEquals(StableSegmentOperationStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertSame(iterator, result.getValue());
     }
 
@@ -62,10 +63,10 @@ class StableSegmentOperationGatewayTest {
                 .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryFlush()).thenReturn(OperationResult.closed());
 
-        final StableSegmentOperationResult<BlockingSegment<String, String>> result =
+        final OperationResult<BlockingSegment<String, String>> result =
                 stableSegmentGateway.flush(segmentId);
 
-        assertEquals(StableSegmentOperationStatus.CLOSED, result.getStatus());
+        assertEquals(OperationStatus.CLOSED, result.getStatus());
     }
 
     private SegmentId segmentId() {

@@ -60,7 +60,6 @@ Schedules or awaits per-segment persistence of write-cache snapshots and then
 flushes `index.map`. `maintenance().flushAndWait()` also waits for split settlement and WAL
 checkpoint when WAL is enabled. Code:
 `segmentindex/core/maintenance/MaintenanceService.java`,
-`segmentindex/core/maintenance/MaintenanceServiceImpl.java`,
 `segmentindex/mapping/KeyToSegmentMap.java`.
 
 ## Hot Partition

@@ -71,7 +71,6 @@ directly on mapped segments:
 
 Key classes:
 `segmentindex/core/maintenance/MaintenanceService`,
-`segmentindex/core/maintenance/MaintenanceServiceImpl`,
 `segmentindex/mapping/KeyToSegmentMap`.
 
 ## Segment Delta Cache Files (Transactional)

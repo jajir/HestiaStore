@@ -7,16 +7,19 @@ import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 
 /**
  * Runs index operations under shared operation tracking and readiness checks.
- *
- * @param <K> key type
- * @param <V> value type
  */
-public final class SegmentIndexTrackedOperationRunner<K, V> {
+final class SegmentIndexTrackedOperationRunner {
 
     private final SegmentIndexStateMachine stateMachine;
     private final SegmentIndexOperationGate operationGate;
 
-    public SegmentIndexTrackedOperationRunner(
+    /**
+     * Creates a tracked operation runner.
+     *
+     * @param stateMachine lifecycle state checked before each operation
+     * @param operationGate operation gate that tracks active work
+     */
+    SegmentIndexTrackedOperationRunner(
             final SegmentIndexStateMachine stateMachine,
             final SegmentIndexOperationGate operationGate) {
         this.stateMachine = Vldtn.requireNonNull(stateMachine, "stateMachine");
@@ -24,7 +27,7 @@ public final class SegmentIndexTrackedOperationRunner<K, V> {
                 "operationGate");
     }
 
-    public <T> T runTracked(final Supplier<T> operation) {
+    <T> T runTracked(final Supplier<T> operation) {
         final Supplier<T> nonNullOperation = Vldtn.requireNonNull(operation,
                 "operation");
         return operationGate.trackOperation(() -> {
@@ -33,7 +36,7 @@ public final class SegmentIndexTrackedOperationRunner<K, V> {
         });
     }
 
-    public void runTrackedVoid(final Runnable operation) {
+    void runTrackedVoid(final Runnable operation) {
         final Runnable nonNullOperation = Vldtn.requireNonNull(operation,
                 "operation");
         runTracked(() -> {

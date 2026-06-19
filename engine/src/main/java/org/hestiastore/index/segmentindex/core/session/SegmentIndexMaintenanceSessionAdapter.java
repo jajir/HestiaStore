@@ -14,7 +14,7 @@ final class SegmentIndexMaintenanceSessionAdapter<K, V>
 
     private final SegmentIndexMaintenance delegate;
     private final SegmentTopologyRuntimeAccess<K, V> topologyRuntime;
-    private final SegmentIndexTrackedOperationRunner<K, V> trackedRunner;
+    private final SegmentIndexTrackedOperationRunner trackedRunner;
 
     /**
      * Creates a maintenance adapter that applies session operation tracking and
@@ -27,7 +27,7 @@ final class SegmentIndexMaintenanceSessionAdapter<K, V>
     SegmentIndexMaintenanceSessionAdapter(
             final SegmentIndexMaintenance delegate,
             final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
-            final SegmentIndexTrackedOperationRunner<K, V> trackedRunner) {
+            final SegmentIndexTrackedOperationRunner trackedRunner) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
         this.topologyRuntime = Vldtn.requireNonNull(topologyRuntime,
                 "topologyRuntime");
@@ -37,31 +37,32 @@ final class SegmentIndexMaintenanceSessionAdapter<K, V>
 
     @Override
     public void compact() {
-        run(delegate::compact);
+        trackedRunner.runTrackedVoid(delegate::compact);
+        topologyRuntime.invalidateSegmentIterators();
     }
 
     @Override
     public void compactAndWait() {
-        run(delegate::compactAndWait);
+        trackedRunner.runTrackedVoid(delegate::compactAndWait);
+        topologyRuntime.invalidateSegmentIterators();
     }
 
     @Override
     public void flush() {
-        run(delegate::flush);
+        trackedRunner.runTrackedVoid(delegate::flush);
+        topologyRuntime.invalidateSegmentIterators();
     }
 
     @Override
     public void flushAndWait() {
-        run(delegate::flushAndWait);
+        trackedRunner.runTrackedVoid(delegate::flushAndWait);
+        topologyRuntime.invalidateSegmentIterators();
     }
 
     @Override
     public void checkAndRepairConsistency() {
-        run(delegate::checkAndRepairConsistency);
-    }
-
-    private void run(final Runnable action) {
-        trackedRunner.runTrackedVoid(action);
+        trackedRunner.runTrackedVoid(delegate::checkAndRepairConsistency);
+        topologyRuntime.requestFullSplitScan();
         topologyRuntime.invalidateSegmentIterators();
     }
 }

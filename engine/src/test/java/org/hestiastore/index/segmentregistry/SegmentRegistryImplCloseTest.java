@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -95,14 +96,14 @@ class SegmentRegistryImplCloseTest {
         final AtomicInteger counter = new AtomicInteger();
         final SegmentIdAllocator allocator = () -> SegmentId
                 .of(counter.getAndIncrement());
-        final RegistryMaintenanceRetryPolicy closeRetryPolicy = new RegistryMaintenanceRetryPolicy(
+        final BusyRetryPolicy closeRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         @SuppressWarnings("unchecked")
         final PreparedSegmentWriterFactory<Integer, String> writerFactory = Mockito
                 .mock(PreparedSegmentWriterFactory.class);
         final SegmentRuntimeTuner runtimeTuner = Mockito
                 .mock(SegmentRuntimeTuner.class);
-        final RegistrySegmentAccessRetryPolicy blockingRetryPolicy = new RegistrySegmentAccessRetryPolicy(
+        final BusyRetryPolicy blockingRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
                 gate, writerFactory, runtimeTuner, blockingRetryPolicy);

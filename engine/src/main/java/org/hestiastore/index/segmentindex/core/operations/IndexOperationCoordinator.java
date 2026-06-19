@@ -13,15 +13,23 @@ import org.hestiastore.index.segmentindex.wal.WalRuntime;
  * @param <K> key type
  * @param <V> value type
  */
-final class IndexOperationCoordinator<K, V>
-        implements SegmentIndexOperationAccess<K, V> {
+public final class IndexOperationCoordinator<K, V> {
 
     private final IndexOperationStatsRecorder statsRecorder;
     private final SegmentLeaseService<K, V> segmentLeaseService;
     private final StorageService<K, V> storageService;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
-    IndexOperationCoordinator(final TypeDescriptor<V> valueTypeDescriptor,
+    /**
+     * Creates an operation coordinator from initialized runtime services.
+     *
+     * @param valueTypeDescriptor value descriptor used for tombstones
+     * @param statsRecorder operation metrics recorder
+     * @param segmentLeaseService segment lease service
+     * @param storageService storage and WAL service
+     */
+    public IndexOperationCoordinator(
+            final TypeDescriptor<V> valueTypeDescriptor,
             final IndexOperationStatsRecorder statsRecorder,
             final SegmentLeaseService<K, V> segmentLeaseService,
             final StorageService<K, V> storageService) {
@@ -35,7 +43,12 @@ final class IndexOperationCoordinator<K, V>
                 "valueTypeDescriptor");
     }
 
-    @Override
+    /**
+     * Stores a value for a key and records the WAL entry as applied.
+     *
+     * @param key key to store
+     * @param value value to store
+     */
     public void put(final K key, final V value) {
         final long startedNanos = startWriteOperation();
         final K nonNullKey = requireKey(key);
@@ -49,7 +62,12 @@ final class IndexOperationCoordinator<K, V>
         recordWriteLatency(startedNanos);
     }
 
-    @Override
+    /**
+     * Reads the value currently stored for a key.
+     *
+     * @param key key to read
+     * @return stored value or {@code null} when the key is absent
+     */
     public V get(final K key) {
         final long startedNanos = startReadOperation();
         final K nonNullKey = requireKey(key);
@@ -59,7 +77,11 @@ final class IndexOperationCoordinator<K, V>
         return result;
     }
 
-    @Override
+    /**
+     * Deletes a key by writing its tombstone value.
+     *
+     * @param key key to delete
+     */
     public void delete(final K key) {
         final long startedNanos = startWriteOperation();
         final K nonNullKey = requireKey(key);
@@ -70,7 +92,11 @@ final class IndexOperationCoordinator<K, V>
         recordWriteLatency(startedNanos);
     }
 
-    @Override
+    /**
+     * Replays one WAL record into the segment layer.
+     *
+     * @param replayRecord WAL record to replay
+     */
     public void replayWalRecord(
             final WalRuntime.ReplayRecord<K, V> replayRecord) {
         final WalRuntime.ReplayRecord<K, V> nonNullReplayRecord = Vldtn

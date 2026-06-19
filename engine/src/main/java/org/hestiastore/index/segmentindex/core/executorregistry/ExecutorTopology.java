@@ -14,16 +14,16 @@ final class ExecutorTopology {
 
     private final ExecutorService indexMaintenanceExecutor;
     private final ExecutorService splitMaintenanceExecutor;
-    private final LazyExecutorReference<ScheduledExecutorService> splitPolicyScheduler;
+    private final ScheduledExecutorService splitPolicyScheduler;
     private final ExecutorService stableSegmentMaintenanceExecutor;
-    private final LazyExecutorReference<ExecutorService> registryMaintenanceExecutor;
+    private final ExecutorService registryMaintenanceExecutor;
     private final int shutdownTimeoutMillis;
 
     ExecutorTopology(final ExecutorService indexMaintenanceExecutor,
             final ExecutorService splitMaintenanceExecutor,
-            final LazyExecutorReference<ScheduledExecutorService> splitPolicyScheduler,
+            final ScheduledExecutorService splitPolicyScheduler,
             final ExecutorService stableSegmentMaintenanceExecutor,
-            final LazyExecutorReference<ExecutorService> registryMaintenanceExecutor,
+            final ExecutorService registryMaintenanceExecutor,
             final int shutdownTimeoutMillis) {
         this.indexMaintenanceExecutor = Vldtn.requireNonNull(
                 indexMaintenanceExecutor, "indexMaintenanceExecutor");
@@ -49,7 +49,7 @@ final class ExecutorTopology {
     }
 
     ScheduledExecutorService splitPolicyScheduler() {
-        return splitPolicyScheduler.get();
+        return splitPolicyScheduler;
     }
 
     ExecutorService stableSegmentMaintenanceExecutor() {
@@ -57,7 +57,7 @@ final class ExecutorTopology {
     }
 
     ExecutorService registryMaintenanceExecutor() {
-        return registryMaintenanceExecutor.get();
+        return registryMaintenanceExecutor;
     }
 
     RuntimeException shutdownExecutorsInCloseOrder() {
@@ -67,20 +67,17 @@ final class ExecutorTopology {
         failure = shutdownAndAwait("splitMaintenance",
                 splitMaintenanceExecutor, failure);
         failure = shutdownAndAwait("splitPolicy",
-                splitPolicyScheduler.getIfCreated(), failure);
+                splitPolicyScheduler, failure);
         failure = shutdownAndAwait("segmentMaintenance",
                 stableSegmentMaintenanceExecutor, failure);
         failure = shutdownAndAwait("registryMaintenance",
-                registryMaintenanceExecutor.getIfCreated(), failure);
+                registryMaintenanceExecutor, failure);
         return failure;
     }
 
     private RuntimeException shutdownAndAwait(final String executorName,
             final ExecutorService executor,
             final RuntimeException failure) {
-        if (executor == null) {
-            return failure;
-        }
         RuntimeException nextFailure = failure;
         executor.shutdown();
         boolean interrupted = false;

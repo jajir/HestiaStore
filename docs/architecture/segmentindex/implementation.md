@@ -24,35 +24,33 @@ Source: [implementation-layers.plantuml](images/implementation-layers.plantuml)
 | Layer | Main classes | Responsibility |
 | ----- | ------------ | -------------- |
 | Public API | `SegmentIndex`, `IndexConfiguration`, `IndexConfigurationBuilder` | External create/open and user-facing operations. This is the compatibility boundary. |
-| Session and lifecycle | `IndexInternalConcurrent`, `IndexContextLoggingAdapter`, `SegmentIndexImpl`, `SegmentIndexTrackedOperationRunner`, `IndexOperationTracker`, `core.session.state` | API method implementation, lifecycle state checks, lifecycle/lock ownership, close safety, context logging, and operation tracking for one live index session. `SegmentIndexImpl.open(...)` is the session composition point and keeps failed-startup cleanup local to session ownership. |
-| Operation facades | `SegmentIndexPointOperationFacade`, `SegmentIndexReadFacade`, `MaintenanceService` | Small call-specific boundaries for point operations, iterator operations, and foreground maintenance. |
-| Runtime opening | `SegmentIndexBootstrapSteps`, `SegmentIndexRuntime`, `SegmentIndexRuntimeServices` | Long-lived runtime graph for one open index: core storage, topology, WAL, metrics, runtime tuning, and service wiring. Bootstrap steps open runtime resources in order and own rollback cleanup until `SegmentIndexRuntime` takes ownership. |
-| Topology runtime | `SegmentTopologyRuntime`, `SegmentTopology`, `SplitService` | Segment route topology, split runtime, iterator invalidation, direct segment access, and recovery cleanup. Topology is created during bootstrap because it depends on storage, executors, runtime state, and failure handling. |
-| Core storage | `StorageService`, `StorageServiceBuilder`, `StorageServiceImpl`, `CoreStorageRuntime`, `IndexWalCoordinator` | Provides the storage package access point, assembles storage runtime services from already opened route map and segment registry, and keeps storage-only helpers such as WAL coordination behind the service boundary. Physical key map, chunk cache, and registry opening are explicit bootstrap steps so dependencies stay visible. |
-| Point operations | `IndexOperationCoordinator`, `SegmentIndexOperationAccess` | Point `put`, `get`, `delete`, WAL append/replay, applied LSN recording, request counters, and operation latency metrics. |
+| Session and lifecycle | `SegmentIndexImpl`, `SegmentIndexTrackedOperationRunner`, `SegmentIndexOperationGate`, `SegmentIndexStateMachine`, `IndexCloseCoordinator` | API method implementation, lifecycle state checks, lifecycle/lock ownership, close safety, context logging, and operation tracking for one live index session. `SegmentIndexSessionFactory` is the session composition point. |
+| Operation access | `IndexOperationCoordinator`, `SegmentIndexMaintenanceSessionAdapter`, `MaintenanceService` | Small call-specific boundaries for point operations, iterator operations, and foreground maintenance. |
+| Runtime opening | `SegmentIndexBootstrapOperation`, `SegmentIndexSessionFactory`, `IndexCloseCoordinator` | Long-lived runtime graph for one open index: core storage, topology, WAL, metrics, runtime tuning, and service wiring. The bootstrap operation opens runtime resources in order and owns rollback cleanup until the session close coordinator takes ownership. |
+| Topology runtime | `SegmentTopologyRuntimeAccess`, `SegmentTopology`, `SplitService` | Segment route topology, split runtime, iterator invalidation, direct segment access, and recovery cleanup. Topology is created during bootstrap because it depends on storage, executors, runtime state, and failure handling. |
+| Core storage | `StorageService`, `StorageServiceBuilder`, `CoreStorageRuntime`, `IndexWalCoordinatorDelegate` | Provides the storage package access point, assembles storage runtime services from already opened route map and segment registry, and keeps storage-only helpers such as WAL coordination behind the service boundary. Physical key map, chunk cache, and registry opening stay explicit in the bootstrap operation so dependencies stay visible. |
+| Point operations | `IndexOperationCoordinator` | Point `put`, `get`, `delete`, WAL append/replay, applied LSN recording, request counters, and operation latency metrics. |
 | Route and segment lease access | `SegmentLeaseService`, `SegmentLease`, `SegmentSplitLease`, `KeyToSegmentMap`, `SegmentTopology` | Key-to-segment lookup, route snapshot validation, route leases/drains, registry-backed segment loading, retry on stale/draining routes, and scoped access to routed or split-drained segments. |
-| Stable segment operations | `StableSegmentOperationGateway`, `StableSegmentOperationResult`, `StableSegmentOperationStatus`, `SegmentStreamingService`, `MaintenanceServiceImpl` | Single-attempt stable-segment calls used by iterator and maintenance paths, with `OK`, `BUSY`, `CLOSED`, and `ERROR` translated into index-level retry decisions. |
+| Stable segment operations | `StableSegmentOperationGateway`, `SegmentStreamingService`, `MaintenanceService` | Single-attempt stable-segment calls used by iterator and maintenance paths, with `OK`, `BUSY`, `CLOSED`, and `ERROR` translated into index-level retry decisions. |
 | Registry and segment handle | `SegmentRegistry`, `BlockingSegment` | Segment cache, lifecycle, loading/reloading, materialization helpers, runtime tuning view, and retry-aware access to a loaded segment. `BlockingSegment` is the current segment handler/handle layer. |
 | Segment engine | `Segment`, `SegmentImpl`, `SegmentCore`, `SegmentSearcher`, `SegmentCompacter` | Segment-local reads, writes, flush, compaction, consistency checking, caches, sparse index, Bloom filter, and on-disk files. |
 
 ## Where to Look
 
 - Public API behavior: start at `SegmentIndex` and `SegmentIndexImpl`.
-- Create/open flow: inspect `SegmentIndexBootstrapOperation`,
-  `SegmentIndexImpl.open(...)`, and `SegmentIndexBootstrapSteps`.
+- Create/open flow: inspect `SegmentIndexBootstrapOperation` and
+  `SegmentIndexSessionFactory`.
 - Operation rejected during close/open/error: inspect
-  `SegmentIndexTrackedOperationRunner`, `IndexOperationTracker`, and
-  `IndexStateCoordinator` in `core.session.state`.
-- Point `put`, `get`, or `delete`: inspect `SegmentIndexPointOperationFacade`,
-  `SegmentIndexRuntime`, and `IndexOperationCoordinator`.
+  `SegmentIndexTrackedOperationRunner`, `SegmentIndexOperationGate`, and
+  `SegmentIndexStateMachine`.
+- Point `put`, `get`, or `delete`: inspect `IndexOperationCoordinator`.
 - Key routing, route drains, split leases, or stale topology retries: inspect
   `SegmentLeaseService`, `KeyToSegmentMap`, and `SegmentTopology`.
 - Segment loading, registry cache, or retry-aware segment handles: inspect
   `SegmentRegistry` and `BlockingSegment`.
-- Iterator and stream behavior: inspect `SegmentIndexReadFacade`,
-  `SegmentTopologyRuntime` in `core.topology`, `SegmentStreamingService`, and
-  `DirectSegmentCoordinator`.
-- Flush, compaction, and wait semantics: inspect `MaintenanceServiceImpl`,
+- Iterator and stream behavior: inspect `SegmentTopologyRuntimeAccess`,
+  `SegmentStreamingService`, and `DirectSegmentCoordinator`.
+- Flush, compaction, and wait semantics: inspect `MaintenanceService`,
   `StableSegmentOperationGateway`, and `SegmentImpl`.
 - Actual per-segment data layout and lookup mechanics: inspect `Segment`,
   `SegmentImpl`, `SegmentCore`, `SegmentSearcher`, and `SegmentCompacter`.

@@ -9,11 +9,21 @@ owner: engine
 
 This page describes how HestiaStore turns a user configuration request into the
 effective configuration used by storage, runtime services, and execution
-packages.
+packages. The package relationship diagram below is intentionally scoped to
+the user data path from `SegmentIndex` calls to `Segment` operations.
 
-![Configuration flow](images/configuration-flow.png)
+![SegmentIndex request package relationships](images/configuration-flow.png)
 
 Source: [configuration-flow.plantuml](images/configuration-flow.plantuml)
+
+## Diagram Scope
+
+Keep package relationship images focused on packages that process user data
+requests to segments: `put`, `get`, `delete`, and iterator or stream paths.
+Do not include broad cross-cutting packages such as bootstrap, monitoring,
+logging, executors, configuration, or tuning unless the image is specifically
+about one of those concerns. Those packages relate to many other packages and
+can hide the request path.
 
 ## Configuration Layers
 
@@ -55,7 +65,7 @@ On create, `EffectiveIndexConfigurationResolver.resolveForCreate(...)`:
 6. returns an `EffectiveIndexConfiguration`
 
 The bootstrap flow stores this effective configuration in the bootstrap state.
-`BootstrapStepWriteConfiguration` then persists it when the resolution says a
+`SegmentIndexBootstrapOperation` then persists it when the resolution says a
 write is required.
 
 ## Open Flow
@@ -81,23 +91,21 @@ and `segmentSplitKeyThreshold` during open.
 
 ## Bootstrap Application
 
-`SegmentIndexBootstrapSteps` applies the effective configuration before runtime
-construction:
+`SegmentIndexBootstrapOperation` applies the effective configuration before and
+during runtime construction. The key configuration-consuming actions are:
 
-1. `BootstrapStepResolveConfiguration` resolves or merges the effective config.
-2. `BootstrapStepResolveTypeDescriptors` instantiates key and value
-   descriptors from `identity`.
-3. `BootstrapStepWriteConfiguration` persists the effective config when needed.
-4. `BootstrapStepCreateExecutorRegistry` maps maintenance and logging settings
-   to runtime executors.
-5. `BootstrapStepOpenCoreStorage` passes the effective config into core
-   storage construction.
-6. `BootstrapStepOpenRuntimeWal` opens WAL runtime resources when WAL is
-   enabled.
-7. `BootstrapStepCreateRuntimeServices` wires WAL coordination, maintenance,
-   metrics, monitoring, and runtime tuning.
-8. `BootstrapStepApplyContextLogging` uses `logging.contextEnabled()` and
-   `identity.name()` to wrap the runtime index when context logging is enabled.
+1. resolve or merge the effective config
+2. instantiate key and value descriptors from `identity`
+3. persist the effective config when needed
+4. map maintenance and logging settings to runtime executors
+5. create the parsed chunk page cache
+6. pass the effective config into the segment registry builder
+7. create storage services and `RuntimeTuningState`
+8. wire topology, split, streaming, and operation services
+9. open WAL resources and bind storage WAL coordination when WAL is enabled
+10. wire maintenance, metrics, monitoring, and runtime tuning
+11. use `logging.contextEnabled()` and `identity.name()` to wrap the runtime
+    index when context logging is enabled
 
 After this point, execution packages receive concrete runtime collaborators
 that were built from the effective configuration.
@@ -108,13 +116,21 @@ that were built from the effective configuration.
 Uses `identity`, `logging`, and `maintenance` to define executor names, context
 logging, thread counts, and shutdown timeout.
 
+`chunkstorecache`:
+Uses `chunkStoreCache.pageLimit()` to create the index-scoped parsed chunk page
+cache.
+
 `core.storage`:
-Uses `runtimeTuning`, `chunkStoreCache`, and `maintenance` to create runtime
-tuning state, the parsed chunk cache, and retry policy.
+Uses maintenance timing values with the route map, segment registry, and type
+descriptors to create the storage service. `SegmentIndexBootstrapOperation`
+also creates `RuntimeTuningState` from the effective configuration and stores
+it in `CoreStorageRuntime`.
 
 `segmentregistry`:
-Uses `segment` and `maintenance` to set registry cache limits and busy retry
-behavior.
+Uses the effective configuration, type descriptors, executors, and chunk page
+cache to create the registry. The registry builder and `SegmentFactory` read
+segment, write-path, Bloom filter, I/O, logging, filter, maintenance, and
+chunk-store cache sections.
 
 `segment` through `SegmentFactory`:
 Passes `segment`, `writePath`, `bloomFilter`, `io`, `logging`, `filters`,
@@ -122,8 +138,8 @@ Passes `segment`, `writePath`, `bloomFilter`, `io`, `logging`, `filters`,
 segment maintenance policy.
 
 `core.storage` WAL coordination:
-Uses `wal` to choose a disabled coordinator or active WAL coordinator. Active
-coordination also reads WAL retention limits.
+Uses the `WalRuntime` opened by bootstrap to choose a disabled coordinator or
+active WAL coordinator. Active coordination also reads WAL retention limits.
 
 `configuration.tuning`:
 Uses `runtimeTuning` to seed runtime tuning state. Tuning changes are applied to

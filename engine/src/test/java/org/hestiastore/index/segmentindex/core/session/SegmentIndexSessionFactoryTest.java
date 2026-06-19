@@ -12,13 +12,14 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -33,77 +34,94 @@ class SegmentIndexSessionFactoryTest {
         assertThrows(IllegalArgumentException.class,
                 () -> SegmentIndexSessionFactory.createIndex(null,
                         effectiveConfiguration("factory-null-resources"),
-                        new TypeDescriptorInteger(), newAssemblyInput()));
+                        new TypeDescriptorInteger(),
+                        mockOperationAccess(),
+                        mockTopologyRuntime(),
+                        mockMaintenanceService(),
+                        mock(RuntimeTuning.class),
+                        mock(IndexRuntimeMonitoring.class),
+                        newCoreStorageRuntime()));
     }
 
     @Test
     void createIndex_rejectsNullConfiguration() {
         final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
         final SegmentIndexSessionResources<Integer, String> resources =
-                initializedResources(SegmentIndexSessionInfrastructure.create());
+                initializedResources();
 
         assertThrows(IllegalArgumentException.class,
                 () -> SegmentIndexSessionFactory.createIndex(resources,
-                        null, keyDescriptor, newAssemblyInput()));
+                        null, keyDescriptor,
+                        mockOperationAccess(),
+                        mockTopologyRuntime(),
+                        mockMaintenanceService(),
+                        mock(RuntimeTuning.class),
+                        mock(IndexRuntimeMonitoring.class),
+                        newCoreStorageRuntime()));
     }
 
     @Test
     void createIndex_rejectsNullKeyTypeDescriptor() {
-        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
         final SegmentIndexSessionResources<Integer, String> resources =
-                initializedResources(SegmentIndexSessionInfrastructure.create());
+                initializedResources();
 
         assertThrows(IllegalArgumentException.class,
                 () -> SegmentIndexSessionFactory.createIndex(resources,
                         effectiveConfiguration("factory-null-key"), null,
-                        newAssemblyInput()));
+                        mockOperationAccess(),
+                        mockTopologyRuntime(),
+                        mockMaintenanceService(),
+                        mock(RuntimeTuning.class),
+                        mock(IndexRuntimeMonitoring.class),
+                        newCoreStorageRuntime()));
     }
 
     @Test
-    void createIndex_rejectsNullAssemblyInput() {
+    void createIndex_rejectsNullOperationAccess() {
         final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
         final SegmentIndexSessionResources<Integer, String> resources =
-                initializedResources(SegmentIndexSessionInfrastructure.create());
+                initializedResources();
 
         assertThrows(IllegalArgumentException.class,
                 () -> SegmentIndexSessionFactory.createIndex(resources,
                         effectiveConfiguration("factory-null-input"),
-                        keyDescriptor, null));
+                        keyDescriptor, null,
+                        mockTopologyRuntime(),
+                        mockMaintenanceService(),
+                        mock(RuntimeTuning.class),
+                        mock(IndexRuntimeMonitoring.class),
+                        newCoreStorageRuntime()));
     }
 
     @Test
     void createIndex_usesInitializedRuntimeAndStateMachine() {
         final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
-        final SegmentIndexSessionInfrastructure<Integer, String> infrastructure =
-                SegmentIndexSessionInfrastructure.create();
         final SegmentIndexSessionResources<Integer, String> resources =
-                initializedResources(infrastructure);
+                initializedResources();
         final RuntimeTuning runtimeTuning = mock(RuntimeTuning.class);
-        final IndexRuntimeMonitoring runtimeMonitoring =
-                mock(IndexRuntimeMonitoring.class);
-        final SegmentIndexSessionAssemblyInput<Integer, String> assemblyInput =
-                newAssemblyInput(runtimeTuning, runtimeMonitoring);
+        final IndexRuntimeMonitoring runtimeMonitoring = mock(IndexRuntimeMonitoring.class);
 
-        final SegmentIndexSessionResource<Integer, String> index =
-                SegmentIndexSessionFactory.createIndex(resources,
-                        effectiveConfiguration("factory-create-index"),
-                        keyDescriptor, assemblyInput);
+        final SegmentIndex<Integer, String> index = SegmentIndexSessionFactory.createIndex(resources,
+                effectiveConfiguration("factory-create-index"),
+                keyDescriptor,
+                mockOperationAccess(),
+                mockTopologyRuntime(),
+                mockMaintenanceService(),
+                runtimeTuning,
+                runtimeMonitoring,
+                newCoreStorageRuntime());
 
         assertInstanceOf(SegmentIndexImpl.class, index);
-        final SegmentIndexImpl<Integer, String> implementation =
-                castIndex(index);
-        assertSame(infrastructure.stateMachine(),
+        final SegmentIndexImpl<Integer, String> implementation = castIndex(index);
+        assertSame(resources.stateMachine(),
                 implementation.stateMachine());
         assertSame(runtimeTuning, implementation.runtimeTuning());
         assertSame(runtimeMonitoring, implementation.runtimeMonitoring());
     }
 
-    private SegmentIndexSessionResources<Integer, String> initializedResources(
-            final SegmentIndexSessionInfrastructure<Integer, String> infrastructure) {
-        final SegmentIndexSessionResources<Integer, String> resources =
-                new SegmentIndexSessionResources<>();
+    private SegmentIndexSessionResources<Integer, String> initializedResources() {
+        final SegmentIndexSessionResources<Integer, String> resources = new SegmentIndexSessionResources<>();
         resources.acquireDirectoryLock(new MemDirectory());
-        resources.setSessionInfrastructure(infrastructure);
         resources.setExecutorRegistry(mock(ExecutorRegistry.class));
         return resources;
     }
@@ -144,34 +162,32 @@ class SegmentIndexSessionFactoryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private SegmentIndexSessionAssemblyInput<Integer, String> newAssemblyInput() {
-        return newAssemblyInput(mock(RuntimeTuning.class),
-                mock(IndexRuntimeMonitoring.class));
+    private MaintenanceService<Integer, String> mockMaintenanceService() {
+        return mock(MaintenanceService.class);
     }
 
     @SuppressWarnings("unchecked")
-    private SegmentIndexSessionAssemblyInput<Integer, String> newAssemblyInput(
-            final RuntimeTuning runtimeTuning,
-            final IndexRuntimeMonitoring runtimeMonitoring) {
-        final StorageService<Integer, String> storageService =
-                mock(StorageService.class);
-        return new SegmentIndexSessionAssemblyInput<>(
-                mock(SegmentIndexOperationAccess.class),
-                mock(SegmentTopologyRuntimeAccess.class),
-                mock(MaintenanceService.class),
-                runtimeTuning,
-                runtimeMonitoring,
-                new CoreStorageRuntime<>(
-                        mock(RuntimeTuningState.class),
-                        storageService,
-                        mock(SegmentRegistry.class),
-                        mock(KeyToSegmentMap.class)),
-                storageService);
+    private CoreStorageRuntime<Integer, String> newCoreStorageRuntime() {
+        final StorageService<Integer, String> storageService = mock(StorageService.class);
+        return new CoreStorageRuntime<>(
+                mock(RuntimeTuningState.class),
+                storageService,
+                mock(SegmentRegistry.class),
+                mock(KeyToSegmentMap.class));
     }
 
     @SuppressWarnings("unchecked")
+    private IndexOperationCoordinator<Integer, String> mockOperationAccess() {
+        return mock(IndexOperationCoordinator.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private SegmentTopologyRuntimeAccess<Integer, String> mockTopologyRuntime() {
+        return mock(SegmentTopologyRuntimeAccess.class);
+    }
+
     private SegmentIndexImpl<Integer, String> castIndex(
-            final SegmentIndexSessionResource<Integer, String> index) {
+            final SegmentIndex<Integer, String> index) {
         return (SegmentIndexImpl<Integer, String>) index;
     }
 }

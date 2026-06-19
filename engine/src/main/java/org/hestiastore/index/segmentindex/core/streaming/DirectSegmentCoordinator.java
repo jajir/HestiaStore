@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.streaming;
 
 import java.util.List;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
@@ -17,18 +18,42 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  * @param <K> key type
  * @param <V> value type
  */
-final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> {
+public final class DirectSegmentCoordinator<K, V> {
 
     private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
 
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final StreamingRetryPolicy retryPolicy;
+    private final BusyRetryPolicy retryPolicy;
+
+    /**
+     * Creates direct segment access with package-local streaming retry
+     * semantics.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @param keyToSegmentMap route map used to resolve segment windows
+     * @param segmentRegistry registry used to open stable segment iterators
+     * @param busyBackoffMillis backoff in milliseconds for transient busy
+     *            states
+     * @param busyTimeoutMillis timeout in milliseconds for transient busy
+     *            states
+     * @return direct segment coordinator
+     */
+    public static <K, V> DirectSegmentCoordinator<K, V> create(
+            final KeyToSegmentMap<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final int busyBackoffMillis,
+            final int busyTimeoutMillis) {
+        return new DirectSegmentCoordinator<>(keyToSegmentMap, segmentRegistry,
+                new BusyRetryPolicy(busyBackoffMillis,
+                        busyTimeoutMillis, "Streaming operation"));
+    }
 
     DirectSegmentCoordinator(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final StreamingRetryPolicy retryPolicy) {
+            final BusyRetryPolicy retryPolicy) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
@@ -36,7 +61,13 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
-    @Override
+    /**
+     * Opens an iterator over a resolved segment window.
+     *
+     * @param resolvedWindows segment window already resolved for the caller
+     * @param isolation iterator isolation mode
+     * @return entry iterator
+     */
     public EntryIterator<K, V> openWindowIterator(
             final SegmentWindow resolvedWindows,
             final SegmentIteratorIsolation isolation) {

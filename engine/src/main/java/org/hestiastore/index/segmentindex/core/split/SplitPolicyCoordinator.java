@@ -5,6 +5,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -42,8 +43,8 @@ final class SplitPolicyCoordinator<K, V> {
     private final SplitCandidateRegistry candidateRegistry;
     private final Executor workerExecutor;
     private final ScheduledExecutorService splitPolicyScheduler;
-    private final SplitFailureReporter failureReporter;
-    private final SplitTelemetry telemetry;
+    private final Consumer<RuntimeException> failureReporter;
+    private final SplitStatsRecorder statsRecorder;
 
     SplitPolicyCoordinator(final EffectiveIndexConfiguration<K, V> conf,
             final RuntimeTuningState runtimeTuningState,
@@ -53,8 +54,8 @@ final class SplitPolicyCoordinator<K, V> {
             final Executor workerExecutor,
             final ScheduledExecutorService splitPolicyScheduler,
             final SegmentIndexStateView stateView,
-            final SplitFailureReporter failureReporter,
-            final SplitTelemetry telemetry,
+            final Consumer<RuntimeException> failureReporter,
+            final SplitStatsRecorder statsRecorder,
             final SplitPolicyState policyState,
             final SplitCandidateRegistry candidateRegistry) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
@@ -76,7 +77,8 @@ final class SplitPolicyCoordinator<K, V> {
                 "splitPolicyScheduler");
         this.failureReporter = Vldtn.requireNonNull(failureReporter,
                 "failureReporter");
-        this.telemetry = Vldtn.requireNonNull(telemetry, "telemetry");
+        this.statsRecorder = Vldtn.requireNonNull(statsRecorder,
+                "statsRecorder");
     }
 
     void requestFullSplitScan() {
@@ -134,7 +136,7 @@ final class SplitPolicyCoordinator<K, V> {
             runWorkerUntilIdle();
         } catch (final RuntimeException e) {
             if (!isClosedOrClosingState()) {
-                failureReporter.reportFailure(e);
+                failureReporter.accept(e);
                 throw e;
             }
         } finally {
@@ -194,7 +196,7 @@ final class SplitPolicyCoordinator<K, V> {
             }
         } catch (final RuntimeException e) {
             if (!isClosedOrClosingState()) {
-                failureReporter.reportFailure(e);
+                failureReporter.accept(e);
                 throw e;
             }
         } finally {
@@ -319,7 +321,7 @@ final class SplitPolicyCoordinator<K, V> {
                     .scheduleEligibleSplit(segmentId, threshold,
                             observedKeyCount);
             if (scheduled) {
-                telemetry.recordSplitScheduled();
+                statsRecorder.recordSplitScheduled();
             }
             return scheduled;
         }

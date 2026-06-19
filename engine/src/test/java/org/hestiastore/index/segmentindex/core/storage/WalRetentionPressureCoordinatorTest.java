@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -32,7 +33,7 @@ class WalRetentionPressureCoordinatorTest {
                 mock(WalRetentionPressureCheckpoint.class);
         final WalRetentionPressureCoordinator<Integer, String> coordinator =
                 new WalRetentionPressureCoordinator<>(effective(buildConf()),
-                        walRuntime, new WalBackpressureRetryPolicy(1, 10),
+                        walRuntime, new BusyRetryPolicy(1, 10),
                         checkpoint);
         when(walRuntime.isRetentionPressure()).thenReturn(true, true, false);
         when(walRuntime.retainedBytes()).thenReturn(99L);

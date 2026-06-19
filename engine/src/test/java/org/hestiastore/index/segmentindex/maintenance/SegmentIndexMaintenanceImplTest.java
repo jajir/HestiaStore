@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,17 +17,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentIndexMaintenanceImplTest {
 
     @Mock
-    private MaintenanceService maintenanceService;
+    private MaintenanceService<Integer, String> maintenanceService;
 
     @Mock
-    private IndexConsistencyRepairService consistencyRepairService;
+    private StorageService<Integer, String> storageService;
 
     private SegmentIndexMaintenance maintenance;
 
     @BeforeEach
     void setUp() {
         maintenance = new SegmentIndexMaintenanceImpl(maintenanceService,
-                consistencyRepairService);
+                storageService);
     }
 
     @Test
@@ -43,16 +44,15 @@ class SegmentIndexMaintenanceImplTest {
         verify(maintenanceService).compactAndWait();
         verify(maintenanceService).flush();
         verify(maintenanceService).flushAndWait();
-        verify(consistencyRepairService).checkAndRepairConsistency();
-        verifyNoMoreInteractions(maintenanceService,
-                consistencyRepairService);
+        verify(storageService).checkAndRepairConsistency();
+        verifyNoMoreInteractions(maintenanceService, storageService);
     }
 
     @Test
     void constructorRejectsMissingCollaborators() {
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentIndexMaintenanceImpl(null,
-                        consistencyRepairService));
+                        storageService));
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentIndexMaintenanceImpl(maintenanceService,
                         null));

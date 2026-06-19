@@ -11,11 +11,10 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,7 +27,7 @@ class SegmentIndexBootstrapStateTest {
     private ExecutorRegistry executorRegistry;
 
     @Mock
-    private SegmentIndexSessionResource<Integer, String> indexHandle;
+    private SegmentIndex<Integer, String> index;
 
     @Test
     void productGettersThrowBeforeMatchingSetterIsCalled() {
@@ -42,10 +41,8 @@ class SegmentIndexBootstrapStateTest {
         assertThrows(IllegalStateException.class,
                 state::getValueTypeDescriptor);
         assertThrows(IllegalStateException.class, state::getExecutorRegistry);
-        assertThrows(IllegalStateException.class, state::getIndexHandle);
         assertThrows(IllegalStateException.class, state::getIndex);
-        assertThrows(IllegalStateException.class, state::getResult);
-        assertFalse(state.hasResult());
+        assertFalse(state.hasExecutorRegistry());
     }
 
     @Test
@@ -58,27 +55,21 @@ class SegmentIndexBootstrapStateTest {
                 new TypeDescriptorInteger();
         final TypeDescriptorShortString valueTypeDescriptor =
                 new TypeDescriptorShortString();
-        final SegmentIndexResourceClosingAdapter<Integer, String> index =
-                new SegmentIndexResourceClosingAdapter<>(indexHandle);
 
         state.setConfiguration(configuration);
         state.setConfigurationWriteRequired(true);
         state.setKeyTypeDescriptor(keyTypeDescriptor);
         state.setValueTypeDescriptor(valueTypeDescriptor);
         state.setExecutorRegistry(executorRegistry);
-        state.setIndexHandle(indexHandle);
         state.setIndex(index);
-        state.setResult(SegmentIndexBootstrapResult.opened(index));
 
         assertSame(configuration, state.getConfiguration());
         assertTrue(state.isConfigurationWriteRequired());
         assertSame(keyTypeDescriptor, state.getKeyTypeDescriptor());
         assertSame(valueTypeDescriptor, state.getValueTypeDescriptor());
         assertSame(executorRegistry, state.getExecutorRegistry());
-        assertSame(indexHandle, state.getIndexHandle());
         assertSame(index, state.getIndex());
-        assertTrue(state.hasResult());
-        assertSame(index, state.getResult().requireIndex());
+        assertTrue(state.hasExecutorRegistry());
     }
 
     @Test
@@ -94,11 +85,7 @@ class SegmentIndexBootstrapStateTest {
                 () -> state.setValueTypeDescriptor(null));
         assertThrows(IllegalArgumentException.class,
                 () -> state.setExecutorRegistry(null));
-        assertThrows(IllegalArgumentException.class,
-                () -> state.setIndexHandle(null));
         assertThrows(IllegalArgumentException.class, () -> state.setIndex(null));
-        assertThrows(IllegalArgumentException.class,
-                () -> state.setResult(null));
     }
 
     private static IndexConfiguration<Integer, String> buildConf() {

@@ -6,27 +6,27 @@ top to bottom direction
 
 component "Public API\n\nSegmentIndex\nIndexConfiguration" as API
 
-component "Session and lifecycle\ncore.session\n\nIndexInternalConcurrent\nIndexContextLoggingAdapter\nSegmentIndexImpl.open(...)\nSegmentIndexTrackedOperationRunner" as SESSION
+component "Session and lifecycle\ncore.session\n\nSegmentIndexImpl\nSegmentIndexTrackedOperationRunner\nSegmentIndexOperationGate" as SESSION
 
-component "Lifecycle and lock state\ncore.session\n\nSegmentIndexSessionOwner\nIndexCloseCoordinator\nIndexDirectoryLock" as SESSION_STATE
+component "Lifecycle and lock state\ncore.session\n\nSegmentIndexStateMachine\nIndexCloseCoordinator\nIndexDirectoryLock" as SESSION_STATE
 
-component "Operation facades\n\nSegmentIndexPointOperationFacade\nSegmentIndexReadFacade\nMaintenanceService" as FACADES
+component "Operation access\n\nIndexOperationCoordinator\nSegmentIndexMaintenanceSessionAdapter" as FACADES
 
-component "Runtime opening\ncore.bootstrap + core.session\n\nSegmentIndexBootstrapSteps\nSegmentIndexRuntime\nSegmentIndexRuntimeServices" as RUNTIME
+component "Runtime opening\ncore.bootstrap + core.session\n\nSegmentIndexBootstrapOperation\nSegmentIndexSessionFactory\nIndexCloseCoordinator" as RUNTIME
 
-component "Topology runtime\ncore.topology\n\nSegmentTopologyRuntime\nSegmentTopology\nSplitService" as TOPOLOGY_RUNTIME
+component "Topology runtime\ncore.session + core.topology\n\nSegmentTopologyRuntimeAccess\nSegmentTopology\nSplitService" as TOPOLOGY_RUNTIME
 
-component "Core storage\ncore.storage\n\nStorageService\nStorageServiceBuilder\nStorageServiceImpl\nCoreStorageRuntime\nIndexWalCoordinator" as CORE_STORAGE
+component "Core storage\ncore.storage\n\nStorageService\nStorageServiceBuilder\nCoreStorageRuntime\nIndexWalCoordinatorDelegate" as CORE_STORAGE
 
-component "Split runtime\ncore.split\n\nSplitServiceBuilder\nSplitServiceImpl\nSplitPolicyCoordinator" as SPLIT_RUNTIME
+component "Split runtime\ncore.split\n\nSplitService\nSplitServiceBuilder\nSplitPolicyCoordinator" as SPLIT_RUNTIME
 
 component "WAL runtime\nwal\n\nWalRuntime.open(...)\nWalRuntime" as WAL_RUNTIME
 
-component "Point operation orchestration\ncore.operations\n\nIndexOperationCoordinator\nSegmentIndexOperationAccess" as OPERATIONS
+component "Point operation orchestration\ncore.operations\n\nIndexOperationCoordinator" as OPERATIONS
 
 component "Route and segment lease access\ncore.segmentlease\n\nSegmentLeaseService\nSegmentLease\nSegmentSplitLease" as ACCESS
 
-component "Stable segment operations\ncore.stablesegment + core.streaming\n\nStableSegmentOperationGateway\nSegmentStreamingService\nDirectSegmentAccess" as STABLE_ACCESS
+component "Stable segment operations\ncore.stablesegment + core.streaming\n\nStableSegmentOperationGateway\nSegmentStreamingService\nDirectSegmentCoordinator" as STABLE_ACCESS
 
 component "Route state\n\nKeyToSegmentMap\nSegmentTopology" as ROUTE
 

@@ -18,6 +18,7 @@ import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalMonitoringView;
@@ -51,6 +52,9 @@ class IndexRuntimeMonitoringBuilderTest {
     private AtomicLong lastAppliedWalLsn;
     private ExecutorRegistry executorRegistry;
 
+    @Mock
+    private SplitService<Integer, String> splitService;
+
     @Test
     void builderReturnsIndexRuntimeMonitoringBuilder() {
         assertNotNull(IndexRuntimeMonitoringBuilder.builder());
@@ -82,6 +86,8 @@ class IndexRuntimeMonitoringBuilderTest {
         when(segmentRegistry.metricsSnapshot())
                 .thenReturn(new SegmentRegistryCacheStats(2L, 3L, 4L, 5L, 6,
                         7));
+        when(splitService.statsSnapshot())
+                .thenReturn(new SplitStats(0L, 2, 1, 0L, 0L));
         operationStatsRecorder.recordGetRequest();
 
         final IndexRuntimeMonitoring service = completeBuilder().build();
@@ -111,8 +117,7 @@ class IndexRuntimeMonitoringBuilderTest {
                 .withConf(conf)
                 .withKeyToSegmentMap(keyToSegmentMap)
                 .withSegmentRegistry(segmentRegistry)
-                .withSplitStatsView(
-                        () -> new SplitStats(0L, 2, 1, 0L, 0L))
+                .withSplitService(splitService)
                 .withExecutorRegistry(executorRegistry)
                 .withRuntimeTuningState(runtimeTuningState)
                 .withChunkStoreCache(new LruChunkStoreCache<>(0))

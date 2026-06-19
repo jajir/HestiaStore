@@ -4,6 +4,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -21,7 +22,7 @@ class OrphanedSegmentDirectoryRemoverTest {
                 .thenReturn(false, true);
         final OrphanedSegmentDirectoryRemover<Integer, String> remover =
                 new OrphanedSegmentDirectoryRemover<>(segmentRegistry,
-                        new StorageCleanupRetryPolicy(2, 1));
+                        new BusyRetryPolicy(2, 1));
 
         remover.remove(segmentId);
 
@@ -39,7 +40,7 @@ class OrphanedSegmentDirectoryRemoverTest {
                 .thenThrow(new IndexException("boom"));
         final OrphanedSegmentDirectoryRemover<Integer, String> remover =
                 new OrphanedSegmentDirectoryRemover<>(segmentRegistry,
-                        new StorageCleanupRetryPolicy(2, 1));
+                        new BusyRetryPolicy(2, 1));
 
         remover.remove(segmentId);
 

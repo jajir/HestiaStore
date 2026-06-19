@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -27,7 +28,7 @@ class DirectSegmentCoordinatorTest {
     private SegmentRegistry<Integer, String> segmentRegistry;
 
     @Mock
-    private StreamingRetryPolicy retryPolicy;
+    private BusyRetryPolicy retryPolicy;
 
     private DirectSegmentCoordinator<Integer, String> coordinator;
 
