@@ -140,6 +140,17 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
         return loaded;
     }
 
+    private SegmentState loadCurrentState() {
+        final Segment<K, V> currentSegment = segment;
+        if (currentSegment != null) {
+            final SegmentState state = currentSegment.getState();
+            if (state != SegmentState.CLOSED) {
+                return state;
+            }
+        }
+        return loadSegment().getState();
+    }
+
     private <T> T runBlocking(final String operation,
             final Function<Segment<K, V>, OperationResult<T>> action) {
         final long startNanos = retryPolicy.startNanos();
@@ -184,7 +195,7 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
         @Override
         public SegmentState getState() {
-            return loadSegment().getState();
+            return loadCurrentState();
         }
 
         @Override
