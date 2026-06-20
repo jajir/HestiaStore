@@ -1,5 +1,8 @@
 package org.hestiastore.indextools;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 class WalManifest {
 
     private boolean enabled;
@@ -9,7 +12,6 @@ class WalManifest {
     private int groupSyncMaxBatchBytes;
     private long maxBytesBeforeForcedCheckpoint;
     private String corruptionPolicy;
-    private boolean epochSupport;
 
     public boolean isEnabled() {
         return enabled;
@@ -68,11 +70,4 @@ class WalManifest {
         this.corruptionPolicy = corruptionPolicy;
     }
 
-    public boolean isEpochSupport() {
-        return epochSupport;
-    }
-
-    public void setEpochSupport(final boolean epochSupport) {
-        this.epochSupport = epochSupport;
-    }
 }

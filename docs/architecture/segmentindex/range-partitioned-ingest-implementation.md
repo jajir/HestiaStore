@@ -7,26 +7,27 @@ described has been removed. The current implementation contract is:
 
 - `put()` / `delete()` append to WAL first when WAL is enabled
 - writes are routed directly to stable segments through
-  `DirectSegmentCoordinator`
-- `get()` reads through `DirectSegmentCoordinator`
-- `KeyToSegmentMap` remains the persisted routing source of truth
-- `SegmentTopology` owns runtime route availability and split drain state
-- `SegmentLeaseService` is the boundary that combines route-map lookup,
+  `PointOperationCoordinator` and `MappedSegmentLeaseService`
+- `get()` reads through `PointOperationCoordinator` and
+  `MappedSegmentLeaseService`
+- `SegmentRouteMap` remains the persisted routing source of truth
+- `RouteTopology` owns runtime route availability and split drain state
+- `MappedSegmentLeaseService` is the boundary that combines route-map lookup,
   topology leases/drains, and registry segment loading
 - WAL replay restores writes by reusing the same direct write path on open
 
 ## Split Behavior
 
 - split is no longer an overlay reassignment workflow
-- `SplitPolicyCoordinator` schedules route-first split work in the
+- `SplitPolicyScheduler` schedules route-first split work in the
   background
-- `SplitPolicyCoordinator` inspects candidate size through
-  `SegmentLeaseService.tryAcquireMappedSegment(...)`
-- `SplitExecutionCoordinator` acquires `SegmentSplitLease` by segment id
+- `SplitPolicyScheduler` inspects candidate size through
+  `MappedSegmentLeaseService.tryAcquireMappedSegment(...)`
+- `SplitTaskCoordinator` acquires `RouteSplitLease` by segment id
   before preparing a split
-- `RouteSplitCoordinator` materializes child stable segments from the parent
+- `RouteSplitPlanner` materializes child stable segments from the parent
   stable snapshot before route publish
-- `SegmentSplitLease` drains the parent route through `SegmentTopology` before
+- `RouteSplitLease` drains the parent route through `RouteTopology` before
   child materialization, so no new writes can enter the old parent while the
   split snapshot is being materialized
 - writes to the affected route may be retried internally as `BUSY` while the

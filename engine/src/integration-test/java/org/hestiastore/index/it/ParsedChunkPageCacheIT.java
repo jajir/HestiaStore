@@ -12,9 +12,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterSnappyCompress;
 import org.hestiastore.index.chunkstore.ChunkFilterSnappyDecompress;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
 import org.junit.jupiter.api.Test;
 
 class ParsedChunkPageCacheIT {
@@ -29,7 +29,7 @@ class ParsedChunkPageCacheIT {
             assertEquals("value-3", index.get(3));
             assertEquals("value-3", index.get(3));
 
-            final IndexRuntimeSnapshot metrics = metrics(index);
+            final SegmentIndexRuntimeSnapshot metrics = metrics(index);
             assertEquals(4, metrics.chunkStoreCache().pageLimit());
             assertEquals(1, metrics.chunkStoreCache().pageCount());
             assertEquals(1L, metrics.chunkStoreCache().missCount());
@@ -69,7 +69,7 @@ class ParsedChunkPageCacheIT {
             index.put(1, "new-1");
             index.maintenance().compactAndWait();
 
-            final IndexRuntimeSnapshot afterCompaction = metrics(index);
+            final SegmentIndexRuntimeSnapshot afterCompaction = metrics(index);
             assertEquals(0, afterCompaction.chunkStoreCache().pageCount());
             assertTrue(afterCompaction.chunkStoreCache().invalidationCount()
                     > 0L);
@@ -87,7 +87,7 @@ class ParsedChunkPageCacheIT {
             assertEquals("value-4", index.get(4));
             assertEquals("value-4", index.get(4));
 
-            final IndexRuntimeSnapshot metrics = metrics(index);
+            final SegmentIndexRuntimeSnapshot metrics = metrics(index);
             assertEquals(1L, metrics.chunkStoreCache().loadCount());
             assertEquals(1L, metrics.chunkStoreCache().hitCount());
         }
@@ -104,7 +104,7 @@ class ParsedChunkPageCacheIT {
         }
     }
 
-    private static IndexRuntimeSnapshot metrics(
+    private static SegmentIndexRuntimeSnapshot metrics(
             final SegmentIndex<Integer, String> index) {
         return index.runtimeMonitoring().snapshot();
     }

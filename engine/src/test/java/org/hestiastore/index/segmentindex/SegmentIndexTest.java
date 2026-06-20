@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Optional;
 
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -127,7 +127,7 @@ class SegmentIndexTest {
         final RuntimeTuningResult patchResult = index.runtimeTuning()
                 .apply(RuntimeTuningPatch.builder()
                         .expectedRevision(revision)
-                        .segment(segment -> segment.cacheKeyLimit(value))
+                        .cacheKeyLimit(value)
                         .build());
         assertTrue(patchResult.applied());
     }

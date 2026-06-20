@@ -16,7 +16,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexLoggingConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexSegmentConfiguration;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWritePathConfiguration;
 import org.junit.jupiter.api.Test;
 
@@ -93,7 +93,7 @@ class RuntimeTuningConfigurationMapperTest {
                         true),
                 new EffectiveIndexIoConfiguration(4_096),
                 new EffectiveIndexLoggingConfiguration(true),
-                EffectiveIndexWalConfiguration.EMPTY,
+                IndexWalConfiguration.EMPTY,
                 new EffectiveIndexFilterConfiguration(List.of(), List.of()),
                 new EffectiveIndexChunkStoreCacheConfiguration(4));
     }

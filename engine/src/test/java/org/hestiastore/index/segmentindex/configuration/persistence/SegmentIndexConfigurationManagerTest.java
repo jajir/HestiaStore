@@ -28,9 +28,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +73,7 @@ class SegmentIndexConfigurationManagerTest {
             .build();
 
     @Mock
-    private IndexConfigurationStorage<Long, String> storage;
+    private IndexConfigurationStore<Long, String> storage;
 
     private IndexConfigurationManager<Long, String> manager;
 
@@ -371,7 +371,7 @@ class SegmentIndexConfigurationManagerTest {
         assertEquals(ChunkFilterCrc32Validation.class,
                 withDefaults.filters().decodingChunkFilters().get(1).getClass());
         assertEquals(
-                IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
+                IndexConfigurationDefaults.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
                 withDefaults.maintenance().registryLifecycleThreads(),
                 "Registry lifecycle threads should be defaulted");
     }
@@ -504,7 +504,7 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(0)).save(any());
         assertNotNull(ret);
 
-        assertEquals(IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
+        assertEquals(IndexConfigurationDefaults.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
                 ret.maintenance().registryLifecycleThreads());
     }
 

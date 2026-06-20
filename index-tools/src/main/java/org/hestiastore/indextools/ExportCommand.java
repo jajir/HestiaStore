@@ -27,7 +27,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStore;
 
 final class ExportCommand {
 
@@ -294,7 +294,7 @@ final class ExportCommand {
     private EffectiveIndexConfiguration<?, ?> loadConfiguration(
             final Path sourceIndex,
             final ChunkFilterProviderResolver resolver) {
-        return new IndexConfigurationStorage<>(
+        return new IndexConfigurationStore<>(
                 new FsNioDirectory(sourceIndex.toFile()), resolver).load();
     }
 

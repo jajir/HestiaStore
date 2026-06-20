@@ -10,7 +10,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
@@ -28,9 +28,8 @@ class RuntimeTuningIT {
                     .apply(RuntimeTuningPatch.builder()
                             .expectedRevision(index.runtimeTuning().current()
                                     .revision())
-                            .segment(segment -> segment
-                                    .cachedSegmentLimit(4)
-                                    .cacheKeyLimit(30))
+                            .cachedSegmentLimit(4)
+                            .cacheKeyLimit(30)
                             .build());
 
             assertTrue(result.applied());
@@ -55,12 +54,10 @@ class RuntimeTuningIT {
                     .apply(RuntimeTuningPatch.builder()
                             .expectedRevision(index.runtimeTuning().current()
                                     .revision())
-                            .writePath(writePath -> writePath
-                                    .segmentWriteCacheKeyLimit(6)
-                                    .segmentWriteCacheKeyLimitDuringMaintenance(
-                                            8)
-                                    .indexBufferedWriteKeyLimit(12)
-                                    .segmentSplitKeyThreshold(40))
+                            .segmentWriteCacheKeyLimit(6)
+                            .segmentWriteCacheKeyLimitDuringMaintenance(8)
+                            .indexBufferedWriteKeyLimit(12)
+                            .segmentSplitKeyThreshold(40)
                             .build());
 
             assertTrue(result.applied());
@@ -95,7 +92,7 @@ class RuntimeTuningIT {
                     .apply(RuntimeTuningPatch.builder()
                             .expectedRevision(index.runtimeTuning().current()
                                     .revision())
-                            .chunkStoreCache(cache -> cache.pageLimit(5))
+                            .chunkStoreCachePageLimit(5)
                             .build());
 
             assertTrue(result.applied());
@@ -144,15 +141,13 @@ class RuntimeTuningIT {
                 .apply(RuntimeTuningPatch.builder()
                         .expectedRevision(index.runtimeTuning().current()
                                 .revision())
-                        .segment(segment -> segment
-                                .cachedSegmentLimit(4)
-                                .cacheKeyLimit(30))
-                        .writePath(writePath -> writePath
-                                .segmentWriteCacheKeyLimit(6)
-                                .segmentWriteCacheKeyLimitDuringMaintenance(8)
-                                .indexBufferedWriteKeyLimit(12)
-                                .segmentSplitKeyThreshold(40))
-                        .chunkStoreCache(cache -> cache.pageLimit(2))
+                        .cachedSegmentLimit(4)
+                        .cacheKeyLimit(30)
+                        .segmentWriteCacheKeyLimit(6)
+                        .segmentWriteCacheKeyLimitDuringMaintenance(8)
+                        .indexBufferedWriteKeyLimit(12)
+                        .segmentSplitKeyThreshold(40)
+                        .chunkStoreCachePageLimit(2)
                         .build());
         assertTrue(result.applied());
     }

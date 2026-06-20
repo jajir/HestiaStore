@@ -8,12 +8,11 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.monitoring.SegmentIndexRuntimeMonitoring;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
-import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexBootstrapOperation;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -41,7 +40,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        return SegmentIndexFactory.create(directory, indexConf);
+        return operation(directory, indexConf, null).create();
     }
 
     /**
@@ -59,8 +58,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return SegmentIndexFactory.create(directory, indexConf,
-                chunkFilterProviderResolver);
+        return operation(directory, indexConf,
+                requireChunkFilterProviderResolver(
+                        chunkFilterProviderResolver)).create();
     }
 
     /**
@@ -77,7 +77,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        return SegmentIndexFactory.open(directory, indexConf);
+        return operation(directory, indexConf, null).open();
     }
 
     /**
@@ -95,8 +95,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return SegmentIndexFactory.open(directory, indexConf,
-                chunkFilterProviderResolver);
+        return operation(directory, indexConf,
+                requireChunkFilterProviderResolver(
+                        chunkFilterProviderResolver)).open();
     }
 
     /**
@@ -110,7 +111,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return index instance backed by the persisted configuration
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory) {
-        return SegmentIndexFactory.openStored(directory);
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                null).open();
     }
 
     /**
@@ -127,8 +129,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return SegmentIndexFactory.openStored(directory,
-                chunkFilterProviderResolver);
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                requireChunkFilterProviderResolver(
+                        chunkFilterProviderResolver)).open();
     }
 
     /**
@@ -143,7 +146,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
-        return SegmentIndexFactory.tryOpen(directory);
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                null).tryOpen();
     }
 
     /**
@@ -161,8 +165,30 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return SegmentIndexFactory.tryOpen(directory,
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                requireChunkFilterProviderResolver(
+                        chunkFilterProviderResolver)).tryOpen();
+    }
+
+    private static <M, N> SegmentIndexBootstrapOperation<M, N> operation(
+            final Directory directory,
+            final IndexConfiguration<M, N> userProvidedConfiguration,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return new SegmentIndexBootstrapOperation<>(
+                Vldtn.requireNonNull(directory, "directory"),
+                Vldtn.requireNonNull(userProvidedConfiguration,
+                        "userProvidedConfiguration"),
                 chunkFilterProviderResolver);
+    }
+
+    private static ChunkFilterProviderResolver requireChunkFilterProviderResolver(
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return Vldtn.requireNonNull(chunkFilterProviderResolver,
+                "chunkFilterProviderResolver");
+    }
+
+    private static <M, N> IndexConfiguration<M, N> emptyConfiguration() {
+        return IndexConfiguration.<M, N>builder().build();
     }
 
     /**
@@ -273,7 +299,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      *
      * @return runtime monitoring view
      */
-    IndexRuntimeMonitoring runtimeMonitoring();
+    SegmentIndexRuntimeMonitoring runtimeMonitoring();
 
     /**
      * Returns runtime tuning API.

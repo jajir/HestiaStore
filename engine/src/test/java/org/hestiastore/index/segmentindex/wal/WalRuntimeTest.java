@@ -41,10 +41,10 @@ import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfigurationBuilder;
-import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.api.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.api.WalDurabilityMode;
 import org.junit.jupiter.api.Test;
 
 class WalRuntimeTest {
@@ -419,7 +419,7 @@ class WalRuntimeTest {
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final byte[] payload = "version=1\n"
                 .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        final int checksum = WalRuntime.computeCrc32(payload, 0, payload.length);
+        final int checksum = WalRecordCodec.computeCrc32(payload, 0, payload.length);
         final byte[] formatMeta = ("version=1\nchecksum=" + checksum + "\n")
                 .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
         storage.overwrite("format.meta.tmp", formatMeta, 0, formatMeta.length);
@@ -470,7 +470,7 @@ class WalRuntimeTest {
         final Directory walDirectory = root.openSubDirectory("wal");
         final byte[] payload = "version=1\n"
                 .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        final int checksum = WalRuntime.computeCrc32(payload, 0, payload.length);
+        final int checksum = WalRecordCodec.computeCrc32(payload, 0, payload.length);
         writeWalMetadata(root, "format.meta.tmp",
                 "version=1\nchecksum=" + checksum + "\n");
         assertFalse(walDirectory.isFileExists("format.meta"));
@@ -489,7 +489,7 @@ class WalRuntimeTest {
         final Directory walDirectory = root.openSubDirectory("wal");
         final byte[] payload = "version=1\n"
                 .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        final int checksum = WalRuntime.computeCrc32(payload, 0, payload.length);
+        final int checksum = WalRecordCodec.computeCrc32(payload, 0, payload.length);
         writeWalMetadata(root, "format.meta", "version=1\nchecksum=" + checksum
                 + "\n");
         writeWalMetadata(root, "format.meta.tmp", "version=999\nchecksum=1\n");
@@ -1504,7 +1504,7 @@ class WalRuntimeTest {
         final MemDirectory walDirectory = (MemDirectory) root
                 .openSubDirectory("wal");
         rewriteFirstRecordBody(walDirectory, segmentName, body -> {
-            WalRuntime.putLong(body, 4, newLsn);
+            WalRecordCodec.putLong(body, 4, newLsn);
         });
     }
 
@@ -1517,7 +1517,7 @@ class WalRuntimeTest {
         final byte[] body = Arrays.copyOfRange(segmentBytes, 4,
                 4 + bodyLength);
         bodyMutator.accept(body);
-        final int updatedCrc = WalRuntime.computeCrc32(body, 4,
+        final int updatedCrc = WalRecordCodec.computeCrc32(body, 4,
                 body.length - 4);
         WalRecordCodec.putInt(body, 0, updatedCrc);
         System.arraycopy(body, 0, segmentBytes, 4, body.length);
@@ -1539,7 +1539,7 @@ class WalRuntimeTest {
             if (bodyLength <= 0 || offset + 4L + bodyLength > bytes.length) {
                 break;
             }
-            final long lsn = WalRuntime.readLong(bytes, (int) offset + 8);
+            final long lsn = WalRecordCodec.readLong(bytes, (int) offset + 8);
             if (lsn > maxLsn) {
                 maxLsn = lsn;
             }
@@ -1597,7 +1597,7 @@ class WalRuntimeTest {
         }
         final byte[] payload = ("lsn=" + lsn + "\n")
                 .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        final int expectedChecksum = WalRuntime.computeCrc32(payload, 0,
+        final int expectedChecksum = WalRecordCodec.computeCrc32(payload, 0,
                 payload.length);
         if (checksum.intValue() != expectedChecksum) {
             throw new IllegalStateException("Invalid checkpoint checksum.");

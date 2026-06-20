@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.WalDurabilityMode;
 import org.junit.jupiter.api.Test;
 
 class WalSyncPolicyTest {
@@ -26,8 +26,7 @@ class WalSyncPolicyTest {
         final Object monitor = new Object();
         final AtomicBoolean closed = new AtomicBoolean(false);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(effective(wal),
-                storage, metrics, monitor, segmentCatalog::segments,
-                closed::get);
+                storage, metrics, monitor, segmentCatalog, closed);
 
         synchronized (monitor) {
             final WalSegmentDescriptor segment = segmentCatalog

@@ -2,8 +2,8 @@ package org.hestiastore.index.segmentindex;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;

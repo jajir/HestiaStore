@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.hestiastore.index.directory.FsDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;

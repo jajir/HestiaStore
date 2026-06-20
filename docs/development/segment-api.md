@@ -7,9 +7,9 @@ and how segment-level rules interact with index-level route splitting.
 
 The public `Segment` interface exposes `flush()` and `compact()`. Split is
 owned by the segment-index layer through
-`SplitPolicyCoordinator`, `SplitExecutionCoordinator`, and
-`RouteSplitCoordinator`. Route drain and parent segment acquisition are owned
-by `SegmentLeaseService`.
+`SplitPolicyScheduler`, `SplitTaskCoordinator`, and
+`RouteSplitPlanner`. Route drain and parent segment acquisition are owned
+by `MappedSegmentLeaseService`.
 
 For the current state machine and iterator rules, use
 [Segment Concurrency](../architecture/segment/segment-concurrency.md).
@@ -62,14 +62,14 @@ Practical consequences:
 
 Current index-level split behavior:
 
-- `SplitPolicyCoordinator` decides when a routed segment should be split
-- `SplitExecutionCoordinator` acquires a `SegmentSplitLease` for the parent
+- `SplitPolicyScheduler` decides when a routed segment should be split
+- `SplitTaskCoordinator` acquires a `RouteSplitLease` for the parent
   route before materialization
-- `RouteSplitCoordinator` computes the split boundary from a parent segment
+- `RouteSplitPlanner` computes the split boundary from a parent segment
   snapshot
 - child stable segments are materialized before route-map publish
-- `SegmentSplitLease` drains the parent route before child materialization,
-  and publish updates `KeyToSegmentMap`
+- `RouteSplitLease` drains the parent route before child materialization,
+  and publish updates `SegmentRouteMap`
 - writes to the affected route may see transient internal `BUSY` and are
   retried with segment-access retry settings
 

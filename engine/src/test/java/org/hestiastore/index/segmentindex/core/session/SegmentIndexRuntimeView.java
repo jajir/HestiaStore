@@ -2,10 +2,12 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.operations.IndexOperationCoordinator;
-import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService;
+import org.hestiastore.index.segmentindex.core.execution.PointOperationCoordinator;
+import org.hestiastore.index.segmentindex.core.execution.SegmentIteratorService;
+import org.hestiastore.index.segmentindex.core.split.SplitRuntime;
+import org.hestiastore.index.segmentindex.core.storage.OpenedStorageRuntime;
+import org.hestiastore.index.segmentindex.monitoring.SegmentIndexRuntimeMonitoring;
 
 /**
  * Test-only view of runtime collaborators extracted from an opened session
@@ -16,33 +18,38 @@ import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitori
  */
 final class SegmentIndexRuntimeView<K, V> {
 
-    private final CoreStorageRuntime<K, V> coreStorageRuntime;
-    private final SegmentTopologyRuntimeAccess<K, V> topologyRuntime;
-    private final IndexOperationCoordinator<K, V> operationAccess;
-    private final MaintenanceService<K, V> maintenance;
-    private final IndexRuntimeMonitoring runtimeMonitoring;
+    private final OpenedStorageRuntime<K, V> coreStorageRuntime;
+    private final SplitRuntime<K, V> splitService;
+    private final SegmentIteratorService<K, V> streamingService;
+    private final PointOperationCoordinator<K, V> operationAccess;
+    private final MappedSegmentMaintenanceService<K, V> maintenance;
+    private final SegmentIndexRuntimeMonitoring runtimeMonitoring;
     private final RuntimeTuning runtimeTuning;
 
     /**
      * Creates a test runtime view.
      *
      * @param coreStorageRuntime core storage runtime
-     * @param topologyRuntime topology runtime access
+     * @param splitService split service
+     * @param streamingService streaming service
      * @param operationAccess operation access
      * @param maintenance maintenance service
      * @param runtimeMonitoring runtime monitoring view
      * @param runtimeTuning runtime tuning view
      */
-    SegmentIndexRuntimeView(final CoreStorageRuntime<K, V> coreStorageRuntime,
-            final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
-            final IndexOperationCoordinator<K, V> operationAccess,
-            final MaintenanceService<K, V> maintenance,
-            final IndexRuntimeMonitoring runtimeMonitoring,
+    SegmentIndexRuntimeView(final OpenedStorageRuntime<K, V> coreStorageRuntime,
+            final SplitRuntime<K, V> splitService,
+            final SegmentIteratorService<K, V> streamingService,
+            final PointOperationCoordinator<K, V> operationAccess,
+            final MappedSegmentMaintenanceService<K, V> maintenance,
+            final SegmentIndexRuntimeMonitoring runtimeMonitoring,
             final RuntimeTuning runtimeTuning) {
         this.coreStorageRuntime = Vldtn.requireNonNull(coreStorageRuntime,
                 "coreStorageRuntime");
-        this.topologyRuntime = Vldtn.requireNonNull(topologyRuntime,
-                "topologyRuntime");
+        this.splitService = Vldtn.requireNonNull(splitService,
+                "splitService");
+        this.streamingService = Vldtn.requireNonNull(streamingService,
+                "streamingService");
         this.operationAccess = Vldtn.requireNonNull(operationAccess,
                 "operationAccess");
         this.maintenance = Vldtn.requireNonNull(maintenance, "maintenance");
@@ -52,23 +59,27 @@ final class SegmentIndexRuntimeView<K, V> {
                 "runtimeTuning");
     }
 
-    CoreStorageRuntime<K, V> coreStorageRuntime() {
+    OpenedStorageRuntime<K, V> coreStorageRuntime() {
         return coreStorageRuntime;
     }
 
-    SegmentTopologyRuntimeAccess<K, V> topologyRuntime() {
-        return topologyRuntime;
+    SplitRuntime<K, V> splitService() {
+        return splitService;
     }
 
-    IndexOperationCoordinator<K, V> operationAccess() {
+    SegmentIteratorService<K, V> streamingService() {
+        return streamingService;
+    }
+
+    PointOperationCoordinator<K, V> operationAccess() {
         return operationAccess;
     }
 
-    MaintenanceService<K, V> maintenance() {
+    MappedSegmentMaintenanceService<K, V> maintenance() {
         return maintenance;
     }
 
-    IndexRuntimeMonitoring runtimeMonitoring() {
+    SegmentIndexRuntimeMonitoring runtimeMonitoring() {
         return runtimeMonitoring;
     }
 

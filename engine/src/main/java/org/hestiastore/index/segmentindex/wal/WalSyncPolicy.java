@@ -2,14 +2,12 @@ package org.hestiastore.index.segmentindex.wal;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +16,12 @@ final class WalSyncPolicy {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(WalSyncPolicy.class);
 
-    private final EffectiveIndexWalConfiguration wal;
+    private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalRuntimeMetrics metrics;
     private final Object monitor;
-    private final Supplier<List<WalSegmentDescriptor>> segmentsSupplier;
-    private final BooleanSupplier closedSupplier;
+    private final WalSegmentCatalog segmentCatalog;
+    private final AtomicBoolean closed;
     private final AtomicLong durableLsn = new AtomicLong(0L);
     private final Set<String> pendingSyncSegmentNames = new LinkedHashSet<>();
 
@@ -31,17 +29,17 @@ final class WalSyncPolicy {
     private long pendingSyncBytes = 0L;
     private RuntimeException syncFailure;
 
-    WalSyncPolicy(final EffectiveIndexWalConfiguration wal,
+    WalSyncPolicy(final IndexWalConfiguration wal,
             final WalStorage storage, final WalRuntimeMetrics metrics,
             final Object monitor,
-            final Supplier<List<WalSegmentDescriptor>> segmentsSupplier,
-            final BooleanSupplier closedSupplier) {
+            final WalSegmentCatalog segmentCatalog,
+            final AtomicBoolean closed) {
         this.wal = wal;
         this.storage = storage;
         this.metrics = metrics;
         this.monitor = monitor;
-        this.segmentsSupplier = segmentsSupplier;
-        this.closedSupplier = closedSupplier;
+        this.segmentCatalog = segmentCatalog;
+        this.closed = closed;
     }
 
     void resetAfterRecovery(final long maxLsn) {
@@ -72,7 +70,7 @@ final class WalSyncPolicy {
 
     void syncGroupPendingSafely() {
         synchronized (monitor) {
-            if (closedSupplier.getAsBoolean()) {
+            if (closed.get()) {
                 return;
             }
             try {
@@ -100,7 +98,7 @@ final class WalSyncPolicy {
         final long startedNanos = System.nanoTime();
         try {
             final Set<String> remaining = new HashSet<>(pendingSyncSegmentNames);
-            for (final WalSegmentDescriptor segment : segmentsSupplier.get()) {
+            for (final WalSegmentDescriptor segment : segmentCatalog.segments()) {
                 if (remaining.remove(segment.name())) {
                     storage.sync(segment.name());
                 }
@@ -155,7 +153,7 @@ final class WalSyncPolicy {
     private void waitUntilDurableLocked(final long lsn) {
         while (durableLsn.get() < lsn) {
             checkSyncFailure();
-            if (closedSupplier.getAsBoolean()) {
+            if (closed.get()) {
                 throw new IndexException(
                         "WAL runtime closed while waiting for durability.");
             }
@@ -179,7 +177,8 @@ final class WalSyncPolicy {
         LOGGER.error(
                 "event=wal_sync_failure durableLsn={} pendingHighLsn={} pendingSyncBytes={} segmentCount={} syncFailureCount={}",
                 durableLsn.get(), pendingSyncHighLsn, pendingSyncBytes,
-                segmentsSupplier.get().size(), metrics.syncFailureCount(), ex);
+                segmentCatalog.segments().size(), metrics.syncFailureCount(),
+                ex);
         synchronized (monitor) {
             monitor.notifyAll();
         }

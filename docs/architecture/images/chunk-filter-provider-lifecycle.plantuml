@@ -7,7 +7,7 @@ left to right direction
 actor Application
 rectangle "IndexConfigurationBuilder" as Builder
 rectangle "ChunkFilterRegistration\nspec + supplier" as Registration
-rectangle "IndexConfigurationStorage" as Storage
+rectangle "IndexConfigurationStore" as Storage
 file "manifest.txt\nencodingChunkFilters /\ndecodingChunkFilters" as Manifest
 rectangle "ChunkFilterProviderResolver" as Resolver
 rectangle "ChunkFilterProvider" as Provider

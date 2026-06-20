@@ -29,23 +29,23 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexBloomFilterMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexChunkStoreCacheMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexLatencyMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexMaintenanceMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexOperationMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexRegistryCacheMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSplitMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWalMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWritePathMetrics;
-import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.monitoring.SegmentIndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexBloomFilterMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexChunkStoreCacheMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexLatencyMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexMaintenanceMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexOperationMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRegistryCacheMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSegmentMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSplitMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexWalMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexWritePathMetrics;
+import org.hestiastore.index.segmentindex.SegmentIndexMaintenance;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
 import org.hestiastore.monitoring.json.api.ActionType;
@@ -444,7 +444,7 @@ class ManagementAgentServerTest {
         for (int i = 0; i < 6; i++) {
             extra.put(i, "value-" + i);
         }
-        final IndexRuntimeSnapshot snapshot = extra.runtimeMonitoring().snapshot();
+        final SegmentIndexRuntimeSnapshot snapshot = extra.runtimeMonitoring().snapshot();
 
         final HttpResponse<String> reportResp = send("GET",
                 ManagementApiPaths.REPORT, null);
@@ -488,22 +488,21 @@ class ManagementAgentServerTest {
         final RuntimeTuningResult patchResult = extra.runtimeTuning()
                 .apply(RuntimeTuningPatch.builder()
                         .expectedRevision(revision)
-                        .writePath(writePath -> writePath
-                                .segmentSplitKeyThreshold(16))
+                        .segmentSplitKeyThreshold(16)
                         .build());
         assertTrue(patchResult.applied());
 
         awaitCondition(() -> {
-            final IndexRuntimeSnapshot snapshot = extra.runtimeMonitoring().snapshot();
+            final SegmentIndexRuntimeSnapshot snapshot = extra.runtimeMonitoring().snapshot();
             return snapshot.segments().count() > 1
                     && snapshot.split().inFlightCount() == 0;
         }, 10_000L);
 
-        final Map.Entry<IndexRuntimeSnapshot, JsonNode> splitMetricsMatch =
+        final Map.Entry<SegmentIndexRuntimeSnapshot, JsonNode> splitMetricsMatch =
                 awaitIndexNodeWithMatchingSplitMetrics(extra,
                         extra.runtimeMonitoring().snapshot().indexName(),
                         10_000L);
-        final IndexRuntimeSnapshot snapshot = splitMetricsMatch.getKey();
+        final SegmentIndexRuntimeSnapshot snapshot = splitMetricsMatch.getKey();
         final JsonNode indexNode = splitMetricsMatch.getValue();
 
         assertEquals(snapshot.segments().count(),
@@ -566,8 +565,8 @@ class ManagementAgentServerTest {
 
     @SuppressWarnings("unchecked")
     private static SegmentIndex<Integer, String> monitoredIndexWithSnapshot(
-            final IndexRuntimeSnapshot snapshot) {
-        final IndexRuntimeMonitoring monitoring = () -> snapshot;
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        final SegmentIndexRuntimeMonitoring monitoring = () -> snapshot;
         final InvocationHandler handler = (proxy, method, args) -> {
             return switch (method.getName()) {
                 case "runtimeMonitoring" -> monitoring;
@@ -586,11 +585,11 @@ class ManagementAgentServerTest {
                 new Class<?>[] { SegmentIndex.class }, handler);
     }
 
-    private static IndexRuntimeSnapshot runtimeSnapshotWithWal(
+    private static SegmentIndexRuntimeSnapshot runtimeSnapshotWithWal(
             final String indexName, final SegmentIndexWalMetrics wal) {
         final SegmentIndexExecutorMetrics executor =
                 new SegmentIndexExecutorMetrics(0, 0, 0, 0L, 0L, 0L);
-        return new IndexRuntimeSnapshot(indexName, SegmentIndexState.READY,
+        return new SegmentIndexRuntimeSnapshot(indexName, SegmentIndexState.READY,
                 Instant.EPOCH,
                 new SegmentIndexOperationMetrics(0L, 0L, 0L),
                 new SegmentIndexRegistryCacheMetrics(0L, 0L, 0L, 0L, 0, 0),
@@ -625,30 +624,30 @@ class ManagementAgentServerTest {
     }
 
     private static boolean sameSplitMetrics(
-            final IndexRuntimeSnapshot left,
-            final IndexRuntimeSnapshot right) {
+            final SegmentIndexRuntimeSnapshot left,
+            final SegmentIndexRuntimeSnapshot right) {
         return left != null && right != null
                 && left.segments().count() == right.segments().count()
                 && left.split().scheduleCount() == right.split().scheduleCount()
                 && left.split().inFlightCount() == right.split().inFlightCount();
     }
 
-    private Map.Entry<IndexRuntimeSnapshot, JsonNode> awaitIndexNodeWithMatchingSplitMetrics(
+    private Map.Entry<SegmentIndexRuntimeSnapshot, JsonNode> awaitIndexNodeWithMatchingSplitMetrics(
             final SegmentIndex<Integer, String> index,
             final String indexName, final long timeoutMillis)
             throws Exception {
         final long deadline = System.nanoTime()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        IndexRuntimeSnapshot lastSnapshot = null;
+        SegmentIndexRuntimeSnapshot lastSnapshot = null;
         JsonNode lastIndexNode = null;
         while (System.nanoTime() < deadline) {
-            final IndexRuntimeSnapshot before = index.runtimeMonitoring().snapshot();
+            final SegmentIndexRuntimeSnapshot before = index.runtimeMonitoring().snapshot();
             final HttpResponse<String> reportResp = send("GET",
                     ManagementApiPaths.REPORT, null);
             assertEquals(200, reportResp.statusCode());
             final JsonNode reportJson = objectMapper.readTree(reportResp.body());
             final JsonNode indexNode = findIndexNode(reportJson, indexName);
-            final IndexRuntimeSnapshot after = index.runtimeMonitoring().snapshot();
+            final SegmentIndexRuntimeSnapshot after = index.runtimeMonitoring().snapshot();
             if (sameSplitMetrics(before, after)
                     && splitMetricsMatch(indexNode, after)) {
                 return Map.entry(after, indexNode);
@@ -671,7 +670,7 @@ class ManagementAgentServerTest {
     }
 
     private static boolean splitMetricsMatch(final JsonNode indexNode,
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return snapshot.segments().count() == indexNode.path("segments")
                 .path("count").asInt()
                 && snapshot.split().scheduleCount() == indexNode

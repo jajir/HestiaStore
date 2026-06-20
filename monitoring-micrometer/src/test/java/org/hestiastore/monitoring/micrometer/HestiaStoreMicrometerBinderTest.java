@@ -9,19 +9,19 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexBloomFilterMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexChunkStoreCacheMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexLatencyMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexMaintenanceMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexOperationMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexRegistryCacheMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSplitMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWalMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWritePathMetrics;
+import org.hestiastore.index.segmentindex.monitoring.SegmentIndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexBloomFilterMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexChunkStoreCacheMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexLatencyMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexMaintenanceMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexOperationMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRegistryCacheMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSegmentMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSplitMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexWalMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexWritePathMetrics;
 import org.junit.jupiter.api.Test;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -32,9 +32,9 @@ class HestiaStoreMicrometerBinderTest {
     @Test
     void bindTo_exposesDynamicCountersAndStateGauge() {
         final SegmentIndex<Integer, String> index = mock(SegmentIndex.class);
-        final IndexRuntimeMonitoring runtimeMonitoring = mock(
-                IndexRuntimeMonitoring.class);
-        final AtomicReference<IndexRuntimeSnapshot> snapshotRef = new AtomicReference<>(
+        final SegmentIndexRuntimeMonitoring runtimeMonitoring = mock(
+                SegmentIndexRuntimeMonitoring.class);
+        final AtomicReference<SegmentIndexRuntimeSnapshot> snapshotRef = new AtomicReference<>(
                 snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 11, 29,
                         37L, 2, 50));
         when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
@@ -53,7 +53,7 @@ class HestiaStoreMicrometerBinderTest {
         assertMetrics(registry, 5D, 8D, 13D, 9D, 13D, 15D, 41D, 0D, 0D, 70);
     }
 
-    private IndexRuntimeSnapshot snapshot(final long getCount,
+    private SegmentIndexRuntimeSnapshot snapshot(final long getCount,
             final long putCount, final long deleteCount,
             final SegmentIndexState state, final int segmentWriteCacheKeyLimit,
             final int segmentWriteCacheKeyLimitDuringMaintenance,
@@ -72,7 +72,7 @@ class HestiaStoreMicrometerBinderTest {
                 new SegmentIndexExecutorMetrics(executorBase + 12,
                         executorBase + 10, executorBase + 11,
                         executorBase + 13L, 0L, executorBase + 14L);
-        return new IndexRuntimeSnapshot(
+        return new SegmentIndexRuntimeSnapshot(
                 "orders",
                 state,
                 Instant.EPOCH,

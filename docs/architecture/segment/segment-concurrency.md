@@ -108,7 +108,7 @@ Segment can be accessd from multiple threads in paraell. Segment
 | `flush` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full write cache. |
 | `compact` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full delta cache. |
 | `openIterator(INTERRUPT_FAST)` | `READY` | No | Throws on version change | Yes (snapshot) | Yes | Default mode. |
-| `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | Yes (snapshot) | Yes | Snapshot captured at open time. |
+| `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | Yes (snapshot) | Yes | RouteMapSnapshot captured at open time. |
 | `openIterator(EXCLUSIVE_ACCESS)` | `READY` | Yes (on lock acquisition) | Invalidates existing iterators; blocks others | Yes | Yes | Maintenance only; must be short. |
 | `close` | `READY` | No | Invalidates existing iterators; blocks others | N/A | N/A | Sets `FREEZE`, optionally flushes the write cache, completes close on the caller thread, then transitions to `CLOSED`. |
 
@@ -223,11 +223,11 @@ Segment can be accessd from multiple threads in paraell. Segment
   `FREEZE` → `MAINTENANCE_RUNNING` → `READY`).
 - **SegmentCompacter**: performs full rewrite compaction using
   `SegmentCore`.
-- **SplitPolicyCoordinator** (segmentindex): decides when to call
+- **SplitPolicyScheduler** (segmentindex): decides when to call
   `flush()`/`compact()` after writes.
 - **SegmentAsyncExecutor** + executor (segmentindex): maintenance executor
   provided to `SegmentImpl` via `SegmentRegistry`.
-- **SplitPolicyCoordinator / RouteSplitCoordinator**
+- **SplitPolicyScheduler / RouteSplitPlanner**
   (segmentindex): schedule and perform route-first stable segment splits.
 
 ### Responsibilities
@@ -245,7 +245,7 @@ Segment can be accessd from multiple threads in paraell. Segment
 - State transitions are enforced by `SegmentStateMachine` and executed in
   `SegmentMaintenanceService.startMaintenance(...)` and
   `SegmentMaintenanceService.runMaintenance(...)`.
-- Maintenance scheduling lives in `SplitPolicyCoordinator` and uses the
+- Maintenance scheduling lives in `SplitPolicyScheduler` and uses the
   executor from `SegmentRegistry` (`SegmentAsyncExecutor`).
 
 ## Future: MVCC

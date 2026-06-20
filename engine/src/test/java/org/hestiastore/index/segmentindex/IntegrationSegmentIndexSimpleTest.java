@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,7 +31,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.hestiastore.index.OperationStatus;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
+import org.hestiastore.index.segmentindex.routemap.PersistentSegmentRouteMap;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +72,7 @@ class IntegrationSegmentIndexSimpleTest {
         index1.close();
 
         final Directory asyncDirectory = directory;
-        final KeyToSegmentMapImpl<Integer> keyToSegmentMap = new KeyToSegmentMapImpl<>(
+        final PersistentSegmentRouteMap<Integer> keyToSegmentMap = new PersistentSegmentRouteMap<>(
                 asyncDirectory, tdi);
         final List<SegmentId> segmentIds = keyToSegmentMap.getSegmentIds();
         assertEquals(expectedFileCount(segmentIds.size()),

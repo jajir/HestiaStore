@@ -5,8 +5,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
-import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStore;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 
 final class SegmentIndexSessionTestSupport {
@@ -24,8 +23,8 @@ final class SegmentIndexSessionTestSupport {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
         try {
-            new IndexConfigurationStorage<K, V>(directory).save(configuration);
-            return SegmentIndexFactory.openStored(directory);
+            new IndexConfigurationStore<K, V>(directory).save(configuration);
+            return SegmentIndex.open(directory);
         } finally {
             if (!executorRegistry.wasClosed()) {
                 executorRegistry.close();

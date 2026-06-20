@@ -97,21 +97,22 @@ Segment-specific internals referenced here are centralized in
 ## Observability and Validation
 
 - Bloom stats: `BloomFilter.getStatistics()` reports avoided disk accesses and false‑positive rate. Code: `bloomfilter/BloomFilterStats`.
-- Operation counters: `segmentindex/Stats` exposes get/put/delete counts (logged on close in `SegmentIndexImpl#doClose`).
+- Operation counters: `segmentindex/Stats` exposes get/put/delete counts (logged on close in `SegmentIndexSession#doClose`).
 - Consistency: after unexpected shutdown, run `SegmentIndex.maintenance().checkAndRepairConsistency()`; optionally `maintenance().compact()` to reclaim locality.
 
 ## Code Pointers
 
 - Routed direct writes and stable maintenance:
-  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`,
-  `src/main/java/org/hestiastore/index/segmentindex/core/maintenance/MaintenanceService.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/execution/PointOperationCoordinator.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/routing/MappedSegmentLeaseService.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/execution/MappedSegmentMaintenanceService.java`
 - Read path bounds: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`,
   `src/main/java/org/hestiastore/index/segment/SegmentIndexSearcher.java`
 - Bloom filter: `src/main/java/org/hestiastore/index/bloomfilter/*`
 - Chunked I/O and filters: `src/main/java/org/hestiastore/index/chunkstore/*`
 - Segment sizing/splitting:
-  `src/main/java/org/hestiastore/index/segmentindex/core/split/RouteSplitCoordinator.java`,
-  `src/main/java/org/hestiastore/index/segmentindex/core/split/SplitPolicyCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/split/RouteSplitPlanner.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/split/SplitPolicyScheduler.java`
 
 ## Related Glossary
 

@@ -1,4 +1,4 @@
-# Metrics Snapshot
+# Metrics RouteMapSnapshot
 
 `SegmentIndex.runtimeMonitoring().snapshot()` exposes the stable,
 read-only runtime monitoring contract for index-level telemetry.
@@ -7,17 +7,17 @@ read-only runtime monitoring contract for index-level telemetry.
 
 - Runtime packages own their raw monitoring snapshots and name them `*Stats`
   or `*Monitoring` according to the local package language.
-  Examples include `IndexOperationStats`, `MaintenanceStats`, `SplitStats`,
+  Examples include `OperationStatsSnapshot`, `MaintenanceStatsSnapshot`, `SplitStats`,
   `WalMonitoring`, `ChunkStoreCacheStats`, `SegmentRegistryCacheStats`, and
   `SegmentStats`.
 - Mutable statistics writers live next to the domain runtime they observe and
   are named `*StatsRecorder` or `*Telemetry`.
-- Snapshot-returning runtime methods use `statsSnapshot()`.
-- `org.hestiastore.index.segmentindex.runtimemonitoring` does not record domain
+- RouteMapSnapshot-returning runtime methods use `statsSnapshot()`.
+- `org.hestiastore.index.segmentindex.monitoring` does not record domain
   events directly. It obtains read-only package-owned snapshots from operation,
   maintenance, split, WAL, executor, cache, registry, and segment runtimes, then
   projects them into the public grouped model under
-  `org.hestiastore.index.segmentindex.runtimemonitoring.model`.
+  `org.hestiastore.index.segmentindex.monitoring.model`.
 
 ## Public Groups
 
@@ -35,7 +35,7 @@ read-only runtime monitoring contract for index-level telemetry.
 
 ## Semantics
 
-- Snapshot is immutable.
+- RouteMapSnapshot is immutable.
 - Counts are monotonic for one index instance lifetime.
 - Counters are process-local and reset when a new index object is created.
 - Field values represent observed operation calls, not necessarily durable

@@ -7,23 +7,28 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
-import org.hestiastore.index.segmentindex.configuration.user.IndexBloomFilterConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexChunkStoreCacheConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.configuration.user.IndexFilterConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexIdentityConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexMaintenanceConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexSegmentConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWritePathConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexBloomFilterConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexChunkStoreCacheConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
+import org.hestiastore.index.segmentindex.configuration.api.IndexFilterConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexIdentityConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexMaintenanceConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexSegmentConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWritePathConfiguration;
 import org.hestiastore.index.segmentindex.configuration.DataTypeDescriptorRegistry;
-import org.hestiastore.index.segmentindex.configuration.defaults.IndexConfigurationRegistry;
+import org.hestiastore.index.segmentindex.configuration.defaults.IndexConfigurationDefaultsRegistry;
 
 /**
  * Resolves nullable user configuration requests into complete effective
  * configurations.
  */
 public final class EffectiveIndexConfigurationResolver {
+
+    private static final IndexConfigurationDefaults DEFAULT_CONTRACT =
+            new IndexConfigurationDefaults() {
+            };
 
     private EffectiveIndexConfigurationResolver() {
     }
@@ -45,7 +50,7 @@ public final class EffectiveIndexConfigurationResolver {
                 .requireNonNull(chunkFilterProviderResolver,
                         "chunkFilterProviderResolver");
         validateRequiredDatatypesAndIndexName(validatedRequest);
-        final IndexConfigurationContract defaults = defaultsFor(
+        final IndexConfigurationDefaults defaults = defaultsFor(
                 validatedRequest);
         return buildEffective(validatedRequest, defaults, validatedResolver);
     }
@@ -87,7 +92,7 @@ public final class EffectiveIndexConfigurationResolver {
 
     private static <K, V> EffectiveIndexConfiguration<K, V> buildEffective(
             final IndexConfiguration<K, V> request,
-            final IndexConfigurationContract defaults,
+            final IndexConfigurationDefaults defaults,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         final IndexSegmentConfiguration defaultSegment = defaults.segment();
         final IndexWritePathConfiguration defaultWritePath =
@@ -138,8 +143,7 @@ public final class EffectiveIndexConfigurationResolver {
                 new EffectiveIndexLoggingConfiguration(booleanOr(
                         request.logging().contextEnabled(),
                         defaults.logging().contextEnabled())),
-                EffectiveIndexWalConfiguration.fromIndexWalConfiguration(
-                        request.wal()),
+                IndexWalConfiguration.orEmpty(request.wal()),
                 effectiveFilters(request, defaults, chunkFilterProviderResolver),
                 new EffectiveIndexChunkStoreCacheConfiguration(
                         chunkStoreCachePageLimit));
@@ -163,7 +167,7 @@ public final class EffectiveIndexConfigurationResolver {
 
     private static <K, V> EffectiveIndexBloomFilterConfiguration effectiveBloomFilter(
             final IndexConfiguration<K, V> request,
-            final IndexConfigurationContract defaults) {
+            final IndexConfigurationDefaults defaults) {
         final IndexBloomFilterConfiguration bloomFilter = request.bloomFilter();
         final IndexBloomFilterConfiguration defaultBloomFilter =
                 defaults.bloomFilter();
@@ -178,7 +182,7 @@ public final class EffectiveIndexConfigurationResolver {
 
     private static <K, V> EffectiveIndexMaintenanceConfiguration effectiveMaintenance(
             final IndexConfiguration<K, V> request,
-            final IndexConfigurationContract defaults) {
+            final IndexConfigurationDefaults defaults) {
         final IndexMaintenanceConfiguration maintenance = request.maintenance();
         final IndexMaintenanceConfiguration defaultMaintenance =
                 defaults.maintenance();
@@ -199,7 +203,7 @@ public final class EffectiveIndexConfigurationResolver {
 
     private static <K, V> EffectiveIndexFilterConfiguration effectiveFilters(
             final IndexConfiguration<K, V> request,
-            final IndexConfigurationContract defaults,
+            final IndexConfigurationDefaults defaults,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         final IndexFilterConfiguration requestFilters = request.filters();
         final IndexFilterConfiguration defaultFilters = defaults.filters();
@@ -256,10 +260,7 @@ public final class EffectiveIndexConfigurationResolver {
 
     private static <K, V> EffectiveIndexBloomFilterConfiguration mergeBloomFilter(
             final EffectiveIndexConfiguration<K, V> stored) {
-        return new EffectiveIndexBloomFilterConfiguration(
-                stored.bloomFilter().hashFunctions(),
-                stored.bloomFilter().indexSizeBytes(),
-                stored.bloomFilter().falsePositiveProbability());
+        return stored.bloomFilter();
     }
 
     private static <K, V> EffectiveIndexMaintenanceConfiguration mergeMaintenance(
@@ -322,12 +323,11 @@ public final class EffectiveIndexConfigurationResolver {
         Vldtn.requireNotBlank(request.identity().name(), "indexName");
     }
 
-    private static <K, V> IndexConfigurationContract defaultsFor(
+    private static <K, V> IndexConfigurationDefaults defaultsFor(
             final IndexConfiguration<K, V> request) {
-        final Optional<IndexConfigurationContract> defaults =
-                IndexConfigurationRegistry.get(request.identity().keyClass());
-        return defaults.orElseGet(() -> new IndexConfigurationContract() {
-        });
+        final Optional<IndexConfigurationDefaults> defaults =
+                IndexConfigurationDefaultsRegistry.get(request.identity().keyClass());
+        return defaults.orElse(DEFAULT_CONTRACT);
     }
 
     private static <K, V> void validateThatFixedPropertiesAreNotOverridden(
@@ -381,9 +381,8 @@ public final class EffectiveIndexConfigurationResolver {
                 "DecodingChunkFilters",
                 stored.filters().decodingChunkFilterSpecs(),
                 request.filters().decodingChunkFilterSpecs());
-        throwIfChanged(request.wal() != null
-                && !EffectiveIndexWalConfiguration
-                        .fromIndexWalConfiguration(request.wal())
+        throwIfChanged(request.isWalConfigured()
+                && !IndexWalConfiguration.orEmpty(request.wal())
                         .equals(stored.wal()),
                 "IndexWalConfiguration", stored.wal(), request.wal());
     }

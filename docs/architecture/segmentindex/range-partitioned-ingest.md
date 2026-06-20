@@ -26,7 +26,7 @@ historical ingest runtime.
 ## Current Runtime Model
 
 - User writes target the routed stable segment directly.
-- `KeyToSegmentMap` remains the persisted routing source of truth.
+- `SegmentRouteMap` remains the persisted routing source of truth.
 - WAL remains the crash-recovery mechanism for acknowledged writes that are not
   yet flushed to stable segment files.
 - Read-after-write comes from the segment write cache, not from an index-level
@@ -51,7 +51,7 @@ Split has two phases:
 
 1. background materialization builds child stable segments from the parent
    stable snapshot
-2. a short publish step atomically remaps `KeyToSegmentMap`
+2. a short publish step atomically remaps `SegmentRouteMap`
 
 During split build, writes to the affected route may be retried internally as
 `BUSY`. There is no overlay reassignment step anymore.

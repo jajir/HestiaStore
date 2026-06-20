@@ -7,7 +7,7 @@ This document defines releasable stages for the monitoring/management rollout.
 - Scope: `engine` module, immutable snapshot API, no external exporters.
 - Required gates:
   - Concurrency correctness test: `IntegrationIndexRuntimeSnapshotConcurrencyTest`
-  - Snapshot contract tests pass in `engine`.
+  - RouteMapSnapshot contract tests pass in `engine`.
   - Perf budget: no more than +3% overhead for get/put baseline in internal
     benchmark profile.
 

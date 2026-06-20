@@ -74,9 +74,6 @@ final class WalRecordCodec<K, V> {
         position += 8;
         final WalRuntime.Operation operation = WalRuntime.Operation
                 .fromCode(body[position++]);
-        if (operation == null) {
-            throw new IndexException("Invalid WAL operation code.");
-        }
         final int keyLen = readInt(body, position);
         position += 4;
         final int valueLen = readInt(body, position);

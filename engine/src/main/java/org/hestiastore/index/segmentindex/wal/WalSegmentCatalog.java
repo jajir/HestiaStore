@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +15,7 @@ final class WalSegmentCatalog {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(WalSegmentCatalog.class);
 
-    private final EffectiveIndexWalConfiguration wal;
+    private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalMetadataCatalog metadataCatalog;
     private final List<WalSegmentDescriptor> segments = new ArrayList<>();
@@ -26,7 +26,7 @@ final class WalSegmentCatalog {
     private long checkpointCleanupSuppressedDeletedSegments = 0L;
     private long checkpointCleanupSuppressedDeletedBytes = 0L;
 
-    WalSegmentCatalog(final EffectiveIndexWalConfiguration wal,
+    WalSegmentCatalog(final IndexWalConfiguration wal,
             final WalStorage storage,
             final WalMetadataCatalog metadataCatalog) {
         this.wal = wal;

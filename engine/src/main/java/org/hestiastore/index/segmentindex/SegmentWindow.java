@@ -1,20 +1,18 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.OptionalInt;
-
 /**
  * Immutable value object that represents SQL-style pagination (OFFSET … LIMIT
  * …).
  *
  */
-public class SegmentWindow {
+public final class SegmentWindow {
 
-    static final SegmentWindow UNBOUNDED = new SegmentWindow(
-            OptionalInt.empty(), OptionalInt.empty());
-    private final OptionalInt offset;
-    private final OptionalInt limit;
+    static final SegmentWindow UNBOUNDED = new SegmentWindow(0,
+            Integer.MAX_VALUE);
+    private final int offset;
+    private final int limit;
 
-    private SegmentWindow(final OptionalInt offset, final OptionalInt limit) {
+    private SegmentWindow(final int offset, final int limit) {
         this.offset = offset;
         this.limit = limit;
     }
@@ -26,7 +24,7 @@ public class SegmentWindow {
      * @return limit value or {@link Integer#MAX_VALUE}
      */
     public int getIntLimit() {
-        return limit.orElse(Integer.MAX_VALUE);
+        return limit;
     }
 
     /**
@@ -35,7 +33,7 @@ public class SegmentWindow {
      * @return offset value or 0 when unset
      */
     public int getIntOffset() {
-        return offset.orElse(0);
+        return offset;
     }
 
     /** no OFFSET / no LIMIT (i.e. un-paginated) */
@@ -46,31 +44,31 @@ public class SegmentWindow {
     /** only LIMIT n */
     public static SegmentWindow ofLimit(final int limit) {
         requireNonNegative(limit, "limit");
-        return new SegmentWindow(OptionalInt.empty(), OptionalInt.of(limit));
+        return new SegmentWindow(0, limit);
     }
 
     /** only OFFSET n */
     public static SegmentWindow ofOffset(final int offset) {
         requireNonNegative(offset, "offset");
-        return new SegmentWindow(OptionalInt.of(offset), OptionalInt.empty());
+        return new SegmentWindow(offset, Integer.MAX_VALUE);
     }
 
     /** OFFSET + LIMIT */
     public static SegmentWindow of(final int offset, final int limit) {
         requireNonNegative(offset, "offset");
         requireNonNegative(limit, "limit");
-        return new SegmentWindow(OptionalInt.of(offset), OptionalInt.of(limit));
+        return new SegmentWindow(offset, limit);
     }
 
     private static void requireNonNegative(final int value, final String name) {
         if (value < 0) {
             throw new IllegalArgumentException(
-                    name + " must be ≥ 0 (was " + value + ")");
+                    name + " must be >= 0 (was " + value + ")");
         }
     }
 
     /** true when neither OFFSET nor LIMIT is set */
     public boolean isUnbounded() {
-        return offset.isEmpty() && limit.isEmpty();
+        return offset == 0 && limit == Integer.MAX_VALUE;
     }
 }

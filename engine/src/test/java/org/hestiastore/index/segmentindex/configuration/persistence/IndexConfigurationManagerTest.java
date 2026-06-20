@@ -13,8 +13,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +42,7 @@ class IndexConfigurationManagerTest {
         final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
                 storage);
 
-        final IndexConfigurationResolution<Integer, String> resolution =
+        final ResolvedIndexConfiguration<Integer, String> resolution =
                 manager.resolveForCreate(buildStored());
 
         assertTrue(resolution.writeRequired());
@@ -61,7 +61,7 @@ class IndexConfigurationManagerTest {
                 .<Integer, String>builder()
                 .build();
 
-        final IndexConfigurationResolution<Integer, String> resolution =
+        final ResolvedIndexConfiguration<Integer, String> resolution =
                 manager.resolveForOpen(runtime);
 
         assertFalse(resolution.writeRequired());
@@ -80,7 +80,7 @@ class IndexConfigurationManagerTest {
                 .io(io -> io.diskBufferSizeBytes(2048))
                 .build();
 
-        final IndexConfigurationResolution<Integer, String> resolution =
+        final ResolvedIndexConfiguration<Integer, String> resolution =
                 manager.resolveForOpen(runtime);
 
         assertTrue(resolution.writeRequired());
@@ -147,7 +147,7 @@ class IndexConfigurationManagerTest {
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
                 .segment(segment -> segment.chunkKeyLimit(2))
                 .segment(segment -> segment.deltaCacheFileLimit(
-                        IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT))
+                        IndexConfigurationDefaults.DEFAULT_DELTA_CACHE_FILE_LIMIT))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(100))
                 .segment(segment -> segment.cachedSegmentLimit(3))
                 .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))
@@ -163,7 +163,7 @@ class IndexConfigurationManagerTest {
     }
 
     private static final class TestStorage<K, V>
-            extends IndexConfigurationStorage<K, V> {
+            extends IndexConfigurationStore<K, V> {
 
         private EffectiveIndexConfiguration<K, V> stored;
         private EffectiveIndexConfiguration<K, V> saved;

@@ -18,7 +18,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterXorEncrypt;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

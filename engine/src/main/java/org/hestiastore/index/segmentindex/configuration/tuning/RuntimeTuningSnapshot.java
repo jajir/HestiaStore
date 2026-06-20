@@ -41,34 +41,34 @@ public final class RuntimeTuningSnapshot {
     }
 
     static RuntimeTuningSnapshot fromValues(final String indexName,
-            final Map<RuntimeSettingKey, RuntimeTuningValue> values,
+            final Map<RuntimeTuningKey, RuntimeTuningValue> values,
             final long revision,
             final Instant capturedAt) {
-        final Map<RuntimeSettingKey, RuntimeTuningValue> input = Vldtn
+        final Map<RuntimeTuningKey, RuntimeTuningValue> input = Vldtn
                 .requireNonNull(values, "values");
         return new RuntimeTuningSnapshot(indexName, revision, capturedAt,
                 new RuntimeSegmentTuningSnapshot(
                         value(input,
-                                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE)
+                                RuntimeTuningKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE)
                                 .asInt(),
                         value(input,
-                                RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE)
+                                RuntimeTuningKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE)
                                 .asInt()),
                 new RuntimeWritePathTuningSnapshot(
                         value(input,
-                                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT)
+                                RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT)
                                 .asInt(),
                         value(input,
-                                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE)
+                                RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE)
                                 .asInt(),
                         value(input,
-                                RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT)
+                                RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT)
                                 .asInt(),
                         value(input,
-                                RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD)
+                                RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD)
                                 .asInt()),
                 new RuntimeChunkStoreCacheTuningSnapshot(value(input,
-                        RuntimeSettingKey.CHUNK_STORE_CACHE_PAGE_LIMIT)
+                        RuntimeTuningKey.CHUNK_STORE_CACHE_PAGE_LIMIT)
                         .asInt()));
     }
 
@@ -96,7 +96,7 @@ public final class RuntimeTuningSnapshot {
         return chunkStoreCache;
     }
 
-    RuntimeTuningValue value(final RuntimeSettingKey key) {
+    RuntimeTuningValue value(final RuntimeTuningKey key) {
         return switch (key) {
             case MAX_NUMBER_OF_SEGMENTS_IN_CACHE -> RuntimeTuningValue
                     .ofInt(segment.cachedSegmentLimit());
@@ -117,8 +117,8 @@ public final class RuntimeTuningSnapshot {
     }
 
     private static RuntimeTuningValue value(
-            final Map<RuntimeSettingKey, RuntimeTuningValue> values,
-            final RuntimeSettingKey key) {
+            final Map<RuntimeTuningKey, RuntimeTuningValue> values,
+            final RuntimeTuningKey key) {
         return Vldtn.requireNonNull(values.get(key), key.name());
     }
 }

@@ -1,0 +1,113 @@
+package org.hestiastore.index.segmentindex.monitoring;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
+import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
+
+/**
+ * Collects runtime metrics for stable segments that are still mapped by the
+ * index routing table.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+final class SegmentRuntimeMetricsCollector<K, V> {
+
+    private final SegmentRouteMap<K> keyToSegmentMap;
+    private final SegmentRegistry<K, V> segmentRegistry;
+
+    SegmentRuntimeMetricsCollector(final SegmentRouteMap<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry) {
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
+    }
+
+    SegmentRuntimeMetrics collect() {
+        final SegmentRuntimeMetrics metrics =
+                new SegmentRuntimeMetrics();
+        final List<SegmentId> mappedSegmentIds = mappedSegmentIds();
+        metrics.setTotalMappedStableSegmentCount(mappedSegmentIds.size());
+        if (mappedSegmentIds.isEmpty()) {
+            return metrics;
+        }
+        final Set<SegmentId> mappedSegmentIdSet = new HashSet<>(
+                mappedSegmentIds);
+        final int accountedMappedSegmentCount = collectLoadedMappedSegments(
+                mappedSegmentIdSet, metrics);
+        metrics.setUnloadedMappedStableSegmentCount(
+                metrics.getTotalMappedStableSegmentCount()
+                        - accountedMappedSegmentCount);
+        return metrics;
+    }
+
+    private List<SegmentId> mappedSegmentIds() {
+        return keyToSegmentMap.getSegmentIds();
+    }
+
+    private int collectLoadedMappedSegments(final Set<SegmentId> mappedSegmentIdSet,
+            final SegmentRuntimeMetrics metrics) {
+        int accountedMappedSegmentCount = 0;
+        for (final BlockingSegment<K, V> segmentHandle : loadedSegmentsSnapshot()) {
+            if (segmentHandle != null) {
+                final SegmentRuntimeSnapshot segmentRuntime =
+                        runtimeSnapshot(segmentHandle);
+                if (mappedSegmentIdSet.contains(segmentRuntime.getSegmentId())) {
+                    accountedMappedSegmentCount++;
+                    accumulateMappedSegmentMetrics(metrics, segmentRuntime);
+                }
+            }
+        }
+        return accountedMappedSegmentCount;
+    }
+
+    private List<BlockingSegment<K, V>> loadedSegmentsSnapshot() {
+        return segmentRegistry.runtime().loadedSegmentsSnapshot();
+    }
+
+    private SegmentRuntimeSnapshot runtimeSnapshot(
+            final BlockingSegment<K, V> segmentHandle) {
+        return segmentHandle.getRuntime().getRuntimeSnapshot();
+    }
+
+    private void accumulateMappedSegmentMetrics(
+            final SegmentRuntimeMetrics metrics,
+            final SegmentRuntimeSnapshot segmentRuntime) {
+        accumulateStateMetrics(metrics, segmentRuntime.getState());
+        metrics.addSegmentRuntimeSnapshot(segmentRuntime);
+    }
+
+    private void accumulateStateMetrics(
+            final SegmentRuntimeMetrics metrics,
+            final SegmentState state) {
+        if (state == SegmentState.READY) {
+            metrics.incrementReadyStableSegmentCount();
+            return;
+        }
+        if (isMaintenanceState(state)) {
+            metrics.incrementStableSegmentsInMaintenanceStateCount();
+            return;
+        }
+        if (state == SegmentState.ERROR) {
+            metrics.incrementErrorStableSegmentCount();
+            return;
+        }
+        if (state == SegmentState.CLOSED) {
+            metrics.incrementClosedStableSegmentCount();
+        }
+    }
+
+    private boolean isMaintenanceState(final SegmentState state) {
+        return state == SegmentState.MAINTENANCE_RUNNING
+                || state == SegmentState.FREEZE;
+    }
+}

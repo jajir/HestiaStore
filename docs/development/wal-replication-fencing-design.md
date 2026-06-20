@@ -46,7 +46,7 @@ For one index:
 
 ## WAL Header Extension Contract
 
-Use reserved header extension area (already planned via `epochSupport`):
+Use the reserved header extension area for replication metadata:
 
 1. `epoch` (or `term`) - monotonically increasing leadership epoch.
 2. `sourceNodeId` - stable identifier of leader node.
@@ -54,8 +54,9 @@ Use reserved header extension area (already planned via `epochSupport`):
 
 Rules:
 
-1. `epochSupport=false` keeps extension disabled and local behavior unchanged.
-2. When replication is enabled, `epochSupport=true` is mandatory.
+1. Local WAL records may omit replication metadata and keep current behavior.
+2. Replicated mode requires the metadata-present flag plus epoch and source node
+   fields.
 3. Records with missing required replication metadata are rejected in replicated mode.
 
 ## Fencing Contract
@@ -113,10 +114,9 @@ Initial rollout recommendation:
 ## Compatibility and Migration
 
 1. Existing indexes with `wal.enabled=false` remain unaffected.
-2. Existing WAL-enabled local indexes can stay local (`epochSupport=false`).
+2. Existing WAL-enabled local indexes can stay local.
 3. Replication enablement is explicit configuration migration:
    - set replication settings
-   - set `epochSupport=true`
 4. Downgrade path:
    - disable replication mode
    - keep local WAL enabled
@@ -150,8 +150,8 @@ Add structured events:
 
 ### P6.1 Metadata and configuration
 
-1. Finalize config schema for replication and epoch controls.
-2. Add validation rules (`epochSupport=true` required when replication enabled).
+1. Finalize config schema for replication controls.
+2. Add validation rules for required replication metadata when replication is enabled.
 3. Add manifest read/write compatibility tests.
 
 ### P6.2 Fencing core

@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.wal;
 import java.util.List;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,14 +13,14 @@ final class WalRecoveryManager<K, V> {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(WalRecoveryManager.class);
 
-    private final EffectiveIndexWalConfiguration wal;
+    private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalMetadataCatalog metadataCatalog;
     private final WalRecordCodec<K, V> recordCodec;
     private final WalSegmentCatalog segmentCatalog;
     private final WalRuntimeMetrics metrics;
 
-    WalRecoveryManager(final EffectiveIndexWalConfiguration wal,
+    WalRecoveryManager(final IndexWalConfiguration wal,
             final WalStorage storage, final WalMetadataCatalog metadataCatalog,
             final WalRecordCodec<K, V> recordCodec,
             final WalSegmentCatalog segmentCatalog,

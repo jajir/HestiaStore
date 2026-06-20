@@ -2,7 +2,7 @@ package org.hestiastore.monitoring.micrometer;
 
 import java.util.Objects;
 
-import org.hestiastore.index.monitoring.MonitoredIndex;
+import org.hestiastore.index.segmentindex.monitoring.MonitoredIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 
 import io.micrometer.core.instrument.FunctionCounter;

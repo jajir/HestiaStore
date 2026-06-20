@@ -2,9 +2,9 @@ package org.hestiastore.monitoring.prometheus;
 
 import java.util.Objects;
 
-import org.hestiastore.index.monitoring.MonitoredIndex;
+import org.hestiastore.index.segmentindex.monitoring.MonitoredIndex;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 
 /**
@@ -41,7 +41,7 @@ public final class PrometheusSegmentIndexSource implements MonitoredIndex {
 
     /** {@inheritDoc} */
     @Override
-    public IndexRuntimeSnapshot runtimeSnapshot() {
+    public SegmentIndexRuntimeSnapshot runtimeSnapshot() {
         return index.runtimeMonitoring().snapshot();
     }
 

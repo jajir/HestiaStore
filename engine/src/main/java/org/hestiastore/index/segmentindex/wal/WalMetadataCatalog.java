@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
 import org.slf4j.Logger;
@@ -16,13 +17,13 @@ final class WalMetadataCatalog {
 
     static final String WAL_DIRECTORY = "wal";
 
-    private static final String FORMAT_FILE = "format.meta";
-    private static final String CHECKPOINT_FILE = "checkpoint.meta";
-    private static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
-    private static final String FORMAT_FILE_TMP = "format.meta.tmp";
-    private static final String CHECKPOINT_KEY_LSN = "lsn";
-    private static final String CHECKPOINT_KEY_CHECKSUM = "checksum";
-    private static final String SEGMENT_SUFFIX = ".wal";
+    static final String FORMAT_FILE = "format.meta";
+    static final String CHECKPOINT_FILE = "checkpoint.meta";
+    static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
+    static final String FORMAT_FILE_TMP = "format.meta.tmp";
+    static final String CHECKPOINT_KEY_LSN = "lsn";
+    static final String CHECKPOINT_KEY_CHECKSUM = "checksum";
+    static final String SEGMENT_SUFFIX = ".wal";
     private static final int SEGMENT_FILE_DIGITS = 20;
     private static final String SEGMENT_FILE_FORMAT = "%020d" + SEGMENT_SUFFIX;
     private static final int FORMAT_VERSION = 1;
@@ -70,15 +71,18 @@ final class WalMetadataCatalog {
     }
 
     String toSegmentFileName(final long baseLsn) {
+        if (baseLsn < 0L) {
+            throw new IllegalArgumentException(
+                    "WAL segment base LSN must be non-negative.");
+        }
         return String.format(Locale.ROOT, SEGMENT_FILE_FORMAT, baseLsn);
     }
 
     private List<WalSegmentDescriptor> discoverSegmentsStrict() {
         final List<String> segmentNames;
-        try (StreamCloseable names = new StreamCloseable(storage.listFileNames())) {
-            segmentNames = names.stream()
-                    .filter(name -> name.endsWith(SEGMENT_SUFFIX)).sorted()
-                    .toList();
+        try (Stream<String> names = storage.listFileNames()) {
+            segmentNames = names
+                    .filter(name -> name.endsWith(SEGMENT_SUFFIX)).toList();
         }
         final List<WalSegmentDescriptor> discovered = new ArrayList<>(
                 segmentNames.size());
@@ -104,7 +108,11 @@ final class WalMetadataCatalog {
         return discovered;
     }
 
-    private long parseSegmentBaseLsn(final String fileName) {
+    static long parseSegmentBaseLsn(final String fileName) {
+        if (fileName == null || !fileName.endsWith(SEGMENT_SUFFIX)
+                || fileName.length() <= SEGMENT_SUFFIX.length()) {
+            return -1L;
+        }
         final String raw = fileName.substring(0,
                 fileName.length() - SEGMENT_SUFFIX.length());
         if (raw.length() != SEGMENT_FILE_DIGITS) {
@@ -166,7 +174,7 @@ final class WalMetadataCatalog {
         }
     }
 
-    private long parseCheckpointMetadata(final byte[] data) {
+    static long parseCheckpointMetadata(final byte[] data) {
         final String text = new String(data, StandardCharsets.US_ASCII).trim();
         if (text.isEmpty()) {
             return 0L;
@@ -177,7 +185,7 @@ final class WalMetadataCatalog {
         return parseChecksummedCheckpointMetadata(text);
     }
 
-    private long parseLegacyCheckpointMetadata(final String text) {
+    private static long parseLegacyCheckpointMetadata(final String text) {
         try {
             final long parsed = Long.parseLong(text);
             if (parsed < 0L) {
@@ -193,7 +201,7 @@ final class WalMetadataCatalog {
         }
     }
 
-    private long parseChecksummedCheckpointMetadata(final String text) {
+    private static long parseChecksummedCheckpointMetadata(final String text) {
         Long lsn = null;
         Integer checksum = null;
         for (final String line : text.split("\\R")) {
@@ -242,7 +250,7 @@ final class WalMetadataCatalog {
         return text.getBytes(StandardCharsets.US_ASCII);
     }
 
-    private byte[] checkpointPayload(final long checkpointLsn) {
+    private static byte[] checkpointPayload(final long checkpointLsn) {
         return (CHECKPOINT_KEY_LSN + "=" + checkpointLsn + "\n")
                 .getBytes(StandardCharsets.US_ASCII);
     }
@@ -296,12 +304,24 @@ final class WalMetadataCatalog {
         storage.syncMetadata();
     }
 
-    private byte[] formatPayload() {
+    private static byte[] formatPayload() {
         return ("version=" + FORMAT_VERSION + "\n")
                 .getBytes(StandardCharsets.US_ASCII);
     }
 
-    private FormatMeta parseFormatMeta(final byte[] bytes) {
+    static void validateFormatMetadata(final byte[] bytes) {
+        final byte[] payload = formatPayload();
+        final FormatMeta meta = parseFormatMeta(bytes);
+        final int expectedChecksum = WalRecordCodec.computeCrc32(payload, 0,
+                payload.length);
+        if (meta.version() != FORMAT_VERSION
+                || meta.checksum() != expectedChecksum) {
+            throw new IndexException(
+                    "Unsupported or corrupted WAL format metadata.");
+        }
+    }
+
+    private static FormatMeta parseFormatMeta(final byte[] bytes) {
         final String text = new String(bytes, StandardCharsets.US_ASCII).trim();
         if (text.isEmpty()) {
             throw new IndexException("WAL format metadata is empty.");
@@ -328,7 +348,7 @@ final class WalMetadataCatalog {
         return new FormatMeta(version.intValue(), checksum.intValue());
     }
 
-    private int parseFormatInt(final String key, final String value) {
+    private static int parseFormatInt(final String key, final String value) {
         try {
             return Integer.parseInt(value);
         } catch (RuntimeException ex) {
@@ -353,23 +373,6 @@ final class WalMetadataCatalog {
 
         int checksum() {
             return checksum;
-        }
-    }
-
-    private static final class StreamCloseable implements AutoCloseable {
-        private final java.util.stream.Stream<String> stream;
-
-        StreamCloseable(final java.util.stream.Stream<String> stream) {
-            this.stream = stream;
-        }
-
-        java.util.stream.Stream<String> stream() {
-            return stream;
-        }
-
-        @Override
-        public void close() {
-            stream.close();
         }
     }
 }

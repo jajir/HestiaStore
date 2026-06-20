@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -62,7 +62,7 @@ class IntegrationIndexRuntimeSnapshotConcurrencyTest {
                 executor.shutdownNow();
             }
 
-            final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+            final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
             assertEquals(expectedGetCount, snapshot.operations().readOperationCount());
             assertEquals(0L, snapshot.operations().putOperationCount());
             assertEquals(0L, snapshot.operations().deleteOperationCount());
