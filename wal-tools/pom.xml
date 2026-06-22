@@ -49,10 +49,23 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <id>default-jar</id>
+                        <configuration>
+                            <attach>false</attach>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>default-cli</id>
                         <configuration>
                             <attach>false</attach>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <id>wal-tools-main-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
