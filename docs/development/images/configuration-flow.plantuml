@@ -17,21 +17,21 @@ title SegmentIndex Request Processing Package Relationships
 
 component "Public API\nsegmentindex\n\nSegmentIndex\nput / get / delete / getStream" as Api
 
-component "Session boundary\ncore.session\n\nSegmentIndexImpl\nSegmentIndexOperationGate" as Session
+component "Session boundary\ncore.session\n\nSegmentIndexSession\nSessionOperationGate" as Session
 
 package "Point operations" {
-  component "Operation coordinator\ncore.execution\n\nIndexOperationCoordinator" as Operations
-  component "Storage boundary\ncore.storage\n\nStorageService\nappendWalPut / appendWalDelete" as Storage
+  component "Operation coordinator\ncore.execution\n\nPointOperationCoordinator" as Operations
+  component "Storage / WAL boundary\ncore.storage\n\nStorageCoordinator\nWalCoordinator" as Storage
 }
 
 package "Iterator operations" {
-  component "Iterator access\ncore.execution\n\nSegmentStreamingService\nSegmentsIterator" as Streaming
+  component "Iterator access\ncore.execution\n\nSegmentIteratorService\nStableSegmentsIterator" as Streaming
 }
 
 package "Routing and segment access" {
-  component "Route lease service\ncore.routing\n\nSegmentLeaseService" as LeaseService
-  component "Route state\nmapping + core.routing\n\nKeyToSegmentMap\nSegmentTopology" as RouteState
-  component "Segment registry\nsegmentregistry\n\nSegmentRegistry\nBlockingSegment" as SegmentRegistry
+  component "Mapped lease service\ncore.routing\n\nMappedSegmentLeaseService\nMappedSegmentLease" as LeaseService
+  component "Route map and leases\nroutemap + core.routing\n\nSegmentRouteMap\nRouteMapSnapshot\nRouteTopology" as RouteState
+  component "Segment registry\nsegmentregistry\n\nSegmentRegistry\nBlockingSegment\nDefaultBlockingSegment" as SegmentRegistry
 }
 
 component "Segment engine\nsegment\n\nSegment\nSegmentImpl" as Segment
@@ -40,11 +40,11 @@ Api --> Session : public user calls
 Session --> Operations : put / get / delete
 Session --> Streaming : iterator / getStream
 
-Operations --> Storage : append WAL for writes
-Operations --> LeaseService : route key and acquire segment
-Streaming --> LeaseService : window ids and segment leases
-LeaseService --> RouteState : key-to-segment lookup\nand route lease
-LeaseService --> SegmentRegistry : load segment handle
+Operations --> Storage : append WAL and record LSN\nfor writes
+Operations --> LeaseService : acquire mapped segment\nfor key
+Streaming --> LeaseService : resolve window ids\nand acquire segment leases
+LeaseService --> RouteState : route-map snapshot\nand route lease
+LeaseService --> SegmentRegistry : load or try-load\nblocking segment
 
 SegmentRegistry --> Segment : get / put / openIterator
 

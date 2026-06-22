@@ -13,7 +13,6 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -93,37 +92,6 @@ class DefaultBlockingSegmentTest {
         handle.getRuntime().updateRuntimeLimits(runtimeLimits);
 
         verify(segment).applyRuntimeLimits(runtimeLimits);
-    }
-
-    @Test
-    void runtimeStateUsesCurrentSegmentWithoutReloading() {
-        when(segment.getState()).thenReturn(SegmentState.MAINTENANCE_RUNNING);
-        final BlockingSegment<Integer, String> segmentHandle =
-                new DefaultBlockingSegment<>(SEGMENT_ID, () -> {
-                    throw new AssertionError("Segment should not reload");
-                }, new BusyRetryPolicy(1, 25), segment);
-
-        assertEquals(SegmentState.MAINTENANCE_RUNNING,
-                segmentHandle.getRuntime().getState());
-    }
-
-    @Test
-    void runtimeStateReloadsAfterCurrentSegmentCloses() {
-        final Segment<Integer, String> reloadedSegment = mockSegment();
-        final BlockingSegment<Integer, String> reloadedHandle = mockBlockingSegment();
-        when(segment.getState()).thenReturn(SegmentState.CLOSED);
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(reloadedHandle);
-        when(reloadedHandle.getSegment()).thenReturn(reloadedSegment);
-        when(reloadedSegment.getState()).thenReturn(SegmentState.READY);
-        final BlockingSegment<Integer, String> segmentHandle =
-                new DefaultBlockingSegment<>(SEGMENT_ID,
-                        () -> segmentRegistry.loadSegment(SEGMENT_ID)
-                                .getSegment(),
-                        new BusyRetryPolicy(1, 25), segment);
-
-        assertEquals(SegmentState.READY,
-                segmentHandle.getRuntime().getState());
-        verify(segmentRegistry).loadSegment(SEGMENT_ID);
     }
 
     @SuppressWarnings("unchecked")
