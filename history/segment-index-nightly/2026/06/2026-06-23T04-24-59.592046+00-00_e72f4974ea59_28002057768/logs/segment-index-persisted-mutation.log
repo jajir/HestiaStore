@@ -1,0 +1,297 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin
+# Parameters: (flushBatchSize = 256, seededKeyCount = 75000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 0.00% complete, ETA 00:00:56
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+1749.474 ops/s
+# Warmup Iteration   2: 1875.809 ops/s
+Iteration   1: 1990.525 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      41308.760 ops/s
+                 diag_fileCountDelta:      1.499 ops/s
+
+Iteration   2: 1998.816 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      41543.174 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   3: 1978.896 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      40973.004 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   4: 1992.790 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      41367.649 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   5: 2015.846 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      42288.961 ops/s
+                 diag_fileCountDelta:      1.476 ops/s
+
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin":
+  1995.375 ±(99.9%) 52.113 ops/s [Average]
+  (min, avg, max) = (1978.896, 1995.375, 2015.846), stdev = 13.534
+  CI (99.9%): [1943.261, 2047.488] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin:diag_directoryCountDelta":
+  ≈ 0 ops/s
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin:diag_fileBytesDelta":
+  41496.310 ±(99.9%) 1882.557 ops/s [Average]
+  (min, avg, max) = (40973.004, 41496.310, 42288.961), stdev = 488.894
+  CI (99.9%): [39613.753, 43378.867] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin:diag_fileCountDelta":
+  1.495 ±(99.9%) 0.040 ops/s [Average]
+  (min, avg, max) = (1.476, 1.495, 1.500), stdev = 0.010
+  CI (99.9%): [1.455, 1.535] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync
+# Parameters: (flushBatchSize = 256, seededKeyCount = 75000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 25.00% complete, ETA 00:01:07
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+1894.954 ops/s
+# Warmup Iteration   2: 2079.565 ops/s
+Iteration   1: 2190.584 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      47095.056 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   2: 2246.532 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      48713.343 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   3: 2172.592 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      50693.983 ops/s
+                 diag_fileCountDelta:      1.997 ops/s
+
+Iteration   4: 2147.348 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      49942.956 ops/s
+                 diag_fileCountDelta:      2.000 ops/s
+
+Iteration   5: 2175.398 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      50759.448 ops/s
+                 diag_fileCountDelta:      1.999 ops/s
+
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync":
+  2186.491 ±(99.9%) 142.397 ops/s [Average]
+  (min, avg, max) = (2147.348, 2186.491, 2246.532), stdev = 36.980
+  CI (99.9%): [2044.094, 2328.887] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync:diag_directoryCountDelta":
+  ≈ 0 ops/s
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync:diag_fileBytesDelta":
+  49440.957 ±(99.9%) 5963.269 ops/s [Average]
+  (min, avg, max) = (47095.056, 49440.957, 50759.448), stdev = 1548.642
+  CI (99.9%): [43477.688, 55404.226] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync:diag_fileCountDelta":
+  1.799 ±(99.9%) 1.052 ops/s [Average]
+  (min, avg, max) = (1.500, 1.799, 2.000), stdev = 0.273
+  CI (99.9%): [0.747, 2.852] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putAsyncJoin
+# Parameters: (flushBatchSize = 256, seededKeyCount = 75000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 50.00% complete, ETA 00:00:44
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+1766.139 ops/s
+# Warmup Iteration   2: 1940.386 ops/s
+Iteration   1: 2028.803 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      201161.440 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   2: 1920.794 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      191109.026 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   3: 1971.708 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      195846.984 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   4: 1923.319 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      191344.445 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+Iteration   5: 1966.770 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      195388.162 ops/s
+                 diag_fileCountDelta:      1.500 ops/s
+
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putAsyncJoin":
+  1962.279 ±(99.9%) 169.750 ops/s [Average]
+  (min, avg, max) = (1920.794, 1962.279, 2028.803), stdev = 44.083
+  CI (99.9%): [1792.529, 2132.028] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putAsyncJoin:diag_directoryCountDelta":
+  ≈ 0 ops/s
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putAsyncJoin:diag_fileBytesDelta":
+  194970.011 ±(99.9%) 15798.164 ops/s [Average]
+  (min, avg, max) = (191109.026, 194970.011, 201161.440), stdev = 4102.733
+  CI (99.9%): [179171.848, 210768.175] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putAsyncJoin:diag_fileCountDelta":
+  1.500 ±(99.9%) 0.001 ops/s [Average]
+  (min, avg, max) = (1.500, 1.500, 1.500), stdev = 0.001
+  CI (99.9%): [1.500, 1.500] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync
+# Parameters: (flushBatchSize = 256, seededKeyCount = 75000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 75.00% complete, ETA 00:00:22
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+1834.007 ops/s
+# Warmup Iteration   2: 2008.939 ops/s
+Iteration   1: 2018.888 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      200062.665 ops/s
+                 diag_fileCountDelta:      1.479 ops/s
+
+Iteration   2: 2095.317 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      211443.034 ops/s
+                 diag_fileCountDelta:      2.000 ops/s
+
+Iteration   3: 1986.263 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      196829.608 ops/s
+                 diag_fileCountDelta:      1.455 ops/s
+
+Iteration   4: 2088.856 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      210842.972 ops/s
+                 diag_fileCountDelta:      2.000 ops/s
+
+Iteration   5: 2172.737 ops/s
+                 diag_directoryCountDelta: ≈ 0 ops/s
+                 diag_fileBytesDelta:      218643.532 ops/s
+                 diag_fileCountDelta:      2.000 ops/s
+
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync":
+  2072.412 ±(99.9%) 279.978 ops/s [Average]
+  (min, avg, max) = (1986.263, 2072.412, 2172.737), stdev = 72.709
+  CI (99.9%): [1792.434, 2352.390] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync:diag_directoryCountDelta":
+  ≈ 0 ops/s
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync:diag_fileBytesDelta":
+  207564.362 ±(99.9%) 34443.993 ops/s [Average]
+  (min, avg, max) = (196829.608, 207564.362, 218643.532), stdev = 8944.996
+  CI (99.9%): [173120.369, 242008.356] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync:diag_fileCountDelta":
+  1.787 ±(99.9%) 1.125 ops/s [Average]
+  (min, avg, max) = (1.455, 1.787, 2.000), stdev = 0.292
+  CI (99.9%): [0.662, 2.911] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:01:29
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                                        (flushBatchSize)  (seededKeyCount)  (snappy)  (valueLength)  (walMode)   Mode  Cnt       Score       Error  Units
+SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin                                        256             75000      true             64       sync  thrpt    5    1995.375 ±    52.113  ops/s
+SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin:diag_directoryCountDelta               256             75000      true             64       sync  thrpt    5         ≈ 0              ops/s
+SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin:diag_fileBytesDelta                    256             75000      true             64       sync  thrpt    5   41496.310 ±  1882.557  ops/s
+SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin:diag_fileCountDelta                    256             75000      true             64       sync  thrpt    5       1.495 ±     0.040  ops/s
+SegmentIndexPersistedMutationBenchmark.deleteSync                                             256             75000      true             64       sync  thrpt    5    2186.491 ±   142.397  ops/s
+SegmentIndexPersistedMutationBenchmark.deleteSync:diag_directoryCountDelta                    256             75000      true             64       sync  thrpt    5         ≈ 0              ops/s
+SegmentIndexPersistedMutationBenchmark.deleteSync:diag_fileBytesDelta                         256             75000      true             64       sync  thrpt    5   49440.957 ±  5963.269  ops/s
+SegmentIndexPersistedMutationBenchmark.deleteSync:diag_fileCountDelta                         256             75000      true             64       sync  thrpt    5       1.799 ±     1.052  ops/s
+SegmentIndexPersistedMutationBenchmark.putAsyncJoin                                           256             75000      true             64       sync  thrpt    5    1962.279 ±   169.750  ops/s
+SegmentIndexPersistedMutationBenchmark.putAsyncJoin:diag_directoryCountDelta                  256             75000      true             64       sync  thrpt    5         ≈ 0              ops/s
+SegmentIndexPersistedMutationBenchmark.putAsyncJoin:diag_fileBytesDelta                       256             75000      true             64       sync  thrpt    5  194970.011 ± 15798.164  ops/s
+SegmentIndexPersistedMutationBenchmark.putAsyncJoin:diag_fileCountDelta                       256             75000      true             64       sync  thrpt    5       1.500 ±     0.001  ops/s
+SegmentIndexPersistedMutationBenchmark.putSync                                                256             75000      true             64       sync  thrpt    5    2072.412 ±   279.978  ops/s
+SegmentIndexPersistedMutationBenchmark.putSync:diag_directoryCountDelta                       256             75000      true             64       sync  thrpt    5         ≈ 0              ops/s
+SegmentIndexPersistedMutationBenchmark.putSync:diag_fileBytesDelta                            256             75000      true             64       sync  thrpt    5  207564.362 ± 34443.993  ops/s
+SegmentIndexPersistedMutationBenchmark.putSync:diag_fileCountDelta                            256             75000      true             64       sync  thrpt    5       1.787 ±     1.125  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-persisted-mutation.json

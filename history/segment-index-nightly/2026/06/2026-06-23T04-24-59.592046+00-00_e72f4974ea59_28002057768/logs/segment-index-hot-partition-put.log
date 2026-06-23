@@ -1,0 +1,83 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark.putHotPartition
+
+# Run progress: 0.00% complete, ETA 00:00:28
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+1907393.248 ops/s
+# Warmup Iteration   2: 3007662.967 ops/s
+Iteration   1: 2774852.592 ops/s
+Iteration   2: 2744277.833 ops/s
+Iteration   3: 2746504.434 ops/s
+Iteration   4: 2780264.858 ops/s
+Iteration   5: 2778214.100 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark.putHotPartition":
+  2764822.764 ±(99.9%) 68775.751 ops/s [Average]
+  (min, avg, max) = (2744277.833, 2764822.764, 2780264.858), stdev = 17860.844
+  CI (99.9%): [2696047.013, 2833598.514] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark.putThenGetHotPartition
+
+# Run progress: 50.00% complete, ETA 00:00:15
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+1232518.710 ops/s
+# Warmup Iteration   2: 1665630.183 ops/s
+Iteration   1: 1609930.144 ops/s
+Iteration   2: 1579304.616 ops/s
+Iteration   3: 1609175.626 ops/s
+Iteration   4: 1598874.936 ops/s
+Iteration   5: 1595064.766 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark.putThenGetHotPartition":
+  1598470.017 ±(99.9%) 48133.698 ops/s [Average]
+  (min, avg, max) = (1579304.616, 1598470.017, 1609930.144), stdev = 12500.169
+  CI (99.9%): [1550336.319, 1646603.716] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:31
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                     Mode  Cnt        Score       Error  Units
+SegmentIndexHotPartitionPutBenchmark.putHotPartition         thrpt    5  2764822.764 ± 68775.751  ops/s
+SegmentIndexHotPartitionPutBenchmark.putThenGetHotPartition  thrpt    5  1598470.017 ± 48133.698  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-hot-partition-put.json
