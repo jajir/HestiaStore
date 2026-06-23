@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,9 +17,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class ExecutorRegistryTest {
+
+    private RuntimeExecutorPools runtimeExecutorPools;
+
+    @AfterEach
+    void tearDown() {
+        if (runtimeExecutorPools != null
+                && !runtimeExecutorPools.wasClosed()) {
+            runtimeExecutorPools.close();
+        }
+    }
 
     @Test
     void createUsesProvidedValues() {
@@ -38,9 +50,10 @@ class ExecutorRegistryTest {
     void createRejectsNonPositiveSegmentMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> newRegistry(0, 1, 1));
+                () -> RuntimeExecutorPools.create("hestia-test", 0, 1,
+                        30_000));
         assertEquals(
-                "Property 'numberOfSegmentMaintenanceThreads' must be greater than 0",
+                "Property 'segmentMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
@@ -58,8 +71,8 @@ class ExecutorRegistryTest {
     void createRejectsNonPositiveSplitMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> ExecutorRegistry.create("executor-registry-test",
-                        false, 1, 0, 1, 1, 30_000));
+                () -> RuntimeExecutorPools.create("hestia-test", 1, 0,
+                        30_000));
         assertEquals(
                 "Property 'splitMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
@@ -79,14 +92,18 @@ class ExecutorRegistryTest {
     void createRejectsBlankIndexNameWhenContextLoggingEnabled() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> ExecutorRegistry.create("  ", true, 1, 1, 1, 1,
-                        30_000));
+                () -> {
+                    runtimeExecutorPools = RuntimeExecutorPools.create(
+                            "hestia-test", 1, 1, 30_000);
+                    ExecutorRegistry.create("  ", true, 1,
+                            runtimeExecutorPools, 1, 30_000);
+                });
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
     }
 
     @Test
-    void closeShutsDownAllExecutors() {
+    void closeShutsDownIndexOwnedExecutors() {
         final ExecutorRegistry registry = newRegistry(1, 1, 1);
         final ExecutorService indexMaintenance = registry
                 .getIndexMaintenanceExecutor();
@@ -102,9 +119,9 @@ class ExecutorRegistryTest {
         registry.close();
 
         assertTrue(indexMaintenance.isShutdown());
-        assertTrue(splitMaintenance.isShutdown());
+        assertFalse(splitMaintenance.isShutdown());
         assertTrue(splitPolicyScheduler.isShutdown());
-        assertTrue(stableSegmentMaintenance.isShutdown());
+        assertFalse(stableSegmentMaintenance.isShutdown());
         assertTrue(registryMaintenance.isShutdown());
     }
 
@@ -158,8 +175,8 @@ class ExecutorRegistryTest {
         registry.close();
 
         assertTrue(indexMaintenance.isShutdown());
-        assertTrue(splitMaintenance.isShutdown());
-        assertTrue(stableSegmentMaintenance.isShutdown());
+        assertFalse(splitMaintenance.isShutdown());
+        assertFalse(stableSegmentMaintenance.isShutdown());
     }
 
     @Test
@@ -199,13 +216,16 @@ class ExecutorRegistryTest {
                     .getRegistryMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().isDaemon()).get();
 
-            assertTrue(indexMaintenanceName.startsWith("index-maintenance-"));
-            assertTrue(splitMaintenanceName.startsWith("split-maintenance-"));
-            assertTrue(splitPolicyName.startsWith("split-policy-"));
+            assertTrue(indexMaintenanceName.startsWith(
+                    "hestia-test-executor-registry-test-index-maintenance-"));
+            assertTrue(splitMaintenanceName
+                    .startsWith("hestia-test-split-maintenance-"));
+            assertTrue(splitPolicyName.startsWith(
+                    "hestia-test-executor-registry-test-split-policy-"));
             assertTrue(stableSegmentMaintenanceName
-                    .startsWith("segment-maintenance-"));
-            assertTrue(
-                    registryMaintenanceName.startsWith("registry-maintenance-"));
+                    .startsWith("hestia-test-segment-maintenance-"));
+            assertTrue(registryMaintenanceName.startsWith(
+                    "hestia-test-executor-registry-test-registry-maintenance-"));
             assertTrue(indexMaintenanceDaemon);
             assertTrue(splitMaintenanceDaemon);
             assertTrue(splitPolicyDaemon);
@@ -219,14 +239,15 @@ class ExecutorRegistryTest {
     @Test
     void stableSegmentMaintenanceExecutorUsesConfiguredThreadCount()
             throws InterruptedException {
-        final int stableSegmentMaintenanceThreads = 4;
-        final ExecutorRegistry registry = newRegistry(stableSegmentMaintenanceThreads, 1, 1);
+        final int segmentMaintenanceThreads = 4;
+        final ExecutorRegistry registry = newRegistry(segmentMaintenanceThreads,
+                1, 1);
         final CountDownLatch started = new CountDownLatch(
-                stableSegmentMaintenanceThreads);
+                segmentMaintenanceThreads);
         final CountDownLatch release = new CountDownLatch(1);
         try {
             final List<java.util.concurrent.Future<String>> futures = java.util.stream.IntStream
-                    .range(0, stableSegmentMaintenanceThreads)
+                    .range(0, segmentMaintenanceThreads)
                     .mapToObj(i -> registry
                             .getStableSegmentMaintenanceExecutor().submit(() -> {
                                 started.countDown();
@@ -251,7 +272,7 @@ class ExecutorRegistryTest {
                             e.getCause());
                 }
             }).collect(Collectors.toSet());
-            assertEquals(stableSegmentMaintenanceThreads,
+            assertEquals(segmentMaintenanceThreads,
                     threadNames.size());
         } finally {
             release.countDown();
@@ -352,13 +373,23 @@ class ExecutorRegistryTest {
         }
     }
 
-    private static ExecutorRegistry newRegistry(
-            final int stableSegmentMaintenanceThreads,
+    private ExecutorRegistry newRegistry(
+            final int segmentMaintenanceThreads,
             final int indexMaintenanceThreads,
             final int registryMaintenanceThreads) {
+        runtimeExecutorPools = RuntimeExecutorPools.create("hestia-test",
+                segmentMaintenanceThreads, 1, 30_000);
+        return newRegistry(indexMaintenanceThreads, registryMaintenanceThreads,
+                runtimeExecutorPools);
+    }
+
+    private ExecutorRegistry newRegistry(
+            final int indexMaintenanceThreads,
+            final int registryMaintenanceThreads,
+            final RuntimeExecutorPools runtimeExecutorPools) {
         return ExecutorRegistry.create("executor-registry-test", false,
-                indexMaintenanceThreads, indexMaintenanceThreads,
-                stableSegmentMaintenanceThreads, registryMaintenanceThreads,
+                indexMaintenanceThreads, runtimeExecutorPools,
+                registryMaintenanceThreads,
                 30_000);
     }
 }

@@ -187,8 +187,6 @@ public final class EffectiveIndexConfigurationResolver {
         final IndexMaintenanceConfiguration defaultMaintenance =
                 defaults.maintenance();
         return new EffectiveIndexMaintenanceConfiguration(
-                intOr(maintenance.segmentThreads(),
-                        defaultMaintenance.segmentThreads()),
                 intOr(maintenance.indexThreads(),
                         defaultMaintenance.indexThreads()),
                 intOr(maintenance.registryLifecycleThreads(),
@@ -267,8 +265,6 @@ public final class EffectiveIndexConfigurationResolver {
             final EffectiveIndexConfiguration<K, V> stored,
             final IndexConfiguration<K, V> request) {
         return new EffectiveIndexMaintenanceConfiguration(
-                intOr(request.maintenance().segmentThreads(),
-                        stored.maintenance().segmentThreads()),
                 intOr(request.maintenance().indexThreads(),
                         stored.maintenance().indexThreads()),
                 intOr(request.maintenance().registryLifecycleThreads(),

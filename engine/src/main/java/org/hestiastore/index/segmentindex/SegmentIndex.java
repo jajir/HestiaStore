@@ -13,6 +13,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexBootstrapOperation;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeHandle;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -41,6 +42,25 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         return operation(directory, indexConf, null).create();
+    }
+
+    /**
+     * Creates a brand new index using caller-owned runtime resources.
+     * <p>
+     * The returned index does not own the supplied runtime. The caller remains
+     * responsible for closing the runtime after all indexes using it have been
+     * closed.
+     * </p>
+     *
+     * @param directory backing directory for the index
+     * @param indexConf requested configuration overrides
+     * @param runtime caller-owned shared runtime
+     * @return a newly created index instance
+     */
+    static <M, N> SegmentIndex<M, N> create(final Directory directory,
+            final IndexConfiguration<M, N> indexConf,
+            final HestiaStoreRuntime runtime) {
+        return operation(directory, indexConf, null, runtime).create();
     }
 
     /**
@@ -81,6 +101,25 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     /**
+     * Opens an existing index using caller-owned runtime resources.
+     * <p>
+     * The returned index does not own the supplied runtime. The caller remains
+     * responsible for closing the runtime after all indexes using it have been
+     * closed.
+     * </p>
+     *
+     * @param directory backing directory that already contains the index
+     * @param indexConf configuration overrides to apply
+     * @param runtime caller-owned shared runtime
+     * @return index instance backed by the updated configuration
+     */
+    static <M, N> SegmentIndex<M, N> open(final Directory directory,
+            final IndexConfiguration<M, N> indexConf,
+            final HestiaStoreRuntime runtime) {
+        return operation(directory, indexConf, null, runtime).open();
+    }
+
+    /**
      * Opens an existing index with an explicit chunk filter provider resolver.
      *
      * @param <M>                         key type
@@ -113,6 +152,20 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     static <M, N> SegmentIndex<M, N> open(final Directory directory) {
         return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
                 null).open();
+    }
+
+    /**
+     * Opens an existing index using stored configuration and caller-owned
+     * runtime resources.
+     *
+     * @param directory backing directory with an existing index
+     * @param runtime caller-owned shared runtime
+     * @return index instance backed by the persisted configuration
+     */
+    static <M, N> SegmentIndex<M, N> open(final Directory directory,
+            final HestiaStoreRuntime runtime) {
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                null, runtime).open();
     }
 
     /**
@@ -151,6 +204,20 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     /**
+     * Attempts to open an index using caller-owned runtime resources.
+     *
+     * @param directory backing directory that may contain an index
+     * @param runtime caller-owned shared runtime
+     * @return optional index instance if the configuration was found
+     */
+    static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
+            final Directory directory,
+            final HestiaStoreRuntime runtime) {
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                null, runtime).tryOpen();
+    }
+
+    /**
      * Attempts to open an index using an explicit chunk filter provider
      * resolver.
      *
@@ -174,11 +241,38 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final Directory directory,
             final IndexConfiguration<M, N> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return operation(
+                Vldtn.requireNonNull(directory, "directory"),
+                Vldtn.requireNonNull(userProvidedConfiguration,
+                        "userProvidedConfiguration"),
+                chunkFilterProviderResolver,
+                HestiaStoreRuntimeAccess.owned());
+    }
+
+    private static <M, N> SegmentIndexBootstrapOperation<M, N> operation(
+            final Directory directory,
+            final IndexConfiguration<M, N> userProvidedConfiguration,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver,
+            final HestiaStoreRuntime runtime) {
+        return operation(
+                Vldtn.requireNonNull(directory, "directory"),
+                Vldtn.requireNonNull(userProvidedConfiguration,
+                        "userProvidedConfiguration"),
+                chunkFilterProviderResolver,
+                HestiaStoreRuntimeAccess.borrowed(runtime));
+    }
+
+    private static <M, N> SegmentIndexBootstrapOperation<M, N> operation(
+            final Directory directory,
+            final IndexConfiguration<M, N> userProvidedConfiguration,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver,
+            final SegmentIndexRuntimeHandle runtimeHandle) {
         return new SegmentIndexBootstrapOperation<>(
                 Vldtn.requireNonNull(directory, "directory"),
                 Vldtn.requireNonNull(userProvidedConfiguration,
                         "userProvidedConfiguration"),
-                chunkFilterProviderResolver);
+                chunkFilterProviderResolver,
+                Vldtn.requireNonNull(runtimeHandle, "runtimeHandle"));
     }
 
     private static ChunkFilterProviderResolver requireChunkFilterProviderResolver(

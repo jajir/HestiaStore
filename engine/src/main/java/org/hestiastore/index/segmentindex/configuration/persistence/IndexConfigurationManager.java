@@ -100,7 +100,6 @@ public class IndexConfigurationManager<K, V> {
                 configuration.bloomFilter().hashFunctions(),
                 configuration.bloomFilter().indexSizeBytes(),
                 configuration.bloomFilter().falsePositiveProbability(),
-                configuration.maintenance().segmentThreads(),
                 configuration.maintenance().indexThreads(),
                 configuration.maintenance().registryLifecycleThreads(),
                 configuration.maintenance().busyBackoffMillis(),

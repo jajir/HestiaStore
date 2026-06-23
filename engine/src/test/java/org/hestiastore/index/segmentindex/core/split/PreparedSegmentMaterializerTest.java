@@ -207,7 +207,6 @@ class PreparedSegmentMaterializerTest {
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
-                .maintenance(maintenance -> maintenance.segmentThreads(1))//
                 .maintenance(maintenance -> maintenance.indexThreads(1))//
                 .maintenance(maintenance -> maintenance.busyBackoffMillis(1))//
                 .maintenance(maintenance -> maintenance.busyTimeoutMillis(1000))//

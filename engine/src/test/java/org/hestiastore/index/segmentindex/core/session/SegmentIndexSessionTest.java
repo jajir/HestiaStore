@@ -24,7 +24,6 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.execution.PointOperationCoordinator;
 import org.hestiastore.index.segmentindex.core.execution.SegmentIteratorService;
 import org.hestiastore.index.segmentindex.SegmentIndexMaintenance;
@@ -42,8 +41,7 @@ class SegmentIndexSessionTest {
         final IndexConfiguration<Integer, String> conf = buildConf();
         index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
-                new TypeDescriptorInteger(), new TypeDescriptorShortString(), effective(conf),
-                ExecutorRegistryFixture.from(conf));
+                new TypeDescriptorInteger(), new TypeDescriptorShortString(), effective(conf));
     }
 
     @AfterEach

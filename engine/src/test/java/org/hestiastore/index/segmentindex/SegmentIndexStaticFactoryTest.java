@@ -105,7 +105,6 @@ class SegmentIndexStaticFactoryTest {
                 .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))
-                .maintenance(maintenance -> maintenance.segmentThreads(1))
                 .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
                 .filters(filters -> filters.encodingFilterRegistrations(List.of()))
                 .filters(filters -> filters.decodingFilterRegistrations(List.of()))

@@ -130,6 +130,7 @@ class SegmentIndexSessionAssemblerTest {
         final SegmentIndexRuntimeResources<Integer, String> resources = new SegmentIndexRuntimeResources<>();
         resources.acquireDirectoryLock(new MemDirectory());
         resources.setExecutorRegistry(mock(ExecutorRegistry.class));
+        resources.setRuntimeHandle(mock(SegmentIndexRuntimeHandle.class));
         return resources;
     }
 

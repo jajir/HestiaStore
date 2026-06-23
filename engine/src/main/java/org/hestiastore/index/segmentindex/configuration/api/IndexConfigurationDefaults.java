@@ -22,7 +22,6 @@ public interface IndexConfigurationDefaults {
     double DEFAULT_BLOOM_FILTER_FALSE_POSITIVE_PROBABILITY = 0.01;
 
     int DEFAULT_DISK_IO_BUFFER_SIZE_BYTES = 1024 * 8;
-    int DEFAULT_SEGMENT_MAINTENANCE_THREADS = 10;
     int DEFAULT_INDEX_MAINTENANCE_THREADS = 10;
     int DEFAULT_REGISTRY_LIFECYCLE_THREADS = 3;
     int DEFAULT_INDEX_BUSY_BACKOFF_MILLIS = 5;
@@ -112,7 +111,6 @@ public interface IndexConfigurationDefaults {
      */
     default IndexMaintenanceConfiguration maintenance() {
         return new IndexMaintenanceConfiguration(
-                DEFAULT_SEGMENT_MAINTENANCE_THREADS,
                 DEFAULT_INDEX_MAINTENANCE_THREADS,
                 DEFAULT_REGISTRY_LIFECYCLE_THREADS,
                 DEFAULT_INDEX_BUSY_BACKOFF_MILLIS,

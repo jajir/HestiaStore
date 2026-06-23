@@ -37,6 +37,12 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
      */
     public static final String WAL_DIRECTORY = WalMetadataCatalog.WAL_DIRECTORY;
 
+    private static final String DEFAULT_THREAD_NAME_PREFIX = "hestia";
+    private static final String DEFAULT_INDEX_NAME = "standalone";
+    private static final String POOL_NAME_WAL_GROUP_SYNC = "wal-group-sync";
+    private static final String ARG_THREAD_NAME_PREFIX = "threadNamePrefix";
+    private static final String ARG_INDEX_NAME = "indexName";
+
     /**
      * WAL operation kind.
      */
@@ -216,6 +222,11 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
 
     /**
      * Creates WAL runtime for the given index directory.
+     * <p>
+     * Direct WAL runtimes use the {@code hestia-standalone-wal-group-sync-*}
+     * thread-name scope. Segment indexes should use the overload that accepts the
+     * runtime thread-name prefix and index name.
+     * </p>
      *
      * @param <K>             key type
      * @param <V>             value type
@@ -229,13 +240,57 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
             final IndexWalConfiguration wal,
             final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
+        return openWithGroupSyncThreadNamePrefix(indexDirectory, wal,
+                keyDescriptor, valueDescriptor,
+                poolThreadNamePrefix(DEFAULT_THREAD_NAME_PREFIX,
+                        DEFAULT_INDEX_NAME,
+                        POOL_NAME_WAL_GROUP_SYNC));
+    }
+
+    /**
+     * Creates WAL runtime for the given index directory and index-owned thread
+     * name scope.
+     *
+     * @param <K>              key type
+     * @param <V>              value type
+     * @param indexDirectory   index directory
+     * @param wal              WAL config
+     * @param keyDescriptor    key descriptor
+     * @param valueDescriptor  value descriptor
+     * @param threadNamePrefix runtime-wide thread-name prefix
+     * @param indexName        index name used in index-owned thread names
+     * @return runtime instance
+     */
+    public static <K, V> WalRuntime<K, V> open(final Directory indexDirectory,
+            final IndexWalConfiguration wal,
+            final TypeDescriptor<K> keyDescriptor,
+            final TypeDescriptor<V> valueDescriptor,
+            final String threadNamePrefix,
+            final String indexName) {
+        return openWithGroupSyncThreadNamePrefix(indexDirectory, wal,
+                keyDescriptor, valueDescriptor,
+                poolThreadNamePrefix(
+                        Vldtn.requireNotBlank(threadNamePrefix,
+                                ARG_THREAD_NAME_PREFIX),
+                        Vldtn.requireNotBlank(indexName, ARG_INDEX_NAME),
+                        POOL_NAME_WAL_GROUP_SYNC));
+    }
+
+    private static <K, V> WalRuntime<K, V> openWithGroupSyncThreadNamePrefix(
+            final Directory indexDirectory,
+            final IndexWalConfiguration wal,
+            final TypeDescriptor<K> keyDescriptor,
+            final TypeDescriptor<V> valueDescriptor,
+            final String groupSyncThreadNamePrefix) {
         final Directory directory = Vldtn.requireNonNull(indexDirectory,
                 "indexDirectory");
         final IndexWalConfiguration resolvedWal = requireEnabledWal(wal);
         final Directory walDirectory = directory.openSubDirectory(WAL_DIRECTORY);
         final WalRuntime<K, V> runtime = createRuntime(resolvedWal,
                 WalStorageFactory.create(walDirectory), keyDescriptor,
-                valueDescriptor);
+                valueDescriptor,
+                Vldtn.requireNotBlank(groupSyncThreadNamePrefix,
+                        "groupSyncThreadNamePrefix"));
         runtime.metadataCatalog.ensureFormatMarker();
         return runtime;
     }
@@ -252,7 +307,8 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
     private static <K, V> WalRuntime<K, V> createRuntime(
             final IndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
-            final TypeDescriptor<V> valueDescriptor) {
+            final TypeDescriptor<V> valueDescriptor,
+            final String groupSyncThreadNamePrefix) {
         final Object monitor = new Object();
         final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
         final AtomicBoolean closed = new AtomicBoolean();
@@ -276,12 +332,14 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
                         recordCodec, segmentCatalog, metrics);
         return new WalRuntime<>(monitor, metrics, closed, metadataCatalog,
                 segmentCatalog, syncPolicy, writer, recoveryManager,
-                newGroupSyncExecutor(wal, syncPolicy));
+                newGroupSyncExecutor(wal, syncPolicy,
+                        groupSyncThreadNamePrefix));
     }
 
     private static ScheduledExecutorService newGroupSyncExecutor(
             final IndexWalConfiguration wal,
-            final WalSyncPolicy syncPolicy) {
+            final WalSyncPolicy syncPolicy,
+            final String groupSyncThreadNamePrefix) {
         if (!wal.isGroupSyncDurabilityMode()
                 || wal.getGroupSyncDelayMillis() <= 0) {
             return null;
@@ -289,11 +347,22 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
         final ScheduledExecutorService executor =
                 Executors.newSingleThreadScheduledExecutor(
                         new NamedDaemonThreadFactory(
-                                "hestiastore-wal-group-sync"));
+                                groupSyncThreadNamePrefix));
         executor.scheduleWithFixedDelay(syncPolicy::syncGroupPendingSafely,
                 wal.getGroupSyncDelayMillis(), wal.getGroupSyncDelayMillis(),
                 TimeUnit.MILLISECONDS);
         return executor;
+    }
+
+    private static String poolThreadNamePrefix(final String prefix,
+            final String poolName) {
+        return prefix + "-" + poolName;
+    }
+
+    private static String poolThreadNamePrefix(final String prefix,
+            final String indexName,
+            final String poolName) {
+        return prefix + "-" + indexName + "-" + poolName;
     }
 
     /**
@@ -434,7 +503,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
         private final AtomicLong sequence = new AtomicLong(0L);
 
         NamedDaemonThreadFactory(final String namePrefix) {
-            this.namePrefix = Vldtn.requireNonNull(namePrefix, "namePrefix");
+            this.namePrefix = Vldtn.requireNotBlank(namePrefix, "namePrefix");
         }
 
         @Override

@@ -2,9 +2,7 @@ package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -62,57 +60,12 @@ final class ExecutorTopology {
 
     RuntimeException shutdownExecutorsInCloseOrder() {
         RuntimeException failure = null;
-        failure = shutdownAndAwait("indexMaintenance",
-                indexMaintenanceExecutor, failure);
-        failure = shutdownAndAwait("splitMaintenance",
-                splitMaintenanceExecutor, failure);
-        failure = shutdownAndAwait("splitPolicy",
-                splitPolicyScheduler, failure);
-        failure = shutdownAndAwait("segmentMaintenance",
-                stableSegmentMaintenanceExecutor, failure);
-        failure = shutdownAndAwait("registryMaintenance",
-                registryMaintenanceExecutor, failure);
-        return failure;
-    }
-
-    private RuntimeException shutdownAndAwait(final String executorName,
-            final ExecutorService executor,
-            final RuntimeException failure) {
-        RuntimeException nextFailure = failure;
-        executor.shutdown();
-        boolean interrupted = false;
-        try {
-            if (!executor.awaitTermination(shutdownTimeoutMillis,
-                    TimeUnit.MILLISECONDS)) {
-                executor.shutdownNow();
-                nextFailure = appendFailure(nextFailure, new IndexException(
-                        String.format(
-                                "Executor '%s' did not terminate within %d ms.",
-                                executorName, shutdownTimeoutMillis)));
-            }
-        } catch (final InterruptedException e) {
-            interrupted = true;
-            executor.shutdownNow();
-            nextFailure = appendFailure(nextFailure, new IndexException(
-                    String.format("Executor '%s' shutdown was interrupted.",
-                            executorName),
-                    e));
-        } catch (final RuntimeException e) {
-            nextFailure = appendFailure(nextFailure, e);
-        } finally {
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        return nextFailure;
-    }
-
-    private RuntimeException appendFailure(final RuntimeException failure,
-            final RuntimeException nextFailure) {
-        if (failure == null) {
-            return nextFailure;
-        }
-        failure.addSuppressed(nextFailure);
+        failure = ExecutorShutdown.shutdownAndAwait("indexMaintenance",
+                indexMaintenanceExecutor, shutdownTimeoutMillis, failure);
+        failure = ExecutorShutdown.shutdownAndAwait("splitPolicy",
+                splitPolicyScheduler, shutdownTimeoutMillis, failure);
+        failure = ExecutorShutdown.shutdownAndAwait("registryMaintenance",
+                registryMaintenanceExecutor, shutdownTimeoutMillis, failure);
         return failure;
     }
 }

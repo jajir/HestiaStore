@@ -881,7 +881,7 @@ class SegmentIndexConcurrentIT {
                         .valueTypeDescriptor(new TypeDescriptorInteger())
                         .name(name))//
                 .maintenance(maintenance -> maintenance
-                        .backgroundAutoEnabled(true).segmentThreads(2)
+                        .backgroundAutoEnabled(true)
                         .indexThreads(2).registryLifecycleThreads(2)
                         .busyTimeoutMillis(120_000))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)

@@ -38,7 +38,6 @@ final class SegmentIndexMetricsTestConfigurationFactory {
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))
                 .maintenance(maintenance -> maintenance.indexThreads(1))
-                .maintenance(maintenance -> maintenance.segmentThreads(1))
                 .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))

@@ -119,7 +119,7 @@ public class SegmentIndexMixedDrainBenchmark {
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(4096)
                         .hashFunctions(2).falsePositiveProbability(0.01D))//
                 .io(io -> io.diskBufferSizeBytes(8 * 1024))//
-                .maintenance(maintenance -> maintenance.segmentThreads(1)
+                .maintenance(maintenance -> maintenance
                         .indexThreads(2).registryLifecycleThreads(1)
                         .backgroundAutoEnabled(true))//
                 .build();

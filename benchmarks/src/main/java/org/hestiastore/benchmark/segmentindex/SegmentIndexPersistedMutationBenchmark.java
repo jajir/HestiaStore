@@ -127,7 +127,7 @@ public class SegmentIndexPersistedMutationBenchmark {
                         .hashFunctions(3)
                         .falsePositiveProbability(0.01D))//
                 .io(io -> io.diskBufferSizeBytes(8 * 1024))//
-                .maintenance(maintenance -> maintenance.segmentThreads(1)
+                .maintenance(maintenance -> maintenance
                         .indexThreads(1).registryLifecycleThreads(1)
                         .backgroundAutoEnabled(false));
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,

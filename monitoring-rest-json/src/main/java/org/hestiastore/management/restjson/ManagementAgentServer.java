@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -95,6 +96,8 @@ public final class ManagementAgentServer
     private static final String UNKNOWN_INDEX_PREFIX = "Unknown index: ";
     private static final String AUDIT_REJECTED = "REJECTED";
     private static final String AUDIT_FAILED = "FAILED";
+    private static final String REQUEST_THREAD_NAME_PREFIX =
+            "hestia-management-http-";
     private static final int MAX_AUDIT_RECORDS = 10_000;
     private static final int MAX_ACTION_REPLAYS = 10_000;
     private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
@@ -218,17 +221,26 @@ public final class ManagementAgentServer
                 0);
         final int workers = Math.max(2,
                 Math.min(16, Runtime.getRuntime().availableProcessors() * 2));
-        final AtomicInteger threadCounter = new AtomicInteger(1);
         this.requestExecutor = Executors.newFixedThreadPool(workers,
-                runnable -> {
-                    final Thread thread = new Thread(runnable,
-                            "monitoring-rest-json-http-"
-                                    + threadCounter.getAndIncrement());
-                    thread.setDaemon(false);
-                    return thread;
-                });
+                requestThreadFactory());
         this.server.setExecutor(requestExecutor);
         registerRoutes();
+    }
+
+    /**
+     * Creates the HTTP request thread factory for the management server.
+     *
+     * @return request thread factory
+     */
+    static ThreadFactory requestThreadFactory() {
+        final AtomicInteger threadCounter = new AtomicInteger(1);
+        return runnable -> {
+            final Thread thread = new Thread(runnable,
+                    REQUEST_THREAD_NAME_PREFIX
+                            + threadCounter.getAndIncrement());
+            thread.setDaemon(false);
+            return thread;
+        };
     }
 
     /**

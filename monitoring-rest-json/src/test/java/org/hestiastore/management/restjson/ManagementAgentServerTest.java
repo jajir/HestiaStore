@@ -109,6 +109,16 @@ class ManagementAgentServerTest {
     }
 
     @Test
+    void requestThreadFactoryUsesHestiaThreadNames() {
+        final Thread thread = ManagementAgentServer.requestThreadFactory()
+                .newThread(() -> {
+                });
+
+        assertTrue(thread.getName().startsWith("hestia-management-http-"));
+        assertFalse(thread.isDaemon());
+    }
+
+    @Test
     void reportEndpointReturnsJvmAndPerIndexSections() throws Exception {
         indexes.get(0).put(1, "A");
         indexes.get(1).put(2, "B");

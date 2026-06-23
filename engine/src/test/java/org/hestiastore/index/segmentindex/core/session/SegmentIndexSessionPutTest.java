@@ -24,7 +24,6 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.api.WalDurabilityMode;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -216,8 +215,8 @@ class SegmentIndexSessionPutTest {
             index.close();
         }
         directory = new MemDirectory();
-        index = SegmentIndexSessionTestSupport.createStarted(directory, tdi, tds, effective(conf),
-                ExecutorRegistryFixture.from(conf));
+        index = SegmentIndexSessionTestSupport.createStarted(directory, tdi,
+                tds, effective(conf));
 
         index.put(1, "one");
         index.put(2, "two");
@@ -240,8 +239,8 @@ class SegmentIndexSessionPutTest {
         directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = buildConf(
                 maxKeysInSegment, segmentWriteCacheKeyLimit, wal);
-        index = SegmentIndexSessionTestSupport.createStarted(directory, tdi, tds, effective(conf),
-                ExecutorRegistryFixture.from(conf));
+        index = SegmentIndexSessionTestSupport.createStarted(directory, tdi,
+                tds, effective(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf(

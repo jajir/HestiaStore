@@ -55,7 +55,6 @@ public class IndexConfigurationStore<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private static final String PROP_SEGMENT_SPLIT_KEY_THRESHOLD = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_SPLIT_KEY_THRESHOLD;
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
-    private static final String PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS;
     private static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUSY_BACKOFF_MILLIS;
@@ -183,9 +182,6 @@ public class IndexConfigurationStore<K, V> {
                         falsePositiveProbability),
                 new EffectiveIndexMaintenanceConfiguration(
                         getOrDefault(propsView,
-                                PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS,
-                                IndexConfigurationDefaults.DEFAULT_SEGMENT_MAINTENANCE_THREADS),
-                        getOrDefault(propsView,
                                 PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                                 IndexConfigurationDefaults.DEFAULT_INDEX_MAINTENANCE_THREADS),
                         getOrDefault(propsView,
@@ -260,9 +256,6 @@ public class IndexConfigurationStore<K, V> {
                 segment.chunkKeyLimit());
         writer.setInt(PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 segment.deltaCacheFileLimit());
-        final int maintenanceThreads = maintenance.segmentThreads();
-        writer.setInt(PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS,
-                maintenanceThreads);
         final int indexMaintenanceThreads = maintenance.indexThreads();
         writer.setInt(PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                 indexMaintenanceThreads);

@@ -26,7 +26,6 @@ import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.execution.MaintenanceStatsRecorder;
 import org.hestiastore.index.segmentindex.core.execution.IndexOperationStatsRecorder;
@@ -80,7 +79,7 @@ class SegmentIndexRuntimeSnapshotCollectorTest {
     private AtomicLong compactRequestHighWaterMark;
     private AtomicLong flushRequestHighWaterMark;
     private AtomicLong lastAppliedWalLsn;
-    private ExecutorRegistry executorRegistry;
+    private ExecutorRegistryFixture executorRegistry;
     private SegmentIndexRuntimeSnapshotCollector<Integer, String> collector;
 
     @BeforeEach
@@ -94,7 +93,7 @@ class SegmentIndexRuntimeSnapshotCollectorTest {
         executorRegistry = ExecutorRegistryFixture.from(conf);
         collector = SegmentIndexRuntimeSnapshotCollector.create(
                 effective(conf), keyToSegmentMap, segmentRegistry,
-                splitService, executorRegistry,
+                splitService, executorRegistry.executorRegistry(),
                 RuntimeTuningState.fromConfiguration(effective(conf)),
                 new LruChunkStoreCache<>(0), WalMonitoringView.empty(),
                 operationStatsRecorder, maintenanceStatsRecorder,
@@ -104,7 +103,7 @@ class SegmentIndexRuntimeSnapshotCollectorTest {
 
     @AfterEach
     void tearDown() {
-        if (executorRegistry != null && !executorRegistry.wasClosed()) {
+        if (executorRegistry != null) {
             executorRegistry.close();
         }
     }
@@ -183,7 +182,8 @@ class SegmentIndexRuntimeSnapshotCollectorTest {
                 .assertThrows(IllegalArgumentException.class,
                         () -> SegmentIndexRuntimeSnapshotCollector.create(null,
                                 keyToSegmentMap, segmentRegistry,
-                                splitService, executorRegistry,
+                                splitService,
+                                executorRegistry.executorRegistry(),
                                 runtimeTuningState, chunkStoreCache,
                                 walMonitoringView,
                                 operationStatsRecorder,
@@ -217,7 +217,6 @@ class SegmentIndexRuntimeSnapshotCollectorTest {
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))
                 .maintenance(maintenance -> maintenance.indexThreads(1))
-                .maintenance(maintenance -> maintenance.segmentThreads(1))
                 .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))

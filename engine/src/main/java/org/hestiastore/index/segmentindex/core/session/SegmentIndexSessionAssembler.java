@@ -105,6 +105,7 @@ public final class SegmentIndexSessionAssembler {
                 coreStorageRuntime,
                 coreStorageRuntime.getStorageService(),
                 resources.executorRegistry(),
+                resources.runtimeHandle(),
                 resources.directoryLock());
     }
 

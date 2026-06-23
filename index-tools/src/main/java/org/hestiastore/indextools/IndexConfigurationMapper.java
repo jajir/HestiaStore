@@ -53,8 +53,6 @@ final class IndexConfigurationMapper {
                 segment.maxKeys());
         manifest.setMaxNumberOfSegmentsInCache(
                 segment.cachedSegmentLimit());
-        manifest.setNumberOfSegmentMaintenanceThreads(
-                maintenance.segmentThreads());
         manifest.setNumberOfIndexMaintenanceThreads(
                 maintenance.indexThreads());
         manifest.setNumberOfRegistryLifecycleThreads(
@@ -118,8 +116,6 @@ final class IndexConfigurationMapper {
                         .segmentSplitKeyThreshold(manifest
                                 .getSegmentSplitKeyThreshold()))
                 .maintenance(maintenance -> maintenance
-                        .segmentThreads(
-                                manifest.getNumberOfSegmentMaintenanceThreads())
                         .indexThreads(
                                 manifest.getNumberOfIndexMaintenanceThreads())
                         .registryLifecycleThreads(manifest

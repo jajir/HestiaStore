@@ -17,7 +17,6 @@ import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.execution.MaintenanceStatsSnapshot;
 import org.hestiastore.index.segmentindex.core.execution.OperationStatsSnapshot;
@@ -31,11 +30,11 @@ import org.junit.jupiter.api.Test;
 
 class IndexRuntimeSnapshotProjectionTest {
 
-    private ExecutorRegistry executorRegistry;
+    private ExecutorRegistryFixture executorRegistry;
 
     @AfterEach
     void tearDown() {
-        if (executorRegistry != null && !executorRegistry.wasClosed()) {
+        if (executorRegistry != null) {
             executorRegistry.close();
         }
     }
@@ -63,7 +62,8 @@ class IndexRuntimeSnapshotProjectionTest {
                                 9),
                         new ChunkStoreCacheStats(5, 2, 4L, 6L, 7L, 8L, 9L,
                                 10L),
-                        stableSegmentRuntime, executorRegistry.statsSnapshot(),
+                        stableSegmentRuntime,
+                        executorRegistry.executorRegistry().statsSnapshot(),
                         new SplitStats(3L, 2, 0, 0L, 0L), WalMonitoring.empty(),
                         new MaintenanceStatsSnapshot(0L, 0L, 0L, 0L, 0L, 0L), 5L, 7L,
                         17L, 10, 5, 6, 7, SegmentIndexState.READY);
@@ -118,7 +118,6 @@ class IndexRuntimeSnapshotProjectionTest {
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))
                 .maintenance(maintenance -> maintenance.indexThreads(1))
-                .maintenance(maintenance -> maintenance.segmentThreads(1))
                 .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))

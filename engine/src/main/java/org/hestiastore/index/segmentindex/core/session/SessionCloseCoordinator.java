@@ -30,6 +30,7 @@ final class SessionCloseCoordinator<K, V> {
     private final OpenedStorageRuntime<K, V> coreStorageRuntime;
     private final StorageCoordinator<K, V> storageService;
     private final ExecutorRegistry executorRegistry;
+    private final SegmentIndexRuntimeHandle runtimeHandle;
     private final IndexDirectoryLock directoryLock;
 
     SessionCloseCoordinator(final String indexName,
@@ -41,6 +42,7 @@ final class SessionCloseCoordinator<K, V> {
             final OpenedStorageRuntime<K, V> coreStorageRuntime,
             final StorageCoordinator<K, V> storageService,
             final ExecutorRegistry executorRegistry,
+            final SegmentIndexRuntimeHandle runtimeHandle,
             final IndexDirectoryLock directoryLock) {
         this.indexName = Vldtn.requireNonNull(indexName, "indexName");
         this.stateMachine = Vldtn.requireNonNull(stateMachine,
@@ -58,6 +60,8 @@ final class SessionCloseCoordinator<K, V> {
                 "storageService");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
+        this.runtimeHandle = Vldtn.requireNonNull(runtimeHandle,
+                "runtimeHandle");
         this.directoryLock = Vldtn.requireNonNull(directoryLock,
                 "directoryLock");
     }
@@ -113,6 +117,11 @@ final class SessionCloseCoordinator<K, V> {
         }
         try {
             executorRegistry.close();
+        } catch (final RuntimeException failure) {
+            firstFailure = recordFailure(firstFailure, failure);
+        }
+        try {
+            runtimeHandle.close();
         } catch (final RuntimeException failure) {
             firstFailure = recordFailure(firstFailure, failure);
         }

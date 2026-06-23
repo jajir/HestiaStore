@@ -7,19 +7,16 @@ import org.hestiastore.index.Vldtn;
  */
 public final class EffectiveIndexMaintenanceConfiguration {
 
-    private final int segmentThreads;
     private final int indexThreads;
     private final int registryLifecycleThreads;
     private final int busyBackoffMillis;
     private final int busyTimeoutMillis;
     private final boolean backgroundAutoEnabled;
 
-    public EffectiveIndexMaintenanceConfiguration(final int segmentThreads,
-            final int indexThreads, final int registryLifecycleThreads,
+    public EffectiveIndexMaintenanceConfiguration(final int indexThreads,
+            final int registryLifecycleThreads,
             final int busyBackoffMillis, final int busyTimeoutMillis,
             final boolean backgroundAutoEnabled) {
-        this.segmentThreads = Vldtn.requireGreaterThanZero(segmentThreads,
-                "segmentThreads");
         this.indexThreads = Vldtn.requireGreaterThanZero(indexThreads,
                 "indexThreads");
         this.registryLifecycleThreads = Vldtn.requireGreaterThanZero(
@@ -29,10 +26,6 @@ public final class EffectiveIndexMaintenanceConfiguration {
         this.busyTimeoutMillis = Vldtn.requireGreaterThanZero(
                 busyTimeoutMillis, "busyTimeoutMillis");
         this.backgroundAutoEnabled = backgroundAutoEnabled;
-    }
-
-    public int segmentThreads() {
-        return segmentThreads;
     }
 
     public int indexThreads() {

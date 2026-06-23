@@ -62,7 +62,6 @@ class IndexConfigurationStoreTest {
         assertEquals(9, loaded.writePath().indexBufferedWriteKeyLimit());
         assertEquals(11, loaded.segment().maxKeys());
         assertEquals(10, loaded.writePath().segmentSplitKeyThreshold());
-        assertEquals(7, loaded.maintenance().segmentThreads());
         assertFalse(loaded.maintenance().backgroundAutoEnabled());
         assertEquals(0, loaded.chunkStoreCache().pageLimit());
     }
@@ -93,7 +92,7 @@ class IndexConfigurationStoreTest {
                                 .indexSizeBytes(1024)
                                 .falsePositiveProbability(0.05D))
                         .maintenance(maintenance -> maintenance
-                                .segmentThreads(2).indexThreads(3)
+                                .indexThreads(3)
                                 .registryLifecycleThreads(4)
                                 .busyBackoffMillis(5)
                                 .busyTimeoutMillis(6)
@@ -321,8 +320,6 @@ class IndexConfigurationStoreTest {
                 true);
         final var view = store.snapshot();
 
-        assertEquals(7, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS));
         assertFalse(view.getBoolean(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED));
         assertNull(view.getString(LEGACY_SEGMENT_MAINTENANCE_AUTO_ENABLED));
@@ -434,7 +431,6 @@ class IndexConfigurationStoreTest {
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
                 .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
                 .io(io -> io.diskBufferSizeBytes(1024))//
-                .maintenance(maintenance -> maintenance.segmentThreads(7))//
                 .logging(logging -> logging.contextEnabled(false))//
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
                 .filters(filters -> filters
@@ -496,7 +492,6 @@ class IndexConfigurationStoreTest {
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
                 .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
                 .io(io -> io.diskBufferSizeBytes(1024))//
-                .maintenance(maintenance -> maintenance.segmentThreads(7))//
                 .logging(logging -> logging.contextEnabled(false))//
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
                 .filters(filters -> filters
@@ -545,7 +540,6 @@ class IndexConfigurationStoreTest {
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
                 .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
                 .io(io -> io.diskBufferSizeBytes(1024))//
-                .maintenance(maintenance -> maintenance.segmentThreads(7))//
                 .logging(logging -> logging.contextEnabled(false))//
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
                 .filters(filters -> filters.encodingFilters(

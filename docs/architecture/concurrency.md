@@ -63,9 +63,14 @@ These structures are shared across threads and require synchronization:
 ## Threads
 
 - Sync operations run on caller threads.
-- Segment maintenance runs on the segment maintenance executor.
-- Split planning runs on one dedicated split-planner thread.
-- Split materialization runs on the shared split-maintenance executor pool.
+- Segment maintenance runs on the shared `hestia-segment-maintenance-*`
+  executor.
+- Split planning runs on the index-owned
+  `hestia-<indexName>-split-policy-*` scheduler.
+- Split materialization runs on the shared `hestia-split-maintenance-*`
+  executor.
+- WAL group sync runs on `hestia-<indexName>-wal-group-sync-*` when GROUP_SYNC
+  durability is enabled with a positive delay.
 
 ## Implications
 

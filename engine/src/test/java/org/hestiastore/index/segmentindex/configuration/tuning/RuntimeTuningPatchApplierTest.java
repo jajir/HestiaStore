@@ -103,6 +103,32 @@ class RuntimeTuningPatchApplierTest {
     }
 
     @Test
+    void applyPublishesValuesToRuntimeStateAccessors() {
+        final RuntimeTuningResult result = applier.apply(RuntimeTuningPatch
+                .builder()
+                .expectedRevision(0L)
+                .cachedSegmentLimit(4)
+                .cacheKeyLimit(12)
+                .segmentWriteCacheKeyLimit(6)
+                .segmentWriteCacheKeyLimitDuringMaintenance(8)
+                .indexBufferedWriteKeyLimit(16)
+                .segmentSplitKeyThreshold(60)
+                .chunkStoreCachePageLimit(2)
+                .build());
+
+        assertTrue(result.applied());
+        assertEquals(1L, runtimeTuningState.revision());
+        assertEquals(4, runtimeTuningState.cachedSegmentLimit());
+        assertEquals(12, runtimeTuningState.cacheKeyLimit());
+        assertEquals(6, runtimeTuningState.segmentWriteCacheKeyLimit());
+        assertEquals(8,
+                runtimeTuningState.segmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(16, runtimeTuningState.indexBufferedWriteKeyLimit());
+        assertEquals(60, runtimeTuningState.segmentSplitKeyThreshold());
+        assertEquals(2, runtimeTuningState.chunkStoreCachePageLimit());
+    }
+
+    @Test
     void sideEffectFailureDoesNotMutateRuntimeState() {
         doThrow(new IllegalStateException("failed")).when(segmentRegistry)
                 .updateCacheLimit(anyInt());

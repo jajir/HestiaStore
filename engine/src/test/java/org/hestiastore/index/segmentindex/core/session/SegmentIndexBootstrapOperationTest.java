@@ -29,6 +29,8 @@ import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigu
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.RuntimeExecutorPools;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
@@ -272,7 +274,38 @@ class SegmentIndexBootstrapOperationTest {
             final IndexConfiguration<Integer, String> configuration,
             final ChunkFilterProviderResolver resolver) {
         return new SegmentIndexBootstrapOperation<>(directory, configuration,
-                resolver);
+                resolver, runtimeHandle());
+    }
+
+    private static SegmentIndexRuntimeHandle runtimeHandle() {
+        final RuntimeExecutorPools executorPools = RuntimeExecutorPools.create(
+                "hestia-test", 1, 1, 30_000);
+        return new SegmentIndexRuntimeHandle() {
+            @Override
+            public ExecutorRegistry createExecutorRegistry(
+                    final String indexName,
+                    final boolean contextLoggingEnabled,
+                    final int indexMaintenanceThreads,
+                    final int registryMaintenanceThreads,
+                    final int shutdownTimeoutMillis) {
+                return ExecutorRegistry.create(indexName,
+                        contextLoggingEnabled, indexMaintenanceThreads,
+                        executorPools, registryMaintenanceThreads,
+                        shutdownTimeoutMillis);
+            }
+
+            @Override
+            public String threadNamePrefix() {
+                return "hestia-test";
+            }
+
+            @Override
+            public void close() {
+                if (!executorPools.wasClosed()) {
+                    executorPools.close();
+                }
+            }
+        };
     }
 
     private static IndexConfiguration<Integer, String> buildConf(
@@ -321,8 +354,6 @@ class SegmentIndexBootstrapOperationTest {
                         .maintenance(maintenance -> maintenance
                                 .backgroundAutoEnabled(false))
                         .maintenance(maintenance -> maintenance
-                                .segmentThreads(1))
-                        .maintenance(maintenance -> maintenance
                                 .registryLifecycleThreads(
                                         registryLifecycleThreads))
                         .filters(filters -> filters.encodingFilters(
@@ -360,7 +391,6 @@ class SegmentIndexBootstrapOperationTest {
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .maintenance(maintenance -> maintenance
                         .backgroundAutoEnabled(false))
-                .maintenance(maintenance -> maintenance.segmentThreads(1))
                 .maintenance(maintenance -> maintenance
                         .registryLifecycleThreads(1))
                 .filters(filters -> filters.encodingFilters(
@@ -398,7 +428,6 @@ class SegmentIndexBootstrapOperationTest {
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .maintenance(maintenance -> maintenance
                         .backgroundAutoEnabled(false))
-                .maintenance(maintenance -> maintenance.segmentThreads(1))
                 .maintenance(maintenance -> maintenance
                         .registryLifecycleThreads(1))
                 .filters(filters -> filters.addEncodingFilter(spec))
