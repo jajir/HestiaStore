@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -18,6 +19,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.MemoryEstimateReport;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
@@ -99,6 +101,8 @@ class SegmentIndexSessionTest {
                 closeCalls);
 
         final RecordingIndex streamingIndex = new RecordingIndex(iterator);
+        assertEquals("test-startup-report",
+                streamingIndex.startupMemoryEstimate().text());
         try (Stream<Entry<Integer, String>> stream = streamingIndex.getStream(
                 SegmentWindow.unbounded(),
                 SegmentIteratorIsolation.FULL_ISOLATION)) {
@@ -221,6 +225,7 @@ class SegmentIndexSessionTest {
                     mockOperationAccess(), mockStreamingService(),
                     recordingConfiguration(), mock(RuntimeTuning.class),
                     mock(SegmentIndexRuntimeMonitoring.class),
+                    SegmentIndexSessionTest.startupMemoryEstimate(),
                     mock(SegmentIndexMaintenance.class),
                     stateMachine, mockCloseCoordinator());
             this.iterator = iterator;
@@ -243,6 +248,11 @@ class SegmentIndexSessionTest {
             // no-op test index
         }
 
+    }
+
+    private static MemoryEstimateReport startupMemoryEstimate() {
+        return new MemoryEstimateReport(List.of("test-startup-report"), true,
+                OptionalLong.of(1L));
     }
 
     private static final class CountingIterator<K, V>

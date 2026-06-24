@@ -2,6 +2,7 @@ package org.hestiastore.index.datatype;
 
 import java.nio.charset.Charset;
 import java.util.Comparator;
+import java.util.OptionalInt;
 
 import org.hestiastore.index.Vldtn;
 
@@ -100,6 +101,16 @@ public final class TypeDescriptorFixedLengthString
                 }
             }
         };
+    }
+
+    /**
+     * Returns the configured fixed string length as the size estimate.
+     *
+     * @return fixed-length string size estimate
+     */
+    @Override
+    public OptionalInt getEstimatedAverageSizeInBytes() {
+        return OptionalInt.of(length);
     }
 
     /**

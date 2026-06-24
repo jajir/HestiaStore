@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -7,11 +8,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
+import java.util.OptionalLong;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.MemoryEstimateReport;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
@@ -43,6 +46,7 @@ class SegmentIndexSessionAssemblerTest {
                         mockMaintenanceService(),
                         mock(RuntimeTuning.class),
                         mock(SegmentIndexRuntimeMonitoring.class),
+                        startupMemoryEstimate(),
                         newCoreStorageRuntime()));
     }
 
@@ -61,6 +65,7 @@ class SegmentIndexSessionAssemblerTest {
                         mockMaintenanceService(),
                         mock(RuntimeTuning.class),
                         mock(SegmentIndexRuntimeMonitoring.class),
+                        startupMemoryEstimate(),
                         newCoreStorageRuntime()));
     }
 
@@ -78,6 +83,7 @@ class SegmentIndexSessionAssemblerTest {
                         mockMaintenanceService(),
                         mock(RuntimeTuning.class),
                         mock(SegmentIndexRuntimeMonitoring.class),
+                        startupMemoryEstimate(),
                         newCoreStorageRuntime()));
     }
 
@@ -96,6 +102,27 @@ class SegmentIndexSessionAssemblerTest {
                         mockMaintenanceService(),
                         mock(RuntimeTuning.class),
                         mock(SegmentIndexRuntimeMonitoring.class),
+                        startupMemoryEstimate(),
+                        newCoreStorageRuntime()));
+    }
+
+    @Test
+    void createIndex_rejectsNullStartupMemoryEstimate() {
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final SegmentIndexRuntimeResources<Integer, String> resources =
+                initializedResources();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> SegmentIndexSessionAssembler.createIndex(resources,
+                        effectiveConfiguration("factory-null-report"),
+                        keyDescriptor,
+                        mockOperationAccess(),
+                        mockSplitService(),
+                        mockStreamingService(),
+                        mockMaintenanceService(),
+                        mock(RuntimeTuning.class),
+                        mock(SegmentIndexRuntimeMonitoring.class),
+                        null,
                         newCoreStorageRuntime()));
     }
 
@@ -106,6 +133,7 @@ class SegmentIndexSessionAssemblerTest {
                 initializedResources();
         final RuntimeTuning runtimeTuning = mock(RuntimeTuning.class);
         final SegmentIndexRuntimeMonitoring runtimeMonitoring = mock(SegmentIndexRuntimeMonitoring.class);
+        final MemoryEstimateReport startupMemoryEstimate = startupMemoryEstimate();
 
         final SegmentIndex<Integer, String> index = SegmentIndexSessionAssembler.createIndex(resources,
                 effectiveConfiguration("factory-create-index"),
@@ -116,6 +144,7 @@ class SegmentIndexSessionAssemblerTest {
                 mockMaintenanceService(),
                 runtimeTuning,
                 runtimeMonitoring,
+                startupMemoryEstimate,
                 newCoreStorageRuntime());
 
         assertInstanceOf(SegmentIndexSession.class, index);
@@ -124,6 +153,10 @@ class SegmentIndexSessionAssemblerTest {
                 implementation.stateMachine());
         assertSame(runtimeTuning, implementation.runtimeTuning());
         assertSame(runtimeMonitoring, implementation.runtimeMonitoring());
+        assertSame(startupMemoryEstimate,
+                implementation.startupMemoryEstimate());
+        assertEquals("line",
+                implementation.startupMemoryEstimate().lines().get(0));
     }
 
     private SegmentIndexRuntimeResources<Integer, String> initializedResources() {
@@ -137,6 +170,11 @@ class SegmentIndexSessionAssemblerTest {
     private EffectiveIndexConfiguration<Integer, String> effectiveConfiguration(
             final String indexName) {
         return effective(configuration(indexName));
+    }
+
+    private MemoryEstimateReport startupMemoryEstimate() {
+        return new MemoryEstimateReport(List.of("line"), true,
+                OptionalLong.of(12L));
     }
 
     private IndexConfiguration<Integer, String> configuration(

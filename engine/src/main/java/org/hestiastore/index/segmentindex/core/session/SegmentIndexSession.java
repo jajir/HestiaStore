@@ -13,6 +13,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.MemoryEstimateReport;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
@@ -42,6 +43,7 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
     private final EffectiveIndexConfiguration<K, V> configuration;
     private final RuntimeTuning runtimeTuning;
     private final SegmentIndexRuntimeMonitoring runtimeMonitoring;
+    private final MemoryEstimateReport startupMemoryEstimate;
     private final SegmentIndexMaintenance maintenanceApi;
     private final SegmentIndexStateMachine stateMachine;
     private final SessionCloseCoordinator<K, V> closeCoordinator;
@@ -58,6 +60,7 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
      *            logging
      * @param runtimeTuning runtime tuning API view
      * @param runtimeMonitoring runtime monitoring API view
+     * @param startupMemoryEstimate startup memory estimate captured during bootstrap
      * @param maintenanceApi maintenance API view
      * @param stateMachine session lifecycle state machine
      * @param closeCoordinator ordered close sequence coordinator
@@ -69,6 +72,7 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
             final EffectiveIndexConfiguration<K, V> configuration,
             final RuntimeTuning runtimeTuning,
             final SegmentIndexRuntimeMonitoring runtimeMonitoring,
+            final MemoryEstimateReport startupMemoryEstimate,
             final SegmentIndexMaintenance maintenanceApi,
             final SegmentIndexStateMachine stateMachine,
             final SessionCloseCoordinator<K, V> closeCoordinator) {
@@ -86,6 +90,8 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
                 "runtimeTuning");
         this.runtimeMonitoring = Vldtn.requireNonNull(runtimeMonitoring,
                 "runtimeMonitoring");
+        this.startupMemoryEstimate = Vldtn.requireNonNull(startupMemoryEstimate,
+                "startupMemoryEstimate");
         this.maintenanceApi = Vldtn.requireNonNull(maintenanceApi,
                 "maintenanceApi");
         this.stateMachine = Vldtn.requireNonNull(stateMachine,
@@ -262,6 +268,12 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
     @Override
     public SegmentIndexRuntimeMonitoring runtimeMonitoring() {
         return runtimeMonitoring;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public MemoryEstimateReport startupMemoryEstimate() {
+        return startupMemoryEstimate;
     }
 
     private SegmentId requireSegmentId(final SegmentId segmentId) {

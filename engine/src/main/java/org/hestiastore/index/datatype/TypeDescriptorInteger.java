@@ -1,6 +1,7 @@
 package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
+import java.util.OptionalInt;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
@@ -54,6 +55,16 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     @Override
     public TypeEncoder<Integer> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
+    }
+
+    /**
+     * Returns four bytes as the fixed serialized size estimate.
+     *
+     * @return fixed integer size estimate
+     */
+    @Override
+    public OptionalInt getEstimatedAverageSizeInBytes() {
+        return OptionalInt.of(REQUIRED_BYTES);
     }
 
     /**

@@ -2,11 +2,14 @@ package org.hestiastore.index.datatype;
 
 import java.nio.charset.Charset;
 import java.util.Comparator;
+import java.util.OptionalInt;
 
 /**
  * Descriptor for short strings prefixed by one-byte payload length.
  */
 public class TypeDescriptorShortString implements TypeDescriptor<String> {
+
+    private static final int MAX_SERIALIZED_BYTES = 128;
 
     private static final String CHARSET_ENCODING_NAME = "ISO_8859_1";
 
@@ -38,6 +41,16 @@ public class TypeDescriptorShortString implements TypeDescriptor<String> {
     @Override
     public TypeEncoder<String> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
+    }
+
+    /**
+     * Returns the conservative maximum short-string serialized size estimate.
+     *
+     * @return conservative short-string size estimate
+     */
+    @Override
+    public OptionalInt getEstimatedAverageSizeInBytes() {
+        return OptionalInt.of(MAX_SERIALIZED_BYTES);
     }
 
     /**

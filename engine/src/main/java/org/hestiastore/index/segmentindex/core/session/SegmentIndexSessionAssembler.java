@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.segmentindex.MemoryEstimateReport;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
@@ -38,6 +39,7 @@ public final class SegmentIndexSessionAssembler {
      * @param maintenance maintenance service
      * @param runtimeTuning runtime tuning API view
      * @param runtimeMonitoring runtime monitoring API view
+     * @param startupMemoryEstimate startup memory estimate captured during bootstrap
      * @param coreStorageRuntime core storage lifecycle owner
      * @return created session index
      */
@@ -51,6 +53,7 @@ public final class SegmentIndexSessionAssembler {
             final MappedSegmentMaintenanceService<K, V> maintenance,
             final RuntimeTuning runtimeTuning,
             final SegmentIndexRuntimeMonitoring runtimeMonitoring,
+            final MemoryEstimateReport startupMemoryEstimate,
             final OpenedStorageRuntime<K, V> coreStorageRuntime) {
         final SegmentIndexRuntimeResources<K, V> initializedResources =
                 Vldtn.requireNonNull(resources, "resources");
@@ -84,6 +87,8 @@ public final class SegmentIndexSessionAssembler {
                 initializedConfiguration,
                 Vldtn.requireNonNull(runtimeTuning, "runtimeTuning"),
                 Vldtn.requireNonNull(runtimeMonitoring, "runtimeMonitoring"),
+                Vldtn.requireNonNull(startupMemoryEstimate,
+                        "startupMemoryEstimate"),
                 maintenanceApi,
                 initializedResources.stateMachine(),
                 closeCoordinator);

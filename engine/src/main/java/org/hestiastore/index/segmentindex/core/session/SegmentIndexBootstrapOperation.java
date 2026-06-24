@@ -10,6 +10,7 @@ import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segmentindex.MemoryEstimateReport;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.DataTypeDescriptorRegistry;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
@@ -56,6 +57,8 @@ public final class SegmentIndexBootstrapOperation<K, V> {
     private static final String ERROR_INDEX_NOT_FOUND = "Cannot open segment index because configuration does not exist.";
     private static final String STALE_LOCK_RECOVERY_MESSAGE = "Recovered stale index lock (.lock). Index is going to be checked "
             + "for consistency and unlocked.";
+    private static final String MEMORY_ESTIMATE_LOG_PREFIX =
+            "memory-estimate";
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(SegmentIndexBootstrapOperation.class);
@@ -134,8 +137,10 @@ public final class SegmentIndexBootstrapOperation<K, V> {
             resolveConfiguration(mode, state, configurationManager);
             resolveTypeDescriptors(state);
             writeConfiguration(state, configurationManager);
-            createExecutorRegistry(state);
             openKeyToSegmentMap(state);
+            createStartupMemoryEstimate(state);
+            logStartupMemoryEstimate(state);
+            createExecutorRegistry(state);
             createChunkStoreCache(state);
             openSegmentRegistry(state);
             openCoreStorage(state);
@@ -224,6 +229,23 @@ public final class SegmentIndexBootstrapOperation<K, V> {
             final BootstrapState<K, V> state) {
         state.setKeyToSegmentMap(new PersistentSegmentRouteMap<>(directory,
                 state.getKeyTypeDescriptor()));
+    }
+
+    private void createStartupMemoryEstimate(final BootstrapState<K, V> state) {
+        final EffectiveIndexConfiguration<K, V> configuration =
+                state.getConfiguration();
+        final int routeCount = state.getKeyToSegmentMap().getSegmentIds()
+                .size();
+        final MemoryEstimateReport memoryEstimate = IndexMemoryEstimator.estimate(
+                configuration, state.getKeyTypeDescriptor(),
+                state.getValueTypeDescriptor(), routeCount);
+        state.setStartupMemoryEstimate(memoryEstimate);
+    }
+
+    private void logStartupMemoryEstimate(final BootstrapState<K, V> state) {
+        state.getStartupMemoryEstimate().lines()
+                .forEach(line -> LOGGER.info("{} {}",
+                        MEMORY_ESTIMATE_LOG_PREFIX, line));
     }
 
     private void createChunkStoreCache(
@@ -436,6 +458,7 @@ public final class SegmentIndexBootstrapOperation<K, V> {
                 state.getRuntimeMaintenanceService(),
                 state.getRuntimeTuning(),
                 state.getRuntimeMonitoring(),
+                state.getStartupMemoryEstimate(),
                 state.getCoreStorageRuntime()));
     }
 
@@ -640,6 +663,7 @@ public final class SegmentIndexBootstrapOperation<K, V> {
         private PointOperationCoordinator<K, V> operationAccess;
         private RuntimeTuning runtimeTuning;
         private SegmentIndexRuntimeMonitoring runtimeMonitoring;
+        private MemoryEstimateReport startupMemoryEstimate;
         private SegmentIndex<K, V> index;
         private boolean closeOwnershipTransferred;
 
@@ -703,6 +727,17 @@ public final class SegmentIndexBootstrapOperation<K, V> {
 
         SegmentIndex<K, V> getIndex() {
             return requireInitialized(index, "index");
+        }
+
+        void setStartupMemoryEstimate(
+                final MemoryEstimateReport startupMemoryEstimate) {
+            this.startupMemoryEstimate = Vldtn.requireNonNull(
+                    startupMemoryEstimate, "startupMemoryEstimate");
+        }
+
+        MemoryEstimateReport getStartupMemoryEstimate() {
+            return requireInitialized(startupMemoryEstimate,
+                    "startupMemoryEstimate");
         }
 
         AtomicLong compactRequestHighWaterMark() {
