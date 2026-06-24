@@ -151,7 +151,7 @@ class IndexToolTest {
                                 .indexSizeBytes(1024)
                                 .falsePositiveProbability(0.05D))
                         .maintenance(maintenance -> maintenance
-                                .segmentThreads(2).indexThreads(3)
+                                .indexThreads(3)
                                 .registryLifecycleThreads(4)
                                 .busyBackoffMillis(5)
                                 .busyTimeoutMillis(6)

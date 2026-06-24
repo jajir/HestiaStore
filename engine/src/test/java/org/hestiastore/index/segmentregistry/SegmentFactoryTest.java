@@ -153,7 +153,7 @@ class SegmentFactoryTest {
                         .falsePositiveProbability(0.01))
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .maintenance(maintenance -> maintenance
-                        .backgroundAutoEnabled(false).segmentThreads(1)
+                        .backgroundAutoEnabled(false)
                         .indexThreads(1).busyBackoffMillis(1)
                         .busyTimeoutMillis(1000))
                 .logging(logging -> logging.contextEnabled(false))
@@ -260,7 +260,7 @@ class SegmentFactoryTest {
                         .decodingFilters(List.of(new ChunkFilterDoNothing())))//
                 .maintenance(maintenance -> maintenance
                         .backgroundAutoEnabled(false)//
-                        .segmentThreads(1)//
+                        //
                         .indexThreads(1)//
                         .busyBackoffMillis(1)//
                         .busyTimeoutMillis(1000))//

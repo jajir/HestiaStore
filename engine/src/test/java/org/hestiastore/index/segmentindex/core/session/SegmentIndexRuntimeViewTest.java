@@ -9,8 +9,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,27 +18,21 @@ class SegmentIndexRuntimeViewTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
-    private ExecutorRegistry executorRegistry;
     private Object openedRuntime;
     private Object runtime;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        executorRegistry = ExecutorRegistryFixture.from(conf);
         openedRuntime = SegmentIndexRuntimeTestAccess.openRuntime(
-                new MemDirectory(), tdi, tds, conf, executorRegistry);
+                new MemDirectory(), tdi, tds, conf);
         runtime = SegmentIndexRuntimeTestAccess.runtime(openedRuntime);
     }
 
     @AfterEach
     void tearDown() {
         if (openedRuntime != null) {
-            SegmentIndexRuntimeTestAccess.closeRuntime(openedRuntime,
-                    "runtime-view-test", executorRegistry);
-        }
-        if (executorRegistry != null && !executorRegistry.wasClosed()) {
-            executorRegistry.close();
+            SegmentIndexRuntimeTestAccess.closeRuntime(openedRuntime);
         }
     }
 

@@ -59,6 +59,9 @@ class SessionCloseCoordinatorTest {
     @Mock
     private ExecutorRegistry executorRegistry;
 
+    @Mock
+    private SegmentIndexRuntimeHandle runtimeHandle;
+
     private SessionCloseCoordinator<Integer, String> closeCoordinator;
 
     @BeforeEach
@@ -74,6 +77,7 @@ class SessionCloseCoordinatorTest {
                 stateMachine, operationGate, new IndexOperationStatsRecorder(),
                 splitService, maintenance, coreStorageRuntime,
                 storageService, executorRegistry,
+                runtimeHandle,
                 new IndexDirectoryLock(directory));
     }
 
@@ -83,7 +87,7 @@ class SessionCloseCoordinatorTest {
 
         final InOrder inOrder = inOrder(awaitOperationDrain, splitService,
                 maintenance, coreStorageRuntime, storageService, stateMachine,
-                executorRegistry, fileLock);
+                executorRegistry, runtimeHandle, fileLock);
         inOrder.verify(stateMachine).beginClose();
         inOrder.verify(awaitOperationDrain).run();
         inOrder.verify(splitService).close();
@@ -92,6 +96,7 @@ class SessionCloseCoordinatorTest {
         inOrder.verify(coreStorageRuntime).closeCoreStorage();
         inOrder.verify(storageService).closeWal();
         inOrder.verify(executorRegistry).close();
+        inOrder.verify(runtimeHandle).close();
         inOrder.verify(stateMachine).completeClose();
         inOrder.verify(fileLock).unlock();
     }
@@ -108,6 +113,7 @@ class SessionCloseCoordinatorTest {
         verify(maintenance).flushAndWait();
         verify(storageService).closeWal();
         verify(executorRegistry).close();
+        verify(runtimeHandle).close();
         verify(stateMachine).completeClose();
         verify(fileLock).unlock();
         verify(stateMachine).markRuntimeFailure(failure);
@@ -123,6 +129,7 @@ class SessionCloseCoordinatorTest {
 
         assertSame(failure, thrown);
         verify(storageService).closeWal();
+        verify(runtimeHandle).close();
         verify(stateMachine).completeClose();
         verify(fileLock).unlock();
         verify(stateMachine).markRuntimeFailure(failure);
@@ -143,6 +150,7 @@ class SessionCloseCoordinatorTest {
         assertEquals(1, thrown.getSuppressed().length);
         assertSame(secondFailure, thrown.getSuppressed()[0]);
         verify(executorRegistry).close();
+        verify(runtimeHandle).close();
         verify(fileLock).unlock();
         verify(stateMachine).markRuntimeFailure(firstFailure);
     }

@@ -182,7 +182,7 @@ class SegmentLoadCloseOperationsTest {
                         .decodingFilters(FILTERS))//
                 .maintenance(maintenance -> maintenance
                         .backgroundAutoEnabled(false)//
-                        .segmentThreads(1)//
+                        //
                         .indexThreads(1)//
                         .busyBackoffMillis(1)//
                         .busyTimeoutMillis(1000))//

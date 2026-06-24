@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,12 +41,12 @@ class ExecutorTopologyTest {
         final RuntimeException failure = topology.shutdownExecutorsInCloseOrder();
 
         assertEquals(null, failure);
-        assertEquals(List.of("index", "split", "scheduler", "stable",
-                "registry"), shutdownOrder);
+        assertEquals(List.of("index", "scheduler", "registry"),
+                shutdownOrder);
         assertTrue(indexMaintenance.isShutdown());
-        assertTrue(splitMaintenance.isShutdown());
+        assertFalse(splitMaintenance.isShutdown());
         assertTrue(splitPolicyScheduler.isShutdown());
-        assertTrue(stableSegmentMaintenance.isShutdown());
+        assertFalse(stableSegmentMaintenance.isShutdown());
         assertTrue(registryMaintenance.isShutdown());
     }
 
@@ -77,9 +78,10 @@ class ExecutorTopologyTest {
         assertTrue(failure.getMessage().contains("indexMaintenance"));
         assertTrue(failure.getMessage().contains("1 ms"));
         assertTrue(indexMaintenance.shutdownNowCalled());
-        assertEquals(List.of("index", "index", "split", "scheduler",
-                "stable", "registry"),
+        assertEquals(List.of("index", "index", "scheduler", "registry"),
                 shutdownOrder);
+        assertFalse(splitMaintenance.isShutdown());
+        assertFalse(stableSegmentMaintenance.isShutdown());
     }
 
     private static final class NeverTerminatingExecutorService

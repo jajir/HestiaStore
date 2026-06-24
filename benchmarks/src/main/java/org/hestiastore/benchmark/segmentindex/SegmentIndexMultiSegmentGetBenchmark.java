@@ -67,7 +67,7 @@ public class SegmentIndexMultiSegmentGetBenchmark
                         .hashFunctions(3)
                         .falsePositiveProbability(0.01D))//
                 .io(io -> io.diskBufferSizeBytes(8 * 1024))//
-                .maintenance(maintenance -> maintenance.segmentThreads(1)
+                .maintenance(maintenance -> maintenance
                         .indexThreads(2).registryLifecycleThreads(1)
                         .backgroundAutoEnabled(true));
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,

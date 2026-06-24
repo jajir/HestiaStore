@@ -33,6 +33,7 @@ public final class SegmentIndexRuntimeResources<K, V>
 
     private IndexDirectoryLock directoryLock;
     private ExecutorRegistry executorRegistry;
+    private SegmentIndexRuntimeHandle runtimeHandle;
 
     public void acquireDirectoryLock(final Directory directory) {
         directoryLock = new IndexDirectoryLock(directory);
@@ -54,6 +55,16 @@ public final class SegmentIndexRuntimeResources<K, V>
     public void setExecutorRegistry(final ExecutorRegistry executorRegistry) {
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
+    }
+
+    /**
+     * Installs the runtime ownership handle used by the close flow.
+     *
+     * @param runtimeHandle runtime ownership handle
+     */
+    public void setRuntimeHandle(final SegmentIndexRuntimeHandle runtimeHandle) {
+        this.runtimeHandle = Vldtn.requireNonNull(runtimeHandle,
+                "runtimeHandle");
     }
 
     /**
@@ -90,6 +101,10 @@ public final class SegmentIndexRuntimeResources<K, V>
 
     ExecutorRegistry executorRegistry() {
         return Vldtn.requireNonNull(executorRegistry, "executorRegistry");
+    }
+
+    SegmentIndexRuntimeHandle runtimeHandle() {
+        return Vldtn.requireNonNull(runtimeHandle, "runtimeHandle");
     }
 
     public SplitStatsRecorder splitStatsRecorder() {

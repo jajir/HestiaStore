@@ -48,7 +48,7 @@ class IndexConfigurationBuilderTest {
                 .bloomFilter(bloom -> bloom.hashFunctions(2)
                         .indexSizeBytes(1024)
                         .falsePositiveProbability(0.05D))
-                .maintenance(maintenance -> maintenance.segmentThreads(2)
+                .maintenance(maintenance -> maintenance
                         .indexThreads(3).registryLifecycleThreads(4)
                         .busyBackoffMillis(5).busyTimeoutMillis(6)
                         .backgroundAutoEnabled(false))
@@ -86,8 +86,6 @@ class IndexConfigurationBuilderTest {
                 grouped.bloomFilter().indexSizeBytes());
         assertEquals(0.05D,
                 grouped.bloomFilter().falsePositiveProbability());
-        assertEquals(Integer.valueOf(2),
-                grouped.maintenance().segmentThreads());
         assertEquals(Integer.valueOf(3), grouped.maintenance().indexThreads());
         assertEquals(Integer.valueOf(4),
                 grouped.maintenance().registryLifecycleThreads());

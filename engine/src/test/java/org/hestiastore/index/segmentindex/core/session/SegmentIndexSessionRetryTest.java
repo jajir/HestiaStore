@@ -22,7 +22,6 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -112,8 +111,7 @@ class SegmentIndexSessionRetryTest {
     private SegmentIndex<Integer, String> newIndex() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         return SegmentIndexSessionTestSupport.createStarted(
-                new MemDirectory(), tdi, tds, effective(conf),
-                ExecutorRegistryFixture.from(conf));
+                new MemDirectory(), tdi, tds, effective(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

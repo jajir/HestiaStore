@@ -73,8 +73,9 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
                 .io(io -> io.diskBufferSizeBytes(8 * 1024))//
                 .chunkStoreCache(cache -> cache
                         .pageLimit(chunkStoreCachePageLimit))//
-                .maintenance(maintenance -> maintenance.segmentThreads(1)
-                        .indexThreads(1).registryLifecycleThreads(1)
+                .maintenance(maintenance -> maintenance
+                        .indexThreads(1)//
+                        .registryLifecycleThreads(1)//
                         .backgroundAutoEnabled(false));
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,
                 snappy);

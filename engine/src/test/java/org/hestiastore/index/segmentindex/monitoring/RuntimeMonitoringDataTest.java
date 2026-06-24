@@ -7,7 +7,6 @@ import java.time.Instant;
 
 import org.hestiastore.index.chunkstorecache.ChunkStoreCacheStats;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryStats;
 import org.hestiastore.index.segmentindex.core.execution.MaintenanceStatsSnapshot;
@@ -21,11 +20,11 @@ import org.junit.jupiter.api.function.Executable;
 
 class RuntimeMonitoringDataTest {
 
-    private ExecutorRegistry executorRegistry;
+    private ExecutorRegistryFixture executorRegistry;
 
     @AfterEach
     void tearDown() {
-        if (executorRegistry != null && !executorRegistry.wasClosed()) {
+        if (executorRegistry != null) {
             executorRegistry.close();
         }
     }
@@ -99,6 +98,6 @@ class RuntimeMonitoringDataTest {
                     SegmentIndexMetricsTestConfigurationFactory.build(
                             "collected-runtime-monitoring-data"));
         }
-        return executorRegistry.statsSnapshot();
+        return executorRegistry.executorRegistry().statsSnapshot();
     }
 }

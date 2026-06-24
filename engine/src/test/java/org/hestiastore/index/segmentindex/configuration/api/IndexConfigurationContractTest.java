@@ -43,9 +43,6 @@ class IndexConfigurationContractTest {
         assertEquals(Boolean.TRUE,
                 contract.maintenance().backgroundAutoEnabled());
         assertEquals(0, contract.chunkStoreCache().pageLimit());
-        assertEquals(
-                IndexConfigurationDefaults.DEFAULT_SEGMENT_MAINTENANCE_THREADS,
-                contract.maintenance().segmentThreads());
 
         final List<ChunkFilterSpec> encoding =
                 contract.filters().encodingChunkFilterSpecs();

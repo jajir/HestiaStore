@@ -18,8 +18,6 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,27 +27,21 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SegmentIndexSessionBehaviorTest {
 
-    private ExecutorRegistry executorRegistry;
     private SegmentIndex<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        executorRegistry = ExecutorRegistryFixture.from(conf);
         index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), effective(conf),
-                executorRegistry);
+                new TypeDescriptorShortString(), effective(conf));
     }
 
     @AfterEach
     void tearDown() {
         if (index != null && !index.wasClosed()) {
             index.close();
-        }
-        if (executorRegistry != null && !executorRegistry.wasClosed()) {
-            executorRegistry.close();
         }
     }
 
@@ -67,11 +59,9 @@ class SegmentIndexSessionBehaviorTest {
     void closeReleasesDirectoryLock() {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = buildConf();
-        final ExecutorRegistry registry = ExecutorRegistryFixture.from(conf);
         try (SegmentIndex<Integer, String> lockedIndex = SegmentIndexSessionTestSupport.createStarted(directory,
                         new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), effective(conf),
-                        registry)) {
+                        new TypeDescriptorShortString(), effective(conf))) {
             assertTrue(directory.isFileExists(".lock"));
         }
 
@@ -82,21 +72,13 @@ class SegmentIndexSessionBehaviorTest {
     void failedOpenKeepsDirectoryLock() {
         final MemDirectory directory = spy(new MemDirectory());
         final IndexConfiguration<Integer, String> conf = buildConf();
-        final ExecutorRegistry registry = ExecutorRegistryFixture.from(conf);
         doThrow(new IllegalStateException("open failed")).when(directory)
                 .openSubDirectory(anyString());
 
-        try {
-            assertThrows(RuntimeException.class,
-                    () -> SegmentIndexSessionTestSupport.createStarted(directory,
-                            new TypeDescriptorInteger(),
-                            new TypeDescriptorShortString(), effective(conf),
-                            registry));
-        } finally {
-            if (!registry.wasClosed()) {
-                registry.close();
-            }
-        }
+        assertThrows(RuntimeException.class,
+                () -> SegmentIndexSessionTestSupport.createStarted(directory,
+                        new TypeDescriptorInteger(),
+                        new TypeDescriptorShortString(), effective(conf)));
 
         assertTrue(directory.isFileExists(".lock"));
     }

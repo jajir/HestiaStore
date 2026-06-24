@@ -49,7 +49,6 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
         .indexSizeBytes(1024)
         .hashFunctions(1))
     .maintenance(maintenance -> maintenance
-        .segmentThreads(10)
         .indexThreads(10)
         .registryLifecycleThreads(3)
         .backgroundAutoEnabled(true)
@@ -67,6 +66,16 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
         .corruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL))
     .logging(logging -> logging
         .contextEnabled(false))
+    .build();
+```
+
+Shared runtime executor pools are configured on `HestiaStoreRuntime`, not in
+the persisted index configuration:
+
+```java
+HestiaStoreRuntime runtime = HestiaStoreRuntime.builder()
+    .segmentMaintenanceThreads(10)
+    .splitMaintenanceThreads(10)
     .build();
 ```
 
@@ -130,13 +139,13 @@ become eligible for split maintenance.
 
 ### Maintenance and busy-state waiting
 
-Maintenance settings control background workers and retry behavior used when an
-operation waits for an internal index state to become available.
+Maintenance settings control index-local workers and retry behavior used when
+an operation waits for an internal index state to become available. Shared
+segment-maintenance and split-maintenance workers are configured on
+`HestiaStoreRuntime`.
 
 - `maintenance(...).backgroundAutoEnabled()` enables automatic background
   maintenance scheduling.
-- `maintenance(...).segmentThreads()` sets the segment maintenance thread
-  count.
 - `maintenance(...).indexThreads()` sets the index maintenance thread count.
 - `maintenance(...).registryLifecycleThreads()` sets the registry lifecycle
   thread count.
@@ -232,7 +241,6 @@ the implementation supports runtime-safe reopening.
 | `writePath().maintenanceWriteCacheKeyLimit()` | Per-segment maintenance backlog limit | Yes |
 | `writePath().indexBufferedWriteKeyLimit()` | Index-wide buffered-write budget | No on open; use runtime tuning where supported |
 | `writePath().segmentSplitKeyThreshold()` | Routed segment split eligibility threshold | No on open |
-| `maintenance().segmentThreads()` | Segment maintenance thread count | Yes |
 | `maintenance().indexThreads()` | Index maintenance thread count | Yes |
 | `maintenance().registryLifecycleThreads()` | Registry lifecycle thread count | Yes |
 | `maintenance().busyBackoffMillis()` | Delay between checks while waiting for a busy internal state | Yes |
@@ -271,7 +279,6 @@ Some names preserve older partition terminology for compatibility.
 | `maxNumberOfKeysInSegment` | `segment().maxKeys()` |
 | `segmentSplitKeyThreshold` | `writePath().segmentSplitKeyThreshold()` |
 | `maxNumberOfSegmentsInCache` | `segment().cachedSegmentLimit()` |
-| `numberOfSegmentMaintenanceThreads` | `maintenance().segmentThreads()` |
 | `numberOfIndexMaintenanceThreads` | `maintenance().indexThreads()` |
 | `numberOfRegistryLifecycleThreads` | `maintenance().registryLifecycleThreads()` |
 | `indexBusyBackoffMillis` | `maintenance().busyBackoffMillis()` |

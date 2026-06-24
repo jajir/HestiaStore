@@ -439,15 +439,6 @@ class IndexConfigurationBuilderValidationTest {
     }
 
     @Test
-    void test_segmentThreads_setsValue() {
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .maintenance(maintenance -> maintenance.segmentThreads(2))
-                .build();
-
-        assertEquals(2, config.maintenance().segmentThreads());
-    }
-
-    @Test
     void test_indexThreads_setsValue() {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .maintenance(maintenance -> maintenance.indexThreads(3))

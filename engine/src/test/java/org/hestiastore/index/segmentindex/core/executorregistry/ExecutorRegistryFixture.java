@@ -8,25 +8,49 @@ import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
  * Test helper for creating executor registries from full index configuration
  * objects.
  */
-public final class ExecutorRegistryFixture {
+public final class ExecutorRegistryFixture implements AutoCloseable {
 
-    private ExecutorRegistryFixture() {
+    private final ExecutorRegistry executorRegistry;
+    private final RuntimeExecutorPools runtimeExecutorPools;
+
+    private ExecutorRegistryFixture(final ExecutorRegistry executorRegistry,
+            final RuntimeExecutorPools runtimeExecutorPools) {
+        this.executorRegistry = executorRegistry;
+        this.runtimeExecutorPools = runtimeExecutorPools;
     }
 
-    public static ExecutorRegistry from(
+    public static ExecutorRegistryFixture from(
             final IndexConfiguration<?, ?> configuration) {
         return from(EffectiveIndexConfigurationResolver.resolveForCreate(
                 configuration));
     }
 
-    public static ExecutorRegistry from(
+    public static ExecutorRegistryFixture from(
             final EffectiveIndexConfiguration<?, ?> configuration) {
-        return ExecutorRegistry.create(configuration.identity().name(),
+        final RuntimeExecutorPools runtimePools = RuntimeExecutorPools.create(
+                "hestia-test", 1, 1,
+                configuration.maintenance().busyTimeoutMillis());
+        return new ExecutorRegistryFixture(ExecutorRegistry.create(
+                configuration.identity().name(),
                 configuration.logging().contextEnabled(),
                 configuration.maintenance().indexThreads(),
-                configuration.maintenance().indexThreads(),
-                configuration.maintenance().segmentThreads(),
+                runtimePools,
                 configuration.maintenance().registryLifecycleThreads(),
-                configuration.maintenance().busyTimeoutMillis());
+                configuration.maintenance().busyTimeoutMillis()),
+                runtimePools);
+    }
+
+    public ExecutorRegistry executorRegistry() {
+        return executorRegistry;
+    }
+
+    @Override
+    public void close() {
+        if (!executorRegistry.wasClosed()) {
+            executorRegistry.close();
+        }
+        if (!runtimeExecutorPools.wasClosed()) {
+            runtimeExecutorPools.close();
+        }
     }
 }

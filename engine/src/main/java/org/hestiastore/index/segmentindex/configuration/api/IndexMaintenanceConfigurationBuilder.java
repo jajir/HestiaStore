@@ -8,7 +8,6 @@ package org.hestiastore.index.segmentindex.configuration.api;
  */
 public final class IndexMaintenanceConfigurationBuilder<K, V> {
 
-    private Integer segmentThreads;
     private Integer indexThreads;
     private Integer registryLifecycleThreads;
     private Integer busyBackoffMillis;
@@ -16,18 +15,6 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
     private Boolean backgroundAutoEnabled;
 
     IndexMaintenanceConfigurationBuilder() {
-    }
-
-    /**
-     * Sets segment maintenance thread count.
-     *
-     * @param value segment maintenance threads
-     * @return this section builder
-     */
-    public IndexMaintenanceConfigurationBuilder<K, V> segmentThreads(
-            final Integer value) {
-        this.segmentThreads = value;
-        return this;
     }
 
     /**
@@ -91,7 +78,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
     }
 
     IndexMaintenanceConfiguration build() {
-        return new IndexMaintenanceConfiguration(segmentThreads, indexThreads,
+        return new IndexMaintenanceConfiguration(indexThreads,
                 registryLifecycleThreads, busyBackoffMillis, busyTimeoutMillis,
                 backgroundAutoEnabled);
     }

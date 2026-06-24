@@ -19,7 +19,6 @@ class IndexConfigurationManifest {
     private Integer segmentSplitKeyThreshold;
     private Integer maxNumberOfKeysInSegment;
     private Integer maxNumberOfSegmentsInCache;
-    private Integer numberOfSegmentMaintenanceThreads;
     private Integer numberOfIndexMaintenanceThreads;
     private Integer numberOfRegistryLifecycleThreads;
     private Integer indexBusyBackoffMillis;
@@ -154,15 +153,6 @@ class IndexConfigurationManifest {
     public void setMaxNumberOfSegmentsInCache(
             final Integer maxNumberOfSegmentsInCache) {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
-    }
-
-    public Integer getNumberOfSegmentMaintenanceThreads() {
-        return numberOfSegmentMaintenanceThreads;
-    }
-
-    public void setNumberOfSegmentMaintenanceThreads(
-            final Integer numberOfSegmentMaintenanceThreads) {
-        this.numberOfSegmentMaintenanceThreads = numberOfSegmentMaintenanceThreads;
     }
 
     public Integer getNumberOfIndexMaintenanceThreads() {

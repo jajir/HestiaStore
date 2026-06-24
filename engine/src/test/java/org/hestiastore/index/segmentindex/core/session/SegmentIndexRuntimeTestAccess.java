@@ -1,23 +1,18 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-import static org.mockito.Mockito.mock;
 
 import java.lang.reflect.Field;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStore;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService;
-import org.hestiastore.index.segmentindex.core.execution.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.execution.PointOperationCoordinator;
 import org.hestiastore.index.segmentindex.core.execution.SegmentIteratorService;
 import org.hestiastore.index.segmentindex.core.split.SplitRuntime;
@@ -40,20 +35,12 @@ public final class SegmentIndexRuntimeTestAccess {
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ExecutorRegistry executorRegistry) {
+            final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
-        try {
-            new IndexConfigurationStore<K, V>(directoryFacade)
-                    .save(effective(conf));
-            final SegmentIndex<K, V> index = SegmentIndex.open(directoryFacade);
-            return new OpenedRuntime<>(index, runtimeFromIndex(index));
-        } finally {
-            if (!executorRegistry.wasClosed()) {
-                executorRegistry.close();
-            }
-        }
+        new IndexConfigurationStore<K, V>(directoryFacade).save(effective(conf));
+        final SegmentIndex<K, V> index = SegmentIndex.open(directoryFacade);
+        return new OpenedRuntime<>(index, runtimeFromIndex(index));
     }
 
     public static Object runtime(final Object runtime) {
@@ -140,30 +127,13 @@ public final class SegmentIndexRuntimeTestAccess {
         return castRuntimeView(runtime).runtimeTuning();
     }
 
-    public static <K, V> void closeRuntime(
-            final SegmentIndexRuntimeView<K, V> runtime,
-            final String indexName, final ExecutorRegistry executorRegistry) {
-        final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
-        stateMachine.markReady();
-        new SessionCloseCoordinator<>(indexName, stateMachine,
-                mock(SessionOperationGate.class),
-                new IndexOperationStatsRecorder(),
-                runtime.splitService(),
-                runtime.maintenance(),
-                runtime.coreStorageRuntime(),
-                runtime.coreStorageRuntime().getStorageService(),
-                executorRegistry,
-                new IndexDirectoryLock(new MemDirectory()))
-                .close();
-    }
-
-    public static void closeRuntime(final Object runtime,
-            final String indexName, final ExecutorRegistry executorRegistry) {
+    public static void closeRuntime(final Object runtime) {
         if (runtime instanceof OpenedRuntime<?, ?> openedRuntime) {
             openedRuntime.index.close();
             return;
         }
-        closeRuntime(castRuntimeView(runtime), indexName, executorRegistry);
+        throw new IllegalArgumentException(
+                "Only opened runtime handles can be closed.");
     }
 
     @SuppressWarnings("unchecked")

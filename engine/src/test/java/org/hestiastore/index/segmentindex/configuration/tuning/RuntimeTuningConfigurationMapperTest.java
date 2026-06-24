@@ -89,7 +89,7 @@ class RuntimeTuningConfigurationMapperTest {
                 new EffectiveIndexSegmentConfiguration(1_000, 25, 30, 5, 3),
                 new EffectiveIndexWritePathConfiguration(10, 15, 60, 500),
                 new EffectiveIndexBloomFilterConfiguration(2, 2_048, 0.01d),
-                new EffectiveIndexMaintenanceConfiguration(2, 3, 4, 5, 30,
+                new EffectiveIndexMaintenanceConfiguration(3, 4, 5, 30,
                         true),
                 new EffectiveIndexIoConfiguration(4_096),
                 new EffectiveIndexLoggingConfiguration(true),

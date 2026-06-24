@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
@@ -66,6 +67,64 @@ class WalRuntimeTest {
                 () -> openWithStorage(IndexWalConfiguration.EMPTY,
                         new WalStorageMem(new MemDirectory()),
                         STRING_DESCRIPTOR, STRING_DESCRIPTOR));
+    }
+
+    @Test
+    void openUsesDefaultWalRuntimeGroupSyncThreadName() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.GROUP_SYNC)
+                .groupSyncDelayMillis(1).build();
+
+        try (WalRuntime<String, String> ignored = WalRuntime.open(
+                new MemDirectory(), effective(wal), STRING_DESCRIPTOR,
+                STRING_DESCRIPTOR)) {
+            assertTrue(awaitThreadNameStartingWith(
+                    "hestia-standalone-wal-group-sync-"));
+        }
+    }
+
+    @Test
+    void openUsesIndexSpecificGroupSyncThreadName() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.GROUP_SYNC)
+                .groupSyncDelayMillis(1).build();
+
+        try (WalRuntime<String, String> ignored = WalRuntime.open(
+                new MemDirectory(), effective(wal), STRING_DESCRIPTOR,
+                STRING_DESCRIPTOR, "hestia-test", "orders")) {
+            assertTrue(awaitThreadNameStartingWith(
+                    "hestia-test-orders-wal-group-sync-"));
+        }
+    }
+
+    @Test
+    void openRejectsBlankThreadNamePrefixForGroupSyncThreadName() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.GROUP_SYNC)
+                .groupSyncDelayMillis(1).build();
+
+        final IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> WalRuntime.open(new MemDirectory(), effective(wal),
+                        STRING_DESCRIPTOR, STRING_DESCRIPTOR, " ", "orders"));
+
+        assertEquals("Property 'threadNamePrefix' must not be blank.",
+                exception.getMessage());
+    }
+
+    @Test
+    void openRejectsBlankIndexNameForGroupSyncThreadName() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.GROUP_SYNC)
+                .groupSyncDelayMillis(1).build();
+
+        final IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> WalRuntime.open(new MemDirectory(), effective(wal),
+                        STRING_DESCRIPTOR, STRING_DESCRIPTOR, "hestia", " "));
+
+        assertEquals("Property 'indexName' must not be blank.",
+                exception.getMessage());
     }
 
     @Test
@@ -1671,6 +1730,22 @@ class WalRuntimeTest {
             assertEquals(expectedState, finalRecovered);
             assertEquals(expectedMaxLsn, recovery.maxLsn());
         }
+    }
+
+    private static boolean awaitThreadNameStartingWith(final String prefix) {
+        final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            if (threadNameStartingWithExists(prefix)) {
+                return true;
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
+        }
+        return threadNameStartingWithExists(prefix);
+    }
+
+    private static boolean threadNameStartingWithExists(final String prefix) {
+        return Thread.getAllStackTraces().keySet().stream().map(Thread::getName)
+                .anyMatch(name -> name.startsWith(prefix));
     }
 
     private static void applyReplayRecord(final Map<String, String> state,

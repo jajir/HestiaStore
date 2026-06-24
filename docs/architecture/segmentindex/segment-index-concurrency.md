@@ -27,8 +27,8 @@
 - Index operations are not globally serialized; concurrency is bounded by
   mapping updates, route-topology leases, and per-segment state machines.
 - Segment maintenance IO runs on the segment maintenance executor.
-- The maintenance executor is always created by SegmentRegistry from
-  `IndexConfiguration.maintenance().segmentThreads()` (default 10).
+- The segment maintenance executor is supplied by `HestiaStoreRuntime`
+  (default 10 workers).
 - Automatic post-write flush/compact is optional and enabled by default.
 - Segment BUSY is treated as transient and retried internally; callers do not
   see BUSY.
@@ -73,6 +73,7 @@
   the directory level.
 
 ## Maintenance & Splits
+
 - SegmentIndex evaluates split thresholds after successful writes and schedules
   follow-up maintenance only when `backgroundMaintenanceAutoEnabled` is true.
 - Successful writes and maintenance follow-ups emit split-service hints or
@@ -195,10 +196,19 @@ Notes:
 - Runtime route version: RouteTopology.version, reconciled from
   SegmentRouteMap snapshots.
 - Maintenance executor: SegmentRegistry.getMaintenanceExecutor() backed by
-  `IndexConfiguration.maintenance().segmentThreads()` (default 10).
-- Index maintenance pool: `index-maintenance-*` from ExecutorRegistry.
-- Split policy scheduler: `split-policy-*` from ExecutorRegistry.
-- Split worker pool: `split-maintenance-*` from ExecutorRegistry.
+  the `HestiaStoreRuntime` segment-maintenance pool.
+- Index maintenance pool: `hestia-<indexName>-index-maintenance-*` from
+  ExecutorRegistry.
+- Split policy scheduler: `hestia-<indexName>-split-policy-*` from
+  ExecutorRegistry.
+- Registry maintenance pool: `hestia-<indexName>-registry-maintenance-*` from
+  ExecutorRegistry.
+- WAL group-sync scheduler: `hestia-<indexName>-wal-group-sync-*` when
+  GROUP_SYNC WAL durability is enabled with a positive delay.
+- Shared segment maintenance pool: `hestia-segment-maintenance-*` from
+  HestiaStoreRuntime.
+- Shared split worker pool: `hestia-split-maintenance-*` from
+  HestiaStoreRuntime.
 - Split isolation: SegmentIteratorIsolation.FULL_ISOLATION.
 - Retry policy: `IndexConfiguration.maintenance().busyBackoffMillis()` and
   `IndexConfiguration.maintenance().busyTimeoutMillis()`.

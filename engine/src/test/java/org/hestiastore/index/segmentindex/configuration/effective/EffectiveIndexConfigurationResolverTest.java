@@ -41,7 +41,6 @@ class EffectiveIndexConfigurationResolverTest {
                 .identity(identity -> identity.name("renamed-index"))
                 .segment(segment -> segment.cacheKeyLimit(12))
                 .chunkStoreCache(cache -> cache.pageLimit(7))
-                .maintenance(maintenance -> maintenance.segmentThreads(2))
                 .logging(logging -> logging.contextEnabled(false)).build();
 
         final EffectiveIndexConfiguration<Integer, String> effective = EffectiveIndexConfigurationResolver
@@ -55,7 +54,6 @@ class EffectiveIndexConfigurationResolverTest {
                 effective.segment().maxKeys());
         assertEquals(12, effective.segment().cacheKeyLimit());
         assertEquals(7, effective.chunkStoreCache().pageLimit());
-        assertEquals(2, effective.maintenance().segmentThreads());
         assertFalse(effective.logging().contextEnabled());
     }
 

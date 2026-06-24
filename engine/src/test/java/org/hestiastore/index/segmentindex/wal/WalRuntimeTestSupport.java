@@ -83,7 +83,7 @@ final class WalRuntimeTestSupport {
         final ScheduledExecutorService executor =
                 Executors.newSingleThreadScheduledExecutor(
                         new NamedDaemonThreadFactory(
-                                "hestiastore-wal-group-sync"));
+                                "hestia-wal-runtime-test-wal-group-sync"));
         executor.scheduleWithFixedDelay(syncPolicy::syncGroupPendingSafely,
                 wal.getGroupSyncDelayMillis(), wal.getGroupSyncDelayMillis(),
                 TimeUnit.MILLISECONDS);

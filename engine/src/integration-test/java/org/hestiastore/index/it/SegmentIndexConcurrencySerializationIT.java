@@ -139,10 +139,7 @@ class SegmentIndexConcurrencySerializationIT {
                                 .falsePositiveProbability()))//
                 .io(io -> io.diskBufferSizeBytes(
                         defaults.io().diskBufferSizeBytes()))//
-                .maintenance(maintenance -> maintenance
-                        .segmentThreads(
-                                defaults.maintenance().segmentThreads())
-                        .busyBackoffMillis(
+                .maintenance(maintenance -> maintenance.busyBackoffMillis(
                                 defaults.maintenance().busyBackoffMillis())
                         .busyTimeoutMillis(
                                 defaults.maintenance().busyTimeoutMillis())

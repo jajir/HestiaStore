@@ -63,6 +63,7 @@ public final class SegmentIndexBootstrapOperation<K, V> {
     private final Directory directory;
     private final IndexConfiguration<K, V> userProvidedConfiguration;
     private final ChunkFilterProviderResolver chunkFilterProviderResolver;
+    private final SegmentIndexRuntimeHandle runtimeHandle;
 
     /**
      * Creates one bootstrap operation for a segment index.
@@ -71,14 +72,18 @@ public final class SegmentIndexBootstrapOperation<K, V> {
      * @param userProvidedConfiguration user configuration overrides
      * @param chunkFilterProviderResolver optional chunk filter provider
      *        resolver
+     * @param runtimeHandle runtime ownership handle
      */
     public SegmentIndexBootstrapOperation(final Directory directory,
             final IndexConfiguration<K, V> userProvidedConfiguration,
-            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver,
+            final SegmentIndexRuntimeHandle runtimeHandle) {
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.userProvidedConfiguration = Vldtn.requireNonNull(
                 userProvidedConfiguration, "userProvidedConfiguration");
         this.chunkFilterProviderResolver = chunkFilterProviderResolver;
+        this.runtimeHandle = Vldtn.requireNonNull(runtimeHandle,
+                "runtimeHandle");
     }
 
     /**
@@ -122,6 +127,7 @@ public final class SegmentIndexBootstrapOperation<K, V> {
         try {
             if (!checkExistingConfiguration(mode,
                     configurationStorage.exists())) {
+                runtimeHandle.close();
                 return Optional.empty();
             }
             sessionResources.acquireDirectoryLock(directory);
@@ -206,12 +212,10 @@ public final class SegmentIndexBootstrapOperation<K, V> {
     private void createExecutorRegistry(
             final BootstrapState<K, V> state) {
         final EffectiveIndexConfiguration<K, V> configuration = state.getConfiguration();
-        state.setExecutorRegistry(ExecutorRegistry.create(
+        state.setExecutorRegistry(runtimeHandle.createExecutorRegistry(
                 configuration.identity().name(),
                 configuration.logging().contextEnabled(),
                 configuration.maintenance().indexThreads(),
-                configuration.maintenance().indexThreads(),
-                configuration.maintenance().segmentThreads(),
                 configuration.maintenance().registryLifecycleThreads(),
                 configuration.maintenance().busyTimeoutMillis()));
     }
@@ -318,7 +322,9 @@ public final class SegmentIndexBootstrapOperation<K, V> {
         }
         state.setRuntimeWalRuntime(WalRuntime.open(directory, wal,
                 state.getKeyTypeDescriptor(),
-                state.getValueTypeDescriptor()));
+                state.getValueTypeDescriptor(),
+                runtimeHandle.threadNamePrefix(),
+                state.getConfiguration().identity().name()));
     }
 
     private void createMaintenance(
@@ -415,6 +421,7 @@ public final class SegmentIndexBootstrapOperation<K, V> {
             final BootstrapState<K, V> state,
             final SegmentIndexRuntimeResources<K, V> sessionResources) {
         sessionResources.setExecutorRegistry(state.getExecutorRegistry());
+        sessionResources.setRuntimeHandle(runtimeHandle);
         state.markRuntimeCloseOwnershipTransferred();
     }
 
@@ -471,7 +478,18 @@ public final class SegmentIndexBootstrapOperation<K, V> {
             currentFailure = closeSegmentRegistry(state, currentFailure);
             currentFailure = closeKeyToSegmentMap(state, currentFailure);
         }
-        return closeExecutorRegistry(state, currentFailure);
+        currentFailure = closeExecutorRegistry(state, currentFailure);
+        return closeRuntimeHandle(currentFailure);
+    }
+
+    private RuntimeException closeRuntimeHandle(
+            final RuntimeException failure) {
+        try {
+            runtimeHandle.close();
+            return failure;
+        } catch (final RuntimeException cleanupFailure) {
+            return appendCleanupFailure(failure, cleanupFailure);
+        }
     }
 
     private RuntimeException closeTransferredRuntime(

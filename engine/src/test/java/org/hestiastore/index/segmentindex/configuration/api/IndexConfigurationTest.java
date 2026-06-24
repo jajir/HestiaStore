@@ -68,10 +68,6 @@ class IndexConfigurationTest {
                 .build();
 
         assertEquals(null, config.maintenance().backgroundAutoEnabled());
-        assertEquals(
-                IndexConfigurationDefaults.DEFAULT_SEGMENT_MAINTENANCE_THREADS,
-                EffectiveIndexConfigurationResolver.resolveForCreate(config)
-                        .maintenance().segmentThreads());
         assertTrue(EffectiveIndexConfigurationResolver.resolveForCreate(config)
                 .maintenance().backgroundAutoEnabled());
     }

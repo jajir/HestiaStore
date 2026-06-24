@@ -24,7 +24,6 @@ import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSn
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,8 +38,7 @@ class SegmentIndexSessionConcurrencyTest {
         index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), effective(conf),
-                ExecutorRegistryFixture.from(conf));
+                new TypeDescriptorShortString(), effective(conf));
     }
 
     @AfterEach
@@ -192,8 +190,7 @@ class SegmentIndexSessionConcurrencyTest {
         index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), effective(conf),
-                ExecutorRegistryFixture.from(conf));
+                new TypeDescriptorShortString(), effective(conf));
     }
 
     private void seedStableRange(final int count) {
