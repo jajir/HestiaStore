@@ -23,7 +23,7 @@ jobs:
     steps:
     
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     
     - name: Set up JDK 17
       uses: actions/setup-java@v5
@@ -239,7 +239,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up JDK 17
       uses: actions/setup-java@v5
