@@ -30,6 +30,7 @@ final class SegmentCache<K, V> {
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final AtomicInteger maxNumberOfKeysInSegmentWriteCache;
     private final AtomicInteger maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private final AtomicInteger bufferedWriteKeys = new AtomicInteger();
     private static final int MAX_INITIAL_CAPACITY = 1_000_000;
     private final ReentrantLock capacityLock = new ReentrantLock();
     private final Condition capacityAvailable = capacityLock.newCondition();
@@ -84,8 +85,12 @@ final class SegmentCache<K, V> {
      * @param entry entry to cache
      */
     public void putToWriteCache(final Entry<K, V> entry) {
-        awaitCapacity();
-        writeCache.put(Vldtn.requireNonNull(entry, ENTRY_ARG));
+        final Entry<K, V> nonNullEntry = validateEntry(entry);
+        if (tryPutExistingWriteKey(nonNullEntry)) {
+            return;
+        }
+        reserveWriteSlot();
+        putReservedEntry(nonNullEntry);
     }
 
     /**
@@ -95,16 +100,15 @@ final class SegmentCache<K, V> {
      * @return true when the entry was accepted
      */
     boolean tryPutToWriteCacheWithoutWaiting(final Entry<K, V> entry) {
-        capacityLock.lock();
-        try {
-            if (currentBufferedKeys() >= effectiveWriteCacheLimit()) {
-                return false;
-            }
-            writeCache.put(Vldtn.requireNonNull(entry, ENTRY_ARG));
+        final Entry<K, V> nonNullEntry = validateEntry(entry);
+        if (tryPutExistingWriteKey(nonNullEntry)) {
             return true;
-        } finally {
-            capacityLock.unlock();
         }
+        if (!tryReserveWriteSlot()) {
+            return false;
+        }
+        putReservedEntry(nonNullEntry);
+        return true;
     }
 
     /**
@@ -189,6 +193,7 @@ final class SegmentCache<K, V> {
             frozen.clear();
             frozenWriteCache = null;
         }
+        bufferedWriteKeys.set(0);
         signalCapacityAvailable();
     }
 
@@ -199,10 +204,11 @@ final class SegmentCache<K, V> {
         deltaCache.clear();
         final UniqueCache<K, V> frozen = frozenWriteCache;
         if (frozen != null) {
+            final int frozenSize = frozen.size();
             frozen.clear();
             frozenWriteCache = null;
+            releaseWriteSlots(frozenSize);
         }
-        signalCapacityAvailable();
     }
 
     /**
@@ -308,10 +314,11 @@ final class SegmentCache<K, V> {
             signalCapacityAvailable();
             return;
         }
+        final int frozenSize = frozen.size();
         frozen.forEachEntry((key, value) -> deltaCache.put(Entry.of(key, value)));
         frozen.clear();
         frozenWriteCache = null;
-        signalCapacityAvailable();
+        releaseWriteSlots(frozenSize);
     }
 
     /**
@@ -339,17 +346,56 @@ final class SegmentCache<K, V> {
      * @return total buffered write keys
      */
     private int currentBufferedKeys() {
-        final UniqueCache<K, V> frozen = frozenWriteCache;
-        return writeCache.size() + sizeOf(frozen);
+        return bufferedWriteKeys.get();
     }
 
     /**
-     * Blocks until there is capacity for another write-cache entry.
+     * Reserves capacity for another write-cache entry.
+     */
+    private void reserveWriteSlot() {
+        while (!tryReserveWriteSlot()) {
+            awaitCapacity();
+        }
+    }
+
+    private boolean tryReserveWriteSlot() {
+        while (true) {
+            final int current = currentBufferedKeys();
+            if (current >= effectiveWriteCacheLimit()) {
+                return false;
+            }
+            if (bufferedWriteKeys.compareAndSet(current, current + 1)) {
+                return true;
+            }
+        }
+    }
+
+    private void putReservedEntry(final Entry<K, V> entry) {
+        final boolean added;
+        try {
+            added = writeCache.putAndReportNewKey(entry);
+        } catch (final RuntimeException e) {
+            releaseWriteSlots(1);
+            throw e;
+        }
+        if (!added) {
+            releaseWriteSlots(1);
+        }
+    }
+
+    private boolean tryPutExistingWriteKey(final Entry<K, V> entry) {
+        final UniqueCache<K, V> write = writeCache;
+        if (write.get(entry.getKey()) == null) {
+            return false;
+        }
+        write.putAndReportNewKey(entry);
+        return true;
+    }
+
+    /**
+     * Blocks until there may be capacity for another write-cache entry.
      */
     private void awaitCapacity() {
-        if (maxNumberOfKeysInSegmentWriteCache.get() <= 0) {
-            return;
-        }
         capacityLock.lock();
         try {
             while (currentBufferedKeys() >= effectiveWriteCacheLimit()) {
@@ -361,6 +407,16 @@ final class SegmentCache<K, V> {
                     "Interrupted while waiting for write cache capacity", ex);
         } finally {
             capacityLock.unlock();
+        }
+    }
+
+    private void releaseWriteSlots(final int slots) {
+        if (slots <= 0) {
+            return;
+        }
+        final int previous = bufferedWriteKeys.getAndAdd(-slots);
+        if (previous >= effectiveWriteCacheLimit()) {
+            signalCapacityAvailable();
         }
     }
 
@@ -540,6 +596,10 @@ final class SegmentCache<K, V> {
                 .withInitialCapacity(capacityHint)//
                 .withThreadSafe(true)//
                 .buildEmpty();
+    }
+
+    private Entry<K, V> validateEntry(final Entry<K, V> entry) {
+        return Vldtn.requireNonNull(entry, ENTRY_ARG);
     }
 
     /**
