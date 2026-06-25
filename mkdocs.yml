@@ -37,6 +37,7 @@ nav:
         - Overview: operations/index.md
         - WAL: operations/wal.md
         - Monitoring: operations/monitoring.md
+        - Startup Memory Estimate: operations/memory-estimate.md
         - Performance Tuning: operations/tuning.md
         - Backup & Restore: operations/backup-restore.md
         - Export & Import: operations/export-import.md

@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
@@ -394,6 +396,21 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return runtime monitoring view
      */
     SegmentIndexRuntimeMonitoring runtimeMonitoring();
+
+    /**
+     * Returns memory-estimation diagnostics captured during successful startup.
+     * <p>
+     * Implementations that do not capture startup diagnostics return an incomplete
+     * report.
+     * </p>
+     *
+     * @return startup memory-estimation report
+     */
+    default MemoryEstimateReport startupMemoryEstimate() {
+        return new MemoryEstimateReport(
+                List.of("startup memory estimate unavailable for this implementation"),
+                false, OptionalLong.empty());
+    }
 
     /**
      * Returns runtime tuning API.

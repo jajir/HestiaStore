@@ -6,6 +6,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.MemoryEstimateReport;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -111,6 +112,11 @@ final class SegmentIndexMdcLoggingAdapter<K, V>
     @Override
     public SegmentIndexRuntimeMonitoring runtimeMonitoring() {
         return runtimeMonitoring;
+    }
+
+    @Override
+    public MemoryEstimateReport startupMemoryEstimate() {
+        return delegate.startupMemoryEstimate();
     }
 
     @Override

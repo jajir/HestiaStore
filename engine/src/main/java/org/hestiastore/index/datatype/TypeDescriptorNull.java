@@ -4,6 +4,7 @@ import static org.hestiastore.index.datatype.NullValue.NULL;
 import static org.hestiastore.index.datatype.NullValue.TOMBSTONE;
 
 import java.util.Comparator;
+import java.util.OptionalInt;
 
 import org.hestiastore.index.Vldtn;
 
@@ -68,6 +69,16 @@ public class TypeDescriptorNull implements TypeDescriptor<NullValue> {
                         0);
             }
         };
+    }
+
+    /**
+     * Returns zero bytes as the fixed serialized size estimate.
+     *
+     * @return fixed null-value size estimate
+     */
+    @Override
+    public OptionalInt getEstimatedAverageSizeInBytes() {
+        return OptionalInt.of(0);
     }
 
     /**
