@@ -9,7 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.Entry;
@@ -331,6 +334,110 @@ class SegmentCacheTest {
 
         assertTrue(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(4, "D")));
         assertFalse(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(5, "E")));
+    }
+
+    @Test
+    void tryPut_overwrite_does_not_consume_capacity() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(), 2, 3, 1024);
+
+        assertTrue(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(1, "A")));
+        assertTrue(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(2, "C")));
+        assertTrue(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(1, "B")));
+        assertFalse(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(3, "D")));
+
+        assertEquals(2, cache.getNumberOfKeysInWriteCache());
+        assertEquals("B", cache.get(1));
+    }
+
+    @Test
+    void put_overwrite_does_not_block_at_capacity() throws Exception {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(), 1, 2, 1024);
+        cache.putToWriteCache(Entry.of(1, "A"));
+
+        CompletableFuture.runAsync(() -> cache.putToWriteCache(Entry.of(1, "B")))
+                .get(1, TimeUnit.SECONDS);
+
+        assertEquals(1, cache.getNumberOfKeysInWriteCache());
+        assertEquals("B", cache.get(1));
+    }
+
+    @Test
+    void mergeFrozenWriteCacheToDeltaCache_releases_reserved_capacity() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(), 2, 3, 1024);
+        cache.putToWriteCache(Entry.of(1, "A"));
+        cache.putToWriteCache(Entry.of(2, "B"));
+        cache.freezeWriteCache();
+
+        assertTrue(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(3, "C")));
+        assertFalse(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(4, "D")));
+
+        cache.mergeFrozenWriteCacheToDeltaCache();
+
+        assertTrue(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(4, "D")));
+        assertFalse(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(5, "E")));
+        assertEquals(2, cache.getNumberOfKeysInWriteCache());
+        assertEquals(4, cache.size());
+    }
+
+    @Test
+    void evictAll_releases_reserved_capacity() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(), 2, 3, 1024);
+        cache.putToWriteCache(Entry.of(1, "A"));
+        cache.putToWriteCache(Entry.of(2, "B"));
+        assertFalse(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(3, "C")));
+
+        cache.evictAll();
+
+        assertTrue(cache.tryPutToWriteCacheWithoutWaiting(Entry.of(3, "C")));
+        assertEquals(1, cache.getNumberOfKeysInWriteCache());
+        assertEquals("C", cache.get(3));
+    }
+
+    @Test
+    void tryPut_concurrent_unique_writes_stop_at_limit() throws Exception {
+        final int limit = 32;
+        final int threads = 16;
+        final int writesPerThread = 8;
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(), limit, limit + 1,
+                1024);
+        final CountDownLatch ready = new CountDownLatch(threads);
+        final CountDownLatch startGate = new CountDownLatch(1);
+        final AtomicInteger accepted = new AtomicInteger();
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        final CompletableFuture<?>[] tasks = new CompletableFuture<?>[threads];
+
+        try {
+            for (int i = 0; i < threads; i++) {
+                final int workerId = i;
+                tasks[i] = CompletableFuture.runAsync(() -> {
+                    ready.countDown();
+                    awaitStart(startGate);
+                    final int baseKey = workerId * writesPerThread;
+                    for (int key = baseKey; key < baseKey
+                            + writesPerThread; key++) {
+                        if (cache.tryPutToWriteCacheWithoutWaiting(
+                                Entry.of(key, "V" + key))) {
+                            accepted.incrementAndGet();
+                        }
+                    }
+                }, executor);
+            }
+
+            assertTrue(ready.await(5, TimeUnit.SECONDS));
+            startGate.countDown();
+            CompletableFuture.allOf(tasks).get(10, TimeUnit.SECONDS);
+        } finally {
+            startGate.countDown();
+            executor.shutdownNow();
+        }
+
+        assertEquals(limit, accepted.get());
+        assertEquals(limit, cache.getNumberOfKeysInWriteCache());
     }
 
     @Test

@@ -67,13 +67,25 @@ public class UniqueCache<K, V> {
      * When there is old value than old value is rewritten.
      */
     public void put(final Entry<K, V> entry) {
+        putAndReportNewKey(entry);
+    }
+
+    /**
+     * Stores an entry and reports whether it added a previously absent key.
+     *
+     * @param entry entry to store
+     * @return true when the key was not present before this write
+     */
+    public boolean putAndReportNewKey(final Entry<K, V> entry) {
         Vldtn.requireNonNull(entry, "entry");
         final K key = Vldtn.requireNonNull(entry.getKey(), "entry.key");
         final V value = Vldtn.requireNonNull(entry.getValue(), "entry.value");
         final V previous = map.put(key, value);
         if (previous == null) {
             size.incrementAndGet();
+            return true;
         }
+        return false;
     }
 
     /**
