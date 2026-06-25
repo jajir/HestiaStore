@@ -1,10 +1,16 @@
 package org.hestiastore.index.segmentindex.wal;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -39,9 +45,13 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
 
     private static final String DEFAULT_THREAD_NAME_PREFIX = "hestia";
     private static final String DEFAULT_INDEX_NAME = "standalone";
+    private static final String POOL_NAME_WAL_APPEND = "wal-append";
     private static final String POOL_NAME_WAL_GROUP_SYNC = "wal-group-sync";
     private static final String ARG_THREAD_NAME_PREFIX = "threadNamePrefix";
     private static final String ARG_INDEX_NAME = "indexName";
+    // ponytail: fixed internal queue; make configurable only if benchmarks need it.
+    private static final int APPEND_QUEUE_CAPACITY = 8192;
+    private static final int APPEND_DRAIN_LIMIT = 256;
 
     /**
      * WAL operation kind.
@@ -192,32 +202,42 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
     private final Object monitor;
     private final WalRuntimeMetrics metrics;
     private final AtomicBoolean closed;
+    private final WalStorage storage;
     private final WalMetadataCatalog metadataCatalog;
     private final WalSegmentCatalog segmentCatalog;
     private final WalSyncPolicy syncPolicy;
     private final WalWriter<K, V> writer;
     private final WalRecoveryManager<K, V> recoveryManager;
     private final ScheduledExecutorService groupSyncExecutor;
+    private final BlockingQueue<WalAppendTask<K, V>> appendQueue =
+            new ArrayBlockingQueue<>(APPEND_QUEUE_CAPACITY);
+    private final Thread appendWorker;
 
     private long checkpointLsn = 0L;
 
     @SuppressWarnings("java:S107")
     WalRuntime(final Object monitor,
             final WalRuntimeMetrics metrics, final AtomicBoolean closed,
+            final WalStorage storage,
             final WalMetadataCatalog metadataCatalog,
             final WalSegmentCatalog segmentCatalog,
             final WalSyncPolicy syncPolicy, final WalWriter<K, V> writer,
             final WalRecoveryManager<K, V> recoveryManager,
-            final ScheduledExecutorService groupSyncExecutor) {
+            final ScheduledExecutorService groupSyncExecutor,
+            final String appendThreadNamePrefix) {
         this.monitor = Vldtn.requireNonNull(monitor, "monitor");
         this.metrics = Vldtn.requireNonNull(metrics, "metrics");
         this.closed = Vldtn.requireNonNull(closed, "closed");
+        this.storage = Vldtn.requireNonNull(storage, "storage");
         this.metadataCatalog = metadataCatalog;
         this.segmentCatalog = segmentCatalog;
         this.syncPolicy = syncPolicy;
         this.writer = writer;
         this.recoveryManager = recoveryManager;
         this.groupSyncExecutor = groupSyncExecutor;
+        this.appendWorker = new NamedDaemonThreadFactory(
+                appendThreadNamePrefix).newThread(this::runAppendWorker);
+        appendWorker.start();
     }
 
     /**
@@ -242,6 +262,9 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
             final TypeDescriptor<V> valueDescriptor) {
         return openWithGroupSyncThreadNamePrefix(indexDirectory, wal,
                 keyDescriptor, valueDescriptor,
+                poolThreadNamePrefix(DEFAULT_THREAD_NAME_PREFIX,
+                        DEFAULT_INDEX_NAME,
+                        POOL_NAME_WAL_APPEND),
                 poolThreadNamePrefix(DEFAULT_THREAD_NAME_PREFIX,
                         DEFAULT_INDEX_NAME,
                         POOL_NAME_WAL_GROUP_SYNC));
@@ -273,6 +296,11 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
                         Vldtn.requireNotBlank(threadNamePrefix,
                                 ARG_THREAD_NAME_PREFIX),
                         Vldtn.requireNotBlank(indexName, ARG_INDEX_NAME),
+                        POOL_NAME_WAL_APPEND),
+                poolThreadNamePrefix(
+                        Vldtn.requireNotBlank(threadNamePrefix,
+                                ARG_THREAD_NAME_PREFIX),
+                        Vldtn.requireNotBlank(indexName, ARG_INDEX_NAME),
                         POOL_NAME_WAL_GROUP_SYNC));
     }
 
@@ -281,6 +309,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
             final IndexWalConfiguration wal,
             final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor,
+            final String appendThreadNamePrefix,
             final String groupSyncThreadNamePrefix) {
         final Directory directory = Vldtn.requireNonNull(indexDirectory,
                 "indexDirectory");
@@ -289,6 +318,8 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
         final WalRuntime<K, V> runtime = createRuntime(resolvedWal,
                 WalStorageFactory.create(walDirectory), keyDescriptor,
                 valueDescriptor,
+                Vldtn.requireNotBlank(appendThreadNamePrefix,
+                        "appendThreadNamePrefix"),
                 Vldtn.requireNotBlank(groupSyncThreadNamePrefix,
                         "groupSyncThreadNamePrefix"));
         runtime.metadataCatalog.ensureFormatMarker();
@@ -308,6 +339,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
             final IndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor,
+            final String appendThreadNamePrefix,
             final String groupSyncThreadNamePrefix) {
         final Object monitor = new Object();
         final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
@@ -325,15 +357,15 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
                 storage, metadataCatalog);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage,
                 metrics, monitor, segmentCatalog, closed);
-        final WalWriter<K, V> writer = new WalWriter<>(wal, storage,
-                recordCodec, segmentCatalog, metrics, syncPolicy);
+        final WalWriter<K, V> writer = new WalWriter<>(storage,
+                recordCodec, segmentCatalog, metrics);
         final WalRecoveryManager<K, V> recoveryManager =
                 new WalRecoveryManager<>(wal, storage, metadataCatalog,
                         recordCodec, segmentCatalog, metrics);
-        return new WalRuntime<>(monitor, metrics, closed, metadataCatalog,
+        return new WalRuntime<>(monitor, metrics, closed, storage, metadataCatalog,
                 segmentCatalog, syncPolicy, writer, recoveryManager,
                 newGroupSyncExecutor(wal, syncPolicy,
-                        groupSyncThreadNamePrefix));
+                        groupSyncThreadNamePrefix), appendThreadNamePrefix);
     }
 
     private static ScheduledExecutorService newGroupSyncExecutor(
@@ -477,16 +509,148 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
         if (groupSyncExecutor != null) {
             groupSyncExecutor.shutdownNow();
         }
+        stopAppendWorker();
         synchronized (monitor) {
             syncPolicy.closeAndFlushPending();
         }
+        storage.close();
     }
 
     private long append(final Operation operation, final K key, final V value) {
+        final WalAppendTask<K, V> task = new WalAppendTask<>(operation, key,
+                value);
+        enqueueAppend(task);
+        final long lsn = awaitWrittenLsn(task);
+        syncPolicy.waitUntilDurable(lsn);
+        return lsn;
+    }
+
+    private void enqueueAppend(final WalAppendTask<K, V> task) {
+        while (true) {
+            if (Thread.interrupted()) {
+                Thread.currentThread().interrupt();
+                throw new IndexException("Interrupted while enqueueing WAL append.");
+            }
+            synchronized (monitor) {
+                syncPolicy.checkSyncFailure();
+                ensureOpen();
+                if (appendQueue.offer(task)) {
+                    return;
+                }
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
+        }
+    }
+
+    private long awaitWrittenLsn(final WalAppendTask<K, V> task) {
+        try {
+            return task.writtenLsn().get().longValue();
+        } catch (final InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted while waiting for WAL append.",
+                    ex);
+        } catch (final ExecutionException ex) {
+            final Throwable cause = ex.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw new IndexException("WAL append failed.", cause);
+        }
+    }
+
+    private void runAppendWorker() {
+        final List<WalAppendTask<K, V>> batch = new ArrayList<>(
+                APPEND_DRAIN_LIMIT);
+        boolean stop = false;
+        while (!stop) {
+            batch.clear();
+            try {
+                stop = takeAppendBatch(batch);
+                appendBatch(batch);
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                failQueuedAppends(new IndexException(
+                        "WAL append worker interrupted.", ex));
+                return;
+            }
+        }
+    }
+
+    private boolean takeAppendBatch(final List<WalAppendTask<K, V>> batch)
+            throws InterruptedException {
+        final WalAppendTask<K, V> first = appendQueue.take();
+        boolean stop = first.stop();
+        if (!stop) {
+            batch.add(first);
+        }
+        appendQueue.drainTo(batch, APPEND_DRAIN_LIMIT - batch.size());
+        for (int i = batch.size() - 1; i >= 0; i--) {
+            if (batch.get(i).stop()) {
+                batch.remove(i);
+                stop = true;
+            }
+        }
+        return stop;
+    }
+
+    private void appendBatch(final List<WalAppendTask<K, V>> batch) {
+        if (batch.isEmpty()) {
+            return;
+        }
         synchronized (monitor) {
+            for (final WalAppendTask<K, V> task : batch) {
+                appendTask(task);
+            }
+            monitor.notifyAll();
+        }
+    }
+
+    private void appendTask(final WalAppendTask<K, V> task) {
+        try {
             syncPolicy.checkSyncFailure();
-            ensureOpen();
-            return writer.append(operation, key, value);
+            final WalAppendResult result = writer.append(task.operation(),
+                    task.key(), task.value());
+            syncPolicy.afterAppend(result.lsn(), result.recordBytes(),
+                    result.segmentName());
+            task.complete(result.lsn());
+        } catch (final RuntimeException ex) {
+            task.fail(ex);
+        }
+    }
+
+    private void stopAppendWorker() {
+        enqueueStopTask();
+        try {
+            appendWorker.join();
+        } catch (final InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted while stopping WAL append worker.",
+                    ex);
+        }
+    }
+
+    private void enqueueStopTask() {
+        final WalAppendTask<K, V> stopTask = WalAppendTask.stopTask();
+        while (true) {
+            try {
+                if (appendQueue.offer(stopTask, 10L, TimeUnit.MILLISECONDS)) {
+                    return;
+                }
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IndexException("Interrupted while stopping WAL append worker.",
+                        ex);
+            }
+        }
+    }
+
+    private void failQueuedAppends(final RuntimeException failure) {
+        WalAppendTask<K, V> task = appendQueue.poll();
+        while (task != null) {
+            if (!task.stop()) {
+                task.fail(failure);
+            }
+            task = appendQueue.poll();
         }
     }
 

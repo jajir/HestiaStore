@@ -18,6 +18,8 @@ import org.hestiastore.index.Vldtn;
 final class WalPathStorage implements WalStorage {
 
     private final Path walDirectory;
+    private String appendFileName;
+    private FileChannel appendChannel;
 
     WalPathStorage(final Path walDirectory) {
         this.walDirectory = Vldtn.requireNonNull(walDirectory, "walDirectory");
@@ -63,15 +65,33 @@ final class WalPathStorage implements WalStorage {
     }
 
     @Override
-    public void append(final String fileName, final byte[] bytes,
+    public synchronized void append(final String fileName, final byte[] bytes,
             final int offset, final int length) {
-        write(fileName, bytes, offset, length, true);
+        Vldtn.requireNonNull(bytes, "bytes");
+        try {
+            writeToChannel(appendChannel(fileName),
+                    ByteBuffer.wrap(bytes, offset, length));
+        } catch (IOException e) {
+            throw new IndexException(
+                    String.format("Unable to write WAL file '%s'.", fileName),
+                    e);
+        }
     }
 
     @Override
-    public void overwrite(final String fileName, final byte[] bytes,
+    public synchronized void overwrite(final String fileName, final byte[] bytes,
             final int offset, final int length) {
-        write(fileName, bytes, offset, length, false);
+        Vldtn.requireNonNull(bytes, "bytes");
+        closeAppendChannelFor(fileName);
+        try (FileChannel channel = FileChannel.open(resolve(fileName),
+                StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+                StandardOpenOption.TRUNCATE_EXISTING)) {
+            writeToChannel(channel, ByteBuffer.wrap(bytes, offset, length));
+        } catch (IOException e) {
+            throw new IndexException(
+                    String.format("Unable to write WAL file '%s'.", fileName),
+                    e);
+        }
     }
 
     @Override
@@ -113,11 +133,12 @@ final class WalPathStorage implements WalStorage {
     }
 
     @Override
-    public void truncate(final String fileName, final long sizeBytes) {
+    public synchronized void truncate(final String fileName, final long sizeBytes) {
         final Path path = resolve(fileName);
         if (!Files.exists(path)) {
             return;
         }
+        closeAppendChannelFor(fileName);
         try (FileChannel channel = FileChannel.open(path,
                 StandardOpenOption.WRITE)) {
             channel.truncate(sizeBytes);
@@ -129,8 +150,9 @@ final class WalPathStorage implements WalStorage {
     }
 
     @Override
-    public boolean delete(final String fileName) {
+    public synchronized boolean delete(final String fileName) {
         final Path path = resolve(fileName);
+        closeAppendChannelFor(fileName);
         try {
             return Files.deleteIfExists(path);
         } catch (IOException e) {
@@ -141,9 +163,12 @@ final class WalPathStorage implements WalStorage {
     }
 
     @Override
-    public void rename(final String currentFileName, final String newFileName) {
+    public synchronized void rename(final String currentFileName,
+            final String newFileName) {
         final Path source = resolve(currentFileName);
         final Path target = resolve(newFileName);
+        closeAppendChannelFor(currentFileName);
+        closeAppendChannelFor(newFileName);
         try {
             if (!Files.exists(source)) {
                 throw new IndexException(
@@ -173,10 +198,20 @@ final class WalPathStorage implements WalStorage {
     }
 
     @Override
-    public void sync(final String fileName) {
+    public synchronized void sync(final String fileName) {
         final Path path = resolve(fileName);
         if (!Files.exists(path)) {
             return;
+        }
+        if (fileName.equals(appendFileName) && appendChannel != null) {
+            try {
+                appendChannel.force(true);
+                return;
+            } catch (IOException e) {
+                throw new IndexException(
+                        String.format("Unable to sync WAL file '%s'.", fileName),
+                        e);
+            }
         }
         try (FileChannel channel = FileChannel.open(path,
                 StandardOpenOption.WRITE)) {
@@ -201,29 +236,50 @@ final class WalPathStorage implements WalStorage {
         }
     }
 
-    private void write(final String fileName, final byte[] bytes,
-            final int offset, final int length, final boolean append) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        final Path path = resolve(fileName);
+    @Override
+    public synchronized void close() {
+        closeAppendChannel();
+    }
+
+    private FileChannel appendChannel(final String fileName) throws IOException {
+        if (fileName.equals(appendFileName) && appendChannel != null) {
+            return appendChannel;
+        }
+        closeAppendChannel();
+        appendFileName = Vldtn.requireNonNull(fileName, "fileName");
+        appendChannel = FileChannel.open(resolve(fileName),
+                StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+                StandardOpenOption.APPEND);
+        return appendChannel;
+    }
+
+    private void closeAppendChannelFor(final String fileName) {
+        if (fileName.equals(appendFileName)) {
+            closeAppendChannel();
+        }
+    }
+
+    private void closeAppendChannel() {
+        if (appendChannel == null) {
+            appendFileName = null;
+            return;
+        }
         try {
-            final StandardOpenOption[] options = append
-                    ? new StandardOpenOption[] { StandardOpenOption.CREATE,
-                            StandardOpenOption.WRITE,
-                            StandardOpenOption.APPEND }
-                    : new StandardOpenOption[] { StandardOpenOption.CREATE,
-                            StandardOpenOption.WRITE,
-                            StandardOpenOption.TRUNCATE_EXISTING };
-            try (FileChannel channel = FileChannel.open(path, options)) {
-                final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset,
-                        length);
-                while (buffer.hasRemaining()) {
-                    channel.write(buffer);
-                }
-            }
+            appendChannel.close();
         } catch (IOException e) {
-            throw new IndexException(
-                    String.format("Unable to write WAL file '%s'.", fileName),
+            throw new IndexException(String.format(
+                    "Unable to close WAL append channel '%s'.", appendFileName),
                     e);
+        } finally {
+            appendChannel = null;
+            appendFileName = null;
+        }
+    }
+
+    private static void writeToChannel(final FileChannel channel,
+            final ByteBuffer buffer) throws IOException {
+        while (buffer.hasRemaining()) {
+            channel.write(buffer);
         }
     }
 

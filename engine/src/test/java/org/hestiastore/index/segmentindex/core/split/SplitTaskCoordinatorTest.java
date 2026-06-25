@@ -101,12 +101,14 @@ class SplitTaskCoordinatorTest {
         final SegmentId segmentId = SegmentId.of(1);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.skipped());
 
         final SplitTaskCoordinator<String, String> coordinator = newCoordinator();
 
         coordinator.scheduleEligibleSplit(segmentId, 100L, 101L);
 
-        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L);
+        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L, 101L);
     }
 
     @Test
@@ -114,12 +116,14 @@ class SplitTaskCoordinatorTest {
         final SegmentId segmentId = SegmentId.of(12);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.skipped());
 
         final SplitTaskCoordinator<String, String> coordinator = newCoordinator();
 
         coordinator.scheduleEligibleSplit(segmentId, 100L, 101L);
 
-        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L);
+        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L, 101L);
         verify(runtime, never()).getNumberOfKeysInCache();
     }
 
@@ -130,6 +134,8 @@ class SplitTaskCoordinatorTest {
         final Executor splitExecutor = scheduledTask::set;
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.skipped());
 
         final SplitTaskCoordinator<String, String> coordinator = newCoordinator(splitExecutor);
 
@@ -143,7 +149,7 @@ class SplitTaskCoordinatorTest {
 
         task.run();
 
-        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L);
+        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L, 101L);
         coordinator.awaitSplitsIdle(1_000L);
         org.junit.jupiter.api.Assertions.assertEquals(0,
                 coordinator.splitInFlightCount());
@@ -158,10 +164,10 @@ class SplitTaskCoordinatorTest {
         final SplitStatsRecorder statsRecorder = new SplitStatsRecorder();
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
                 .thenAnswer(invocation -> {
                     nowNanos.set(TimeUnit.MILLISECONDS.toNanos(9));
-                    return null;
+                    return RouteSplitPreparation.skipped();
                 });
 
         final SplitTaskCoordinator<String, String> coordinator = newCoordinator(scheduledTask::set, statsRecorder,
@@ -185,8 +191,8 @@ class SplitTaskCoordinatorTest {
         final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
-                .thenReturn(splitPlan);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.prepared(splitPlan));
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenReturn(Boolean.TRUE);
 
@@ -207,8 +213,8 @@ class SplitTaskCoordinatorTest {
         when(splitLease.segmentId()).thenReturn(segmentId);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
-                .thenReturn(splitPlan);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.prepared(splitPlan));
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenReturn(Boolean.FALSE);
 
@@ -229,8 +235,8 @@ class SplitTaskCoordinatorTest {
         when(splitLease.segmentId()).thenReturn(segmentId);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of());
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
-                .thenReturn(splitPlan);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.prepared(splitPlan));
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenThrow(new IllegalStateException("flush failed"));
 
@@ -251,8 +257,8 @@ class SplitTaskCoordinatorTest {
         final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
-                .thenReturn(splitPlan);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.prepared(splitPlan));
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenReturn(Boolean.TRUE);
         doThrow(new IllegalStateException("topology failed"))
@@ -277,8 +283,8 @@ class SplitTaskCoordinatorTest {
         when(splitLease.segmentId()).thenReturn(segmentId);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
-                .thenReturn(splitPlan);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.prepared(splitPlan));
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenThrow(new IllegalStateException("publish failed"));
 
@@ -289,6 +295,53 @@ class SplitTaskCoordinatorTest {
 
         assertThrows(IllegalStateException.class,
                 () -> coordinator.awaitSplitsIdle(1_000L));
+    }
+
+    @Test
+    void compactParentOutcomeRequestsCompactionAndAbortsLease() {
+        final SegmentId segmentId = SegmentId.of(21);
+        final AtomicLong nowNanos = new AtomicLong();
+        when(runtime.getState()).thenReturn(SegmentState.READY);
+        allowSplitLease(segmentId);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.compactParent());
+
+        final SplitTaskCoordinator<String, String> coordinator =
+                newCoordinator(Runnable::run, nowNanos::get);
+
+        coordinator.scheduleEligibleSplit(segmentId, 100L, 101L);
+        final boolean rescheduled = coordinator.scheduleEligibleSplit(segmentId,
+                100L, 101L);
+
+        verify(segmentHandle).compact();
+        verify(splitLease).abort();
+        verify(splitLease, never()).completeAfterPublish();
+        verifyNoInteractions(splitPublishCoordinator);
+        org.junit.jupiter.api.Assertions.assertFalse(rescheduled);
+    }
+
+    @Test
+    void compactParentFailureFailsCoordinatorAndAbortsLease() {
+        final SegmentId segmentId = SegmentId.of(22);
+        final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
+        when(runtime.getState()).thenReturn(SegmentState.READY);
+        allowSplitLease(segmentId);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.compactParent());
+        doThrow(new IllegalStateException("compact failed"))
+                .when(segmentHandle).compact();
+
+        final SplitTaskCoordinator<String, String> coordinator =
+                newCoordinator(scheduledTask::set);
+
+        coordinator.scheduleEligibleSplit(segmentId, 100L, 101L);
+        scheduledTask.get().run();
+
+        assertThrows(IllegalStateException.class,
+                () -> coordinator.awaitSplitsIdle(1_000L));
+        verify(splitLease).abort();
+        verify(splitLease, never()).completeAfterPublish();
+        verifyNoInteractions(splitPublishCoordinator);
     }
 
     @Test
@@ -303,8 +356,8 @@ class SplitTaskCoordinatorTest {
         };
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
-                .thenReturn(null);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.skipped());
 
         final SplitTaskCoordinator<String, String> coordinator = newCoordinator(splitExecutor, nowNanos::get);
 
@@ -332,8 +385,8 @@ class SplitTaskCoordinatorTest {
         };
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
-                .thenReturn(null);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.skipped());
 
         final SplitTaskCoordinator<String, String> coordinator = newCoordinator(splitExecutor, nowNanos::get);
 
@@ -363,8 +416,8 @@ class SplitTaskCoordinatorTest {
         };
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
-                .thenReturn(null);
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
+                .thenReturn(RouteSplitPreparation.skipped());
 
         final SplitTaskCoordinator<String, String> coordinator = newCoordinator(splitExecutor, nowNanos::get);
 
@@ -392,10 +445,10 @@ class SplitTaskCoordinatorTest {
         };
         when(runtime.getState()).thenReturn(SegmentState.READY);
         allowSplitLease(segmentId);
-        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L, 101L))
                 .thenAnswer(invocation -> {
                     nowNanos.addAndGet(TimeUnit.SECONDS.toNanos(2L));
-                    return null;
+                    return RouteSplitPreparation.skipped();
                 });
 
         final SplitTaskCoordinator<String, String> coordinator = newCoordinator(splitExecutor, nowNanos::get);

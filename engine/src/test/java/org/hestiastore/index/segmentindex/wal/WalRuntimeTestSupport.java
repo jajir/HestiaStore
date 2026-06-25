@@ -61,14 +61,15 @@ final class WalRuntimeTestSupport {
                 storage, metadataCatalog);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage,
                 metrics, monitor, segmentCatalog, closed);
-        final WalWriter<K, V> writer = new WalWriter<>(wal, storage,
-                recordCodec, segmentCatalog, metrics, syncPolicy);
+        final WalWriter<K, V> writer = new WalWriter<>(storage,
+                recordCodec, segmentCatalog, metrics);
         final WalRecoveryManager<K, V> recoveryManager =
                 new WalRecoveryManager<>(wal, storage, metadataCatalog,
                         recordCodec, segmentCatalog, metrics);
         final WalRuntime<K, V> runtime = new WalRuntime<>(monitor, metrics,
-                closed, metadataCatalog, segmentCatalog, syncPolicy, writer,
-                recoveryManager, newGroupSyncExecutor(wal, syncPolicy));
+                closed, storage, metadataCatalog, segmentCatalog, syncPolicy,
+                writer, recoveryManager, newGroupSyncExecutor(wal, syncPolicy),
+                "hestia-wal-runtime-test-wal-append");
         metadataCatalog.ensureFormatMarker();
         return runtime;
     }

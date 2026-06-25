@@ -10,7 +10,6 @@ import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.routemap.RouteSplitPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +23,6 @@ import org.slf4j.LoggerFactory;
 final class RouteSplitMaterializer<K, V> {
 
     private static final long MIN_KEYS_PER_CHILD_SEGMENT = 3L;
-    private static final long MIN_VISIBLE_KEYS_FOR_FALLBACK_SPLIT =
-            MIN_KEYS_PER_CHILD_SEGMENT * 2L;
     private static final String SEGMENT_ARG = "segment";
     private static final Logger LOGGER = LoggerFactory
             .getLogger(RouteSplitMaterializer.class);
@@ -41,76 +38,52 @@ final class RouteSplitMaterializer<K, V> {
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
-    RouteSplitPlan<K> prepare(final Segment<K, V> parentSegment,
-            final long splitThreshold) {
+    /**
+     * Opens one isolated parent snapshot and materializes child segments using
+     * the caller-provided visible-key estimate for the lower-child target.
+     *
+     * @param parentSegment parent segment
+     * @param estimatedVisibleKeys scheduler-observed visible-key estimate
+     * @return preparation outcome
+     */
+    RouteSplitPreparation<K> prepare(final Segment<K, V> parentSegment,
+            final long estimatedVisibleKeys) {
         final Segment<K, V> nonNullParentSegment = Vldtn
                 .requireNonNull(parentSegment, SEGMENT_ARG);
-        final Long visibleCount = countVisibleEntries(nonNullParentSegment);
-        if (visibleCount == null) {
-            logEligibilityRecountAbortedBecauseParentClosed(
-                    nonNullParentSegment);
-            return null;
-        }
-        final long recountedVisibleCount = visibleCount.longValue();
-        if (!shouldContinueSplitAfterVisibleRecount(nonNullParentSegment,
-                recountedVisibleCount, splitThreshold)) {
-            logSplitAbortedAfterRecountBelowThreshold(nonNullParentSegment,
-                    recountedVisibleCount, splitThreshold);
-            return null;
-        }
+        requireEstimatedVisibleKeys(estimatedVisibleKeys);
         return materializeChildSegments(nonNullParentSegment,
-                targetLowerCount(recountedVisibleCount));
+                targetLowerCount(estimatedVisibleKeys));
     }
 
-    private boolean shouldContinueSplitAfterVisibleRecount(
-            final Segment<K, V> parentSegment, final long visibleCount,
-            final long splitThreshold) {
-        if (visibleCount >= splitThreshold) {
-            return true;
-        }
-        if (visibleCount < MIN_VISIBLE_KEYS_FOR_FALLBACK_SPLIT) {
-            return false;
-        }
-        logSplitContinuingAfterBelowThresholdRecount(parentSegment,
-                visibleCount, splitThreshold);
-        return true;
-    }
-
-    private long targetLowerCount(final long visibleCount) {
-        return Math.max(1L, visibleCount / 2L);
-    }
-
-    private Long countVisibleEntries(final Segment<K, V> segment) {
-        try (EntryIterator<K, V> iterator = openIteratorWithRetry(segment,
-                SegmentIteratorIsolation.FULL_ISOLATION)) {
-            if (iterator == null) {
-                return null;
-            }
-            long count = 0L;
-            while (iterator.hasNext()) {
-                iterator.next();
-                count++;
-            }
-            return count;
+    private void requireEstimatedVisibleKeys(final long estimatedVisibleKeys) {
+        if (estimatedVisibleKeys < 0L) {
+            throw new IllegalArgumentException(String.format(
+                    "Property 'estimatedVisibleKeys' must be >= 0 but was %d.",
+                    estimatedVisibleKeys));
         }
     }
 
-    private RouteSplitPlan<K> materializeChildSegments(
+    private long targetLowerCount(final long estimatedVisibleKeys) {
+        return Math.max(MIN_KEYS_PER_CHILD_SEGMENT, estimatedVisibleKeys / 2L);
+    }
+
+    private RouteSplitPreparation<K> materializeChildSegments(
             final Segment<K, V> parentSegment, final long targetLowerCount) {
         try (EntryIterator<K, V> iterator = openIteratorWithRetry(parentSegment,
                 SegmentIteratorIsolation.FULL_ISOLATION)) {
             if (iterator == null) {
                 logMaterializationAbortedBecauseParentClosed(parentSegment);
-                return null;
+                return RouteSplitPreparation.skipped();
             }
             try {
                 return materializationService.materializeRouteSplit(
-                        parentSegment, targetLowerCount, iterator);
+                        parentSegment, targetLowerCount,
+                        MIN_KEYS_PER_CHILD_SEGMENT, iterator);
             } catch (final RuntimeException e) {
-                if (isIteratorInvalidated(e)) {
+                if (e instanceof NoSuchElementException) {
                     logMaterializationAbortedBecauseIteratorInvalidated(
                             parentSegment);
-                    return null;
+                    return RouteSplitPreparation.skipped();
                 }
                 throw e;
             }
@@ -160,37 +133,4 @@ final class RouteSplitMaterializer<K, V> {
         }
     }
 
-    private void logEligibilityRecountAbortedBecauseParentClosed(
-            final Segment<K, V> parentSegment) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(
-                    "Route split aborted because parent segment closed before eligibility recount completed: segment='{}'",
-                    parentSegment.getId());
-        }
-    }
-
-    private void logSplitAbortedAfterRecountBelowThreshold(
-            final Segment<K, V> parentSegment, final long visibleCount,
-            final long splitThreshold) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(
-                    "Route split aborted after eligibility recount fell below threshold: segment='{}' visibleKeys='{}' threshold='{}'",
-                    parentSegment.getId(), visibleCount, splitThreshold);
-        }
-    }
-
-    private void logSplitContinuingAfterBelowThresholdRecount(
-            final Segment<K, V> parentSegment, final long visibleCount,
-            final long splitThreshold) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(
-                    "Route split continuing after eligibility recount fell below threshold because minimum child size is satisfied: segment='{}' visibleKeys='{}' threshold='{}' minKeysPerChild='{}'",
-                    parentSegment.getId(), visibleCount, splitThreshold,
-                    MIN_KEYS_PER_CHILD_SEGMENT);
-        }
-    }
-
-    private boolean isIteratorInvalidated(final RuntimeException e) {
-        return e instanceof NoSuchElementException;
-    }
 }

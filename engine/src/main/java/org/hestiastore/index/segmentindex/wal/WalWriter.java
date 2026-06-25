@@ -2,35 +2,43 @@ package org.hestiastore.index.segmentindex.wal;
 
 import java.util.Objects;
 
-import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
-
+/**
+ * Serial WAL record writer. Callers serialize access and handle durability.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 final class WalWriter<K, V> {
 
-    private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalRecordCodec<K, V> recordCodec;
     private final WalSegmentCatalog segmentCatalog;
     private final WalRuntimeMetrics metrics;
-    private final WalSyncPolicy syncPolicy;
     private long nextLsn = 1L;
 
-    WalWriter(final IndexWalConfiguration wal, final WalStorage storage,
+    WalWriter(final WalStorage storage,
             final WalRecordCodec<K, V> recordCodec,
             final WalSegmentCatalog segmentCatalog,
-            final WalRuntimeMetrics metrics, final WalSyncPolicy syncPolicy) {
-        this.wal = wal;
+            final WalRuntimeMetrics metrics) {
         this.storage = storage;
         this.recordCodec = recordCodec;
         this.segmentCatalog = segmentCatalog;
         this.metrics = metrics;
-        this.syncPolicy = syncPolicy;
     }
 
     void resetNextLsn(final long nextLsn) {
         this.nextLsn = nextLsn;
     }
 
-    long append(final WalRuntime.Operation operation, final K key,
+    /**
+     * Appends one encoded WAL record and returns durability metadata.
+     *
+     * @param operation operation kind
+     * @param key       record key
+     * @param value     record value
+     * @return append result
+     */
+    WalAppendResult append(final WalRuntime.Operation operation, final K key,
             final V value) {
         Objects.requireNonNull(key, "key");
         if (operation == WalRuntime.Operation.PUT) {
@@ -45,10 +53,7 @@ final class WalWriter<K, V> {
         segmentCatalog.recordAppend(activeSegment, recordBytes.length, lsn);
         metrics.recordAppend(recordBytes.length);
         nextLsn = lsn + 1L;
-        if (wal.isAsyncDurabilityMode()) {
-            return lsn;
-        }
-        syncPolicy.afterAppend(lsn, recordBytes.length, activeSegment.name());
-        return lsn;
+        return new WalAppendResult(lsn, recordBytes.length,
+                activeSegment.name());
     }
 }

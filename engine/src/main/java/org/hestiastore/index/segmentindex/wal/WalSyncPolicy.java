@@ -63,9 +63,6 @@ final class WalSyncPolicy {
                 || pendingSyncBytes >= wal.getGroupSyncMaxBatchBytes()) {
             syncGroupPendingLocked();
         }
-        if (wal.isGroupSyncDurabilityMode()) {
-            waitUntilDurableLocked(lsn);
-        }
     }
 
     void syncGroupPendingSafely() {
@@ -106,7 +103,10 @@ final class WalSyncPolicy {
             for (final String segmentName : remaining) {
                 storage.sync(segmentName);
             }
-            storage.syncMetadata();
+            if (segmentCatalog.hasPendingMetadataSync()) {
+                storage.syncMetadata();
+                segmentCatalog.markMetadataSynced();
+            }
             durableLsn.set(pendingSyncHighLsn);
             pendingSyncBytes = 0L;
             pendingSyncSegmentNames.clear();
@@ -150,22 +150,22 @@ final class WalSyncPolicy {
         return pendingSyncBytes;
     }
 
-    private void waitUntilDurableLocked(final long lsn) {
-        while (durableLsn.get() < lsn) {
-            checkSyncFailure();
-            if (closed.get()) {
-                throw new IndexException(
-                        "WAL runtime closed while waiting for durability.");
-            }
-            try {
-                synchronized (monitor) {
+    void waitUntilDurable(final long lsn) {
+        if (wal.isAsyncDurabilityMode()) {
+            return;
+        }
+        synchronized (monitor) {
+            while (durableLsn.get() < lsn) {
+                checkSyncFailure();
+                try {
                     monitor.wait(Math.max(1L, wal.getGroupSyncDelayMillis()));
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IndexException(
+                            "Interrupted while waiting for WAL durability.", ex);
                 }
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                throw new IndexException(
-                        "Interrupted while waiting for group WAL sync.", ex);
             }
+            checkSyncFailure();
         }
     }
 

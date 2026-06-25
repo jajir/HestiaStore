@@ -202,7 +202,8 @@ final class SplitTaskCoordinator<K, V> {
         boolean splitApplied = false;
         RuntimeException failure = null;
         try {
-            splitApplied = tryApplyPreparedSplit(segmentId, splitThreshold);
+            splitApplied = tryApplyPreparedSplit(segmentId, splitThreshold,
+                    observedKeyCount);
         } catch (final RuntimeException e) {
             failure = e;
             splitFailure.compareAndSet(null, e);
@@ -239,7 +240,7 @@ final class SplitTaskCoordinator<K, V> {
     }
 
     private boolean tryApplyPreparedSplit(final SegmentId segmentId,
-            final long splitThreshold) {
+            final long splitThreshold, final long observedKeyCount) {
         final Optional<RouteSplitLease<K, V>> splitLease =
                 segmentLeaseService.tryAcquireForSplit(segmentId);
         if (splitLease.isEmpty()) {
@@ -251,12 +252,30 @@ final class SplitTaskCoordinator<K, V> {
                 logSplitAbortedBecauseSegmentClosed(segmentId);
                 return false;
             }
-            final RouteSplitPlan<K> routeSplit = routeSplitCoordinator
-                    .tryPrepareSplit(lease.segment(), splitThreshold);
-            if (routeSplit == null) {
-                return false;
-            }
-            return publishSplit(routeSplit, lease);
+            final RouteSplitPreparation<K> routeSplit = routeSplitCoordinator
+                    .tryPrepareSplit(lease.segment(), splitThreshold,
+                            observedKeyCount);
+            return applyPreparedSplit(routeSplit, lease);
+        }
+    }
+
+    private boolean applyPreparedSplit(
+            final RouteSplitPreparation<K> routeSplit,
+            final RouteSplitLease<K, V> lease) {
+        if (routeSplit.status() == RouteSplitPreparationStatus.PREPARED) {
+            return publishSplit(routeSplit.routeSplit().orElseThrow(), lease);
+        }
+        if (routeSplit.status() == RouteSplitPreparationStatus.COMPACT_PARENT) {
+            compactParentSegment(lease);
+        }
+        return false;
+    }
+
+    private void compactParentSegment(final RouteSplitLease<K, V> lease) {
+        try {
+            lease.segment().compact();
+        } finally {
+            lease.abort();
         }
     }
 

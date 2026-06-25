@@ -84,6 +84,19 @@ class WalRuntimeTest {
     }
 
     @Test
+    void openUsesDefaultWalRuntimeAppendThreadName() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.ASYNC).build();
+
+        try (WalRuntime<String, String> ignored = WalRuntime.open(
+                new MemDirectory(), effective(wal), STRING_DESCRIPTOR,
+                STRING_DESCRIPTOR)) {
+            assertTrue(awaitThreadNameStartingWith(
+                    "hestia-standalone-wal-append-"));
+        }
+    }
+
+    @Test
     void openUsesIndexSpecificGroupSyncThreadName() {
         final IndexWalConfiguration wal = IndexWalConfiguration.builder()
                 .durability(WalDurabilityMode.GROUP_SYNC)
@@ -94,6 +107,19 @@ class WalRuntimeTest {
                 STRING_DESCRIPTOR, "hestia-test", "orders")) {
             assertTrue(awaitThreadNameStartingWith(
                     "hestia-test-orders-wal-group-sync-"));
+        }
+    }
+
+    @Test
+    void openUsesIndexSpecificAppendThreadName() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.ASYNC).build();
+
+        try (WalRuntime<String, String> ignored = WalRuntime.open(
+                new MemDirectory(), effective(wal), STRING_DESCRIPTOR,
+                STRING_DESCRIPTOR, "hestia-test", "orders")) {
+            assertTrue(awaitThreadNameStartingWith(
+                    "hestia-test-orders-wal-append-"));
         }
     }
 
@@ -1481,6 +1507,58 @@ class WalRuntimeTest {
         assertTrue(storage.syncedWalSegments().containsAll(walFiles),
                 "Expected synced WAL segments " + walFiles + " but got "
                         + storage.syncedWalSegments());
+    }
+
+    @Test
+    void queuedConcurrentAppendsRecoverSequentialLsns() throws Exception {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.GROUP_SYNC)
+                .groupSyncDelayMillis(1)
+                .groupSyncMaxBatchBytes(16 * 1024 * 1024)
+                .segmentSizeBytes(4096L).build();
+        final MemDirectory root = new MemDirectory();
+        final int writers = 32;
+        final ExecutorService executor = Executors.newFixedThreadPool(writers);
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch readyLatch = new CountDownLatch(writers);
+        final List<Future<Long>> writes = new ArrayList<>(writers);
+        final Set<Long> lsns = new HashSet<>();
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root,
+                effective(wal), STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            for (int i = 0; i < writers; i++) {
+                final int value = i;
+                writes.add(executor.submit(() -> {
+                    readyLatch.countDown();
+                    startLatch.await();
+                    return runtime.appendPut("queue-" + value,
+                            "value-" + value);
+                }));
+            }
+            assertTrue(readyLatch.await(5, TimeUnit.SECONDS));
+            startLatch.countDown();
+            for (final Future<Long> write : writes) {
+                assertTrue(lsns.add(write.get(5, TimeUnit.SECONDS)));
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+
+        final List<WalRuntime.ReplayRecord<String, String>> replayed =
+                new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root,
+                effective(wal), STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertEquals(writers, result.maxLsn());
+        }
+        replayed.sort(Comparator.comparingLong(WalRuntime.ReplayRecord::getLsn));
+        assertEquals(writers, replayed.size());
+        assertEquals(writers, lsns.size());
+        for (int i = 0; i < writers; i++) {
+            assertEquals(i + 1L, replayed.get(i).getLsn());
+            assertTrue(replayed.get(i).getKey().startsWith("queue-"));
+        }
     }
 
     private static int countWalSegments(final MemDirectory root) {

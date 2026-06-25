@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.NoSuchElementException;
 import java.util.List;
 
 import org.hestiastore.index.BusyRetryPolicy;
@@ -45,78 +46,97 @@ class RouteSplitMaterializerTest {
     @Test
     void prepareReturnsMaterializedSplitForEligibleBoundary() {
         final RouteSplitPlan<Integer> routeSplit = new RouteSplitPlan<>(
-                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 2, null);
+                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 4, null);
+        final EntryIterator<Integer, String> iterator = iterator(entries(8));
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(iteratorResult(entries()))
-                .thenReturn(iteratorResult(entries()));
+                .thenReturn(OperationResult.ok(iterator));
         when(materializationService.materializeRouteSplit(eq(parentSegment),
-                eq(2L), any())).thenReturn(routeSplit);
+                eq(4L), eq(3L), any()))
+                .thenReturn(RouteSplitPreparation.prepared(routeSplit));
 
-        final RouteSplitPlan<Integer> prepared = preparationService.prepare(
-                parentSegment, 2L);
+        final RouteSplitPreparation<Integer> prepared = preparationService
+                .prepare(parentSegment, 8L);
 
-        assertNotNull(prepared);
-        verify(parentSegment, times(2))
+        assertEquals(RouteSplitPreparationStatus.PREPARED, prepared.status());
+        assertTrue(iterator.wasClosed());
+        verify(parentSegment, times(1))
                 .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
         verify(materializationService).materializeRouteSplit(eq(parentSegment),
-                eq(2L), any());
+                eq(4L), eq(3L), any());
     }
 
     @Test
-    void prepareReturnsNullWhenBoundaryIsNotEligible() {
-        when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(iteratorResult(List.of(Entry.of(1, "a"))));
-
-        final RouteSplitPlan<Integer> prepared = preparationService.prepare(
-                parentSegment, 2L);
-
-        assertNull(prepared);
-    }
-
-    @Test
-    void prepareReturnsMaterializedSplitWhenRecountFallsBelowThresholdButChildMinimumIsSatisfied() {
+    void prepareClampsLowerTargetToMinimumChildSize() {
         final RouteSplitPlan<Integer> routeSplit = new RouteSplitPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 3, null);
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(iteratorResult(entries(6)))
                 .thenReturn(iteratorResult(entries(6)));
         when(materializationService.materializeRouteSplit(eq(parentSegment),
-                eq(3L), any())).thenReturn(routeSplit);
+                eq(3L), eq(3L), any()))
+                .thenReturn(RouteSplitPreparation.prepared(routeSplit));
 
-        final RouteSplitPlan<Integer> prepared = preparationService.prepare(
-                parentSegment, 10L);
+        final RouteSplitPreparation<Integer> prepared = preparationService
+                .prepare(parentSegment, 2L);
 
-        assertNotNull(prepared);
-        verify(parentSegment, times(2))
-                .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+        assertEquals(RouteSplitPreparationStatus.PREPARED, prepared.status());
         verify(materializationService).materializeRouteSplit(eq(parentSegment),
-                eq(3L), any());
+                eq(3L), eq(3L), any());
     }
 
     @Test
-    void prepareReturnsNullWhenRecountFallsBelowThresholdAndChildMinimumIsNotSatisfied() {
+    void prepareReturnsSkippedWhenParentIsClosed() {
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(iteratorResult(entries(5)));
+                .thenReturn(OperationResult.closed());
 
-        final RouteSplitPlan<Integer> prepared = preparationService.prepare(
-                parentSegment, 10L);
+        final RouteSplitPreparation<Integer> prepared = preparationService
+                .prepare(parentSegment, 10L);
 
-        assertNull(prepared);
+        assertEquals(RouteSplitPreparationStatus.SKIPPED, prepared.status());
         verifyNoInteractions(materializationService);
     }
 
-    private static List<Entry<Integer, String>> entries() {
-        return entries(4);
+    @Test
+    void prepareReturnsSkippedWhenIteratorInvalidates() {
+        when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(iteratorResult(entries(6)));
+        when(materializationService.materializeRouteSplit(eq(parentSegment),
+                eq(3L), eq(3L), any()))
+                .thenThrow(new NoSuchElementException("invalidated"));
+
+        final RouteSplitPreparation<Integer> prepared = preparationService
+                .prepare(parentSegment, 6L);
+
+        assertEquals(RouteSplitPreparationStatus.SKIPPED, prepared.status());
+    }
+
+    @Test
+    void preparePropagatesCompactParentResult() {
+        when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(iteratorResult(entries(5)));
+        when(materializationService.materializeRouteSplit(eq(parentSegment),
+                eq(5L), eq(3L), any()))
+                .thenReturn(RouteSplitPreparation.compactParent());
+
+        final RouteSplitPreparation<Integer> prepared = preparationService
+                .prepare(parentSegment, 10L);
+
+        assertEquals(RouteSplitPreparationStatus.COMPACT_PARENT,
+                prepared.status());
     }
 
     private static List<Entry<Integer, String>> entries(final int count) {
         return List.of(Entry.of(1, "a"), Entry.of(2, "b"), Entry.of(3, "c"),
-                Entry.of(4, "d"), Entry.of(5, "e"), Entry.of(6, "f"))
-                .subList(0, count);
+                Entry.of(4, "d"), Entry.of(5, "e"), Entry.of(6, "f"),
+                Entry.of(7, "g"), Entry.of(8, "h")).subList(0, count);
     }
 
     private static OperationResult<EntryIterator<Integer, String>> iteratorResult(
             final List<Entry<Integer, String>> entries) {
-        return OperationResult.ok(EntryIterator.make(entries.iterator()));
+        return OperationResult.ok(iterator(entries));
+    }
+
+    private static EntryIterator<Integer, String> iterator(
+            final List<Entry<Integer, String>> entries) {
+        return EntryIterator.make(entries.iterator());
     }
 }

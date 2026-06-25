@@ -66,13 +66,15 @@ class SegmentIndexSessionPutTest {
 
     @Test
     void putOptionallySplitsSegmentWhenThresholdReached() {
-        resetIndex(4, 1);
+        resetIndex(6, 1);
 
         index.put(1, "a");
         index.put(2, "b");
         index.put(3, "c");
         index.put(4, "d");
         index.put(5, "e");
+        index.put(6, "f");
+        index.put(7, "g");
         index.maintenance().flushAndWait();
 
         final SegmentRouteMap<Integer> cache = readKeyToSegmentMap(
@@ -90,10 +92,12 @@ class SegmentIndexSessionPutTest {
         assertEquals("c", index.get(3));
         assertEquals("d", index.get(4));
         assertEquals("e", index.get(5));
-
-        index.put(6, "f");
-
         assertEquals("f", index.get(6));
+        assertEquals("g", index.get(7));
+
+        index.put(8, "h");
+
+        assertEquals("h", index.get(8));
     }
 
     @Test

@@ -43,14 +43,30 @@ final class PreparedSegmentMaterializer<K, V> {
                 "materialization");
     }
 
-    RouteSplitPlan<K> materializeRouteSplit(
+    /**
+     * Materializes a prepared split in one parent iterator pass.
+     * <p>
+     * Prepared child files are committed only after both children satisfy the
+     * configured minimum size. Deterministic undersized-child outcomes discard
+     * all prepared files and ask the caller to compact the parent instead.
+     *
+     * @param parentSegment parent segment being split
+     * @param targetLowerCount estimated lower-child cut point
+     * @param minKeysPerChildSegment minimum live keys required in each child
+     * @param iterator isolated parent snapshot iterator
+     * @return preparation outcome
+     */
+    RouteSplitPreparation<K> materializeRouteSplit(
             final Segment<K, V> parentSegment,
             final long targetLowerCount,
+            final long minKeysPerChildSegment,
             final EntryIterator<K, V> iterator) {
         Vldtn.requireNonNull(parentSegment, "parentSegment");
         Vldtn.requireNonNull(iterator, "iterator");
-        final long validatedTargetLowerCount = requireTargetLowerCount(
-                targetLowerCount);
+        final long validatedTargetLowerCount = requireAtLeastOne(
+                targetLowerCount, "targetLowerCount");
+        final long validatedMinKeysPerChildSegment = requireAtLeastOne(
+                minKeysPerChildSegment, "minKeysPerChildSegment");
         SegmentId lowerSegmentId = null;
         WriteTransaction<K, V> lowerWriterTx = null;
         EntryWriter<K, V> lowerWriter = null;
@@ -62,21 +78,43 @@ final class PreparedSegmentMaterializer<K, V> {
             lowerSegmentId = nextPreparedSegmentId();
             lowerWriterTx = openPreparedWriterTx(lowerSegmentId);
             lowerWriter = openPreparedWriter(lowerSegmentId, lowerWriterTx);
-            final PreparedUpperSegment<K, V> upperSegment = writeSplitEntries(
-                    iterator, validatedTargetLowerCount, lowerWriter);
-            upperSegmentId = upperSegment.segmentId();
-            upperWriterTx = upperSegment.writerTx();
-            upperWriter = upperSegment.writer();
+            long lowerCount = 0L;
+            long upperCount = 0L;
+            K lowerMaxKey = null;
+            K upperMaxKey = null;
+            while (iterator.hasNext()) {
+                final Entry<K, V> entry = iterator.next();
+                if (upperWriter == null
+                        && lowerCount < validatedTargetLowerCount) {
+                    lowerMaxKey = entry.getKey();
+                    lowerCount++;
+                    writeEntry(lowerWriter, entry);
+                    continue;
+                }
+                if (upperWriter == null) {
+                    closePreparedWriter(lowerWriter);
+                    upperSegmentId = nextPreparedSegmentId();
+                    upperWriterTx = openPreparedWriterTx(upperSegmentId);
+                    upperWriter = openPreparedWriter(upperSegmentId,
+                            upperWriterTx);
+                }
+                upperMaxKey = entry.getKey();
+                upperCount++;
+                writeEntry(upperWriter, entry);
+            }
+            if (!hasEnoughKeysForSplit(lowerCount, upperCount,
+                    validatedMinKeysPerChildSegment)) {
+                return RouteSplitPreparation.compactParent();
+            }
             commitPreparedSegment(lowerWriterTx, lowerWriter);
             commitPreparedSegment(upperWriterTx, upperWriter);
             materializationCompleted = true;
-            final K lowerMaxKey = upperSegment.lowerMaxKey();
-            return new RouteSplitPlan<>(
+            return RouteSplitPreparation.prepared(new RouteSplitPlan<>(
                     parentSegment.getId(),
                     lowerSegmentId,
                     upperSegmentId,
-                    lowerMaxKey,
-                    upperSegment.upperMaxKey());
+                    Vldtn.requireNonNull(lowerMaxKey, "lowerMaxKey"),
+                    Vldtn.requireNonNull(upperMaxKey, "upperMaxKey")));
         } finally {
             if (materializationCompleted) {
                 closePreparedWriter(lowerWriter);
@@ -88,13 +126,14 @@ final class PreparedSegmentMaterializer<K, V> {
         }
     }
 
-    private long requireTargetLowerCount(final long targetLowerCount) {
-        if (targetLowerCount < 1L) {
+    private long requireAtLeastOne(final long value,
+            final String propertyName) {
+        if (value < 1L) {
             throw new IllegalArgumentException(String.format(
-                    "Property 'targetLowerCount' must be >= 1 but was %d.",
-                    targetLowerCount));
+                    "Property '%s' must be >= 1 but was %d.", propertyName,
+                    value));
         }
-        return targetLowerCount;
+        return value;
     }
 
     private SegmentId nextPreparedSegmentId() {
@@ -126,39 +165,10 @@ final class PreparedSegmentMaterializer<K, V> {
         deletePreparedSegmentFiles(segmentId);
     }
 
-    private PreparedUpperSegment<K, V> writeSplitEntries(
-            final EntryIterator<K, V> iterator,
-            final long targetLowerCount,
-            final EntryWriter<K, V> lowerWriter) {
-        SegmentId upperSegmentId = null;
-        WriteTransaction<K, V> upperWriterTx = null;
-        EntryWriter<K, V> upperWriter = null;
-        K lowerMaxKey = null;
-        K upperMaxKey = null;
-        long lowerCount = 0L;
-        while (iterator.hasNext()) {
-            final Entry<K, V> entry = iterator.next();
-            if (lowerCount < targetLowerCount) {
-                lowerMaxKey = entry.getKey();
-                lowerCount++;
-                writeEntry(lowerWriter, entry);
-                continue;
-            }
-            if (upperWriter == null) {
-                upperSegmentId = nextPreparedSegmentId();
-                upperWriterTx = openPreparedWriterTx(upperSegmentId);
-                upperWriter = openPreparedWriter(upperSegmentId,
-                        upperWriterTx);
-            }
-            upperMaxKey = entry.getKey();
-            writeEntry(upperWriter, entry);
-        }
-        return new PreparedUpperSegment<>(
-                Vldtn.requireNonNull(upperSegmentId, "upperSegmentId"),
-                Vldtn.requireNonNull(upperWriterTx, "upperWriterTx"),
-                Vldtn.requireNonNull(upperWriter, "upperWriter"),
-                Vldtn.requireNonNull(lowerMaxKey, "lowerMaxKey"),
-                Vldtn.requireNonNull(upperMaxKey, "upperMaxKey"));
+    private boolean hasEnoughKeysForSplit(final long lowerCount,
+            final long upperCount, final long minKeysPerChildSegment) {
+        return lowerCount >= minKeysPerChildSegment
+                && upperCount >= minKeysPerChildSegment;
     }
 
     private void writeEntry(final EntryWriter<K, V> writer,

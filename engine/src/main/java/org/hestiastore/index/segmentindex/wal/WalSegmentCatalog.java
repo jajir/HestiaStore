@@ -25,6 +25,7 @@ final class WalSegmentCatalog {
     private long checkpointCleanupSuppressedEvents = 0L;
     private long checkpointCleanupSuppressedDeletedSegments = 0L;
     private long checkpointCleanupSuppressedDeletedBytes = 0L;
+    private boolean metadataSyncPending;
 
     WalSegmentCatalog(final IndexWalConfiguration wal,
             final WalStorage storage,
@@ -37,6 +38,7 @@ final class WalSegmentCatalog {
     void resetRecoveredSegments() {
         retainedBytes = 0L;
         segments.clear();
+        metadataSyncPending = false;
     }
 
     void addRecoveredSegment(final String name, final long baseLsn,
@@ -72,6 +74,7 @@ final class WalSegmentCatalog {
         }
         if (deletedCount > 0) {
             storage.syncMetadata();
+            markMetadataSynced();
         }
         return deletedCount;
     }
@@ -100,6 +103,7 @@ final class WalSegmentCatalog {
         segments.addAll(retained);
         if (deletedCount > 0) {
             storage.syncMetadata();
+            markMetadataSynced();
         }
         if (retainedBytes < 0L) {
             retainedBytes = 0L;
@@ -126,9 +130,26 @@ final class WalSegmentCatalog {
         return segments;
     }
 
+    /**
+     * Returns whether WAL segment file metadata still needs a directory sync.
+     *
+     * @return true when segment metadata has changed since the last metadata sync
+     */
+    boolean hasPendingMetadataSync() {
+        return metadataSyncPending;
+    }
+
+    /**
+     * Marks pending WAL segment metadata as synced.
+     */
+    void markMetadataSynced() {
+        metadataSyncPending = false;
+    }
+
     private WalSegmentDescriptor createSegment(final long baseLsn) {
         final String name = metadataCatalog.toSegmentFileName(baseLsn);
         storage.touch(name);
+        metadataSyncPending = true;
         final WalSegmentDescriptor segment = new WalSegmentDescriptor(name,
                 baseLsn, 0L, baseLsn);
         segments.add(segment);

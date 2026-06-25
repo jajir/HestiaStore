@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.routemap.RouteSplitPlan;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,31 +26,29 @@ final class RouteSplitPlanner<K, V> {
                 "preparationService");
     }
 
-    RouteSplitPlan<K> tryPrepareSplit(
+    /**
+     * Validates split eligibility from the scheduler estimate and delegates to
+     * snapshot materialization without recounting parent entries.
+     *
+     * @param segmentHandle routed segment handle
+     * @param splitThreshold active split threshold
+     * @param estimatedVisibleKeys scheduler-observed key estimate
+     * @return preparation outcome
+     */
+    RouteSplitPreparation<K> tryPrepareSplit(
             final BlockingSegment<K, V> segmentHandle,
-            final long splitThreshold) {
+            final long splitThreshold, final long estimatedVisibleKeys) {
         final BlockingSegment<K, V> nonNullBlockingSegment = requireBlockingSegment(
                 segmentHandle);
-        final long estimatedVisibleKeys = estimatedVisibleKeys(
-                nonNullBlockingSegment);
         if (!isSplitEligible(estimatedVisibleKeys, splitThreshold,
                 isSplitFeasible(estimatedVisibleKeys))) {
             logSkippedSplit(nonNullBlockingSegment, estimatedVisibleKeys,
                     splitThreshold);
-            return null;
+            return RouteSplitPreparation.skipped();
         }
         logStartedSplit(nonNullBlockingSegment, splitThreshold);
         return preparationService.prepare(nonNullBlockingSegment.getSegment(),
-                splitThreshold);
-    }
-
-    private BlockingSegment<K, V> requireBlockingSegment(
-            final BlockingSegment<K, V> segmentHandle) {
-        return Vldtn.requireNonNull(segmentHandle, "segmentHandle");
-    }
-
-    private long estimatedVisibleKeys(final BlockingSegment<K, V> segmentHandle) {
-        return segmentHandle.getRuntime().getNumberOfKeysInCache();
+                estimatedVisibleKeys);
     }
 
     private boolean isSplitFeasible(final long estimatedVisibleKeys) {
@@ -79,5 +76,10 @@ final class RouteSplitPlanner<K, V> {
         return splitThreshold >= 1L
                 && estimatedVisibleKeys >= splitThreshold
                 && splitFeasible;
+    }
+
+    private BlockingSegment<K, V> requireBlockingSegment(
+            final BlockingSegment<K, V> segmentHandle) {
+        return Vldtn.requireNonNull(segmentHandle, "segmentHandle");
     }
 }
