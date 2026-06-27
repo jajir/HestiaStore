@@ -16,7 +16,7 @@
   <rect x="0" y="130" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="150">HestiaStoreBasic</text>
   <rect x="250" y="137" width="8" height="26" rx="6" ry="6" fill="#E53935" stroke="#C2302D" stroke-width="2" />
-  <text class="value" x="274" y="150">22,380 ops/s</text>
+  <text class="value" x="274" y="150">24,238 ops/s</text>
   <rect x="0" y="190" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="210">HestiaStoreCompress</text>
   <rect x="250" y="197" width="8" height="26" rx="6" ry="6" fill="#E53935" stroke="#C2302D" stroke-width="2" />

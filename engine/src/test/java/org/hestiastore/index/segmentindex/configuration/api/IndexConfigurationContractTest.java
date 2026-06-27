@@ -42,7 +42,7 @@ class IndexConfigurationContractTest {
 
         assertEquals(Boolean.TRUE,
                 contract.maintenance().backgroundAutoEnabled());
-        assertEquals(0, contract.chunkStoreCache().pageLimit());
+        assertEquals(128, contract.chunkStoreCache().pageLimit());
 
         final List<ChunkFilterSpec> encoding =
                 contract.filters().encodingChunkFilterSpecs();
