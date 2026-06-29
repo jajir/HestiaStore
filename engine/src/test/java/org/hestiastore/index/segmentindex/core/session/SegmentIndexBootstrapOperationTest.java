@@ -50,8 +50,7 @@ import org.slf4j.MDC;
 class SegmentIndexBootstrapOperationTest {
 
     private static final String LOCK_FILE_NAME = ".lock";
-    private static final String CONFIGURATION_FILE_NAME =
-            IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME;
+    private static final String CONFIGURATION_FILE_NAME = IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME;
     private static final String MDC_INDEX_NAME_KEY = "index.name";
 
     @AfterEach
@@ -68,9 +67,8 @@ class SegmentIndexBootstrapOperationTest {
                 .close();
 
         assertTrue(directory.isFileExists(CONFIGURATION_FILE_NAME));
-        final var loaded =
-                new IndexConfigurationStore<Integer, String>(directory)
-                        .load();
+        final var loaded = new IndexConfigurationStore<Integer, String>(directory)
+                .load();
         assertEquals("bootstrap-operation-create", loaded.identity().name());
         assertEquals(Integer.class, loaded.identity().keyClass());
         assertEquals(String.class, loaded.identity().valueClass());
@@ -214,13 +212,11 @@ class SegmentIndexBootstrapOperationTest {
     @Test
     void explicitProviderResolverIsUsedForPersistedCustomChunkFilters() {
         final MemDirectory directory = new MemDirectory();
-        final ChunkFilterProviderResolver resolver =
-                ChunkFilterProviderResolverImpl.builder()
-                        .withDefaultProviders()
-                        .withProvider(new BootstrapChunkFilterProvider())
-                        .build();
-        final IndexConfiguration<Integer, String> original =
-                buildCustomFilterConf("bootstrap-operation-provider");
+        final ChunkFilterProviderResolver resolver = ChunkFilterProviderResolverImpl.builder()
+                .withDefaultProviders()
+                .withProvider(new BootstrapChunkFilterProvider())
+                .build();
+        final IndexConfiguration<Integer, String> original = buildCustomFilterConf("bootstrap-operation-provider");
 
         operation(directory, original, resolver).create().close();
 
@@ -229,10 +225,9 @@ class SegmentIndexBootstrapOperationTest {
                 resolver).open();
 
         try {
-            final var loaded =
-                    new IndexConfigurationStore<Integer, String>(directory,
-                            resolver)
-                            .load();
+            final var loaded = new IndexConfigurationStore<Integer, String>(directory,
+                    resolver)
+                    .load();
             assertEquals(original.filters().encodingChunkFilterSpecs(),
                     loaded.filters().encodingChunkFilterSpecs());
             assertEquals(original.filters().decodingChunkFilterSpecs(),
@@ -289,12 +284,11 @@ class SegmentIndexBootstrapOperationTest {
                 SegmentIndexBootstrapOperation.class.getName(), Level.INFO);
 
         try {
-            final SegmentIndex<Integer, ByteArray> index =
-                    new SegmentIndexBootstrapOperation<Integer, ByteArray>(
-                            new MemDirectory(),
-                            buildUnknownValueSizeConf(
-                                    "bootstrap-operation-memory-incomplete"),
-                            null, runtimeHandle()).create();
+            final SegmentIndex<Integer, ByteArray> index = new SegmentIndexBootstrapOperation<Integer, ByteArray>(
+                    new MemDirectory(),
+                    buildUnknownValueSizeConf(
+                            "bootstrap-operation-memory-incomplete"),
+                    null, runtimeHandle()).create();
             printReport("bootstrap-incomplete",
                     index.startupMemoryEstimate());
             index.close();
@@ -308,8 +302,7 @@ class SegmentIndexBootstrapOperationTest {
 
             assertEquals(index.startupMemoryEstimate().lines(),
                     loggedReportLines);
-            assertTrue(appender.countMessageStartingWith("memory-estimate ")
-                    > 1);
+            assertTrue(appender.countMessageStartingWith("memory-estimate ") > 1);
             assertFalse(index.startupMemoryEstimate().isComplete());
             assertTrue(index.startupMemoryEstimate()
                     .totalEstimatedBytes().isEmpty());
@@ -325,11 +318,10 @@ class SegmentIndexBootstrapOperationTest {
                 SegmentIndexBootstrapOperation.class.getName(), Level.INFO);
 
         try {
-            final Optional<SegmentIndex<Integer, String>> index =
-                    operation(directory,
-                            buildConf("bootstrap-operation-try-open-empty",
-                                    false))
-                            .tryOpen();
+            final Optional<SegmentIndex<Integer, String>> index = operation(directory,
+                    buildConf("bootstrap-operation-try-open-empty",
+                            false))
+                    .tryOpen();
 
             assertTrue(index.isEmpty());
             assertFalse(directory.isFileExists(LOCK_FILE_NAME));
@@ -348,10 +340,9 @@ class SegmentIndexBootstrapOperationTest {
                 .create()
                 .close();
 
-        final Optional<SegmentIndex<Integer, String>> index =
-                operation(directory,
-                        buildConf("bootstrap-operation-try-open", false))
-                        .tryOpen();
+        final Optional<SegmentIndex<Integer, String>> index = operation(directory,
+                buildConf("bootstrap-operation-try-open", false))
+                .tryOpen();
 
         assertTrue(index.isPresent());
         try {
@@ -423,42 +414,41 @@ class SegmentIndexBootstrapOperationTest {
             final String indexName, final boolean contextLoggingEnabled,
             final int registryLifecycleThreads,
             final IndexWalConfiguration walConfiguration) {
-        final IndexConfigurationBuilder<Integer, String> builder =
-                IndexConfiguration.<Integer, String>builder()
-                        .identity(identity -> identity.keyClass(Integer.class))
-                        .identity(identity -> identity
-                                .valueClass(String.class))
-                        .identity(identity -> identity.keyTypeDescriptor(
-                                new TypeDescriptorInteger()))
-                        .identity(identity -> identity.valueTypeDescriptor(
-                                new TypeDescriptorShortString()))
-                        .identity(identity -> identity.name(indexName))
-                        .logging(logging -> logging
-                                .contextEnabled(contextLoggingEnabled))
-                        .segment(segment -> segment.cacheKeyLimit(10))
-                        .writePath(writePath -> writePath
-                                .segmentWriteCacheKeyLimit(5))
-                        .writePath(writePath -> writePath
-                                .maintenanceWriteCacheKeyLimit(6))
-                        .segment(segment -> segment.chunkKeyLimit(2))
-                        .segment(segment -> segment.maxKeys(100))
-                        .segment(segment -> segment.cachedSegmentLimit(3))
-                        .bloomFilter(bloomFilter -> bloomFilter
-                                .hashFunctions(1))
-                        .bloomFilter(bloomFilter -> bloomFilter
-                                .indexSizeBytes(1024))
-                        .bloomFilter(bloomFilter -> bloomFilter
-                                .falsePositiveProbability(0.01D))
-                        .io(io -> io.diskBufferSizeBytes(1024))
-                        .maintenance(maintenance -> maintenance
-                                .backgroundAutoEnabled(false))
-                        .maintenance(maintenance -> maintenance
-                                .registryLifecycleThreads(
-                                        registryLifecycleThreads))
-                        .filters(filters -> filters.encodingFilters(
-                                List.of(new ChunkFilterDoNothing())))
-                        .filters(filters -> filters.decodingFilters(
-                                List.of(new ChunkFilterDoNothing())));
+        final IndexConfigurationBuilder<Integer, String> builder = IndexConfiguration.<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class))
+                .identity(identity -> identity
+                        .valueClass(String.class))
+                .identity(identity -> identity.keyTypeDescriptor(
+                        new TypeDescriptorInteger()))
+                .identity(identity -> identity.valueTypeDescriptor(
+                        new TypeDescriptorShortString()))
+                .identity(identity -> identity.name(indexName))
+                .logging(logging -> logging
+                        .contextEnabled(contextLoggingEnabled))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath
+                        .segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath
+                        .maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2))
+                .segment(segment -> segment.maxKeys(100))
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .hashFunctions(1))
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(1024))
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(false))
+                .maintenance(maintenance -> maintenance
+                        .registryLifecycleThreads(
+                                registryLifecycleThreads))
+                .filters(filters -> filters.encodingFilters(
+                        List.of(new ChunkFilterDoNothing())))
+                .filters(filters -> filters.decodingFilters(
+                        List.of(new ChunkFilterDoNothing())));
         if (walConfiguration != null) {
             builder.wal(wal -> wal.configuration(walConfiguration));
         }
@@ -641,12 +631,6 @@ class SegmentIndexBootstrapOperationTest {
         @Override
         public void append(final LogEvent event) {
             messages.add(event.getMessage().getFormattedMessage());
-        }
-
-        String messages() {
-            synchronized (messages) {
-                return String.join("\n", messages);
-            }
         }
 
         long countMessageStartingWith(final String prefix) {

@@ -71,9 +71,9 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
 
         static Operation fromCode(final byte code) {
             return switch (code) {
-            case 1 -> PUT;
-            case 2 -> DELETE;
-            default -> throw new IndexException("Invalid WAL operation code.");
+                case 1 -> PUT;
+                case 2 -> DELETE;
+                default -> throw new IndexException("Invalid WAL operation code.");
             };
         }
     }
@@ -127,8 +127,8 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
          * Creates a recovery summary.
          *
          * @param lastReplayedLsn last LSN replayed into the index
-         * @param maxLsn maximum valid WAL LSN seen during recovery
-         * @param truncatedTail whether recovery truncated an invalid WAL tail
+         * @param maxLsn          maximum valid WAL LSN seen during recovery
+         * @param truncatedTail   whether recovery truncated an invalid WAL tail
          */
         public RecoveryResult(final long lastReplayedLsn, final long maxLsn,
                 final boolean truncatedTail) {
@@ -209,8 +209,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
     private final WalWriter<K, V> writer;
     private final WalRecoveryManager<K, V> recoveryManager;
     private final ScheduledExecutorService groupSyncExecutor;
-    private final BlockingQueue<WalAppendTask<K, V>> appendQueue =
-            new ArrayBlockingQueue<>(APPEND_QUEUE_CAPACITY);
+    private final BlockingQueue<WalAppendTask<K, V>> appendQueue = new ArrayBlockingQueue<>(APPEND_QUEUE_CAPACITY);
     private final Thread appendWorker;
 
     private long checkpointLsn = 0L;
@@ -359,13 +358,13 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
                 metrics, monitor, segmentCatalog, closed);
         final WalWriter<K, V> writer = new WalWriter<>(storage,
                 recordCodec, segmentCatalog, metrics);
-        final WalRecoveryManager<K, V> recoveryManager =
-                new WalRecoveryManager<>(wal, storage, metadataCatalog,
-                        recordCodec, segmentCatalog, metrics);
+        final WalRecoveryManager<K, V> recoveryManager = new WalRecoveryManager<>(wal, storage, metadataCatalog,
+                recordCodec, segmentCatalog, metrics);
         return new WalRuntime<>(monitor, metrics, closed, storage, metadataCatalog,
                 segmentCatalog, syncPolicy, writer, recoveryManager,
                 newGroupSyncExecutor(wal, syncPolicy,
-                        groupSyncThreadNamePrefix), appendThreadNamePrefix);
+                        groupSyncThreadNamePrefix),
+                appendThreadNamePrefix);
     }
 
     private static ScheduledExecutorService newGroupSyncExecutor(
@@ -376,19 +375,13 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
                 || wal.getGroupSyncDelayMillis() <= 0) {
             return null;
         }
-        final ScheduledExecutorService executor =
-                Executors.newSingleThreadScheduledExecutor(
-                        new NamedDaemonThreadFactory(
-                                groupSyncThreadNamePrefix));
+        final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
+                new NamedDaemonThreadFactory(
+                        groupSyncThreadNamePrefix));
         executor.scheduleWithFixedDelay(syncPolicy::syncGroupPendingSafely,
                 wal.getGroupSyncDelayMillis(), wal.getGroupSyncDelayMillis(),
                 TimeUnit.MILLISECONDS);
         return executor;
-    }
-
-    private static String poolThreadNamePrefix(final String prefix,
-            final String poolName) {
-        return prefix + "-" + poolName;
     }
 
     private static String poolThreadNamePrefix(final String prefix,
@@ -422,7 +415,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
     /**
      * Appends a PUT record and returns assigned LSN.
      *
-     * @param key key
+     * @param key   key
      * @param value value
      * @return assigned LSN
      */

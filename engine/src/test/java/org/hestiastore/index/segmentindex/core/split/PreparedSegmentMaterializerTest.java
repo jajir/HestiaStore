@@ -247,8 +247,8 @@ class PreparedSegmentMaterializerTest {
     void materializeRouteSplitDeletesPreparedSegmentsWhenWriteFails() {
         final Directory directory = new MemDirectory();
         @SuppressWarnings("unchecked")
-        final SegmentRegistry.Materialization<Integer, String> materialization =
-                mock(SegmentRegistry.Materialization.class);
+        final SegmentRegistry.Materialization<Integer, String> materialization = mock(
+                SegmentRegistry.Materialization.class);
         final SegmentFullWriterTx<Integer, String> lowerTx = writerTx();
         final EntryWriter<Integer, String> lowerWriter = writer();
         when(materialization.nextSegmentId())
@@ -258,12 +258,11 @@ class PreparedSegmentMaterializerTest {
         when(lowerTx.open()).thenReturn(lowerWriter);
         doThrow(new IllegalStateException("write failed"))
                 .when(lowerWriter).write(any());
-        final PreparedSegmentMaterializer<Integer, String> service =
-                new PreparedSegmentMaterializer<>(directory,
-                        materialization);
+        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(directory,
+                materialization);
 
         assertThrows(IllegalStateException.class,
-                () -> service.materializeRouteSplit(mock(Segment.class),
+                () -> service.materializeRouteSplit(mockSegment(),
                         3L, 3L, EntryIterator.make(entries(6).iterator())));
 
         assertFalse(directory.isFileExists(SegmentId.of(2).getName()));
@@ -274,19 +273,18 @@ class PreparedSegmentMaterializerTest {
     void materializeRouteSplitDeletesPreparedSegmentsWhenWriterOpenFails() {
         final Directory directory = new MemDirectory();
         @SuppressWarnings("unchecked")
-        final SegmentRegistry.Materialization<Integer, String> materialization =
-                mock(SegmentRegistry.Materialization.class);
+        final SegmentRegistry.Materialization<Integer, String> materialization = mock(
+                SegmentRegistry.Materialization.class);
         final SegmentFullWriterTx<Integer, String> lowerTx = writerTx();
         when(materialization.nextSegmentId()).thenReturn(SegmentId.of(2));
         when(materialization.openWriterTx(SegmentId.of(2)))
                 .thenReturn(lowerTx);
         when(lowerTx.open()).thenThrow(new IllegalStateException("open failed"));
-        final PreparedSegmentMaterializer<Integer, String> service =
-                new PreparedSegmentMaterializer<>(directory,
-                        materialization);
+        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(directory,
+                materialization);
 
         assertThrows(IllegalStateException.class,
-                () -> service.materializeRouteSplit(mock(Segment.class),
+                () -> service.materializeRouteSplit(mockSegment(),
                         3L, 3L, EntryIterator.make(entries(6).iterator())));
 
         assertFalse(directory.isFileExists(SegmentId.of(2).getName()));
@@ -296,8 +294,8 @@ class PreparedSegmentMaterializerTest {
     void materializeRouteSplitDeletesPreparedSegmentsWhenCommitFails() {
         final Directory directory = new MemDirectory();
         @SuppressWarnings("unchecked")
-        final SegmentRegistry.Materialization<Integer, String> materialization =
-                mock(SegmentRegistry.Materialization.class);
+        final SegmentRegistry.Materialization<Integer, String> materialization = mock(
+                SegmentRegistry.Materialization.class);
         final SegmentFullWriterTx<Integer, String> lowerTx = writerTx();
         final SegmentFullWriterTx<Integer, String> upperTx = writerTx();
         final EntryWriter<Integer, String> lowerWriter = writer();
@@ -312,12 +310,11 @@ class PreparedSegmentMaterializerTest {
         when(upperTx.open()).thenReturn(upperWriter);
         doThrow(new IllegalStateException("commit failed"))
                 .when(upperTx).commit();
-        final PreparedSegmentMaterializer<Integer, String> service =
-                new PreparedSegmentMaterializer<>(directory,
-                        materialization);
+        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(directory,
+                materialization);
 
         assertThrows(IllegalStateException.class,
-                () -> service.materializeRouteSplit(mock(Segment.class),
+                () -> service.materializeRouteSplit(mockSegment(),
                         3L, 3L, EntryIterator.make(entries(6).iterator())));
 
         assertFalse(directory.isFileExists(SegmentId.of(2).getName()));
@@ -331,8 +328,8 @@ class PreparedSegmentMaterializerTest {
         final Directory directory = mock(Directory.class);
         final Directory segmentDirectory = mock(Directory.class);
         @SuppressWarnings("unchecked")
-        final SegmentRegistry.Materialization<Integer, String> materialization =
-                mock(SegmentRegistry.Materialization.class);
+        final SegmentRegistry.Materialization<Integer, String> materialization = mock(
+                SegmentRegistry.Materialization.class);
         final SegmentId segmentId = SegmentId.of(17);
         when(directory.isFileExists(segmentId.getName()))
                 .thenReturn(true, true);
@@ -341,9 +338,8 @@ class PreparedSegmentMaterializerTest {
         when(segmentDirectory.getFileNames()).thenReturn(Stream.empty());
         when(directory.rmdir(segmentId.getName()))
                 .thenThrow(new IllegalStateException("root busy"));
-        final PreparedSegmentMaterializer<Integer, String> service =
-                new PreparedSegmentMaterializer<>(directory,
-                        materialization);
+        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(directory,
+                materialization);
 
         final IllegalStateException thrown = assertThrows(
                 IllegalStateException.class,
@@ -382,6 +378,11 @@ class PreparedSegmentMaterializerTest {
                 SegmentId.of(sourceSegmentId.getId() + 1).getName()));
         assertFalse(directory.isFileExists(
                 SegmentId.of(sourceSegmentId.getId() + 2).getName()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Segment<Integer, String> mockSegment() {
+        return mock(Segment.class);
     }
 
     @SuppressWarnings("unchecked")

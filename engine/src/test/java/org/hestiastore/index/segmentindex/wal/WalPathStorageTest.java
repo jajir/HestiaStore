@@ -18,17 +18,18 @@ class WalPathStorageTest {
 
     @Test
     void listFileNamesReturnsConsumableStreamAfterDirectoryListingCloses() {
-        final WalPathStorage storage = new WalPathStorage(tempDir);
-        storage.append("000000000001.wal", "a".getBytes(StandardCharsets.UTF_8),
-                0, 1);
-        storage.append("000000000003.wal", "b".getBytes(StandardCharsets.UTF_8),
-                0, 1);
-        storage.append("000000000002.wal", "c".getBytes(StandardCharsets.UTF_8),
-                0, 1);
+        try (WalPathStorage storage = new WalPathStorage(tempDir)) {
+            storage.append("000000000001.wal", "a".getBytes(StandardCharsets.UTF_8),
+                    0, 1);
+            storage.append("000000000003.wal", "b".getBytes(StandardCharsets.UTF_8),
+                    0, 1);
+            storage.append("000000000002.wal", "c".getBytes(StandardCharsets.UTF_8),
+                    0, 1);
 
-        try (var names = storage.listFileNames()) {
-            assertEquals(List.of("000000000001.wal", "000000000002.wal",
-                    "000000000003.wal"), names.toList());
+            try (var names = storage.listFileNames()) {
+                assertEquals(List.of("000000000001.wal", "000000000002.wal",
+                        "000000000003.wal"), names.toList());
+            }
         }
     }
 
