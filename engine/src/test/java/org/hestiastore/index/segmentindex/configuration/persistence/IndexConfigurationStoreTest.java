@@ -63,7 +63,7 @@ class IndexConfigurationStoreTest {
         assertEquals(11, loaded.segment().maxKeys());
         assertEquals(10, loaded.writePath().segmentSplitKeyThreshold());
         assertFalse(loaded.maintenance().backgroundAutoEnabled());
-        assertEquals(0, loaded.chunkStoreCache().pageLimit());
+        assertEquals(128, loaded.chunkStoreCache().pageLimit());
     }
 
     @Test
