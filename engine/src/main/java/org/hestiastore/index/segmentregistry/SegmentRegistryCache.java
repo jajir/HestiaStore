@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -11,77 +12,66 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
 
 /**
  * High-throughput, bounded cache with per-key loading and unloading control.
  * <p>
  * Concurrency design:
  * <ul>
- *   <li>Map lookups are lock-free via {@link ConcurrentHashMap}.</li>
- *   <li>Each entry has its own lock and condition, so unrelated keys never
- *   block each other.</li>
- *   <li>Only the winning thread loads a missing entry; other threads wait on
- *   the entry condition.</li>
- *   <li>Eviction picks the least recently used READY entry and marks it as
- *   UNLOADING before calling the unloader outside the locks.</li>
- *   <li>Registry contract treats LOADING and UNLOADING differently:
- *   LOADING is awaited on the same key, UNLOADING is surfaced as BUSY to
- *   callers by registry layer decisions.</li>
+ * <li>Map lookups are lock-free via {@link ConcurrentHashMap}.</li>
+ * <li>Each entry has its own lock and condition, so unrelated keys never
+ * block each other.</li>
+ * <li>Only the winning thread loads a missing entry; other threads wait on
+ * the entry condition.</li>
+ * <li>Eviction picks the least recently used READY entry and marks it as
+ * UNLOADING before closing the segment outside the locks.</li>
+ * <li>Registry contract treats LOADING and UNLOADING differently:
+ * LOADING is awaited on the same key, UNLOADING is surfaced as BUSY to
+ * callers by registry layer decisions.</li>
  * </ul>
  *
- * @param <K> key type
- * @param <V> value type
+ * @param <K> index key type
+ * @param <V> index value type
  */
-public final class SegmentRegistryCache<K, V> {
+final class SegmentRegistryCache<K, V> {
 
-    private final ConcurrentHashMap<K, Entry<V>> map = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<SegmentId, Entry<Segment<K, V>>> map = new ConcurrentHashMap<>();
     private final AtomicInteger size = new AtomicInteger();
     private final AtomicLong accessCx = new AtomicLong();
     private final ReentrantLock evictionLock = new ReentrantLock();
     private final AtomicInteger limit;
-    private final Function<K, V> loader;
-    private final Consumer<V> unloader;
+    private final SegmentLoadCloseOperations<K, V> segmentOperations;
+    private final SegmentUnloadEligibility unloadEligibility;
     private final Executor unloadExecutor;
-    private final Predicate<V> unloadablePredicate;
     private final LongAdder hitCount = new LongAdder();
     private final LongAdder missCount = new LongAdder();
     private final LongAdder loadCount = new LongAdder();
     private final LongAdder evictionCount = new LongAdder();
 
     /**
-     * Creates a cache with a fixed size limit.
+     * Creates a cache with direct segment load/close operations.
      *
-     * @param limit   maximum number of cached entries
-     * @param loader  value loader invoked on cache misses
-     * @param unloader value unloader invoked on eviction/removal
+     * @param limit             maximum number of cached entries
+     * @param segmentOperations segment load/close operations
+     * @param unloadEligibility unload eligibility policy
+     * @param unloadExecutor    executor used for asynchronous eviction
      */
-    public SegmentRegistryCache(final int limit, final Function<K, V> loader,
-            final Consumer<V> unloader) {
-        this(limit, loader, unloader, Runnable::run,
-                value -> true);
-    }
-
-    SegmentRegistryCache(final int limit, final Function<K, V> loader,
-            final Consumer<V> unloader, final Executor unloadExecutor) {
-        this(limit, loader, unloader, unloadExecutor, value -> true);
-    }
-
-    SegmentRegistryCache(final int limit, final Function<K, V> loader,
-            final Consumer<V> unloader, final Executor unloadExecutor,
-            final Predicate<V> unloadablePredicate) {
+    SegmentRegistryCache(final int limit,
+            final SegmentLoadCloseOperations<K, V> segmentOperations,
+            final SegmentUnloadEligibility unloadEligibility,
+            final Executor unloadExecutor) {
         this.limit = new AtomicInteger(
                 Vldtn.requireGreaterThanZero(limit, "limit"));
-        this.loader = Vldtn.requireNonNull(loader, "loader");
-        this.unloader = Vldtn.requireNonNull(unloader, "unloader");
+        this.segmentOperations = Vldtn.requireNonNull(segmentOperations,
+                "segmentOperations");
+        this.unloadEligibility = Vldtn.requireNonNull(unloadEligibility,
+                "unloadEligibility");
         this.unloadExecutor = Vldtn.requireNonNull(unloadExecutor,
                 "unloadExecutor");
-        this.unloadablePredicate = Vldtn.requireNonNull(unloadablePredicate,
-                "unloadablePredicate");
     }
 
     /**
@@ -90,15 +80,17 @@ public final class SegmentRegistryCache<K, V> {
      * @param key cache key
      * @return cached or newly loaded value
      */
-    public V get(final K key) {
+    Segment<K, V> get(final SegmentId key) {
         Vldtn.requireNonNull(key, "key");
         while (true) {
             final long currentAccessCx = accessCx.getAndIncrement();
-            Entry<V> entry = map.get(key);
+            Entry<Segment<K, V>> entry = map.get(key);
             if (entry == null) {
                 missCount.increment();
-                final Entry<V> created = new Entry<>(currentAccessCx);
-                final Entry<V> entryInMap = map.putIfAbsent(key, created);
+                final Entry<Segment<K, V>> created = new Entry<>(
+                        currentAccessCx);
+                final Entry<Segment<K, V>> entryInMap = map.putIfAbsent(key,
+                        created);
                 if (entryInMap == null) {
                     // Winner path: created is now the value associated with key.
                     if (!created.tryStartLoad()) {
@@ -111,7 +103,8 @@ public final class SegmentRegistryCache<K, V> {
                 // Loser path: always wait on the entry returned from the map.
                 entry = entryInMap;
             }
-            final V value = entry.waitWhileLoading(currentAccessCx);
+            final Segment<K, V> value = entry
+                    .waitWhileLoading(currentAccessCx);
             if (value != null) {
                 hitCount.increment();
                 return value;
@@ -120,16 +113,45 @@ public final class SegmentRegistryCache<K, V> {
         }
     }
 
-    InvalidateStatus invalidate(final K key) {
+    Optional<Segment<K, V>> getIfReady(final SegmentId key) {
         Vldtn.requireNonNull(key, "key");
-        final Entry<V> entry = map.get(key);
+        final Entry<Segment<K, V>> entry = map.get(key);
+        if (entry == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(entry.getReadyValue());
+    }
+
+    InvalidateStatus invalidate(final SegmentId key) {
+        Vldtn.requireNonNull(key, "key");
+        final Entry<Segment<K, V>> entry = map.get(key);
         if (entry == null) {
             return InvalidateStatus.REMOVED;
         }
-        if (!entry.tryStartUnload(unloadablePredicate)) {
+        final Segment<K, V> readyValue = entry.getReadyValue();
+        if (readyValue == null || !unloadEligibility.canUnload(readyValue)
+                || !entry.tryStartUnload(readyValue)) {
             return InvalidateStatus.BUSY;
         }
-        final V value = entry.getValueForUnload();
+        return unloadAndRemove(key, entry);
+    }
+
+    InvalidateStatus forceInvalidate(final SegmentId key) {
+        Vldtn.requireNonNull(key, "key");
+        final Entry<Segment<K, V>> entry = map.get(key);
+        if (entry == null) {
+            return InvalidateStatus.REMOVED;
+        }
+        final Segment<K, V> readyValue = entry.getReadyValue();
+        if (readyValue == null || !entry.tryStartUnload(readyValue)) {
+            return InvalidateStatus.BUSY;
+        }
+        return unloadAndRemove(key, entry);
+    }
+
+    private InvalidateStatus unloadAndRemove(final SegmentId key,
+            final Entry<Segment<K, V>> entry) {
+        final Segment<K, V> value = entry.getValueForUnload();
         if (value == null) {
             entry.cancelUnload();
             return InvalidateStatus.BUSY;
@@ -143,7 +165,7 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     void clear() {
-        for (final K key : map.keySet()) {
+        for (final SegmentId key : map.keySet()) {
             invalidate(key);
         }
     }
@@ -175,10 +197,10 @@ public final class SegmentRegistryCache<K, V> {
         return true;
     }
 
-    List<V> readyValuesSnapshot() {
-        final List<V> values = new ArrayList<>();
-        for (final Entry<V> entry : map.values()) {
-            final V readyValue = entry.getReadyValue();
+    List<Segment<K, V>> readyValuesSnapshot() {
+        final List<Segment<K, V>> values = new ArrayList<>();
+        for (final Entry<Segment<K, V>> entry : map.values()) {
+            final Segment<K, V> readyValue = entry.getReadyValue();
             if (readyValue != null) {
                 values.add(readyValue);
             }
@@ -186,10 +208,12 @@ public final class SegmentRegistryCache<K, V> {
         return List.copyOf(values);
     }
 
-    private V loadValue(final K key, final Entry<V> entry) {
-        final V value;
+    private Segment<K, V> loadValue(final SegmentId key,
+            final Entry<Segment<K, V>> entry) {
+        final Segment<K, V> value;
         try {
-            value = Vldtn.requireNonNull(loader.apply(key), "loadedValue");
+            value = Vldtn.requireNonNull(segmentOperations.loadSegment(key),
+                    "loadedValue");
         } catch (final RuntimeException ex) {
             entry.fail(ex);
             map.remove(key, entry);
@@ -202,14 +226,14 @@ public final class SegmentRegistryCache<K, V> {
         return value;
     }
 
-    private void evictIfNeeded(final K exceptKey) {
+    private void evictIfNeeded(final SegmentId exceptKey) {
         if (size.get() <= limit.get()) {
             return;
         }
         removeLastRecentUsedSegment(exceptKey);
     }
 
-    boolean removeLastRecentUsedSegment(final K exceptKey) {
+    boolean removeLastRecentUsedSegment(final SegmentId exceptKey) {
         final EvictionCandidate<K, V> candidate;
         evictionLock.lock();
         try {
@@ -225,16 +249,16 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     private EvictionCandidate<K, V> selectLeastRecentlyUsedCandidate(
-            final K exceptKey) {
+            final SegmentId exceptKey) {
         long oldestAccessCx = Long.MAX_VALUE;
-        K oldestKey = null;
-        Entry<V> oldestEntry = null;
-        for (final Map.Entry<K, Entry<V>> mapEntry : map.entrySet()) {
-            final K key = mapEntry.getKey();
+        SegmentId oldestKey = null;
+        Entry<Segment<K, V>> oldestEntry = null;
+        for (final Map.Entry<SegmentId, Entry<Segment<K, V>>> mapEntry : map
+                .entrySet()) {
+            final SegmentId key = mapEntry.getKey();
             if (exceptKey == null || !exceptKey.equals(key)) {
-                final Entry<V> entry = mapEntry.getValue();
-                final long entryAccessCx = entry
-                        .getEvictionOrder(unloadablePredicate);
+                final Entry<Segment<K, V>> entry = mapEntry.getValue();
+                final long entryAccessCx = getEvictionOrder(entry);
                 if (entryAccessCx != Long.MAX_VALUE
                         && entryAccessCx < oldestAccessCx) {
                     oldestAccessCx = entryAccessCx;
@@ -246,19 +270,25 @@ public final class SegmentRegistryCache<K, V> {
         if (oldestEntry == null || oldestKey == null) {
             return null;
         }
-        if (!oldestEntry.tryStartUnload(unloadablePredicate)) {
-            return null;
-        }
-        final V value = oldestEntry.getValueForUnload();
-        if (value == null) {
+        final Segment<K, V> value = oldestEntry.getReadyValue();
+        if (value == null || !unloadEligibility.canUnload(value)
+                || !oldestEntry.tryStartUnload(value)) {
             return null;
         }
         return new EvictionCandidate<>(oldestKey, oldestEntry, value);
     }
 
-    private boolean unloadValue(final V value) {
+    private long getEvictionOrder(final Entry<Segment<K, V>> entry) {
+        final Segment<K, V> value = entry.getReadyValue();
+        if (value == null || !unloadEligibility.canUnload(value)) {
+            return Long.MAX_VALUE;
+        }
+        return entry.getEvictionOrder(value);
+    }
+
+    private boolean unloadValue(final Segment<K, V> value) {
         try {
-            unloader.accept(value);
+            segmentOperations.closeSegmentIfNeeded(value);
             return true;
         } catch (final RuntimeException ex) {
             return false;
@@ -279,8 +309,8 @@ public final class SegmentRegistryCache<K, V> {
         }
     }
 
-    private boolean finalizeRemoval(final K key, final Entry<V> entry,
-            final boolean eviction) {
+    private boolean finalizeRemoval(final SegmentId key,
+            final Entry<Segment<K, V>> entry, final boolean eviction) {
         final boolean removed = map.remove(key, entry);
         if (removed) {
             size.decrementAndGet();
@@ -400,13 +430,13 @@ public final class SegmentRegistryCache<K, V> {
             }
         }
 
-        long getEvictionOrder(final Predicate<V> unloadablePredicate) {
+        long getEvictionOrder(final V expectedValue) {
             lock.lock();
             try {
                 if (state != EntryState.READY || value == null) {
                     return Long.MAX_VALUE;
                 }
-                if (!unloadablePredicate.test(value)) {
+                if (value != expectedValue) {
                     return Long.MAX_VALUE;
                 }
                 return accessCx;
@@ -415,13 +445,13 @@ public final class SegmentRegistryCache<K, V> {
             }
         }
 
-        boolean tryStartUnload(final Predicate<V> unloadablePredicate) {
+        boolean tryStartUnload(final V expectedValue) {
             lock.lock();
             try {
                 if (state != EntryState.READY || value == null) {
                     return false;
                 }
-                if (!unloadablePredicate.test(value)) {
+                if (value != expectedValue) {
                     return false;
                 }
                 state = EntryState.UNLOADING;
@@ -485,12 +515,13 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     private static final class EvictionCandidate<K, V> {
-        private final K key;
-        private final Entry<V> entry;
-        private final V value;
+        private final SegmentId key;
+        private final Entry<Segment<K, V>> entry;
+        private final Segment<K, V> value;
 
-        private EvictionCandidate(final K key, final Entry<V> entry,
-                final V value) {
+        private EvictionCandidate(final SegmentId key,
+                final Entry<Segment<K, V>> entry,
+                final Segment<K, V> value) {
             this.key = key;
             this.entry = entry;
             this.value = value;

@@ -15,7 +15,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.monitoring.json.api.ManagementApiPaths;
 import org.junit.jupiter.api.AfterEach;
@@ -34,13 +34,13 @@ class ManagementAgentServerSecurityTest {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
-                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
-                .withBloomFilterIndexSizeInBytes(0) //
-                .withContextLoggingEnabled(false) //
-                .withName("secure-index") //
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("secure-index")) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(0)) //
+                .logging(logging -> logging.contextEnabled(false)) //
                 .build();
         index = SegmentIndex.create(directory, conf);
         final ManagementAgentSecurityPolicy policy = new ManagementAgentSecurityPolicy(

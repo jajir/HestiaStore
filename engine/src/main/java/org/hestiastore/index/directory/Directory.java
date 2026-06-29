@@ -65,6 +65,12 @@ public interface Directory {
 
     boolean deleteFile(String fileName);
 
+    /**
+     * Lists the names currently present in this directory.
+     *
+     * @return stream of entry names
+     * Throws IndexException when entries cannot be listed.
+     */
     Stream<String> getFileNames();
 
     void renameFile(String currentFileName, String newFileName);

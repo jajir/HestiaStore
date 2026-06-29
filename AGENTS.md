@@ -11,7 +11,7 @@
 - Run `mvn clean verify` after non-trivial changes.
 - Use the `fix-ci-failure` skill for failing CI jobs and broken local verification runs.
 - Use the `update-dependencies` skill for Maven dependency and plugin refresh work.
-- Employ the `java-code-review` skill to review diffs, branches, pull requests, and actionable PMD/CPD findings from module site reports.
+- Use the `java-code-review` skill for reviewing diffs, branches, and pull requests.
 - Use the `investigate-test-flake` skill for intermittent or nondeterministic test failures.
 - Use the `benchmark-regression-check` skill for benchmark drift and performance regression investigation.
 - Use the `release-maven-library` skill for release preparation, versioning, and post-release snapshot tasks.
@@ -31,7 +31,6 @@
 - `mvn clean test` runs unit tests with Surefire.
 - `mvn verify` runs the full pipeline: unit tests, integration tests, JaCoCo coverage checks, and dependency checks.
 - `mvn clean site` generates static analysis reports, coverage reports, and site documentation.
-- During review, check relevant module PMD and CPD reports under `target/site/<module>/pmd.html` and `target/site/<module>/cpd.html`, or under `<module>/target/site/pmd.html` and `<module>/target/site/cpd.html`, when those artifacts are available.
 - `mvn clean package -DskipTests` builds artifacts for fast local iteration, but avoid using it as final verification for PRs.
 - The `benchmarks` module sets `skipTests=true` by default; use `-DskipTests=false` when you need benchmark module tests or Python script smoke tests to actually execute.
 
@@ -40,13 +39,18 @@
 - Use Java 17 and the repository `eclipse-formatter.xml` profile with 4-space indentation.
 - Keep packages under `org.hestiastore.index...`.
 - Avoid inner enums and exception classes when a separate file is clearer.
+- Avoid non-trivial inner classes when a separate file is clearer; if an inner class grows beyond roughly 20 lines or carries its own state and behavior, prefer a dedicated top-level class.
 - Prefer clear, descriptive class names such as `*Adapter`, `*Cache`, and `*Descriptor`.
-- Add Javadoc for public types and non-trivial logic.
+- Javadoc is mandatory before finishing a Java change for every new or changed
+  public type, public constructor, public method, and non-trivial
+  package-private type or method. Treat lifecycle, concurrency, persistence,
+  package-boundary, and architectural decisions as non-trivial logic.
 - Do not use fully qualified class names in code; use explicit imports instead.
 - Remove unused imports in every touched file before finishing.
 - Benchmark sources under `benchmarks/src/...` are especially prone to stale imports after refactors, so do a final unused-import pass there before updating a PR.
 - Try to avoid creating class instances in constructors.
 - Prefer centralizing object creation in builder classes when practical.
+- Follow `docs/development/code-quality-charter.md` for static factory method names such as `of(...)`, `fromXxx(...)`, and `createXxx(...)`.
 - Do not use Java records.
 - Keep one constructor per class when possible.
 - Use `Vldtn` as the primary validation helper.
@@ -75,6 +79,12 @@
 - New code must satisfy the JaCoCo gate: 80% instruction coverage and no missed classes.
 - Test corner cases.
 - For each changed production class, ensure there is a corresponding `*Test` class in the matching package.
+- Apply the matching `*Test` expectation to helper, value, registry, SPI, codec, and factory classes too, not only to large service classes.
+- If a matching `*Test` class is intentionally not added for a changed production class, explicitly explain in the final response which existing tests cover it and which corner cases remain uncovered.
+- Changes in persistence, configuration, or codec layers must include direct tests for round-trip behavior, backward compatibility, and invalid-input handling.
+- Changes in factory, lifecycle, or transaction layers must include direct tests for open/close/commit ordering, repeated calls, and rollback or cleanup on failure paths.
+- Changes in registry, provider, supplier, or spec-mapping layers must include direct tests for unknown IDs, duplicate registration, canonicalization, and negative-path resolution failures.
+- New public classes, public overloads, and new persistence/runtime adaptation paths must have direct tests for the main happy path and at least one representative failure path.
 - If a JUnit test class uses mocks, annotate it with `@ExtendWith(MockitoExtension.class)`.
 - Create one private field per mocked dependency.
 - Instantiate the class under test in `setUp()` and clean up in `tearDown()` when needed.
@@ -88,22 +98,6 @@
 - Each refactoring step should have a unique ID and checkbox marker.
 - Completed tasks move to `## Done (Archive)` and are marked done.
 - Tasks with IDs starting with `M` are maintenance tasks; they remain repeatable and should not be archived after one pass.
-
-## Git, Branch, and Worktree Workflow
-
-- Treat the repository root checkout as a control checkout and keep it clean when practical.
-- Start normal `feature`, `fix`, `docs`, and `chore` work from `devel` and target PRs back to `devel`.
-- Start `hotfix` work from `main` and target PRs back to `main`; sync merged hotfixes back into `devel`.
-- Do not open the same branch as separate PRs to both `devel` and `main`.
-- Use one branch per task, one worktree per branch, and one PR per branch.
-- Use descriptive lowercase branch names such as `feature/<topic>`, `fix/<topic>`, `docs/<topic>`, `chore/<topic>`, `hotfix/<topic>`, or `release/<version>`.
-- Codex-created branches may use `codex/<topic>` when automation owns the branch.
-- Prefer `scripts/git-worktree-start.sh`, `scripts/git-worktree-clean.sh`, or the aliases in `config/git/aliases.gitconfig` when starting and cleaning task worktrees.
-- Keep task worktrees under a dedicated sibling `worktrees/` directory when practical.
-- Do not develop in detached `HEAD` worktrees.
-- Do not switch an existing task worktree to a different branch.
-- Remove merged worktrees and delete merged local branches promptly.
-- For release work, use a clean `main` worktree and follow `docs/development/release.md`.
 
 ## Commit & Pull Request Guidelines
 

@@ -32,18 +32,18 @@ This produces a runnable JMH fat-jar:
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ChunkStoreWriteBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ChunkStoreSteadyWriteBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DataBlockByteReaderBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DiffKeyReaderBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryIteratorBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryWriterBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SortedDataFileWriterBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Benchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar StringEncodingBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotPartitionPutBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotRoutePutBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SequentialFileReadingBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SequentialFileWritingBenchmark
 ```
 
 Compare both modes in one run (recommended):
@@ -56,12 +56,10 @@ Read-path only (recommended for byte-slice migration checks):
 
 ```sh
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "DataBlockByteReaderBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DiffKeyReaderBenchmark -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SingleChunkEntryIteratorBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryWriterBenchmark -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SortedDataFileWriterBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=overlay -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=live -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark -p workingSetMode=cold -prof gc
 ```
 
@@ -110,15 +108,9 @@ PR benchmark runs now surface in three places:
   `history/<profile>/pull-requests/pr-<number>/...`
 
 Canonical `main` baselines continue to advance through
-`history/<profile>/latest-main.json`.
-
-Current canonical CI profiles are:
-
-- `segment-index-pr-smoke`
-- `segment-index-nightly`
-
-The PR workflow runs `segment-index-pr-smoke` on every commit pushed to the
-PR branch. The nightly schedule runs `segment-index-nightly`.
+`history/<profile>/latest-main.json`. Today, `segment-index-pr-smoke`
+publishes there on `push` to `main`, while `segment-index-nightly` and
+`diskio-nightly` publish there from the nightly schedule.
 
 Run a profile locally:
 
@@ -127,6 +119,15 @@ python3 benchmarks/scripts/run_jmh_profile.py \
   --repo-root . \
   --profile segment-index-pr-smoke \
   --output-dir /tmp/hestia-bench/current
+```
+
+Run the nightly disk I/O profile locally:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile diskio-nightly \
+  --output-dir /tmp/hestia-bench/diskio
 ```
 
 Compare two profile runs:

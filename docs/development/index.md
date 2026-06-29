@@ -1,29 +1,19 @@
----
-title: Development
-audience: contributor
-doc_type: reference
-owner: docs
----
+# Contribute and Community
 
-# Development
-
-This section groups maintainer runbooks, engineering standards, and
-implementation-facing references used while changing, validating, and releasing
-HestiaStore.
+This section is for contributors and maintainers. It groups community process,
+quality expectations, release work, documentation rules, and deeper
+implementation-facing references that do not belong in the main user journey.
 
 ## Start here
 
-- [Git and Worktree Workflow](git-workflow.md) for daily branch, PR, and
-  worktree usage
-- [Release Process](release.md) for release and versioning work
+- [Contributing](../CONTRIBUTING.md) for contribution workflow
+- [Code of Conduct](../CODE_OF_CONDUCT.md) for community standards
 - [Documentation Guide](documentation-guidelines.md) for docs maintenance rules
-- [Code Quality Charter](code-quality-charter.md) for refactoring targets and
-  quality expectations
-- [Contribute and Community](../community/index.md) for contribution workflow,
-  community standards, and changelog history
+- [Release Process](release.md) for release and versioning work
 
 ## Engineering references
 
+- [Code Quality Charter](code-quality-charter.md)
 - [Quality Reporting](quality-reporting.md)
 - [Developer Guides](guides.md)
 - [Segment API](segment-api.md)

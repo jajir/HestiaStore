@@ -9,17 +9,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
-
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -66,25 +60,16 @@ class BenchmarkHistoryScriptsSmokeTest {
         assertEquals(1, comparison.path("worseCount").asInt());
         assertEquals(1, comparison.path("newMetricCount").asInt());
         assertEquals(1, comparison.path("removedMetricCount").asInt());
-        assertTrue(hasMetricWithStatus(comparison, "segment-index-get-overlay:getHit:overlayProbe",
+        assertTrue(hasMetricWithStatus(comparison, "segment-index-get-live:getHit:liveProbe",
                 "better"));
-        assertFalse(hasMetricWithDisplayName(comparison,
-                "segment-index-get-overlay:getHit:diag_fileBytesDelta"));
         assertTrue(hasMetricWithStatus(comparison,
                 "segment-index-mixed-drain:putWorkload", "new"));
         assertTrue(hasMetricWithStatus(comparison,
                 "segment-index-get-persisted:getMiss", "removed"));
-        assertTrue(firstMetricByDisplayName(comparison,
-                "segment-index-get-overlay:getHit")
-                        .path("baselineScoreErrorPct").isNumber());
-        assertTrue(firstMetricByDisplayName(comparison,
-                "segment-index-get-persisted:getMiss")
-                        .path("baselineScoreErrorPct").isNull());
 
         final String markdown = Files.readString(markdownOut,
                 StandardCharsets.UTF_8);
-        assertTrue(markdown.contains("segment-index-get-overlay:getHit"));
-        assertFalse(markdown.contains("diag_fileBytesDelta"));
+        assertTrue(markdown.contains("segment-index-get-live:getHit"));
         assertTrue(markdown.contains("segment-index-mixed-drain:putWorkload"));
         assertTrue(markdown.contains("segment-index-get-persisted:getMiss"));
     }
@@ -207,9 +192,9 @@ class BenchmarkHistoryScriptsSmokeTest {
                 {
                   "profile": "segment-index-pr-smoke",
                   "benchmarks": [
-                    { "label": "segment-index-get-overlay" },
+                    { "label": "segment-index-get-live" },
                     { "label": "segment-index-get-persisted" },
-                    { "label": "segment-index-hot-partition-put" }
+                    { "label": "segment-index-hot-route-put" }
                   ]
                 }
                 """, StandardCharsets.UTF_8);
@@ -286,73 +271,6 @@ class BenchmarkHistoryScriptsSmokeTest {
 
             assertEquals(1, resolveResult.exitCode(), resolveResult.output());
         }
-    }
-
-    @Test
-    void runProfileScriptSkipsBenchmarksMissingFromRepoRoot() throws Exception {
-        assumePython3Available();
-        final Path benchmarkRepo = tempDir.resolve("benchmark-repo");
-        final Path benchmarkSourceRoot = benchmarkRepo.resolve("benchmarks")
-                .resolve("src").resolve("main").resolve("java")
-                .resolve("com").resolve("example");
-        Files.createDirectories(benchmarkSourceRoot);
-        Files.writeString(benchmarkSourceRoot.resolve("ExistingBenchmark.java"),
-                """
-                        package com.example;
-
-                        public class ExistingBenchmark {
-                        }
-                        """,
-                StandardCharsets.UTF_8);
-
-        final Path profileSpec = tempDir.resolve("profile.json");
-        Files.writeString(profileSpec, """
-                {
-                  "profile": "script-smoke",
-                  "description": "script smoke",
-                  "benchmarks": [
-                    {
-                      "label": "existing-benchmark",
-                      "include": "com.example.ExistingBenchmark",
-                      "args": [ "-wi", "1" ]
-                    },
-                    {
-                      "label": "missing-benchmark",
-                      "include": "com.example.MissingBenchmark",
-                      "args": [ "-wi", "1" ]
-                    }
-                  ]
-                }
-                """, StandardCharsets.UTF_8);
-
-        final Path outputDir = tempDir.resolve("profile-output");
-        final Path runnerJar = createDummyJmhRunnerJar(
-                tempDir.resolve("dummy-jmh-runner.jar"));
-
-        final ProcessResult result = runPythonScript(
-                "run_jmh_profile.py",
-                "--repo-root", benchmarkRepo.toString(),
-                "--profile", profileSpec.toString(),
-                "--output-dir", outputDir.toString(),
-                "--jar", runnerJar.toString(),
-                "--skip-build");
-
-        assertEquals(0, result.exitCode(), result.output());
-        assertTrue(result.output().contains("Skipping benchmark 'missing-benchmark'"),
-                result.output());
-
-        final JsonNode summary = OBJECT_MAPPER
-                .readTree(outputDir.resolve("summary.json").toFile());
-        assertEquals(1, summary.path("benchmarks").size());
-        assertEquals("existing-benchmark",
-                summary.path("benchmarks").get(0).path("label").asText());
-        assertEquals(1, summary.path("skippedBenchmarks").size());
-        assertEquals("missing-benchmark",
-                summary.path("skippedBenchmarks").get(0).path("label")
-                        .asText());
-        assertEquals("missing_benchmark_source",
-                summary.path("skippedBenchmarks").get(0).path("reason")
-                        .asText());
     }
 
     @Test
@@ -447,93 +365,160 @@ class BenchmarkHistoryScriptsSmokeTest {
     }
 
     @Test
-    void filterProfileScriptRetainsOnlyRequestedLabelsInSourceOrder()
+    void syncBenchmarkDocsScriptCopiesLatestArtifactsToCanonicalNamesAndRemovesObsoleteFiles()
             throws Exception {
         assumePython3Available();
-        final Path profilePath = tempDir.resolve("profile.json");
-        final Path outputPath = tempDir.resolve("profile-filtered.json");
-        Files.writeString(profilePath, """
-                {
-                  "profile": "segment-index-pr-smoke",
-                  "benchmarks": [
-                    { "label": "alpha", "include": "Alpha", "args": ["-i", "1"] },
-                    { "label": "beta", "include": "Beta", "args": ["-i", "1"] },
-                    { "label": "gamma", "include": "Gamma", "args": ["-i", "1"] }
-                  ]
-                }
-                """, StandardCharsets.UTF_8);
+        final Path sourceRoot = tempDir.resolve("generated");
+        final Path targetRoot = tempDir.resolve("site");
+        final Path sourceDocs = sourceRoot.resolve("docs").resolve("why-hestiastore");
+        final Path sourceImages = sourceRoot.resolve("docs").resolve("images");
+        final Path targetDocs = targetRoot.resolve("docs").resolve("why-hestiastore");
+        final Path targetImages = targetRoot.resolve("docs").resolve("images");
+        Files.createDirectories(sourceDocs);
+        Files.createDirectories(sourceImages);
+        Files.createDirectories(targetDocs);
+        Files.createDirectories(targetImages);
+
+        writeText(sourceDocs.resolve("out-write.md"),
+                "# old write\n![chart](../images/out-write.svg)\n",
+                1_000L);
+        writeText(sourceDocs.resolve("out-write-single-thread.md"), """
+                # latest single-thread write
+
+                ![chart](../images/out-write-single-thread.svg)
+                ![percentiles](../images/out-write-single-thread-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-write.svg"), "<svg>old-write</svg>\n",
+                1_000L);
+        writeText(sourceImages.resolve("out-write-single-thread.svg"),
+                "<svg>latest-write</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-write-percentiles.svg"),
+                "<svg>old-write-percentiles</svg>\n", 1_000L);
+        writeText(sourceImages.resolve("out-write-single-thread-percentiles.svg"),
+                "<svg>latest-write-percentiles</svg>\n", 2_000L);
+
+        writeText(sourceDocs.resolve("out-read-single-thread.md"), """
+                # latest single-thread read
+
+                ![chart](../images/out-read-single-thread.svg)
+                ![percentiles](../images/out-read-single-thread-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-read-single-thread.svg"),
+                "<svg>latest-read</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-read-single-thread-percentiles.svg"),
+                "<svg>latest-read-percentiles</svg>\n", 2_000L);
+
+        writeText(sourceDocs.resolve("out-sequential-read.md"), """
+                # latest sequential read
+
+                ![chart](../images/out-sequential-read.svg)
+                ![percentiles](../images/out-sequential-read-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-sequential-read.svg"),
+                "<svg>latest-sequential</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-sequential-read-percentiles.svg"),
+                "<svg>latest-sequential-percentiles</svg>\n", 2_000L);
+
+        writeText(sourceDocs.resolve("out-write-multi-thread.md"), """
+                # latest multi-thread write
+
+                ![chart](../images/out-write-multi-thread.svg)
+                ![percentiles](../images/out-write-multi-thread-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-write-multi-thread.svg"),
+                "<svg>latest-multi-write</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-write-multi-thread-percentiles.svg"),
+                "<svg>latest-multi-write-percentiles</svg>\n", 2_000L);
+
+        writeText(sourceDocs.resolve("out-read-multi-thread.md"), """
+                # latest multi-thread read
+
+                ![chart](../images/out-read-multi-thread.svg)
+                ![percentiles](../images/out-read-multi-thread-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-read-multi-thread.svg"),
+                "<svg>latest-multi-read</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-read-multi-thread-percentiles.svg"),
+                "<svg>latest-multi-read-percentiles</svg>\n", 2_000L);
+
+        writeText(targetDocs.resolve("out-write-single-thread.md"), "obsolete\n",
+                500L);
+        writeText(targetDocs.resolve("out-read-single-thread.md"), "obsolete\n",
+                500L);
+        writeText(targetDocs.resolve("out-sequential-read.md"), "obsolete\n",
+                500L);
+        writeText(targetDocs.resolve("out-write-multi-thread.md"), "obsolete\n",
+                500L);
+        writeText(targetDocs.resolve("out-read-multi-thread.md"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-write-single-thread.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-write-single-thread-percentiles.svg"),
+                "obsolete\n", 500L);
+        writeText(targetImages.resolve("out-read-single-thread.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-read-single-thread-percentiles.svg"),
+                "obsolete\n", 500L);
+        writeText(targetImages.resolve("out-sequential-read.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-sequential-read-percentiles.svg"),
+                "obsolete\n", 500L);
+        writeText(targetImages.resolve("out-write-multi-thread.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-write-multi-thread-percentiles.svg"),
+                "obsolete\n", 500L);
+        writeText(targetImages.resolve("out-read-multi-thread.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-read-multi-thread-percentiles.svg"),
+                "obsolete\n", 500L);
 
         final ProcessResult result = runPythonScript(
-                "filter_jmh_profile.py",
-                "--profile", profilePath.toString(),
-                "--labels", "gamma,alpha",
-                "--output", outputPath.toString());
-
-        assertEquals(0, result.exitCode(), result.output());
-        final JsonNode filtered = OBJECT_MAPPER.readTree(outputPath.toFile());
-        assertEquals(List.of("alpha", "gamma"),
-                benchmarkLabels(filtered));
-    }
-
-    @Test
-    void aggregateSummariesScriptMedianMergesSelectedLabels() throws Exception {
-        assumePython3Available();
-        final Path baseSummary = tempDir.resolve("base-summary.json");
-        final Path rerunOneSummary = tempDir.resolve("rerun-one-summary.json");
-        final Path rerunTwoSummary = tempDir.resolve("rerun-two-summary.json");
-        final Path outputSummary = tempDir.resolve("merged-summary.json");
-
-        writeSummary(baseSummary, summary("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                List.of(
-                        benchmark("segment-index-get-overlay",
-                                BENCHMARK_GET_HIT,
-                                metric(100D, 10D, "ops/s"),
-                                Map.of("overlayProbe", metric(10D, 1D, "ops/s"))),
-                        benchmark("segment-index-mixed-drain",
-                                BENCHMARK_MIXED_PUT,
-                                metric(210D, 5D, "ops/s"), Map.of()))));
-        writeSummary(rerunOneSummary, summary("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-                List.of(benchmark("segment-index-get-overlay",
-                        BENCHMARK_GET_HIT,
-                        metric(60D, 6D, "ops/s"),
-                        Map.of("overlayProbe", metric(30D, 3D, "ops/s"))))));
-        writeSummary(rerunTwoSummary, summary("cccccccccccccccccccccccccccccccccccccccc",
-                List.of(benchmark("segment-index-get-overlay",
-                        BENCHMARK_GET_HIT,
-                        metric(80D, 8D, "ops/s"),
-                        Map.of("overlayProbe",
-                                metricWithLiteralScoreError(20D, "NaN",
-                                        "ops/s"))))));
-
-        final ProcessResult result = runPythonScript(
-                "aggregate_jmh_profile_summaries.py",
-                "--base-summary", baseSummary.toString(),
-                "--supplemental-summary", rerunOneSummary.toString(),
-                "--supplemental-summary", rerunTwoSummary.toString(),
-                "--labels", "segment-index-get-overlay",
-                "--output", outputSummary.toString());
+                "sync_benchmark_docs.py",
+                "--source-root", sourceRoot.toString(),
+                "--target-root", targetRoot.toString());
 
         assertEquals(0, result.exitCode(), result.output());
 
-        final JsonNode merged = OBJECT_MAPPER.readTree(outputSummary.toFile());
-        final JsonNode overlay = benchmarkByLabel(merged,
-                "segment-index-get-overlay");
-        final JsonNode overlayRow = overlay.path("normalized").path("results")
-                .get(0);
-        assertEquals(80D,
-                overlayRow.path("primaryMetric").path("score").asDouble());
-        assertEquals(8D,
-                overlayRow.path("primaryMetric").path("scoreError")
-                        .asDouble());
-        assertEquals(20D, overlayRow.path("secondaryMetrics")
-                .path("overlayProbe").path("score").asDouble());
-        assertEquals(2D, overlayRow.path("secondaryMetrics")
-                .path("overlayProbe").path("scoreError").asDouble());
-        assertEquals(210D, benchmarkByLabel(merged, "segment-index-mixed-drain")
-                .path("normalized").path("results").get(0)
-                .path("primaryMetric").path("score").asDouble());
-        assertEquals(3,
-                merged.path("aggregation").path("candidateRunCount").asInt());
+        final String writeMarkdown = Files.readString(targetDocs.resolve("out-write.md"),
+                StandardCharsets.UTF_8);
+        assertTrue(writeMarkdown.contains("# latest single-thread write"));
+        assertTrue(writeMarkdown.contains("../images/out-write.svg"));
+        assertTrue(writeMarkdown.contains("../images/out-write-percentiles.svg"));
+        assertFalse(writeMarkdown.contains("out-write-single-thread.svg"));
+        assertEquals("<svg>latest-write</svg>\n",
+                Files.readString(targetImages.resolve("out-write.svg"),
+                        StandardCharsets.UTF_8));
+        assertEquals("<svg>latest-write-percentiles</svg>\n",
+                Files.readString(targetImages.resolve("out-write-percentiles.svg"),
+                        StandardCharsets.UTF_8));
+        assertEquals("<svg>latest-multi-read</svg>\n",
+                Files.readString(targetImages.resolve("out-multithread-read.svg"),
+                        StandardCharsets.UTF_8));
+        assertEquals("<svg>latest-multi-read-percentiles</svg>\n",
+                Files.readString(targetImages.resolve(
+                        "out-multithread-read-percentiles.svg"),
+                        StandardCharsets.UTF_8));
+
+        assertFalse(Files.exists(targetDocs.resolve("out-write-single-thread.md")));
+        assertFalse(Files.exists(targetDocs.resolve("out-read-single-thread.md")));
+        assertFalse(Files.exists(targetDocs.resolve("out-sequential-read.md")));
+        assertFalse(Files.exists(targetDocs.resolve("out-write-multi-thread.md")));
+        assertFalse(Files.exists(targetDocs.resolve("out-read-multi-thread.md")));
+        assertFalse(Files.exists(targetImages.resolve("out-write-single-thread.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-write-single-thread-percentiles.svg")));
+        assertFalse(Files.exists(targetImages.resolve("out-read-single-thread.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-read-single-thread-percentiles.svg")));
+        assertFalse(Files.exists(targetImages.resolve("out-sequential-read.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-sequential-read-percentiles.svg")));
+        assertFalse(Files.exists(targetImages.resolve("out-write-multi-thread.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-write-multi-thread-percentiles.svg")));
+        assertFalse(Files.exists(targetImages.resolve("out-read-multi-thread.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-read-multi-thread-percentiles.svg")));
     }
 
     private boolean hasMetricWithStatus(final JsonNode comparison,
@@ -545,21 +530,6 @@ class BenchmarkHistoryScriptsSmokeTest {
             }
         }
         return false;
-    }
-
-    private boolean hasMetricWithDisplayName(final JsonNode comparison,
-            final String displayName) {
-        return firstMetricByDisplayName(comparison, displayName) != null;
-    }
-
-    private JsonNode firstMetricByDisplayName(final JsonNode comparison,
-            final String displayName) {
-        for (final JsonNode metric : comparison.path("metrics")) {
-            if (displayName.equals(metric.path("displayName").asText())) {
-                return metric;
-            }
-        }
-        return null;
     }
 
     private void assumePython3Available() throws Exception {
@@ -595,38 +565,31 @@ class BenchmarkHistoryScriptsSmokeTest {
                 summary);
     }
 
+    private void writeText(final Path path, final String value,
+            final long modifiedMillis) throws IOException {
+        path.getParent().toFile().mkdirs();
+        Files.writeString(path, value, StandardCharsets.UTF_8);
+        Files.setLastModifiedTime(path, FileTime.fromMillis(modifiedMillis));
+    }
+
     private Map<String, Object> baselineSummaryModel() {
         return summary("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 List.of(
-                        benchmark("segment-index-get-overlay",
-                                BENCHMARK_GET_HIT,
-                                metric(100D, 10D, "ops/s"),
-                                Map.of(
-                                        "overlayProbe", metric(10D, 1D,
-                                                "ops/s"),
-                                        "diag_fileBytesDelta", metric(1000D, 50D,
-                                                "ops/s"))),
+                        benchmark("segment-index-get-live",
+                                BENCHMARK_GET_HIT, 100D,
+                                Map.of("liveProbe", metric(10D, "ops/s"))),
                         benchmark("segment-index-get-persisted",
-                                BENCHMARK_GET_MISS,
-                                metricWithLiteralScoreError(90D, "NaN",
-                                        "ops/s"),
-                                Map.of())));
+                                BENCHMARK_GET_MISS, 90D, Map.of())));
     }
 
     private Map<String, Object> candidateSummaryModel() {
         return summary("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
                 List.of(
-                        benchmark("segment-index-get-overlay",
-                                BENCHMARK_GET_HIT,
-                                metric(80D, 8D, "ops/s"),
-                                Map.of(
-                                        "overlayProbe", metric(12D, 1.2D,
-                                                "ops/s"),
-                                        "diag_fileBytesDelta", metric(800D, 40D,
-                                                "ops/s"))),
+                        benchmark("segment-index-get-live",
+                                BENCHMARK_GET_HIT, 80D,
+                                Map.of("liveProbe", metric(12D, "ops/s"))),
                         benchmark("segment-index-mixed-drain",
-                                BENCHMARK_MIXED_PUT,
-                                metric(210D, 21D, "ops/s"), Map.of())));
+                                BENCHMARK_MIXED_PUT, 210D, Map.of())));
     }
 
     private Map<String, Object> summary(final String sha,
@@ -640,58 +603,20 @@ class BenchmarkHistoryScriptsSmokeTest {
     }
 
     private Map<String, Object> benchmark(final String label,
-            final String benchmarkName, final Map<String, Object> primaryMetric,
+            final String benchmarkName, final double primaryScore,
             final Map<String, Object> secondaryMetrics) {
         return Map.of(
                 "label", label,
                 "normalized", Map.of(
                         "results", List.of(Map.of(
                                 "benchmark", benchmarkName,
-                                "primaryMetric", new LinkedHashMap<>(
-                                        primaryMetric),
+                                "primaryMetric", metric(primaryScore, "ops/s"),
                                 "secondaryMetrics",
                                 new LinkedHashMap<>(secondaryMetrics)))));
     }
 
     private Map<String, Object> metric(final double score, final String unit) {
-        return metric(score, null, unit);
-    }
-
-    private Map<String, Object> metric(final double score,
-            final Double scoreError, final String unit) {
-        final Map<String, Object> metric = new LinkedHashMap<>();
-        metric.put("score", Double.valueOf(score));
-        metric.put("scoreUnit", unit);
-        if (scoreError != null) {
-            metric.put("scoreError", scoreError);
-        }
-        return metric;
-    }
-
-    private Map<String, Object> metricWithLiteralScoreError(final double score,
-            final String scoreError, final String unit) {
-        final Map<String, Object> metric = new LinkedHashMap<>();
-        metric.put("score", Double.valueOf(score));
-        metric.put("scoreUnit", unit);
-        metric.put("scoreError", scoreError);
-        return metric;
-    }
-
-    private List<String> benchmarkLabels(final JsonNode profile) {
-        final List<String> labels = new ArrayList<>();
-        for (final JsonNode benchmark : profile.path("benchmarks")) {
-            labels.add(benchmark.path("label").asText());
-        }
-        return labels;
-    }
-
-    private JsonNode benchmarkByLabel(final JsonNode summary, final String label) {
-        for (final JsonNode benchmark : summary.path("benchmarks")) {
-            if (label.equals(benchmark.path("label").asText())) {
-                return benchmark;
-            }
-        }
-        return null;
+        return Map.of("score", Double.valueOf(score), "scoreUnit", unit);
     }
 
     private Path repoRoot() {
@@ -709,82 +634,6 @@ class BenchmarkHistoryScriptsSmokeTest {
     private Path scriptPath(final String scriptName) {
         return repoRoot().resolve("benchmarks").resolve("scripts")
                 .resolve(scriptName);
-    }
-
-    private Path createDummyJmhRunnerJar(final Path jarPath) throws Exception {
-        final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        Assumptions.assumeTrue(compiler != null,
-                "JDK compiler is required for dummy JMH runner smoke tests");
-
-        final Path sourceDir = tempDir.resolve("dummy-jmh-src");
-        final Path classesDir = tempDir.resolve("dummy-jmh-classes");
-        Files.createDirectories(sourceDir);
-        Files.createDirectories(classesDir);
-
-        final Path sourceFile = sourceDir.resolve("DummyJmhMain.java");
-        Files.writeString(sourceFile, """
-                import java.nio.charset.StandardCharsets;
-                import java.nio.file.Files;
-                import java.nio.file.Path;
-
-                public final class DummyJmhMain {
-
-                    private DummyJmhMain() {
-                    }
-
-                    public static void main(final String[] args)
-                            throws Exception {
-                        if (args.length == 0) {
-                            throw new IllegalArgumentException(
-                                    "Missing benchmark include");
-                        }
-                        final String benchmark = args[0];
-                        Path resultPath = null;
-                        for (int index = 0; index < args.length - 1; index++) {
-                            if ("-rff".equals(args[index])) {
-                                resultPath = Path.of(args[index + 1]);
-                                break;
-                            }
-                        }
-                        if (resultPath == null) {
-                            throw new IllegalArgumentException(
-                                    "Missing -rff argument");
-                        }
-                        Files.createDirectories(resultPath.getParent());
-                        final String payload = "[{"
-                                + "\\"benchmark\\":\\"" + benchmark
-                                + ".run\\","
-                                + "\\"mode\\":\\"thrpt\\","
-                                + "\\"threads\\":1,"
-                                + "\\"primaryMetric\\":{"
-                                + "\\"score\\":1.0,"
-                                + "\\"scoreUnit\\":\\"ops/s\\""
-                                + "}"
-                                + "}]";
-                        Files.writeString(resultPath, payload,
-                                StandardCharsets.UTF_8);
-                    }
-                }
-                """, StandardCharsets.UTF_8);
-
-        final int compileExit = compiler.run(null, null, null, "-d",
-                classesDir.toString(), sourceFile.toString());
-        assertEquals(0, compileExit, "Failed to compile dummy JMH runner");
-
-        final Manifest manifest = new Manifest();
-        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION,
-                "1.0");
-        manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
-                "DummyJmhMain");
-
-        try (JarOutputStream jarOutput = new JarOutputStream(
-                Files.newOutputStream(jarPath), manifest)) {
-            final Path classFile = classesDir.resolve("DummyJmhMain.class");
-            jarOutput.putNextEntry(new JarEntry("DummyJmhMain.class"));
-            jarOutput.write(Files.readAllBytes(classFile));
-            jarOutput.closeEntry();
-        }
-        return jarPath;
     }
 
     private record ProcessResult(int exitCode, String output) {

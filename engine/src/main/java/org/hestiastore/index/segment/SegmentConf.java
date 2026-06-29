@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
@@ -35,8 +36,8 @@ public class SegmentConf {
     private final int bloomFilterIndexSizeInBytes;
     private final double bloomFilterProbabilityOfFalsePositive;
     private final int diskIoBufferSize;
-    private final List<ChunkFilter> encodingChunkFilters;
-    private final List<ChunkFilter> decodingChunkFilters;
+    private final List<Supplier<? extends ChunkFilter>> encodingChunkFilters;
+    private final List<Supplier<? extends ChunkFilter>> decodingChunkFilters;
 
     private SegmentConf(final Builder builder) {
         maxNumberOfKeysInSegmentWriteCache = requireSet(
@@ -84,62 +85,12 @@ public class SegmentConf {
     }
 
     /**
-     * Creates a configuration with explicit values for all fields.
-     *
-     * @param maxNumberOfKeysInSegmentWriteCache max write-cache size
-     * @param maxNumberOfKeysInSegmentWriteCacheDuringMaintenance write-cache size
-     *        allowed during maintenance
-     * @param maxNumberOfKeysInSegmentCache max segment cache size
-     * @param maxNumberOfKeysInChunk max number of keys in a chunk
-     * @param maxNumberOfDeltaCacheFiles max delta cache file count
-     * @param bloomFilterNumberOfHashFunctions Bloom filter hash count or
-     *        {@link #UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS}
-     * @param bloomFilterIndexSizeInBytes Bloom filter index size in bytes or
-     *        {@link #UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES}
-     * @param bloomFilterProbabilityOfFalsePositive Bloom filter false positive
-     *        probability or {@link #UNSET_BLOOM_FILTER_PROBABILITY}
-     * @param diskIoBufferSize disk I/O buffer size in bytes
-     * @param encodingChunkFilters chunk filters applied during encoding
-     * @param decodingChunkFilters chunk filters applied during decoding
-     * @deprecated use {@link #builder()} for clearer named configuration
-     */
-    @Deprecated(since = "0.0.7")
-    public SegmentConf(final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-            final int maxNumberOfKeysInSegmentCache,
-            final int maxNumberOfKeysInChunk,
-            final int maxNumberOfDeltaCacheFiles,
-            final int bloomFilterNumberOfHashFunctions,
-            final int bloomFilterIndexSizeInBytes,
-            final double bloomFilterProbabilityOfFalsePositive,
-            final int diskIoBufferSize,
-            final List<ChunkFilter> encodingChunkFilters,
-            final List<ChunkFilter> decodingChunkFilters) {
-        this(SegmentConf.builder()
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        maxNumberOfKeysInSegmentWriteCache)
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)
-                .withMaxNumberOfKeysInSegmentCache(maxNumberOfKeysInSegmentCache)
-                .withMaxNumberOfKeysInChunk(maxNumberOfKeysInChunk)
-                .withMaxNumberOfDeltaCacheFiles(maxNumberOfDeltaCacheFiles)
-                .withBloomFilterNumberOfHashFunctions(
-                        bloomFilterNumberOfHashFunctions)
-                .withBloomFilterIndexSizeInBytes(bloomFilterIndexSizeInBytes)
-                .withBloomFilterProbabilityOfFalsePositive(
-                        bloomFilterProbabilityOfFalsePositive)
-                .withDiskIoBufferSize(diskIoBufferSize)
-                .withEncodingChunkFilters(encodingChunkFilters)
-                .withDecodingChunkFilters(decodingChunkFilters));
-    }
-
-    /**
      * Creates a copy of an existing configuration.
      *
      * @param segmentConf source configuration
      */
     public SegmentConf(final SegmentConf segmentConf) {
-        this(SegmentConf.builder(segmentConf));
+        this(builder(segmentConf));
     }
 
     private static int requireSet(final Integer value,
@@ -266,7 +217,8 @@ public class SegmentConf {
      * @return encoding filters
      */
     public List<ChunkFilter> getEncodingChunkFilters() {
-        return encodingChunkFilters;
+        return encodingChunkFilters.stream()
+                .map(supplier -> (ChunkFilter) supplier.get()).toList();
     }
 
     /**
@@ -275,6 +227,15 @@ public class SegmentConf {
      * @return decoding filters
      */
     public List<ChunkFilter> getDecodingChunkFilters() {
+        return decodingChunkFilters.stream()
+                .map(supplier -> (ChunkFilter) supplier.get()).toList();
+    }
+
+    List<Supplier<? extends ChunkFilter>> getEncodingChunkFilterSuppliers() {
+        return encodingChunkFilters;
+    }
+
+    List<Supplier<? extends ChunkFilter>> getDecodingChunkFilterSuppliers() {
         return decodingChunkFilters;
     }
 
@@ -292,8 +253,8 @@ public class SegmentConf {
         private int bloomFilterIndexSizeInBytes = UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
         private double bloomFilterProbabilityOfFalsePositive = UNSET_BLOOM_FILTER_PROBABILITY;
         private Integer diskIoBufferSize;
-        private List<ChunkFilter> encodingChunkFilters;
-        private List<ChunkFilter> decodingChunkFilters;
+        private List<Supplier<? extends ChunkFilter>> encodingChunkFilters;
+        private List<Supplier<? extends ChunkFilter>> decodingChunkFilters;
 
         private Builder() {
         }
@@ -357,23 +318,78 @@ public class SegmentConf {
             return this;
         }
 
+        /**
+         * Sets disk I/O buffer size in bytes.
+         *
+         * @param value buffer size in bytes
+         * @return this builder
+         */
         public Builder withDiskIoBufferSize(final int value) {
             diskIoBufferSize = value;
             return this;
         }
 
+        /**
+         * Sets fixed encoding filters for the segment configuration.
+         *
+         * @param filters ordered encoding filters
+         * @return this builder
+         */
         public Builder withEncodingChunkFilters(
                 final List<ChunkFilter> filters) {
-            encodingChunkFilters = filters;
+            encodingChunkFilters = List
+                    .copyOf(Objects.requireNonNull(filters, "filters").stream()
+                            .map(filter -> (Supplier<? extends ChunkFilter>) () -> filter)
+                            .toList());
             return this;
         }
 
+        /**
+         * Sets fixed decoding filters for the segment configuration.
+         *
+         * @param filters ordered decoding filters
+         * @return this builder
+         */
         public Builder withDecodingChunkFilters(
                 final List<ChunkFilter> filters) {
-            decodingChunkFilters = filters;
+            decodingChunkFilters = List
+                    .copyOf(Objects.requireNonNull(filters, "filters").stream()
+                            .map(filter -> (Supplier<? extends ChunkFilter>) () -> filter)
+                            .toList());
             return this;
         }
 
+        /**
+         * Sets encoding filters as runtime suppliers.
+         *
+         * @param filters ordered encoding filter suppliers
+         * @return this builder
+         */
+        Builder withEncodingChunkFilterSuppliers(
+                final List<Supplier<? extends ChunkFilter>> filters) {
+            encodingChunkFilters = List.copyOf(
+                    Objects.requireNonNull(filters, "filters"));
+            return this;
+        }
+
+        /**
+         * Sets decoding filters as runtime suppliers.
+         *
+         * @param filters ordered decoding filter suppliers
+         * @return this builder
+         */
+        Builder withDecodingChunkFilterSuppliers(
+                final List<Supplier<? extends ChunkFilter>> filters) {
+            decodingChunkFilters = List.copyOf(
+                    Objects.requireNonNull(filters, "filters"));
+            return this;
+        }
+
+        /**
+         * Builds an immutable segment configuration snapshot.
+         *
+         * @return immutable configuration
+         */
         public SegmentConf build() {
             return new SegmentConf(this);
         }

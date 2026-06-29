@@ -2,7 +2,7 @@ package org.hestiastore.benchmark.segmentindex;
 
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -54,25 +54,22 @@ public class SegmentIndexMultiSegmentGetBenchmark
     protected IndexConfiguration<Integer, String> buildConfiguration() {
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-multi-segment-get-benchmark")//
-                .withMaxNumberOfKeysInSegmentCache(32)//
-                .withMaxNumberOfKeysInActivePartition(256)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(512)//
-                .withMaxNumberOfKeysInIndexBuffer(8_192)//
-                .withMaxNumberOfKeysInSegmentChunk(64)//
-                .withMaxNumberOfKeysInSegment(maxKeysInSegment)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(maxKeysInSegment)//
-                .withMaxNumberOfSegmentsInCache(maxSegmentsInCache)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(Math.max(16_384, keyCount))//
-                .withBloomFilterNumberOfHashFunctions(3)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withIndexWorkerThreadCount(4)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(2)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(true);
+                .segment(segment -> segment.cacheKeyLimit(32)
+                        .chunkKeyLimit(64).maxKeys(maxKeysInSegment)
+                        .cachedSegmentLimit(maxSegmentsInCache)
+                        .deltaCacheFileLimit(2))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
+                        .maintenanceWriteCacheKeyLimit(512)
+                        .indexBufferedWriteKeyLimit(8_192)
+                        .segmentSplitKeyThreshold(maxKeysInSegment))//
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(Math.max(16_384, keyCount))
+                        .hashFunctions(3)
+                        .falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .maintenance(maintenance -> maintenance
+                        .indexThreads(2).registryLifecycleThreads(1)
+                        .backgroundAutoEnabled(true));
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,
                 snappy);
         return builder.build();
@@ -88,15 +85,17 @@ public class SegmentIndexMultiSegmentGetBenchmark
     @Override
     protected void afterCreate(final SegmentIndex<Integer, String> created) {
         SegmentIndexBenchmarkSupport.awaitCondition(
-                () -> created.metricsSnapshot().getSegmentCount() > 1, 15_000L,
+                () -> created.runtimeMonitoring().snapshot()
+                        .segments().count() > 1, 15_000L,
                 "Expected persisted multi-segment benchmark layout.");
-        created.flushAndWait();
+        created.maintenance().flushAndWait();
     }
 
     @Override
     protected void configureReadState(
             final SegmentIndex<Integer, String> openedIndex) {
-        if (openedIndex.metricsSnapshot().getSegmentCount() <= 1) {
+        if (openedIndex.runtimeMonitoring().snapshot()
+                .segments().count() <= 1) {
             throw new IllegalStateException(
                     "Expected reopened multi-segment benchmark layout.");
         }

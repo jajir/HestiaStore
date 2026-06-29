@@ -1,10 +1,11 @@
 package org.hestiastore.index.segment;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,6 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     private final SegmentCore<K, V> core;
     private final SegmentCompacter<K, V> segmentCompacter;
     private final SegmentConcurrencyGate gate = new SegmentConcurrencyGate();
-    private final SegmentMaintenanceService maintenanceService;
     private final SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private final Executor maintenanceExecutor;
     private final SegmentDirectoryLocking directoryLocking;
@@ -66,8 +66,6 @@ class SegmentImpl<K, V> implements Segment<K, V> {
                 "maintenanceExecutor");
         this.maintenancePolicy = Vldtn.requireNonNull(maintenancePolicy,
                 "maintenancePolicy");
-        this.maintenanceService = new SegmentMaintenanceService(gate,
-                this.maintenanceExecutor, this::onMaintenanceFailure);
         this.directoryLocking = directoryLocking;
     }
 
@@ -131,7 +129,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentResult<EntryIterator<K, V>> openIterator() {
+    public OperationResult<EntryIterator<K, V>> openIterator() {
         return openIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
@@ -139,7 +137,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentResult<EntryIterator<K, V>> openIterator(
+    public OperationResult<EntryIterator<K, V>> openIterator(
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(isolation, "isolation");
         if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
@@ -150,21 +148,21 @@ class SegmentImpl<K, V> implements Segment<K, V> {
                 core.invalidateIterators();
                 final EntryIterator<K, V> iterator = core
                         .openIterator(isolation);
-                return SegmentResult.ok(
+                return OperationResult.ok(
                         new ExclusiveAccessIterator<>(iterator, gate));
             } catch (final RuntimeException e) {
                 failUnlessClosed();
-                return SegmentResult.error();
+                return OperationResult.error();
             }
         }
         if (!gate.tryEnterRead()) {
             return resultForState(gate.getState());
         }
         try {
-            return SegmentResult.ok(core.openIterator(isolation));
+            return OperationResult.ok(core.openIterator(isolation));
         } catch (final RuntimeException e) {
             failUnlessClosed();
-            return SegmentResult.error();
+            return OperationResult.error();
         } finally {
             gate.exitRead();
         }
@@ -174,7 +172,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentResult<Void> compact() {
+    public OperationResult<Void> compact() {
         if (logger.isDebugEnabled()) {
             logger.debug(
                     "Compact requested: segment='{}' state='{}' deltaFiles='{}' writeCacheKeys='{}' keysInCache='{}'",
@@ -182,23 +180,12 @@ class SegmentImpl<K, V> implements Segment<K, V> {
                     core.getNumberOfKeysInWriteCache(),
                     core.getNumberOfKeysInCache());
         }
-        final AtomicReference<SegmentCompacter.CompactionPlan<K, V>> planRef = new AtomicReference<>();
-        final SegmentResult<Void> result = maintenanceService.startMaintenance(() -> {
-            final SegmentCompacter.CompactionPlan<K, V> plan = segmentCompacter
-                    .prepareCompactionPlan(core);
-            planRef.set(plan);
-            return new SegmentMaintenanceWork(
-                    () -> segmentCompacter.writeCompaction(plan),
-                    () -> segmentCompacter.publishCompaction(plan));
-        }, () -> {
-            segmentCompacter.scheduleCleanup(planRef.get(), maintenanceExecutor);
-            scheduleMaintenanceIfNeeded();
-        });
+        final OperationResult<Void> result = scheduleCompaction();
         if (logger.isDebugEnabled()) {
             logger.debug("Compact scheduling finished: segment='{}' status='{}'",
                     core.getId(), result.getStatus());
         }
-        if (result.getStatus() == SegmentResultStatus.OK) {
+        if (result.getStatus() == OperationStatus.OK) {
             compactRequestCx.increment();
         }
         return result;
@@ -208,18 +195,18 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentResult<Void> put(final K key, final V value) {
+    public OperationResult<Void> put(final K key, final V value) {
         if (!gate.tryEnterWrite()) {
             return resultForState(gate.getState());
         }
-        final SegmentResult<Void> result;
+        final OperationResult<Void> result;
         final boolean shouldScheduleMaintenance;
         try {
             if (!core.tryPutWithoutWaiting(key, value)) {
-                result = SegmentResult.busy();
+                result = OperationResult.busy();
                 shouldScheduleMaintenance = false;
             } else {
-                result = SegmentResult.ok();
+                result = OperationResult.ok();
                 shouldScheduleMaintenance = true;
             }
         } finally {
@@ -235,7 +222,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentResult<Void> flush() {
+    public OperationResult<Void> flush() {
         flushRequestCx.increment();
         final int deltaFileCount = core.getDeltaCacheFileCount();
         final int maxDeltaFileCount = core.getSegmentConf()
@@ -248,15 +235,9 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             }
             return compact();
         }
-        final SegmentResult<Void> result = maintenanceService.startMaintenance(
-                () -> {
-                    core.freezeWriteCacheForFlush();
-                    return new SegmentMaintenanceWork(
-                            core::flushFrozenWriteCacheToDeltaFile,
-                            core::applyFrozenWriteCacheAfterFlush);
-                }, this::scheduleMaintenanceIfNeeded);
+        final OperationResult<Void> result = scheduleFlush();
         if (logger.isDebugEnabled()
-                && result.getStatus() == SegmentResultStatus.OK) {
+                && result.getStatus() == OperationStatus.OK) {
             logger.debug(
                     "Flush started: segment='{}' state='{}' deltaFiles='{}' maxDeltaFiles='{}' writeCacheKeys='{}'",
                     core.getId(), gate.getState(), deltaFileCount,
@@ -266,7 +247,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     }
 
     private void scheduleMaintenanceIfNeeded() {
-        if (gate.getState() != SegmentState.READY) {
+        if (gate.isClosing() || gate.getState() != SegmentState.READY) {
             return;
         }
         final SegmentMaintenanceDecision decision = maintenancePolicy
@@ -278,6 +259,141 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         if (decision.shouldFlush()) {
             flush();
         }
+    }
+
+    private OperationResult<Void> scheduleCompaction() {
+        if (!gate.tryEnterFreezeAndDrain()) {
+            return resultForState(gate.getState());
+        }
+        final SegmentCompacter.CompactionPlan<K, V> plan;
+        try {
+            plan = segmentCompacter.prepareCompactionPlan(core);
+        } catch (final RuntimeException e) {
+            failMaintenance(e);
+            return OperationResult.error();
+        }
+        if (!gate.enterMaintenanceRunning()) {
+            failUnlessClosed();
+            return OperationResult.error();
+        }
+        try {
+            maintenanceExecutor.execute(() -> executeScheduledCompaction(plan));
+        } catch (final RuntimeException e) {
+            failMaintenance(e);
+            return OperationResult.error();
+        }
+        return OperationResult.ok();
+    }
+
+    private OperationResult<Void> scheduleFlush() {
+        if (!gate.tryEnterFreezeAndDrain()) {
+            return resultForState(gate.getState());
+        }
+        try {
+            core.freezeWriteCacheForFlush();
+        } catch (final RuntimeException e) {
+            failMaintenance(e);
+            return OperationResult.error();
+        }
+        if (!gate.enterMaintenanceRunning()) {
+            failUnlessClosed();
+            return OperationResult.error();
+        }
+        try {
+            maintenanceExecutor.execute(this::executeScheduledFlush);
+        } catch (final RuntimeException e) {
+            failMaintenance(e);
+            return OperationResult.error();
+        }
+        return OperationResult.ok();
+    }
+
+    private void executeScheduledCompaction(
+            final SegmentCompacter.CompactionPlan<K, V> plan) {
+        try {
+            segmentCompacter.writeCompaction(plan);
+        } catch (final RuntimeException e) {
+            failMaintenance(e);
+            return;
+        }
+        if (!finishMaintenanceToFreeze()) {
+            return;
+        }
+        try {
+            segmentCompacter.publishCompaction(plan);
+        } catch (final RuntimeException e) {
+            failMaintenance(e);
+            return;
+        }
+        if (!finishFreezeToReady()) {
+            return;
+        }
+        try {
+            segmentCompacter.cleanupCompaction(plan);
+        } catch (final RuntimeException e) {
+            onMaintenanceFailure(e);
+            gate.fail();
+            return;
+        }
+        scheduleMaintenanceAfterReady();
+    }
+
+    private void executeScheduledFlush() {
+        try {
+            core.flushFrozenWriteCacheToDeltaFile();
+        } catch (final RuntimeException e) {
+            failMaintenance(e);
+            return;
+        }
+        if (!finishMaintenanceToFreeze()) {
+            return;
+        }
+        try {
+            core.applyFrozenWriteCacheAfterFlush();
+        } catch (final RuntimeException e) {
+            failMaintenance(e);
+            return;
+        }
+        if (finishFreezeToReady()) {
+            scheduleMaintenanceAfterReady();
+        }
+    }
+
+    private boolean finishMaintenanceToFreeze() {
+        if (gate.getState() == SegmentState.CLOSED) {
+            return false;
+        }
+        if (gate.finishMaintenanceToFreeze()) {
+            return true;
+        }
+        onMaintenanceFailure(new IllegalStateException(
+                "Maintenance gate failed to transition to FREEZE."));
+        failUnlessClosed();
+        return false;
+    }
+
+    private boolean finishFreezeToReady() {
+        if (gate.finishFreezeToReady()) {
+            return true;
+        }
+        onMaintenanceFailure(new IllegalStateException(
+                "Maintenance gate failed to transition to READY."));
+        failUnlessClosed();
+        return false;
+    }
+
+    private void scheduleMaintenanceAfterReady() {
+        try {
+            scheduleMaintenanceIfNeeded();
+        } catch (final RuntimeException e) {
+            onMaintenanceFailure(e);
+            gate.fail();
+        }
+    }
+
+    private void failMaintenance(final RuntimeException e) {
+        onMaintenanceFailure(e);
+        failUnlessClosed();
     }
 
     /**
@@ -348,12 +464,12 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
-    public SegmentResult<V> get(final K key) {
+    public OperationResult<V> get(final K key) {
         if (!gate.tryEnterRead()) {
             return resultForState(gate.getState());
         }
         try {
-            return SegmentResult.ok(core.get(key));
+            return OperationResult.ok(core.get(key));
         } finally {
             gate.exitRead();
         }
@@ -376,37 +492,40 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     }
 
     /**
-     * Starts closing the segment in the maintenance thread.
+     * Closes the segment synchronously on the caller thread.
      */
     @Override
-    public SegmentResult<Void> close() {
+    public OperationResult<Void> close() {
         if (!gate.tryEnterCloseAndDrain()) {
             return resultForState(gate.getState());
         }
         core.freezeWriteCacheForFlush();
-        try {
-            maintenanceExecutor.execute(this::runClose);
-        } catch (final RuntimeException e) {
-            failUnlessClosed();
-            return SegmentResult.error();
+        if (!closeInternal()) {
+            return OperationResult.error();
         }
-        return SegmentResult.ok();
+        return OperationResult.ok();
     }
 
-    private void runClose() {
+    private boolean closeInternal() {
         try {
             core.flushFrozenWriteCacheToDeltaFile();
             core.applyFrozenWriteCacheAfterFlush();
             core.close();
             if (!gate.finishCloseToClosed()) {
                 gate.fail();
+                return false;
             }
+            releaseDirectoryLock();
+            return true;
         } catch (final RuntimeException e) {
             gate.fail();
-        } finally {
-            if (directoryLocking != null) {
-                directoryLocking.unlock();
-            }
+            return false;
+        }
+    }
+
+    private void releaseDirectoryLock() {
+        if (directoryLocking != null) {
+            directoryLocking.unlock();
         }
     }
 
@@ -417,15 +536,15 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * @param <T> result value type
      * @return mapped result
      */
-    private static <T> SegmentResult<T> resultForState(
+    private static <T> OperationResult<T> resultForState(
             final SegmentState state) {
         if (state == SegmentState.CLOSED) {
-            return SegmentResult.closed();
+            return OperationResult.closed();
         }
         if (state == SegmentState.ERROR) {
-            return SegmentResult.error();
+            return OperationResult.error();
         }
-        return SegmentResult.busy();
+        return OperationResult.busy();
     }
 
     /**

@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 /**
  * Internal filesystem abstraction used by WAL runtime.
  */
-interface WalStorage {
+interface WalStorage extends AutoCloseable {
 
     boolean exists(String fileName);
 
@@ -52,4 +52,9 @@ interface WalStorage {
      * </p>
      */
     void syncMetadata();
+
+    @Override
+    default void close() {
+        // Default no-op for storage implementations without open resources.
+    }
 }

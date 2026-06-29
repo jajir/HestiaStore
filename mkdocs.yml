@@ -1,7 +1,7 @@
 # https://squidfunk.github.io/mkdocs-material/
 
 site_name: HestiaStore
-site_url: !ENV [MKDOCS_SITE_URL, "http://127.0.0.1:8080/"]
+site_url: https://jajir.github.io/HestiaStore/
 site_author: Jan Jirout
 
 repo_name: jajir/HestiaStore
@@ -16,8 +16,10 @@ nav:
         - Security: SECURITY.md
         - Benchmarks:
             - Overview: why-hestiastore/benchmarks.md
-            - Write Throughput Results: why-hestiastore/out-write.md
-            - Random Read Results: why-hestiastore/out-read.md
+            - Write Results: why-hestiastore/out-write.md
+            - Read Results: why-hestiastore/out-read.md
+            - Multithread Write Results: why-hestiastore/out-multithread-write.md
+            - Multithread Read Results: why-hestiastore/out-multithread-read.md
             - Sequential Read Results: why-hestiastore/out-sequential.md
     - Getting Started:
         - Overview: how-to-use/index.md
@@ -35,17 +37,19 @@ nav:
         - Overview: operations/index.md
         - WAL: operations/wal.md
         - Monitoring: operations/monitoring.md
+        - Startup Memory Estimate: operations/memory-estimate.md
         - Performance Tuning: operations/tuning.md
         - Backup & Restore: operations/backup-restore.md
+        - Export & Import: operations/export-import.md
         - WAL Canary Runbook: operations/wal-canary-runbook.md
     - Architecture:
         - Overview: architecture/index.md
         - Data Block Format: architecture/datablock.md
         - Filters & Integrity: architecture/filters.md
+        - Chunk Filter Provider Model: architecture/chunk-filter-provider-model.md
         - Chain of Filters: architecture/chain-of-filters.md
         - Concurrency Model: architecture/concurrency.md
         - Consistency & Recovery: architecture/recovery.md
-        - Package Layout: architecture/package-boundaries.md
         - Limitations & Trade-offs: architecture/limits.md
         - Glossary: architecture/glossary.md
         - Monitoring:
@@ -56,12 +60,13 @@ nav:
             - Overview: architecture/segmentindex/index.md
             - Write Path: architecture/segmentindex/write-path.md
             - Read Path: architecture/segmentindex/read-path.md
+            - WAL Runtime: architecture/segmentindex/wal-runtime.md
             - Range-Partitioned Ingest: architecture/segmentindex/range-partitioned-ingest.md
             - Range-Partitioned Ingest Implementation Notes: architecture/segmentindex/range-partitioned-ingest-implementation.md
             - Caching Strategy: architecture/segmentindex/caching.md
             - Cache LRU: architecture/segmentindex/cache-lru.md
             - Performance Model & Sizing: architecture/segmentindex/performance.md
-            - Metrics Snapshot: architecture/segmentindex/metrics-snapshot.md
+            - Metrics RouteMapSnapshot: architecture/segmentindex/metrics-snapshot.md
             - Segment Index Concurrency: architecture/segmentindex/segment-index-concurrency.md
         - Segment:
             - Overview: architecture/segment/index.md
@@ -72,21 +77,23 @@ nav:
         - Registry:
             - Overview: architecture/registry/index.md
             - Segment Registry: architecture/registry/registry.md
-    - Contribute & Community:
-        - Overview: community/index.md
-        - Contributing: community/contributing.md
-        - Code of Conduct: community/code-of-conduct.md
-        - Changelog: community/changelog.md
     - Development:
+        - Overview: development/code.md
+        - Code Structure: architecture/package-boundaries.md
+        - Configuration Flow: development/configuration-flow.md
+        - Coding Guidelines: development/code-quality-charter.md
+        - Segment Index: architecture/segmentindex/implementation.md
+        - Developer Guides: development/guides.md
+        - JVM Profiling: development/profiler-stacktrace.md
+    - Contribute & Community:
         - Overview: development/index.md
-        - Git and Worktree Workflow: development/git-workflow.md
+        - Contributing: CONTRIBUTING.md
+        - Code of Conduct: CODE_OF_CONDUCT.md
+        - Changelog: CHANGELOG.md
         - Release Process: development/release.md
-        - Code Quality Charter: development/code-quality-charter.md
         - Quality Reporting: development/quality-reporting.md
         - Documentation Guide: development/documentation-guidelines.md
-        - Developer Guides: development/guides.md
         - Segment API: development/segment-api.md
-        - JVM Profiling: development/profiler-stacktrace.md
         - Compatibility Matrix: development/compatibility-matrix.md
         - Upgrade Notes: development/upgrade-notes-multimodule.md
         - Rollout Quality Gates: development/rollout-quality-gates.md
@@ -96,7 +103,6 @@ nav:
 
 theme:
     name: material
-    custom_dir: overrides
     logo: images/logo-square.png
     favicon: favicon.ico
     font:

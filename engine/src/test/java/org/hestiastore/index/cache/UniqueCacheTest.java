@@ -97,6 +97,15 @@ class UniqueCacheTest {
     }
 
     @Test
+    void putAndReportNewKey_reports_when_key_is_new() {
+        assertTrue(cache.putAndReportNewKey(Entry.of(10, "hello")));
+        assertFalse(cache.putAndReportNewKey(Entry.of(10, "dear")));
+
+        assertEquals(1, cache.size());
+        assertEquals("dear", cache.get(10));
+    }
+
+    @Test
     void test_constructor_null_comparator_throws() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 this::buildWithNullComparator);

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
@@ -43,7 +44,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
         try (final SegmentIndex<Integer, Integer> index = makeIndex()) {
             for (int i = 0; i < 20; i++) {
                 writeEntries(index, makeList(i));
-                index.flush();
+                index.maintenance().flush();
                 verifyIndexData(index, makeList(i),
                         SegmentIteratorIsolation.FULL_ISOLATION);
             }
@@ -78,7 +79,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
     void test_search_for_missing_key_bigger_than_last_existing_one() {
         try (final SegmentIndex<Integer, Integer> index = makeIndex()) {
             writeEntries(index, makeList(888));
-            index.flush();
+            index.maintenance().flush();
             for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
                 assertNull(index.get(i * 2 + 1));
             }
@@ -88,18 +89,18 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
     private SegmentIndex<Integer, Integer> makeIndex() {
         final IndexConfiguration<Integer, Integer> conf = IndexConfiguration
                 .<Integer, Integer>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(Integer.class)//
-                .withKeyTypeDescriptor(tdi) //
-                .withValueTypeDescriptor(tdi) //
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withMaxNumberOfKeysInSegmentCache(64) //
-                .withMaxNumberOfKeysInSegment(64) //
-                .withMaxNumberOfKeysInSegmentChunk(16) //
-                .withBloomFilterIndexSizeInBytes(0) //
-                .withBloomFilterNumberOfHashFunctions(4) //
-                .withContextLoggingEnabled(false) //
-                .withName("test_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(Integer.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi)) //
+                .identity(identity -> identity.valueTypeDescriptor(tdi)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .segment(segment -> segment.cacheKeyLimit(64)) //
+                .segment(segment -> segment.maxKeys(64)) //
+                .segment(segment -> segment.chunkKeyLimit(16)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(0)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("test_index")) //
                 .build();
         return SegmentIndex.<Integer, Integer>create(directory, conf);
     }

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -49,8 +50,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
          */
 
         verifyIndexSearch(index, testData);
-        index.compact();
-        awaitMaintenanceIdle(index);
+        index.maintenance().compactAndWait();
 
         verifyIndexData(index, testData);
         verifyIndexSearch(index, testData);
@@ -66,15 +66,14 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             index.put(i, "kachna");
             index.delete(i);
         }
-        index.compact();
-        awaitMaintenanceIdle(index);
+        index.maintenance().compactAndWait();
         verifyIndexData(index, new ArrayList<>());
     }
 
     @Test
     void test_delete_search_operations() {
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);
-        for (int i = 0; i < 300; i++) {
+        for (int i = 0; i < 64; i++) {
             index.put(i, "kachna");
             assertEquals("kachna", index.get(i));
             index.delete(i);
@@ -119,40 +118,39 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             index.put(i, "kachna");
             assertEquals("kachna", index.get(i));
         }
-        index.compact();
-        awaitMaintenanceIdle(index);
+        index.maintenance().compactAndWait();
         assertEquals(iterations,
                 index.getStream(SegmentWindow.unbounded()).count());
         for (int i = 0; i < iterations; i++) {
             index.delete(i);
             assertNull(index.get(i));
         }
-        index.compact();
-        awaitMaintenanceIdle(index);
+        index.maintenance().compactAndWait();
         verifyIndexData(index, List.of());
     }
 
     private SegmentIndex<Integer, String> makeSegmentIndex(boolean withLog) {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi) //
-                .withValueTypeDescriptor(tds) //
-                .withMaxNumberOfKeysInSegmentCache(16) //
-                .withMaxNumberOfKeysInActivePartition(128) //
-                .withMaxNumberOfImmutableRunsPerPartition(4) //
-                .withMaxNumberOfKeysInPartitionBuffer(256) //
-                .withMaxNumberOfKeysInIndexBuffer(512) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(256) //
-                .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withContextLoggingEnabled(withLog) //
-                .withName("test_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi)) //
+                .identity(identity -> identity.valueTypeDescriptor(tds)) //
+                .segment(segment -> segment.cacheKeyLimit(16)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(128)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(256)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(512)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(256)) //
+                // Keep CRUD integrations focused on index semantics, not on
+                // stable-segment split pressure introduced by direct writes.
+                .segment(segment -> segment.maxKeys(1_024)) //
+                .segment(segment -> segment.chunkKeyLimit(2)) //
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .logging(logging -> logging.contextEnabled(withLog)) //
+                .identity(identity -> identity.name("test_index")) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }

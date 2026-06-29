@@ -2,61 +2,81 @@
 
 ## Overview
 
-SegmentIndex is thread-safe and does not use a global read/write lock. Sync
-operations execute on the caller thread; concurrency is controlled by
-per-segment state machines and minimal shared-structure locks (mapping,
-registry).
+`SegmentIndex` is thread-safe and does not use a global read/write lock. Sync
+operations run on the caller thread; concurrency is controlled by per-segment
+state machines plus small shared-structure locks around persisted routing,
+runtime route topology, and registry lifecycle.
 
 Segment-level concurrency does not require external locks. `SegmentImpl`
-enforces its own lock-free admission gate (see
-[Segment Concurrency](segment/segment-concurrency.md)).
+enforces its own admission gate and iterator/version rules; see
+[Segment Concurrency](segment/segment-concurrency.md).
 
-## Concurrency Invariants (Target Design)
+## Concurrency Invariants
 
-These invariants must hold for the current per-segment concurrency design:
+These invariants must hold in the current direct-to-segment model:
 
-- **Mapping integrity:** the key→segment map must always point to an existing
-  segment; updates are atomic and visible to readers.
-- **Split atomicity:** a segment split must either be fully applied (new
-  segments + updated map) or not applied at all.
-- **Cache visibility:** reads observe the latest cached writes (read-after-write
-  visibility) and flushes operate on a consistent snapshot.
-- **Lifecycle linearity:** once close starts, no new operations are accepted;
-  operations in flight either complete before close returns or fail deterministically.
-- **No use-after-close:** evicted/closed segment data must not be accessed by
+- **Mapping integrity:** the key-to-segment map always points to an existing
+  stable segment, and map updates are atomic.
+- **Topology handoff:** foreground operations hold a `RouteTopology` route
+  lease before touching a segment. Callers acquire this through
+  `MappedSegmentLeaseService`, which also loads the mapped segment from
+  `SegmentRegistry`. Split materialization starts only after
+  `MappedSegmentLeaseService.tryAcquireForSplit(...)` moves the parent route to
+  `DRAINING` and all in-flight route leases drain.
+- **Split atomicity:** before route-map publish, a split either deletes
+  prepared children and keeps the parent route active, or it publishes the
+  children into the route map. After route-map publish, recovery cleanup owns
+  any orphaned segment directories left by persistence or parent-delete
+  failures.
+- **Segment-local freshness:** a successful write is immediately visible to a
+  later read through the target segment write cache.
+- **Lifecycle linearity:** once close starts, no new API operations are
+  accepted; in-flight operations either finish or fail deterministically.
+- **No use-after-close:** evicted or closed segment resources are not reused by
   concurrent readers.
-- **Stats consistency:** counters reflect all completed operations (exact or
-  eventually consistent by design).
+- **Stats consistency:** counters reflect completed work for the lifetime of
+  the index instance.
 
 ## Shared State That Must Be Protected
 
 These structures are shared across threads and require synchronization:
 
-- `UniqueCache` (index write buffer)
-- `KeyToSegmentMap` (key→segment map)
-- `SegmentRegistry` and `SegmentDataCache` (segment lookup + cached data)
-- `BackgroundSplitCoordinator` + `PartitionStableSplitCoordinator` (range topology updates)
-- `IndexState` (open/close state) and `Stats` (counters)
-- Any `TypeDescriptor` implementation with mutable internal state
+- `SegmentRouteMap` for persisted route lookup and atomic split publish
+- `RouteTopology` for runtime route states, in-flight route leases, and split
+  drain coordination
+- `MappedSegmentLeaseService` for the boundary that combines route snapshots,
+  topology leases/drains, and registry-loaded `BlockingSegment` handles
+- `SegmentRegistry` and `SegmentDataCache` for segment lifecycle and cached
+  data
+- `SplitPolicyScheduler`, `SplitTaskCoordinator`,
+  `RouteSplitPlanner`, and `RouteSplitPublisher` for split
+  scheduling, split-lease lifecycle, materialization, and route-map publish
+- `IndexState` and `Stats`
+- any `TypeDescriptor` implementation with mutable internal state
 
 ## Ordering
 
-- With multiple threads, **operation order is not guaranteed**.
-- If strict ordering is required, apply external synchronization at the caller
-  level.
-- Across segments, operations can complete in any order.
+- With multiple threads, operation order is not guaranteed.
+- If strict ordering is required, apply external synchronization at the caller.
+- Across different routed segments, operations can complete in any order.
 
 ## Threads
 
 - Sync operations run on caller threads.
-- Async operations run on dedicated index-worker threads owned by the
-  segment-index runtime; `IndexAsyncAdapter` is only a thin facade over that
-  async path.
-- Segment maintenance runs on the segment-index maintenance executor.
+- Segment maintenance runs on the shared `hestia-segment-maintenance-*`
+  executor.
+- Split planning runs on the index-owned
+  `hestia-<indexName>-split-policy-*` scheduler.
+- Split materialization runs on the shared `hestia-split-maintenance-*`
+  executor.
+- WAL group sync runs on `hestia-<indexName>-wal-group-sync-*` when GROUP_SYNC
+  durability is enabled with a positive delay.
 
 ## Implications
 
-- Write/write and read/write conflicts are handled by per-segment state
-  machines and shared-structure locks, not a global lock.
-- Read-heavy workloads benefit from parallelism.
-- Callers should not rely on global ordering across keys.
+- Read/write conflicts are handled at the routed segment and
+  `MappedSegmentLeaseService` route-lease level, not by a global lock.
+- Read-heavy workloads benefit from parallelism across routed segments.
+- Writes to a route affected by split can see transient internal `BUSY` and
+  are retried by the index retry policy.
+- Callers must not rely on a global ordering across keys.

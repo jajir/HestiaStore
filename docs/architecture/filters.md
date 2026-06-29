@@ -1,10 +1,15 @@
 # Filters & Integrity
 
-HestiaStore persists segment data in chunked files. Each chunk carries a header and a payload processed by an ordered filter pipeline. Filters provide integrity (magic number, CRC32), optional compression, and optional reversible transformations.
+HestiaStore persists segment data in chunked files. Each chunk carries a header
+and a payload processed by an ordered filter pipeline. Filters provide
+integrity (magic number, CRC32), optional compression, optional authenticated
+encryption, and optional reversible transformations.
 
 This page focuses on filter behavior and ordering. For byte-level block/chunk
 structure see [Data Block Format](datablock.md). For builder setup and
-examples, see [Filter Configuration](../configuration/filters.md).
+examples, see [Filter Configuration](../configuration/filters.md). For
+provider/spec persistence and runtime resolution, see
+[Chunk Filter Provider Model](chunk-filter-provider-model.md).
 
 ## Chunk Flags Used by Filters
 
@@ -18,6 +23,7 @@ Flag bit positions (see `src/main/java/org/hestiastore/index/chunkstore/ChunkFil
 - 1 — CRC32 present (bit reserved; validation uses the header value)
 - 3 — Snappy compression
 - 4 — XOR encryption (reversible obfuscation)
+- 5 — AES-GCM encryption
 
 ## Encoding Pipeline (Write Path)
 
@@ -27,11 +33,15 @@ Write path constructs a `ChunkData` and passes it through a `ChunkProcessor` con
 - Pipeline wrapper: `chunkstore/ChunkProcessor` with encoding filters
 - Typical defaults: CRC32 → MagicNumber
 - With compression/encryption enabled, recommended order:
-  - CRC32 writing → Magic number writing → Snappy compression → XOR encrypt
+  - CRC32 writing → Magic number writing → Snappy compression → AES-GCM encrypt
 
 Why this order:
 - CRC32 computed on the plaintext payload gives a strong data‑integrity check after decoding (you must decompress/decrypt before CRC validation on read).
 - Magic‑number header flag is a quick consistency guard before attempting other transforms.
+- Compression should run before encryption because encrypted payloads are not
+  meaningfully compressible.
+- XOR, when used, occupies the same final transform slot as AES-GCM but should
+  be treated as obfuscation only.
 
 ## Decoding Pipeline (Read Path)
 
@@ -41,11 +51,13 @@ Read path pulls a raw chunk, parses the header, then applies the decoding filter
 - Pipeline wrapper: `chunkstore/ChunkProcessor` with decoding filters
 - Typical defaults: MagicNumber validation → CRC32 validation
 - With compression/encryption enabled, recommended order:
-  - MagicNumber validation → XOR decrypt → Snappy decompress → CRC32 validation
+  - MagicNumber validation → AES-GCM decrypt → Snappy decompress → CRC32 validation
 
 Notes:
 - Validation filters check the corresponding header flag (when provided) and throw an exception if the precondition fails (e.g., “not marked as compressed”).
 - CRC validation recomputes CRC32 on the current payload and compares to the header value.
+- XOR, when configured instead of AES-GCM, should also run before Snappy
+  decompression and CRC validation.
 
 ## Available Filters
 
@@ -77,6 +89,16 @@ Notes:
 3. Used classes: `ChunkFilterSnappyCompress`, `ChunkFilterSnappyDecompress`.
 4. External resources: [snappy-java](https://github.com/xerial/snappy-java).
 
+### AES-GCM Encryption
+
+1. What it does: encrypts payload on write, authenticates selected header
+   fields as additional authenticated data, and decrypts on read (flag bit
+   `5`).
+2. Why it is valuable: provides authenticated confidentiality for chunk payload
+   bytes when wired through a provider-backed filter registry.
+3. Used classes: `ChunkFilterAesGcmEncrypt`, `ChunkFilterAesGcmDecrypt`.
+4. External resources: [AES-GCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode).
+
 ### XOR Encryption
 
 1. What it does: applies a reversible XOR transformation on write and restores
@@ -97,9 +119,12 @@ Notes:
 ## Configuration
 
 Filter setup, defaults, constraints, and code examples are documented in
-[Filter Configuration](../configuration/filters.md).
+[Filter Configuration](../configuration/filters.md). Provider/spec lifecycle is
+documented in [Chunk Filter Provider Model](chunk-filter-provider-model.md).
 
 ## Error Handling and Safety
 
 - Validation failures (wrong magic, CRC mismatch, missing flags) throw exceptions and abort the read; no partial state is committed.
+- AES-GCM authentication failures abort the read before plaintext is exposed to
+  later filters.
 - Chunk data is written through transactional temp-file + rename (`DataBlockWriterTx`); broader crash/recovery semantics are documented in [Consistency & Recovery](recovery.md).

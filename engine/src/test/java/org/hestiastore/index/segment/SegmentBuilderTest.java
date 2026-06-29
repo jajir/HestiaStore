@@ -1,6 +1,8 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 
 /**
  * Class test invalid parameters of segment.
@@ -8,10 +10,12 @@ import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
@@ -206,6 +210,71 @@ class SegmentBuilderTest {
     }
 
     @Test
+    void test_withEncodingChunkFilterSuppliers_null() {
+        final SegmentBuilder<Integer, String> builder = newBuilder();
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> builder.withEncodingChunkFilterSuppliers(null));
+
+        assertEquals("Property 'encodingChunkFilters' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_withEncodingChunkFilterSuppliers_empty() {
+        final SegmentBuilder<Integer, String> builder = newBuilder();
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> builder.withEncodingChunkFilterSuppliers(List.of()));
+
+        assertEquals("Property 'encodingChunkFilters' must not be empty.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_withDecodingChunkFilterSuppliers_null() {
+        final SegmentBuilder<Integer, String> builder = newBuilder();
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> builder.withDecodingChunkFilterSuppliers(null));
+
+        assertEquals("Property 'decodingChunkFilters' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_withDecodingChunkFilterSuppliers_empty() {
+        final SegmentBuilder<Integer, String> builder = newBuilder();
+
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> builder.withDecodingChunkFilterSuppliers(List.of()));
+
+        assertEquals("Property 'decodingChunkFilters' must not be empty.",
+                e.getMessage());
+    }
+
+    @Test
+    void test_supplierBasedFiltersMaterializeFreshInstances() {
+        final AtomicInteger sequence = new AtomicInteger();
+        final SegmentBuilder<Integer, String> builder = newBuilder()
+                .withEncodingChunkFilterSuppliers(
+                        List.of(() -> new TrackingChunkFilter(
+                                sequence.incrementAndGet())))
+                .withDecodingChunkFilterSuppliers(
+                        List.of(() -> new TrackingChunkFilter(
+                                sequence.incrementAndGet())));
+
+        final TrackingChunkFilter first = (TrackingChunkFilter) builder
+                .getEncodingChunkFilters().get(0);
+        final TrackingChunkFilter second = (TrackingChunkFilter) builder
+                .getEncodingChunkFilters().get(0);
+
+        assertEquals(1, first.getId());
+        assertEquals(2, second.getId());
+        assertNotSame(first, second);
+    }
+
+    @Test
     void test_build_withProvidedChunkFilters() {
         final Segment<Integer, String> segment = Segment
                 .<Integer, String>builder(DIRECTORY)//
@@ -218,7 +287,7 @@ class SegmentBuilderTest {
                 .build().getValue();
 
         assertNotNull(segment);
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
     }
 
     @Test
@@ -244,13 +313,13 @@ class SegmentBuilderTest {
         tx.commit();
 
         final Segment<Integer, String> segment = builder.build().getValue();
-        final SegmentResult<String> first = segment.get(1);
-        final SegmentResult<String> second = segment.get(2);
-        assertEquals(SegmentResultStatus.OK, first.getStatus());
-        assertEquals(SegmentResultStatus.OK, second.getStatus());
+        final OperationResult<String> first = segment.get(1);
+        final OperationResult<String> second = segment.get(2);
+        assertEquals(OperationStatus.OK, first.getStatus());
+        assertEquals(OperationStatus.OK, second.getStatus());
         assertEquals("a", first.getValue());
         assertEquals("b", second.getValue());
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
     }
 
     @Test
@@ -273,7 +342,7 @@ class SegmentBuilderTest {
         final Object executor = field.get(impl);
 
         assertEquals(DirectExecutor.class, executor.getClass());
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
     }
 
     @Test
@@ -313,7 +382,7 @@ class SegmentBuilderTest {
                     .get(core);
             assertEquals(2L, files.getActiveVersion());
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final SegmentPropertiesManager rootProperties = new SegmentPropertiesManager(
@@ -324,5 +393,24 @@ class SegmentBuilderTest {
     private SegmentBuilder<Integer, String> newBuilder() {
         return Segment.<Integer, String>builder(DIRECTORY)
                 .withMaintenancePolicy(SegmentMaintenancePolicy.none());
+    }
+
+    private static final class TrackingChunkFilter implements ChunkFilter {
+
+        private final int id;
+
+        private TrackingChunkFilter(final int id) {
+            this.id = id;
+        }
+
+        private int getId() {
+            return id;
+        }
+
+        @Override
+        public org.hestiastore.index.chunkstore.ChunkData apply(
+                final org.hestiastore.index.chunkstore.ChunkData input) {
+            return input;
+        }
     }
 }

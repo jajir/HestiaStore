@@ -15,7 +15,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,35 +28,52 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.hestiastore.index.monitoring.MonitoredIndex;
-import org.hestiastore.index.monitoring.MonitoredIndexProvider;
-import org.hestiastore.index.control.model.ConfigurationSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.MonitoredIndex;
+import org.hestiastore.index.segmentindex.monitoring.MonitoredIndexProvider;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSegmentRuntimeMetrics;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimePatchValidation;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatchBuilder;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningValidation;
 import org.hestiastore.monitoring.json.api.ActionRequest;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
 import org.hestiastore.monitoring.json.api.ActionType;
+import org.hestiastore.monitoring.json.api.BloomFilterReportResponse;
+import org.hestiastore.monitoring.json.api.ChunkStoreCacheReportResponse;
 import org.hestiastore.monitoring.json.api.ConfigPatchRequest;
 import org.hestiastore.monitoring.json.api.ConfigViewResponse;
 import org.hestiastore.monitoring.json.api.ErrorResponse;
+import org.hestiastore.monitoring.json.api.ExecutorReportResponse;
 import org.hestiastore.monitoring.json.api.IndexReportResponse;
 import org.hestiastore.monitoring.json.api.JvmMetricsResponse;
+import org.hestiastore.monitoring.json.api.LatencyReportResponse;
 import org.hestiastore.monitoring.json.api.ManagementApiPaths;
+import org.hestiastore.monitoring.json.api.MaintenanceReportResponse;
 import org.hestiastore.monitoring.json.api.NodeReportResponse;
+import org.hestiastore.monitoring.json.api.OperationReportResponse;
+import org.hestiastore.monitoring.json.api.RegistryCacheReportResponse;
+import org.hestiastore.monitoring.json.api.SegmentReportResponse;
 import org.hestiastore.monitoring.json.api.SegmentRuntimeReportResponse;
+import org.hestiastore.monitoring.json.api.SplitReportResponse;
+import org.hestiastore.monitoring.json.api.WalReportResponse;
+import org.hestiastore.monitoring.json.api.WritePathReportResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.net.httpserver.HttpExchange;
@@ -80,26 +96,28 @@ public final class ManagementAgentServer
     private static final String UNKNOWN_INDEX_PREFIX = "Unknown index: ";
     private static final String AUDIT_REJECTED = "REJECTED";
     private static final String AUDIT_FAILED = "FAILED";
+    private static final String REQUEST_THREAD_NAME_PREFIX =
+            "hestia-management-http-";
     private static final int MAX_AUDIT_RECORDS = 10_000;
     private static final int MAX_ACTION_REPLAYS = 10_000;
     private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
-    private static final Map<RuntimeSettingKey, String> API_NAME_BY_RUNTIME_KEY = Map
-            .of(RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
+    private static final Map<RuntimeTuningKey, String> API_NAME_BY_RUNTIME_FIELD = Map
+            .of(RuntimeTuningKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                     "maxNumberOfSegmentsInCache",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
+                    RuntimeTuningKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                     "maxNumberOfKeysInSegmentCache",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
-                    "maxNumberOfKeysInActivePartition",
-                    RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
-                    "maxNumberOfImmutableRunsPerPartition",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
-                    "maxNumberOfKeysInPartitionBuffer",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
-                    "maxNumberOfKeysInIndexBuffer",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                    "maxNumberOfKeysInPartitionBeforeSplit");
-    private static final Map<String, RuntimeSettingKey> RUNTIME_KEY_BY_API_NAME = buildRuntimeKeyByApiName();
-    private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_KEY
+                    RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT,
+                    "segmentWriteCacheKeyLimit",
+                    RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
+                    "segmentWriteCacheKeyLimitDuringMaintenance",
+                    RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
+                    "indexBufferedWriteKeyLimit",
+                    RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD,
+                    "segmentSplitKeyThreshold",
+                    RuntimeTuningKey.CHUNK_STORE_CACHE_PAGE_LIMIT,
+                    "chunkStoreCachePageLimit");
+    private static final Map<String, RuntimeTuningKey> RUNTIME_FIELD_BY_API_NAME = buildRuntimeFieldByApiName();
+    private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_FIELD
             .values().stream().sorted().toList();
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -111,7 +129,13 @@ public final class ManagementAgentServer
     private final ConcurrentMap<ActionRequestKey, CompletableFuture<ActionReplay>> actionReplays = new ConcurrentHashMap<>();
     private final int maxActionReplays;
     private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
+            .registerModule(new JavaTimeModule())
+            .setVisibility(PropertyAccessor.FIELD,
+                    JsonAutoDetect.Visibility.ANY)
+            .setVisibility(PropertyAccessor.GETTER,
+                    JsonAutoDetect.Visibility.NONE)
+            .setVisibility(PropertyAccessor.IS_GETTER,
+                    JsonAutoDetect.Visibility.NONE);
     private final HttpServer server;
     private final ExecutorService requestExecutor;
 
@@ -197,17 +221,26 @@ public final class ManagementAgentServer
                 0);
         final int workers = Math.max(2,
                 Math.min(16, Runtime.getRuntime().availableProcessors() * 2));
-        final AtomicInteger threadCounter = new AtomicInteger(1);
         this.requestExecutor = Executors.newFixedThreadPool(workers,
-                runnable -> {
-                    final Thread thread = new Thread(runnable,
-                            "monitoring-rest-json-http-"
-                                    + threadCounter.getAndIncrement());
-                    thread.setDaemon(false);
-                    return thread;
-                });
+                requestThreadFactory());
         this.server.setExecutor(requestExecutor);
         registerRoutes();
+    }
+
+    /**
+     * Creates the HTTP request thread factory for the management server.
+     *
+     * @return request thread factory
+     */
+    static ThreadFactory requestThreadFactory() {
+        final AtomicInteger threadCounter = new AtomicInteger(1);
+        return runnable -> {
+            final Thread thread = new Thread(runnable,
+                    REQUEST_THREAD_NAME_PREFIX
+                            + threadCounter.getAndIncrement());
+            thread.setDaemon(false);
+            return thread;
+        };
     }
 
     /**
@@ -333,12 +366,12 @@ public final class ManagementAgentServer
 
     private void handleFlush(final HttpExchange exchange) throws IOException {
         handleMutatingAction(exchange, ActionType.FLUSH,
-                registered -> registered.index().flushAndWait());
+                registered -> registered.index().maintenance().flushAndWait());
     }
 
     private void handleCompact(final HttpExchange exchange) throws IOException {
         handleMutatingAction(exchange, ActionType.COMPACT,
-                registered -> registered.index().compactAndWait());
+                registered -> registered.index().maintenance().compactAndWait());
     }
 
     private void handleConfig(final HttpExchange exchange) throws IOException {
@@ -396,7 +429,7 @@ public final class ManagementAgentServer
         if (target.isEmpty()) {
             return;
         }
-        final RuntimeConfigPatch runtimePatch = toRuntimePatchOrReject(exchange,
+        final RuntimeTuningPatch runtimePatch = toRuntimePatchOrReject(exchange,
                 endpoint, body, request);
         if (runtimePatch == null) {
             return;
@@ -565,7 +598,7 @@ public final class ManagementAgentServer
         return Optional.of(target);
     }
 
-    private RuntimeConfigPatch toRuntimePatchOrReject(
+    private RuntimeTuningPatch toRuntimePatchOrReject(
             final HttpExchange exchange, final String endpoint,
             final String body, final ConfigPatchRequest request)
             throws IOException {
@@ -590,18 +623,26 @@ public final class ManagementAgentServer
     private void applyConfigPatch(final HttpExchange exchange,
             final String endpoint, final String body,
             final ConfigPatchRequest request, final RegisteredIndex target,
-            final RuntimeConfigPatch runtimePatch) throws IOException {
-        final RuntimePatchResult result = target.index().controlPlane()
-                .configuration().apply(runtimePatch);
-        if (!result.validation().valid()) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
-                    formatValidationIssues(result.validation()), "",
-                    Instant.now());
-            writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
+            final RuntimeTuningPatch runtimePatch) throws IOException {
+        if (request.dryRun()) {
+            final RuntimeTuningValidation validation = target.index()
+                    .runtimeTuning().validate(runtimePatch);
+            if (!validation.valid()) {
+                writeValidationError(exchange, endpoint, body, validation);
+                return;
+            }
+            writeNoContent(exchange);
+            audit(exchange, endpoint, body, 204, "DRY_RUN");
             return;
         }
-        if (!request.dryRun() && !result.applied()) {
+        final RuntimeTuningResult result = target.index().runtimeTuning()
+                .apply(runtimePatch);
+        if (!result.validation().valid()) {
+            writeValidationError(exchange, endpoint, body,
+                    result.validation());
+            return;
+        }
+        if (!result.applied()) {
             final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
                     "Runtime patch was not applied.", "", Instant.now());
             writeJson(exchange, 409, error);
@@ -609,8 +650,16 @@ public final class ManagementAgentServer
             return;
         }
         writeNoContent(exchange);
-        audit(exchange, endpoint, body, 204,
-                request.dryRun() ? "DRY_RUN" : "APPLIED");
+        audit(exchange, endpoint, body, 204, "APPLIED");
+    }
+
+    private void writeValidationError(final HttpExchange exchange,
+            final String endpoint, final String body,
+            final RuntimeTuningValidation validation) throws IOException {
+        final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
+                formatValidationIssues(validation), "", Instant.now());
+        writeJson(exchange, 400, error);
+        audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
     }
 
     private ActionRequest parseActionRequest(final HttpExchange exchange,
@@ -801,7 +850,8 @@ public final class ManagementAgentServer
                         indexName);
                 return true;
             }
-            final SegmentIndexState state = index.getState();
+            final SegmentIndexState state = index.runtimeMonitoring().snapshot()
+                    .state();
             if (state == SegmentIndexState.CLOSED) {
                 logger.info("Removing CLOSED index from reporting: {}",
                         indexName);
@@ -842,113 +892,208 @@ public final class ManagementAgentServer
     }
 
     private IndexReportResponse toIndexReport(final RegisteredIndex monitored) {
-        final SegmentIndexMetricsSnapshot snapshot = monitored
-                .metricsSnapshot();
-        final SegmentIndexState state = monitored.state();
+        final SegmentIndexRuntimeSnapshot snapshot = monitored
+                .runtimeSnapshot();
+        final SegmentIndexState state = snapshot.state();
         return new IndexReportResponse(monitored.indexName(), state.name(),
                 state == SegmentIndexState.READY,
-                snapshot.getGetOperationCount(),
-                snapshot.getPutOperationCount(),
-                snapshot.getDeleteOperationCount(),
-                snapshot.getRegistryCacheHitCount(),
-                snapshot.getRegistryCacheMissCount(),
-                snapshot.getRegistryCacheLoadCount(),
-                snapshot.getRegistryCacheEvictionCount(),
-                snapshot.getRegistryCacheSize(),
-                snapshot.getRegistryCacheLimit(),
-                snapshot.getSegmentCacheKeyLimitPerSegment(),
-                snapshot.getMaxNumberOfKeysInActivePartition(),
-                snapshot.getMaxNumberOfImmutableRunsPerPartition(),
-                snapshot.getMaxNumberOfKeysInPartitionBuffer(),
-                snapshot.getMaxNumberOfKeysInIndexBuffer(),
-                snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
-                snapshot.getSegmentMaintenanceCount(),
-                snapshot.getSegmentErrorCount(),
-                snapshot.getSegmentClosedCount(),
-                snapshot.getSegmentBusyCount(), snapshot.getTotalSegmentKeys(),
-                snapshot.getTotalSegmentCacheKeys(),
-                snapshot.getTotalBufferedWriteKeys(),
-                snapshot.getTotalDeltaCacheFiles(),
-                snapshot.getCompactRequestCount(),
-                snapshot.getFlushRequestCount(),
-                snapshot.getSplitScheduleCount(),
-                snapshot.getSplitInFlightCount(),
-                snapshot.getMaintenanceQueueSize(),
-                snapshot.getMaintenanceQueueCapacity(),
-                snapshot.getSplitQueueSize(), snapshot.getSplitQueueCapacity(),
-                snapshot.getPartitionCount(),
-                snapshot.getActivePartitionCount(),
-                snapshot.getDrainingPartitionCount(),
-                snapshot.getImmutableRunCount(),
-                snapshot.getPartitionBufferedKeyCount(),
-                snapshot.getLocalThrottleCount(),
-                snapshot.getGlobalThrottleCount(),
-                snapshot.getDrainScheduleCount(),
-                snapshot.getDrainInFlightCount(),
-                snapshot.getDrainLatencyP95Micros(),
-                snapshot.getReadLatencyP50Micros(),
-                snapshot.getReadLatencyP95Micros(),
-                snapshot.getReadLatencyP99Micros(),
-                snapshot.getWriteLatencyP50Micros(),
-                snapshot.getWriteLatencyP95Micros(),
-                snapshot.getWriteLatencyP99Micros(),
-                snapshot.getBloomFilterHashFunctions(),
-                snapshot.getBloomFilterIndexSizeInBytes(),
-                snapshot.getBloomFilterProbabilityOfFalsePositive(),
-                snapshot.getBloomFilterRequestCount(),
-                snapshot.getBloomFilterRefusedCount(),
-                snapshot.getBloomFilterPositiveCount(),
-                snapshot.getBloomFilterFalsePositiveCount(),
+                toOperations(snapshot),
+                toRegistryCache(snapshot),
+                toChunkStoreCache(snapshot),
+                toSegments(snapshot),
+                toWritePath(snapshot),
+                toMaintenance(snapshot),
+                toSplit(snapshot),
+                toLatency(snapshot),
+                toBloomFilter(snapshot),
+                toWal(snapshot));
+    }
+
+    private OperationReportResponse toOperations(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new OperationReportResponse(
+                snapshot.operations().readOperationCount(),
+                snapshot.operations().putOperationCount(),
+                snapshot.operations().deleteOperationCount());
+    }
+
+    private RegistryCacheReportResponse toRegistryCache(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new RegistryCacheReportResponse(
+                snapshot.registryCache().hitCount(),
+                snapshot.registryCache().missCount(),
+                snapshot.registryCache().loadCount(),
+                snapshot.registryCache().evictionCount(),
+                snapshot.registryCache().size(),
+                snapshot.registryCache().limit());
+    }
+
+    private ChunkStoreCacheReportResponse toChunkStoreCache(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new ChunkStoreCacheReportResponse(
+                snapshot.chunkStoreCache().pageLimit(),
+                snapshot.chunkStoreCache().pageCount(),
+                snapshot.chunkStoreCache().entryCount(),
+                snapshot.chunkStoreCache().hitCount(),
+                snapshot.chunkStoreCache().missCount(),
+                snapshot.chunkStoreCache().loadCount(),
+                snapshot.chunkStoreCache().evictionCount(),
+                snapshot.chunkStoreCache().invalidationCount());
+    }
+
+    private SegmentReportResponse toSegments(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new SegmentReportResponse(
+                snapshot.segments().cacheKeyLimitPerSegment(),
+                snapshot.segments().count(),
+                snapshot.segments().readyCount(),
+                snapshot.segments().maintenanceCount(),
+                snapshot.segments().errorCount(),
+                snapshot.segments().closedCount(),
+                snapshot.segments().unloadedMappedSegmentCount(),
+                snapshot.segments().totalKeys(),
+                snapshot.segments().totalCacheKeys(),
+                snapshot.segments().totalDeltaCacheFiles(),
                 toSegmentRuntimeSections(snapshot));
     }
 
+    private WritePathReportResponse toWritePath(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new WritePathReportResponse(
+                snapshot.writePath().segmentWriteCacheKeyLimit(),
+                snapshot.writePath()
+                        .segmentWriteCacheKeyLimitDuringMaintenance(),
+                snapshot.writePath().indexBufferedWriteKeyLimit(),
+                snapshot.writePath().totalBufferedWriteKeys());
+    }
+
+    private MaintenanceReportResponse toMaintenance(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new MaintenanceReportResponse(
+                snapshot.maintenance().compactRequestCount(),
+                snapshot.maintenance().flushRequestCount(),
+                snapshot.maintenance().flushAcceptedToReadyP95Micros(),
+                snapshot.maintenance().compactAcceptedToReadyP95Micros(),
+                snapshot.maintenance().flushBusyRetryCount(),
+                snapshot.maintenance().compactBusyRetryCount(),
+                toExecutor(snapshot.maintenance().indexExecutor()),
+                toExecutor(snapshot.maintenance().stableSegmentExecutor()));
+    }
+
+    private SplitReportResponse toSplit(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new SplitReportResponse(
+                snapshot.split().scheduleCount(),
+                snapshot.split().inFlightCount(),
+                snapshot.split().blockedCount(),
+                snapshot.split().taskStartDelayP95Micros(),
+                snapshot.split().taskRunLatencyP95Micros(),
+                toExecutor(snapshot.split().executor()));
+    }
+
+    private ExecutorReportResponse toExecutor(
+            final SegmentIndexExecutorMetrics metrics) {
+        return new ExecutorReportResponse(metrics.activeThreadCount(),
+                metrics.queueSize(), metrics.queueCapacity(),
+                metrics.completedTaskCount(), metrics.rejectedTaskCount(),
+                metrics.callerRunsCount());
+    }
+
+    private LatencyReportResponse toLatency(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new LatencyReportResponse(
+                snapshot.latency().readP50Micros(),
+                snapshot.latency().readP95Micros(),
+                snapshot.latency().readP99Micros(),
+                snapshot.latency().writeP50Micros(),
+                snapshot.latency().writeP95Micros(),
+                snapshot.latency().writeP99Micros());
+    }
+
+    private BloomFilterReportResponse toBloomFilter(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new BloomFilterReportResponse(
+                snapshot.bloomFilter().hashFunctions(),
+                snapshot.bloomFilter().indexSizeInBytes(),
+                snapshot.bloomFilter().probabilityOfFalsePositive(),
+                snapshot.bloomFilter().requestCount(),
+                snapshot.bloomFilter().refusedCount(),
+                snapshot.bloomFilter().positiveCount(),
+                snapshot.bloomFilter().falsePositiveCount());
+    }
+
+    private WalReportResponse toWal(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return new WalReportResponse(
+                snapshot.wal().enabled(),
+                snapshot.wal().appendCount(),
+                snapshot.wal().appendBytes(),
+                snapshot.wal().syncCount(),
+                snapshot.wal().syncFailureCount(),
+                snapshot.wal().corruptionCount(),
+                snapshot.wal().truncationCount(),
+                snapshot.wal().retainedBytes(),
+                snapshot.wal().segmentCount(),
+                snapshot.wal().durableLsn(),
+                snapshot.wal().checkpointLsn(),
+                snapshot.wal().pendingSyncBytes(),
+                snapshot.wal().appliedLsn(),
+                snapshot.wal().checkpointLagLsn(),
+                snapshot.wal().syncTotalNanos(),
+                snapshot.wal().syncMaxNanos(),
+                snapshot.wal().syncBatchBytesTotal(),
+                snapshot.wal().syncBatchBytesMax(),
+                snapshot.wal().syncAverageNanos(),
+                snapshot.wal().syncAverageBatchBytes());
+    }
+
     private List<SegmentRuntimeReportResponse> toSegmentRuntimeSections(
-            final SegmentIndexMetricsSnapshot snapshot) {
-        return snapshot.getSegmentRuntimeSnapshots().stream()
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return snapshot.segments().runtimeMetrics().stream()
                 .map(this::toSegmentRuntimeSection).toList();
     }
 
     private SegmentRuntimeReportResponse toSegmentRuntimeSection(
-            final SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot segment) {
-        return new SegmentRuntimeReportResponse(segment.getSegmentId(),
-                segment.getState().name(),
-                segment.getNumberOfKeysInDeltaCache(),
-                segment.getNumberOfKeysInSegment(),
-                segment.getNumberOfKeysInScarceIndex(),
-                segment.getNumberOfKeysInSegmentCache(),
-                segment.getNumberOfKeysInWriteCache(),
-                segment.getNumberOfDeltaCacheFiles(),
-                segment.getCompactRequestCount(),
-                segment.getFlushRequestCount(),
-                segment.getBloomFilterRequestCount(),
-                segment.getBloomFilterRefusedCount(),
-                segment.getBloomFilterPositiveCount(),
-                segment.getBloomFilterFalsePositiveCount());
+            final SegmentIndexSegmentRuntimeMetrics segment) {
+        return new SegmentRuntimeReportResponse(segment.segmentId(),
+                segment.state().name(),
+                segment.numberOfKeysInDeltaCache(),
+                segment.numberOfKeysInSegment(),
+                segment.numberOfKeysInScarceIndex(),
+                segment.numberOfKeysInSegmentCache(),
+                segment.numberOfKeysInWriteCache(),
+                segment.numberOfDeltaCacheFiles(),
+                segment.compactRequestCount(),
+                segment.flushRequestCount(),
+                segment.bloomFilterRequestCount(),
+                segment.bloomFilterRefusedCount(),
+                segment.bloomFilterPositiveCount(),
+                segment.bloomFilterFalsePositiveCount());
     }
 
     private ConfigViewResponse toConfigViewResponse(
             final RegisteredIndex monitored) {
-        final ConfigurationSnapshot currentConfig = monitored.index()
-                .controlPlane().configuration().getConfigurationActual();
-        final ConfigurationSnapshot originalConfig = monitored.index()
-                .controlPlane().configuration().getConfigurationOriginal();
+        final RuntimeTuningSnapshot currentConfig = monitored.index()
+                .runtimeTuning().current();
+        final RuntimeTuningSnapshot originalConfig = monitored.index()
+                .runtimeTuning().original();
         return new ConfigViewResponse(monitored.indexName(),
-                toApiConfigMap(originalConfig.values()),
-                toApiConfigMap(currentConfig.values()),
+                toApiConfigMap(originalConfig),
+                toApiConfigMap(currentConfig),
                 supportedRuntimeConfigKeys(),
                 currentConfig.revision(), Instant.now());
     }
 
-    private RuntimeConfigPatch toRuntimePatch(
+    private RuntimeTuningPatch toRuntimePatch(
             final ConfigPatchRequest request) {
-        final EnumMap<RuntimeSettingKey, Integer> runtimeValues = new EnumMap<>(
-                RuntimeSettingKey.class);
+        final RuntimeTuningPatchBuilder builder =
+                RuntimeTuningPatch.builder();
         for (final Map.Entry<String, String> entry : request.values()
                 .entrySet()) {
             final String key = entry.getKey();
-            final RuntimeSettingKey runtimeKey = RUNTIME_KEY_BY_API_NAME
+            final RuntimeTuningKey runtimeField = RUNTIME_FIELD_BY_API_NAME
                     .get(key);
-            if (runtimeKey == null) {
+            if (runtimeField == null) {
                 throw new ConfigKeyNotSupportedException("Config key '" + key
                         + "' is not supported for runtime tuning.");
             }
@@ -959,22 +1104,43 @@ public final class ManagementAgentServer
                 throw new IllegalArgumentException(
                         "Config key '" + key + "' requires integer value.");
             }
-            runtimeValues.put(runtimeKey, Integer.valueOf(value));
+            applyRuntimePatchValue(builder, runtimeField, value);
         }
-        return new RuntimeConfigPatch(runtimeValues, request.dryRun(), null);
+        return builder.build();
     }
 
     private static List<String> supportedRuntimeConfigKeys() {
         return SUPPORTED_RUNTIME_CONFIG_KEYS;
     }
 
+    private static void applyRuntimePatchValue(
+            final RuntimeTuningPatchBuilder builder,
+            final RuntimeTuningKey field, final int value) {
+        switch (field) {
+            case MAX_NUMBER_OF_SEGMENTS_IN_CACHE -> builder
+                    .cachedSegmentLimit(value);
+            case MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE -> builder
+                    .cacheKeyLimit(value);
+            case SEGMENT_WRITE_CACHE_KEY_LIMIT -> builder
+                    .segmentWriteCacheKeyLimit(value);
+            case SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> builder
+                    .segmentWriteCacheKeyLimitDuringMaintenance(value);
+            case INDEX_BUFFERED_WRITE_KEY_LIMIT -> builder
+                    .indexBufferedWriteKeyLimit(value);
+            case SEGMENT_SPLIT_KEY_THRESHOLD -> builder
+                    .segmentSplitKeyThreshold(value);
+            case CHUNK_STORE_CACHE_PAGE_LIMIT -> builder
+                    .chunkStoreCachePageLimit(value);
+        }
+    }
+
     private String formatValidationIssues(
-            final RuntimePatchValidation validation) {
+            final RuntimeTuningValidation validation) {
         return validation.issues().stream().map(issue -> {
-            if (issue.key() == null) {
+            if (issue.field() == null) {
                 return issue.message();
             }
-            return apiName(issue.key()) + ": " + issue.message();
+            return issue.field().path() + ": " + issue.message();
         }).collect(Collectors.joining("; "));
     }
 
@@ -1017,25 +1183,35 @@ public final class ManagementAgentServer
     }
 
     private static Map<String, Integer> toApiConfigMap(
-            final Map<RuntimeSettingKey, Integer> runtimeValues) {
+            final RuntimeTuningSnapshot runtimeValues) {
         final LinkedHashMap<String, Integer> values = new LinkedHashMap<>();
-        for (final Map.Entry<RuntimeSettingKey, String> entry : API_NAME_BY_RUNTIME_KEY
+        for (final Map.Entry<RuntimeTuningKey, String> entry : API_NAME_BY_RUNTIME_FIELD
                 .entrySet()) {
-            final Integer value = runtimeValues.get(entry.getKey());
-            if (value == null) {
-                continue;
-            }
-            values.put(entry.getValue(), value);
+            values.put(entry.getValue(),
+                    Integer.valueOf(value(runtimeValues, entry.getKey())));
         }
         return Map.copyOf(values);
     }
 
-    private static String apiName(final RuntimeSettingKey runtimeKey) {
-        final String name = API_NAME_BY_RUNTIME_KEY.get(runtimeKey);
-        if (name != null) {
-            return name;
-        }
-        return runtimeKey.name();
+    private static int value(final RuntimeTuningSnapshot snapshot,
+            final RuntimeTuningKey field) {
+        return switch (field) {
+            case MAX_NUMBER_OF_SEGMENTS_IN_CACHE -> snapshot.segment()
+                    .cachedSegmentLimit();
+            case MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE -> snapshot.segment()
+                    .cacheKeyLimit();
+            case SEGMENT_WRITE_CACHE_KEY_LIMIT -> snapshot
+                    .writePath().segmentWriteCacheKeyLimit();
+            case SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> snapshot
+                    .writePath()
+                    .segmentWriteCacheKeyLimitDuringMaintenance();
+            case INDEX_BUFFERED_WRITE_KEY_LIMIT -> snapshot
+                    .writePath().indexBufferedWriteKeyLimit();
+            case SEGMENT_SPLIT_KEY_THRESHOLD -> snapshot.writePath()
+                    .segmentSplitKeyThreshold();
+            case CHUNK_STORE_CACHE_PAGE_LIMIT -> snapshot.chunkStoreCache()
+                    .pageLimit();
+        };
     }
 
     private void writeMethodNotAllowed(final HttpExchange exchange)
@@ -1227,9 +1403,10 @@ public final class ManagementAgentServer
         }
     }
 
-    private static Map<String, RuntimeSettingKey> buildRuntimeKeyByApiName() {
-        final LinkedHashMap<String, RuntimeSettingKey> values = new LinkedHashMap<>();
-        for (final Map.Entry<RuntimeSettingKey, String> entry : API_NAME_BY_RUNTIME_KEY
+    private static Map<String, RuntimeTuningKey> buildRuntimeFieldByApiName() {
+        final LinkedHashMap<String, RuntimeTuningKey> values =
+                new LinkedHashMap<>();
+        for (final Map.Entry<RuntimeTuningKey, String> entry : API_NAME_BY_RUNTIME_FIELD
                 .entrySet()) {
             values.put(entry.getValue(), entry.getKey());
         }
@@ -1303,12 +1480,12 @@ public final class ManagementAgentServer
 
         @Override
         public SegmentIndexState state() {
-            return index.getState();
+            return index.runtimeMonitoring().snapshot().state();
         }
 
         @Override
-        public SegmentIndexMetricsSnapshot metricsSnapshot() {
-            return index.metricsSnapshot();
+        public SegmentIndexRuntimeSnapshot runtimeSnapshot() {
+            return index.runtimeMonitoring().snapshot();
         }
     }
 

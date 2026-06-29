@@ -11,20 +11,19 @@ longer-term replication design work, see
 ## Enable WAL
 
 ```java
-Wal wal = Wal.builder()
-    .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
-    .build();
-
 IndexConfiguration<String, String> conf = IndexConfiguration
     .<String, String>builder()
-    .withKeyClass(String.class)
-    .withValueClass(String.class)
-    .withName("orders")
-    .withWal(wal)
+    .identity(identity -> identity
+        .name("orders")
+        .keyClass(String.class)
+        .valueClass(String.class))
+    .wal(wal -> wal
+        .durability(WalDurabilityMode.GROUP_SYNC))
     .build();
 ```
 
-WAL is disabled by default through `Wal.EMPTY`.
+WAL is disabled by default through `IndexWalConfiguration.EMPTY`. Use
+`wal(wal -> wal.disabled())` to explicitly disable it in an override.
 
 ## Choose a durability mode
 
@@ -52,6 +51,23 @@ Inside the index directory:
 
 WAL segment files are named as `<20-digit-base-lsn>.wal`.
 
+## Runtime ownership
+
+Internally, WAL is now split into smaller collaborators while keeping the
+public `WalRuntime` contract stable:
+
+- `WalMetadataCatalog` handles `format.meta`, `checkpoint.meta`, temp-file
+  promotion, and segment discovery.
+- `WalRecoveryManager` handles replay, invalid-tail handling, and checkpoint
+  clamp behavior on open.
+- `WalSegmentCatalog` handles active-segment rotation, retained-byte tracking,
+  and checkpoint cleanup.
+- `WalWriter` and `WalSyncPolicy` handle append-path durability behavior for
+  `ASYNC`, `SYNC`, and `GROUP_SYNC`.
+
+Architecture details live in
+[WAL Runtime](../architecture/segmentindex/wal-runtime.md).
+
 ## Tooling
 
 `WalTool` supports:
@@ -59,20 +75,46 @@ WAL segment files are named as `<20-digit-base-lsn>.wal`.
 - `verify` for integrity checks
 - `dump` for record-level diagnostics
 
-Run it from compiled classes:
+Use the standalone `wal-tools-<version>.zip` distribution on the operator host
+or diagnostic workstation. The distribution contains:
 
-```bash
-java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool verify /path/to/index/wal
-java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool dump /path/to/index/wal
+```text
+wal-tools-<version>.zip
+wal-tools-<version>.zip.sha256
 ```
 
-Or use the packaged CLI:
+Example installation:
 
 ```bash
-mvn -pl wal-tools -am package
-unzip wal-tools/target/wal-tools-<version>.zip -d /tmp
-/tmp/wal-tools-<version>/bin/wal_verify /path/to/index/wal
-/tmp/wal-tools-<version>/bin/wal_dump /path/to/index/wal
+sha256sum -c wal-tools-<version>.zip.sha256
+unzip wal-tools-<version>.zip -d /opt/hestiastore/wal-tools
+```
+
+Concrete example:
+
+```bash
+VERSION=1.2.3
+RELEASE_DIR=/srv/releases/hestiastore
+INSTALL_DIR=/opt/hestiastore/wal-tools
+
+cd "$RELEASE_DIR"
+sha256sum -c "wal-tools-${VERSION}.zip.sha256"
+unzip -o "wal-tools-${VERSION}.zip" -d "$INSTALL_DIR"
+```
+
+Example usage:
+
+```bash
+/opt/hestiastore/wal-tools/bin/wal_verify /path/to/index/wal
+/opt/hestiastore/wal-tools/bin/wal_dump /path/to/index/wal
+```
+
+Concrete examples:
+
+```bash
+/opt/hestiastore/wal-tools/bin/wal_verify /srv/hestia/indexes/orders/wal
+/opt/hestiastore/wal-tools/bin/wal_verify /srv/hestia/indexes/orders/wal --json
+/opt/hestiastore/wal-tools/bin/wal_dump /srv/hestia/indexes/orders/wal --json
 ```
 
 JSON output is available through `--json` for both commands.
@@ -87,13 +129,13 @@ Exit codes:
 
 Monitor these first:
 
-- `getWalSyncFailureCount()`
-- `getWalCorruptionCount()`
-- `getWalTruncationCount()`
-- `getWalRetainedBytes()`
-- `getWalCheckpointLagLsn()`
-- `getWalPendingSyncBytes()`
-- `getWalSyncAvgNanos()`
+- `wal().syncFailureCount()`
+- `wal().corruptionCount()`
+- `wal().truncationCount()`
+- `wal().retainedBytes()`
+- `wal().checkpointLagLsn()`
+- `wal().pendingSyncBytes()`
+- `wal().syncAverageNanos()`
 
 When retained WAL exceeds `maxBytesBeforeForcedCheckpoint`, the write path
 applies forced checkpoint behavior and backpressure until retained WAL drops.
@@ -112,16 +154,16 @@ Structured log events include:
 - `event=wal_sync_failure`
 - `event=wal_sync_failure_transition`
 
-## Metrics exposed by `metricsSnapshot()`
+## Metrics exposed by `runtimeMonitoring().snapshot().wal()`
 
-- throughput: `getWalAppendCount()`, `getWalAppendBytes()`
-- durability: `getWalSyncCount()`, `getWalSyncFailureCount()`, `getWalDurableLsn()`
-- corruption and recovery: `getWalCorruptionCount()`, `getWalTruncationCount()`
+- throughput: `wal().appendCount()`, `wal().appendBytes()`
+- durability: `wal().syncCount()`, `wal().syncFailureCount()`, `wal().durableLsn()`
+- corruption and recovery: `wal().corruptionCount()`, `wal().truncationCount()`
 - retention and checkpointing:
-  `getWalRetainedBytes()`, `getWalSegmentCount()`, `getWalCheckpointLsn()`,
-  `getWalCheckpointLagLsn()`
-- pending work: `getWalPendingSyncBytes()`, `getWalAppliedLsn()`
+  `wal().retainedBytes()`, `wal().segmentCount()`, `wal().checkpointLsn()`,
+  `wal().checkpointLagLsn()`
+- pending work: `wal().pendingSyncBytes()`, `wal().appliedLsn()`
 - sync latency and batch sizing:
-  `getWalSyncTotalNanos()`, `getWalSyncMaxNanos()`, `getWalSyncAvgNanos()`,
-  `getWalSyncBatchBytesTotal()`, `getWalSyncBatchBytesMax()`,
-  `getWalSyncAvgBatchBytes()`
+  `wal().syncTotalNanos()`, `wal().syncMaxNanos()`, `wal().syncAverageNanos()`,
+  `wal().syncBatchBytesTotal()`, `wal().syncBatchBytesMax()`,
+  `wal().syncAverageBatchBytes()`

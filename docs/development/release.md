@@ -2,21 +2,6 @@
 
 This is the source-of-truth runbook for making a new HestiaStore release.
 
-For contribution workflow, community standards, and project history, use
-[Contribute and Community](../community/index.md).
-
-For day-to-day branch selection, task worktrees, and pull request targeting,
-use [Git and Worktree Workflow](git-workflow.md). This page covers the
-release-specific exception: a clean dedicated `main` worktree.
-
-## Branching model
-
-![Branching and release flow](../images/branching.png)
-
-Normal work starts from `devel`, merges back to `devel`, and reaches `main`
-through the release flow. Hotfixes start from `main`, merge back to `main`, and
-must then be synced into `devel`.
-
 When you ask Codex to use the `release-maven-library` skill, it performs the
 full local release workflow described on this page: prerequisite checks,
 pre-release verification, release version bump, release commit, release tag,
@@ -65,6 +50,13 @@ matching release version.
 Releases are published to Maven Central. Release credentials and signing
 configuration live in `~/.m2/settings.xml`.
 
+Standalone operational ZIP distributions are also part of the release build.
+For export/import, the official CLI artifact is
+`index-tools/target/index-tools-<version>.zip` with
+`index-tools/target/index-tools-<version>.zip.sha256`. For WAL inspection, the
+official CLI artifact is `wal-tools/target/wal-tools-<version>.zip` with
+`wal-tools/target/wal-tools-<version>.zip.sha256`.
+
 Releases must be prepared from a clean `main` branch worktree with push access
 to the repository and tags.
 
@@ -101,8 +93,7 @@ Example `settings.xml` fragments:
 ```
 
 Generate the Maven Central credentials from your account at
-[central.sonatype.com](https://central.sonatype.com/), make sure the
-`org.hestiastore` namespace is verified for that account, and confirm a usable
+[central.sonatype.com](https://central.sonatype.com/), and make sure a usable
 GPG secret key exists locally before starting a release.
 
 ## Release Checklist
@@ -118,18 +109,17 @@ GPG secret key exists locally before starting a release.
 - Commit and tag the release.
 - Run `mvn -P release -DskipTests verify`.
 - Deploy the release artifact from the repository root.
-- Push the release commit and tag.
+- Confirm the standalone CLI ZIP and SHA-256 artifacts were produced for
+  operational tools.
 - Bump to the next snapshot version.
 - Verify again after the next snapshot bump.
-- Push the post-release snapshot commit.
 - Publish the GitHub release manually.
 
 ## Step-by-Step Procedure
 
-### 1. Checkout and update the `main` branch
+### 1. Inspect branch and working tree
 
-Release work is the main branching exception to the normal `devel` flow. Start
-from a clean `main` worktree and fast-forward it before changing versions:
+Use the intended release branch, usually `main`, and make sure it is clean:
 
 ```bash
 git checkout main
@@ -164,8 +154,7 @@ Use the helper script:
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
 ```
 
-That script runs the standard release verification used by the skill. If
-verification fails, stop and fix the problem before changing versions.
+If verification fails, stop and fix the problem before changing versions.
 
 ### 4. Check for forbidden snapshot dependencies or plugins
 
@@ -188,7 +177,7 @@ Convert `X.Y.Z-SNAPSHOT` to `X.Y.Z` using the helper script:
 ./.agents/skills/release-maven-library/scripts/bump-version.sh X.Y.Z
 ```
 
-Review the changed `pom.xml` files, then verify again:
+Then verify again:
 
 ```bash
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
@@ -212,6 +201,9 @@ git tag release-X.Y.Z
 Use the `release-X.Y.Z` tag format. Create the tag on the release commit, not
 on the later post-release snapshot commit.
 
+The `benchmarks` module participates in the build but is not deployed because
+its POM sets `maven.deploy.skip=true`.
+
 ### 7. Validate the release profile
 
 Run the root release profile so the parent POM and all release modules are
@@ -224,9 +216,6 @@ mvn -P release -DskipTests verify
 Do not deploy `engine` alone. The release must be run from the repository root
 so the parent POM and all publishable modules stay aligned.
 
-The `benchmarks` module participates in the build but is not deployed because
-its POM sets `maven.deploy.skip=true`.
-
 ### 8. Deploy the release
 
 Deploy the release to Maven Central from the repository root:
@@ -235,16 +224,18 @@ Deploy the release to Maven Central from the repository root:
 mvn -P release -DskipTests deploy
 ```
 
-### 9. Push the release commit and tag
+After the release build, confirm these standalone tool distributions exist:
 
-After deployment succeeds, push both the branch and the release tag:
-
-```bash
-git push origin main
-git push origin release-X.Y.Z
+```text
+index-tools/target/index-tools-X.Y.Z.zip
+index-tools/target/index-tools-X.Y.Z.zip.sha256
+wal-tools/target/wal-tools-X.Y.Z.zip
+wal-tools/target/wal-tools-X.Y.Z.zip.sha256
 ```
 
-### 10. Prepare the next development snapshot
+Treat them as the official downloadable distributions for operational CLI use.
+
+### 9. Prepare the next development snapshot
 
 After the release is deployed, bump to the next snapshot version:
 
@@ -253,10 +244,18 @@ After the release is deployed, bump to the next snapshot version:
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
 git add pom.xml */pom.xml
 git commit -m "post-release: bumped to X.Y.(Z+1)-SNAPSHOT"
-git push origin main
 ```
 
-### 11. Publish the release on GitHub
+### 10. Push commits and tags
+
+Push both the branch and the release tag:
+
+```bash
+git push origin main
+git push origin release-X.Y.Z
+```
+
+### 11. Publish release notes
 
 This step is manual and must be completed on the GitHub repository homepage,
 not in the generated documentation site:
@@ -266,7 +265,9 @@ not in the generated documentation site:
 3. Keep `main` as the target branch.
 4. Set the release title to `Release X.Y.Z`.
 5. In the description, include notable changes, any migration or compatibility
-   notes, and the dependency snippet below.
+   notes, the dependency snippet below, and mention the standalone
+   `index-tools-X.Y.Z.zip` operational distribution plus its SHA-256 file when
+   export/import changed.
 6. If the release contains breaking changes, add a dedicated `Breaking changes`
    section with migration steps.
 7. Press `Publish release`.

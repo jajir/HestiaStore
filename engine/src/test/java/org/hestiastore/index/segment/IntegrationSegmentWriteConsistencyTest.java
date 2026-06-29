@@ -2,7 +2,7 @@ package org.hestiastore.index.segment;
 
 import static org.hestiastore.index.AbstractDataTest.verifyNumberOfFiles;
 import static org.hestiastore.index.segment.AbstractSegmentTest.verifySegmentData;
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -48,7 +48,7 @@ class IntegrationSegmentWriteConsistencyTest {
     @AfterEach
     void tearDown() {
         if (segment != null) {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
         segment = null;
         directory = null;
@@ -61,7 +61,7 @@ class IntegrationSegmentWriteConsistencyTest {
         segment.flush();
 
         verifySegmentData(segment, data);
-        verifyNumberOfFiles(directory, 2);
+        verifyNumberOfFiles(directory, 5);
     }
 
     @Test
@@ -71,7 +71,7 @@ class IntegrationSegmentWriteConsistencyTest {
 
         verifySegmentData(segment, data);
         // no data are flushed to disk
-        verifyNumberOfFiles(directory, 1);
+        verifyNumberOfFiles(directory, 4);
     }
 
     @Test
@@ -79,13 +79,13 @@ class IntegrationSegmentWriteConsistencyTest {
         assertTrue(true);
         data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
         segment.flush();
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
 
         final Segment<Integer, String> reopened = makeSegment(directory,
                 SEGMENT_ID_1);
         verifySegmentData(reopened, data);
-        closeAndAwait(reopened);
-        verifyNumberOfFiles(directory, 2);
+        closeAndAssertClosed(reopened);
+        verifyNumberOfFiles(directory, 5);
     }
 
     @Test
@@ -94,7 +94,7 @@ class IntegrationSegmentWriteConsistencyTest {
         data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
         segment.flush();
         verifySegmentData(segment, data);
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
 
         final Segment<Integer, String> segment2 = makeSegment(directory,
                 SEGMENT_ID_1);
@@ -102,8 +102,8 @@ class IntegrationSegmentWriteConsistencyTest {
                 entry -> segment2.put(entry.getKey(), entry.getValue()));
         segment2.flush();
         verifySegmentData(segment2, updatedData);
-        closeAndAwait(segment2);
-        verifyNumberOfFiles(directory, 3);
+        closeAndAssertClosed(segment2);
+        verifyNumberOfFiles(directory, 6);
     }
 
     private Segment<Integer, String> makeSegment(final Directory directory,

@@ -270,7 +270,7 @@ public class MonitoringConsoleWebController {
                 .fetchDashboard();
         final long reachable = nodes.stream().filter(n -> n.reachable()).count();
         final long unreachable = nodes.size() - reachable;
-        final long getOps = nodes.stream().mapToLong(ConsoleBackendClient.NodeRow::getOps)
+        final long readOps = nodes.stream().mapToLong(ConsoleBackendClient.NodeRow::readOps)
                 .sum();
         final long writeOps = nodes.stream()
                 .mapToLong(n -> n.putOps() + n.deleteOps()).sum();
@@ -301,9 +301,9 @@ public class MonitoringConsoleWebController {
         model.addAttribute("statReachableDisplay",
                 ConsoleBackendClient.NodeRow.formatWholeNumberValue(reachable));
         model.addAttribute("statUnreachable", unreachable);
-        model.addAttribute("statGetOps", getOps);
-        model.addAttribute("statGetOpsDisplay",
-                ConsoleBackendClient.NodeRow.formatWholeNumberValue(getOps));
+        model.addAttribute("statReadOps", readOps);
+        model.addAttribute("statReadOpsDisplay",
+                ConsoleBackendClient.NodeRow.formatWholeNumberValue(readOps));
         model.addAttribute("statWriteOps", writeOps);
         model.addAttribute("statWriteOpsDisplay",
                 ConsoleBackendClient.NodeRow.formatWholeNumberValue(writeOps));

@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.hestiastore.index.directory.FsDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
@@ -53,23 +53,9 @@ public abstract class AbstractSegmentIndexGetBenchmark {
     }
 
     @Benchmark
-    public final String getHitAsyncJoin(final QueryState queryState) {
-        return index
-                .getAsync(Integer.valueOf(nextHitKey(queryState, queryKeyBound)))
-                .toCompletableFuture().join();
-    }
-
-    @Benchmark
     public final String getMissSync(final QueryState queryState) {
         return index.get(Integer.valueOf(
                 nextMissKey(queryState, queryKeyBound, missKeyStart)));
-    }
-
-    @Benchmark
-    public final String getMissAsyncJoin(final QueryState queryState) {
-        return index.getAsync(Integer.valueOf(
-                nextMissKey(queryState, queryKeyBound, missKeyStart)))
-                .toCompletableFuture().join();
     }
 
     protected abstract String tempDirPrefix();

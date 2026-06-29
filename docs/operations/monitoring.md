@@ -8,66 +8,67 @@ For rollout and rollback procedures, see
 
 ## Metrics Source
 
-Use `SegmentIndex.metricsSnapshot()` as the canonical in-process source.
+Use `SegmentIndex.runtimeMonitoring().snapshot()` as the canonical in-process source.
 Export these values into your monitoring stack (Micrometer/Prometheus, etc.)
 at a fixed scrape interval.
+
+For in-process integrations, use the grouped runtime monitoring model:
+
+- `snapshot.operations()`
+- `snapshot.segments()`
+- `snapshot.writePath()`
+- `snapshot.maintenance()`
+- `snapshot.split()`
+- `snapshot.wal()`
 
 ## Core Index Signals
 
 - Throughput:
-  - `getOperationCount`, `putOperationCount`, `deleteOperationCount`
+  - `operations().readOperationCount()`, `operations().putOperationCount()`,
+    `operations().deleteOperationCount()`
 - Cache behavior:
-  - `registryCacheHitCount`, `registryCacheMissCount`, `registryCacheEvictionCount`
+  - `registryCache().hitCount()`, `registryCache().missCount()`,
+    `registryCache().evictionCount()`
+- Segment write path:
+  - `writePath().totalBufferedWriteKeys()`
+  - `segments().totalDeltaCacheFiles()`
 - Latency:
-  - `readLatencyP50/P95/P99Micros`
-  - `writeLatencyP50/P95/P99Micros`
+  - `latency().readP50Micros()`, `latency().readP95Micros()`,
+    `latency().readP99Micros()`
+  - `latency().writeP50Micros()`, `latency().writeP95Micros()`,
+    `latency().writeP99Micros()`
 - State:
-  - `state` (`OPENING`, `READY`, `CLOSING`, `ERROR`, `CLOSED`)
+  - `snapshot().state()` (`OPENING`, `READY`, `CLOSING`, `ERROR`, `CLOSED`)
 
-## Partition Overlay Signals
+## Split And Maintenance Signals
 
-For the range-partitioned ingest runtime, treat these as the primary
-backpressure and drain indicators:
+In the current direct-to-segment runtime, these are the primary topology and
+maintenance indicators:
 
-- Buffered overlay pressure:
-  - `getPartitionBufferedKeyCount()`
-  - `getImmutableRunCount()`
-  - `getDrainingPartitionCount()`
-- Capacity and routing shape:
-  - `getPartitionCount()`
-  - `getActivePartitionCount()`
-  - `getMaxNumberOfKeysInActivePartition()`
-  - `getMaxNumberOfKeysInPartitionBuffer()`
-  - `getMaxNumberOfKeysInIndexBuffer()`
-  - `getMaxNumberOfImmutableRunsPerPartition()`
-- Throttling:
-  - `getLocalThrottleCount()`
-  - `getGlobalThrottleCount()`
-- Drain activity:
-  - `getDrainScheduleCount()`
-  - `getDrainInFlightCount()`
-  - `getDrainLatencyP95Micros()`
-
-Compatibility note:
-
-- `splitScheduleCount`, `splitInFlightCount`, `maintenanceQueueSize`, and
-  related legacy queue fields are still emitted for older clients.
-- New dashboards and alerts should prefer the explicit partition fields above.
+- `split().scheduleCount()`
+- `split().inFlightCount()`
+- `split().blockedCount()`
+- `split().taskStartDelayP95Micros()`
+- `split().taskRunLatencyP95Micros()`
+- `maintenance().flushAcceptedToReadyP95Micros()`
+- `maintenance().compactAcceptedToReadyP95Micros()`
+- `maintenance().stableSegmentExecutor().queueSize()`
+- `maintenance().stableSegmentExecutor().activeThreadCount()`
 
 ## WAL Signals
 
-Use these fields whenever `isWalEnabled()` is `true`:
+Use these fields whenever `wal().enabled()` is `true`:
 
 - Append throughput:
-  - `getWalAppendCount()`
-  - `getWalAppendBytes()`
+  - `wal().appendCount()`
+  - `wal().appendBytes()`
 - Sync health:
-  - `getWalSyncCount()`
-  - `getWalSyncFailureCount()`
-  - `getWalSyncAvgNanos()`
-  - `getWalSyncMaxNanos()`
-  - `getWalSyncAvgBatchBytes()`
-  - `getWalSyncBatchBytesMax()`
+  - `wal().syncCount()`
+  - `wal().syncFailureCount()`
+  - `wal().syncAverageNanos()`
+  - `wal().syncMaxNanos()`
+  - `wal().syncAverageBatchBytes()`
+  - `wal().syncBatchBytesMax()`
 - Recovery/corruption:
   - `getWalCorruptionCount()`
   - `getWalTruncationCount()`
@@ -103,17 +104,13 @@ Start with these baseline alerts and tune per workload:
 - `wal pending sync growth`:
   - condition: `getWalPendingSyncBytes()` grows without recovery for 10+ minutes
   - severity: warning
-- `partition overlay backlog growth`:
-  - condition: `getPartitionBufferedKeyCount()` and `getImmutableRunCount()`
-    grow continuously without returning to baseline
+- `split queue delay spike`:
+  - condition: `getSplitTaskStartDelayP95Micros()` remains elevated above
+    workload baseline for 10+ minutes
   - severity: warning
-- `partition drain latency spike`:
-  - condition: `getDrainLatencyP95Micros()` remains elevated above workload
-    baseline for 10+ minutes
-  - severity: warning
-- `partition throttling`:
-  - condition: `getLocalThrottleCount()` or `getGlobalThrottleCount()`
-    increases steadily
+- `stable maintenance backlog`:
+  - condition: `getStableSegmentMaintenanceQueueSize()` stays elevated and
+    `getTotalBufferedWriteKeys()` keeps growing
   - severity: warning
 - `index stuck closing`:
   - condition: `state == CLOSING` for longer than the expected shutdown window
@@ -148,6 +145,6 @@ At minimum, create one dashboard per WAL-enabled index with:
 4. `WalPendingSyncBytes`.
 5. Counters for `WalSyncFailureCount`, `WalCorruptionCount`,
    `WalTruncationCount`.
-6. `PartitionBufferedKeyCount`, `ImmutableRunCount`,
-   `DrainingPartitionCount`, `DrainInFlightCount`.
+6. `TotalBufferedWriteKeys`, `TotalDeltaCacheFiles`,
+   `SplitInFlightCount`, `StableSegmentMaintenanceQueueSize`.
 7. Index state timeline (`OPENING` / `READY` / `CLOSING` / `ERROR` / `CLOSED`).

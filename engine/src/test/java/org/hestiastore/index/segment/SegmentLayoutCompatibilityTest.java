@@ -1,6 +1,8 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -54,7 +56,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         "Expected flat segment files in base directory.");
             }
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final Segment<Integer, String> reopened = applyConf(
@@ -66,7 +68,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         try {
             verifySegmentSearch(reopened, entries);
         } finally {
-            closeAndAwait(reopened);
+            closeAndAssertClosed(reopened);
         }
     }
 
@@ -89,11 +91,11 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                 segmentConf).build().getValue();
         try {
             writeEntries(segment, entries);
-            final SegmentResult<Void> result = segment.compact();
-            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            final OperationResult<Void> result = segment.compact();
+            assertEquals(OperationStatus.OK, result.getStatus());
             awaitReady(segment);
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final Directory rootDirectory = asyncDirectory
@@ -118,9 +120,9 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         .withValueTypeDescriptor(valueDescriptor),
                 segmentConf).build().getValue();
         try {
-            assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final Directory rootDirectory = asyncDirectory
@@ -153,7 +155,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         try {
             assertNotNull(segment);
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final SegmentPropertiesManager reloaded = new SegmentPropertiesManager(

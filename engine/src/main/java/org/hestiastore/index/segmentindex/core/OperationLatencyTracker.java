@@ -7,14 +7,25 @@ import java.util.concurrent.atomic.AtomicLongArray;
 /**
  * Lock-free rolling latency tracker used to estimate percentiles.
  */
-final class OperationLatencyTracker {
+public final class OperationLatencyTracker {
 
     private static final int SAMPLE_SIZE = 1024;
 
     private final AtomicLong totalSamples = new AtomicLong();
     private final AtomicLongArray nanos = new AtomicLongArray(SAMPLE_SIZE);
 
-    void recordNanos(final long value) {
+    /**
+     * Creates an empty latency tracker.
+     */
+    public OperationLatencyTracker() {
+    }
+
+    /**
+     * Records one latency sample.
+     *
+     * @param value latency in nanoseconds; negative values are ignored
+     */
+    public void recordNanos(final long value) {
         if (value < 0L) {
             return;
         }
@@ -23,7 +34,13 @@ final class OperationLatencyTracker {
         nanos.set(index, value);
     }
 
-    long percentileMicros(final double percentile) {
+    /**
+     * Estimates a percentile from the current rolling sample window.
+     *
+     * @param percentile percentile in the {@code (0, 1]} interval
+     * @return estimated percentile latency in microseconds
+     */
+    public long percentileMicros(final double percentile) {
         if (percentile <= 0D || percentile > 1D) {
             throw new IllegalArgumentException("percentile must be in (0,1]");
         }

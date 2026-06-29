@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import org.hestiastore.index.OperationStatus;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -48,9 +49,9 @@ class SegmentCompactionPublishTest {
                 .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
                 .build().getValue();
         try {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(1, "one").getStatus());
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(2, "two").getStatus());
 
             final SegmentImpl<Integer, String> impl = (SegmentImpl<Integer, String>) segment;
@@ -65,7 +66,7 @@ class SegmentCompactionPublishTest {
             assertDoesNotThrow(() -> compacter.publishCompaction(plan));
             guardedDirectory.allowIo();
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 

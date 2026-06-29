@@ -108,9 +108,9 @@ Segment can be accessd from multiple threads in paraell. Segment
 | `flush` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full write cache. |
 | `compact` | `READY` | Yes (after publish) | Invalidates optimistic iterators | N/A | N/A | Serialized; concurrent request returns `BUSY`. May be triggered by full delta cache. |
 | `openIterator(INTERRUPT_FAST)` | `READY` | No | Throws on version change | Yes (snapshot) | Yes | Default mode. |
-| `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | Yes (snapshot) | Yes | Snapshot captured at open time. |
+| `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | Yes (snapshot) | Yes | RouteMapSnapshot captured at open time. |
 | `openIterator(EXCLUSIVE_ACCESS)` | `READY` | Yes (on lock acquisition) | Invalidates existing iterators; blocks others | Yes | Yes | Maintenance only; must be short. |
-| `close` | `READY` | No | Invalidates existing iterators; blocks others | N/A | N/A | Sets `FREEZE`, optionally flushes the write cache, schedules close on maintenance thread, then transitions to `CLOSED`. |
+| `close` | `READY` | No | Invalidates existing iterators; blocks others | N/A | N/A | Sets `FREEZE`, optionally flushes the write cache, completes close on the caller thread, then transitions to `CLOSED`. |
 
 ### Flush/Compact Lifecycle
 
@@ -209,8 +209,8 @@ Segment can be accessd from multiple threads in paraell. Segment
 - `SegmentCore.invalidateIterators()` bumps the version for explicit invalidation or exclusive access.
 
 ### Close Workflow
-- `SegmentImpl.close()` enters `FREEZE`, drains in-flight ops, freezes the write cache, and schedules `runClose(...)` on the maintenance executor.
-- `runClose(...)` flushes frozen data (if any), closes the core, transitions to `CLOSED`, and releases the segment lock.
+- `SegmentImpl.close()` enters `FREEZE`, drains in-flight ops, freezes the write cache, and completes close synchronously on the caller thread.
+- `closeInternal(...)` flushes frozen data (if any), closes the core, transitions to `CLOSED`, and releases the segment lock.
 
 ### Components
 - **Segment**: user-facing API (`put`, `get`, `openIterator`, `flush`,
@@ -223,11 +223,11 @@ Segment can be accessd from multiple threads in paraell. Segment
   `FREEZE` → `MAINTENANCE_RUNNING` → `READY`).
 - **SegmentCompacter**: performs full rewrite compaction using
   `SegmentCore`.
-- **BackgroundSplitCoordinator** (segmentindex): decides when to call
+- **SplitPolicyScheduler** (segmentindex): decides when to call
   `flush()`/`compact()` after writes.
 - **SegmentAsyncExecutor** + executor (segmentindex): maintenance executor
   provided to `SegmentImpl` via `SegmentRegistry`.
-- **BackgroundSplitCoordinator / PartitionStableSplitCoordinator**
+- **SplitPolicyScheduler / RouteSplitPlanner**
   (segmentindex): schedule and perform route-first stable segment splits.
 
 ### Responsibilities
@@ -245,7 +245,7 @@ Segment can be accessd from multiple threads in paraell. Segment
 - State transitions are enforced by `SegmentStateMachine` and executed in
   `SegmentMaintenanceService.startMaintenance(...)` and
   `SegmentMaintenanceService.runMaintenance(...)`.
-- Maintenance scheduling lives in `BackgroundSplitCoordinator` and uses the
+- Maintenance scheduling lives in `SplitPolicyScheduler` and uses the
   executor from `SegmentRegistry` (`SegmentAsyncExecutor`).
 
 ## Future: MVCC

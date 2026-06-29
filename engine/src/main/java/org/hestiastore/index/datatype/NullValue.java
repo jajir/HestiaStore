@@ -21,6 +21,14 @@ public class NullValue {
      */
     public static final NullValue TOMBSTONE = new NullValue() {
         @Override
+        public boolean equals(final Object obj) {
+            if (!(obj instanceof NullValue)) {
+                return false;
+            }
+            return hashCode() == obj.hashCode();
+        }
+
+        @Override
         public int hashCode() {
             return 7;
         }

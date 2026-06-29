@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.OperationResult;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,6 +16,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -27,9 +30,8 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentMaintenancePolicy;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.segmentindex.routemap.PersistentSegmentRouteMap;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +59,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         testData.stream().forEach(index1::put);
 
-        index1.compactAndWait();
+        index1.maintenance().compactAndWait();
 
         try (final Stream<Entry<Integer, String>> stream = testData.stream()) {
             stream.forEach(entry -> {
@@ -65,19 +67,19 @@ class IntegrationSegmentIndexSimpleTest {
                 assertEquals(entry.getValue(), value);
             });
         }
-        index1.compactAndWait();
+        index1.maintenance().compactAndWait();
 
         index1.close();
 
         final Directory asyncDirectory = directory;
-        final KeyToSegmentMap<Integer> keyToSegmentMap = new KeyToSegmentMap<>(
+        final PersistentSegmentRouteMap<Integer> keyToSegmentMap = new PersistentSegmentRouteMap<>(
                 asyncDirectory, tdi);
         final List<SegmentId> segmentIds = keyToSegmentMap.getSegmentIds();
         assertEquals(expectedFileCount(segmentIds.size()),
                 numberOfFilesInDirectoryP(directory, segmentIds));
         keyToSegmentMap.close();
 
-        final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
+        final SegmentIndex<Integer, String> index2 = openSegmentIndex();
         testData.stream().forEach(entry -> {
             final String value = index2.get(entry.getKey());
             assertEquals(entry.getValue(), value);
@@ -107,14 +109,14 @@ class IntegrationSegmentIndexSimpleTest {
 
         // reopen index to make sure all log data at flushed at the disk
         index1.close();
-        index1 = makeIndex(true);
+        index1 = openIndex(true);
     }
 
     @Test
     void test_merging_values_from_cache_and_segment() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flushAndWait();
+        index1.maintenance().flushAndWait();
 
         try (final Stream<Entry<Integer, String>> stream = index1
                 .getStream(SegmentWindow.unbounded())) {
@@ -134,7 +136,7 @@ class IntegrationSegmentIndexSimpleTest {
     void test_repeated_read() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flushAndWait();
+        index1.maintenance().flushAndWait();
 
         final List<Entry<Integer, String>> list1 = index1
                 .getStream(SegmentWindow.unbounded()).toList();
@@ -156,7 +158,7 @@ class IntegrationSegmentIndexSimpleTest {
         testData.stream().forEach(index1::put);
         index1.close();
 
-        final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
+        final SegmentIndex<Integer, String> index2 = openSegmentIndex();
         final List<Entry<Integer, String>> list1 = index2
                 .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(testData.size(), list1.size());
@@ -174,7 +176,7 @@ class IntegrationSegmentIndexSimpleTest {
         index1.put(Entry.of(2, "duck"));
         index1.close();
 
-        final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
+        final SegmentIndex<Integer, String> index2 = openSegmentIndex();
         final List<Entry<Integer, String>> list1 = index2
                 .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(1, list1.size());
@@ -184,10 +186,10 @@ class IntegrationSegmentIndexSimpleTest {
     void test_reopen_after_flush_and_split_materialization() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flushAndWait();
+        index1.maintenance().flushAndWait();
         index1.close();
 
-        final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
+        final SegmentIndex<Integer, String> index2 = openSegmentIndex();
         try {
             verifyDataIndex(index2, testData);
         } finally {
@@ -199,14 +201,14 @@ class IntegrationSegmentIndexSimpleTest {
     void test_reopen_cleans_orphan_segment_directory() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flushAndWait();
+        index1.maintenance().flushAndWait();
         index1.close();
 
         final SegmentId orphanSegmentId = SegmentId.of(999);
         directory.openSubDirectory(orphanSegmentId.getName()).touch("junk");
         assertTrue(directory.isFileExists(orphanSegmentId.getName()));
 
-        final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
+        final SegmentIndex<Integer, String> index2 = openSegmentIndex();
         try {
             verifyDataIndex(index2, testData);
         } finally {
@@ -220,13 +222,13 @@ class IntegrationSegmentIndexSimpleTest {
     void test_consistency_check_cleans_orphan_segment_directory() {
         final SegmentIndex<Integer, String> index = makeSegmentIndex();
         testData.stream().forEach(index::put);
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final SegmentId orphanSegmentId = SegmentId.of(998);
         directory.openSubDirectory(orphanSegmentId.getName()).touch("junk");
         assertTrue(directory.isFileExists(orphanSegmentId.getName()));
 
-        index.checkAndRepairConsistency();
+        index.maintenance().checkAndRepairConsistency();
 
         assertFalse(directory.isFileExists(orphanSegmentId.getName()));
         verifyDataIndex(index, testData);
@@ -252,13 +254,13 @@ class IntegrationSegmentIndexSimpleTest {
 
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         data.stream().forEach(index1::put);
-        index1.flush();
+        index1.maintenance().flush();
         verifyDataIndex(index1, data);
         index1.close();
 
-        final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
+        final SegmentIndex<Integer, String> index2 = openSegmentIndex();
         updatedData.stream().forEach(index2::put);
-        index2.flushAndWait();
+        index2.maintenance().flushAndWait();
         verifyDataIndex(index2, updatedData);
         index2.close();
     }
@@ -289,34 +291,46 @@ class IntegrationSegmentIndexSimpleTest {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
 
-        assertThrows(IllegalStateException.class, () -> makeSegmentIndex());
+        assertThrows(IndexException.class, () -> makeSegmentIndex());
     }
 
     private SegmentIndex<Integer, String> makeSegmentIndex() {
         return makeIndex(false);
     }
 
-    private SegmentIndex<Integer, String> makeIndex(boolean withLog) {
-        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+    private SegmentIndex<Integer, String> openSegmentIndex() {
+        return openIndex(false);
+    }
+
+    private SegmentIndex<Integer, String> makeIndex(final boolean withLog) {
+        return SegmentIndex.create(directory, configuration(withLog));
+    }
+
+    private SegmentIndex<Integer, String> openIndex(final boolean withLog) {
+        return SegmentIndex.open(directory, configuration(withLog));
+    }
+
+    private IndexConfiguration<Integer, String> configuration(
+            final boolean withLog) {
+        return IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi) //
-                .withValueTypeDescriptor(tds) //
-                .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER_SIZE)//
-                .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInActivePartition(64) //
-                .withMaxNumberOfKeysInPartitionBuffer(128) //
-                .withMaxNumberOfKeysInIndexBuffer(256) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(5) //
-                .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(4) //
-                .withContextLoggingEnabled(withLog) //
-                .withName("test_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi)) //
+                .identity(identity -> identity.valueTypeDescriptor(tds)) //
+                .io(io -> io.diskBufferSizeBytes(DISK_IO_BUFFER_SIZE))//
+                .segment(segment -> segment.cacheKeyLimit(3)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(128)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(256)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(5)) //
+                .segment(segment -> segment.chunkKeyLimit(2)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
+                .logging(logging -> logging.contextEnabled(withLog)) //
+                .identity(identity -> identity.name("test_index")) //
                 .build();
-        return SegmentIndex.create(directory, conf);
     }
 
     private int numberOfFilesInDirectoryP(final Directory directory,
@@ -359,16 +373,16 @@ class IntegrationSegmentIndexSimpleTest {
         final List<Entry<Integer, String>> out = new ArrayList<>();
         final Segment<Integer, String> seg = makeSegment(segmentId);
         try {
-            final SegmentResult<EntryIterator<Integer, String>> result = seg
+            final OperationResult<EntryIterator<Integer, String>> result = seg
                     .openIterator();
-            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            assertEquals(OperationStatus.OK, result.getStatus());
             try (EntryIterator<Integer, String> iterator = result.getValue()) {
                 while (iterator.hasNext()) {
                     out.add(iterator.next());
                 }
             }
         } finally {
-            closeAndAwait(seg);
+            closeAndAssertClosed(seg);
         }
         return out;
     }

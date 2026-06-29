@@ -1,25 +1,45 @@
 # Consistency & Recovery
 
-This page explains HestiaStore’s crash safety model and commit semantics. WAL is optional and disabled by default (`Wal.EMPTY`). Without WAL, durability is driven by explicit flushes and by temp-file + atomic-rename commit paths. With WAL enabled, writes are appended before apply and startup replays WAL records above checkpoint (with invalid-tail truncation or fail-fast based on policy).
+This page explains HestiaStore's crash-safety model and commit semantics. WAL
+is optional and disabled by default (`IndexWalConfiguration.EMPTY`). Without WAL, durability is
+driven by explicit maintenance completion plus temp-file + atomic-rename commit
+paths. With WAL enabled, writes are appended before apply and startup replays
+WAL records above checkpoint, with invalid-tail truncation or fail-fast based
+on policy.
 
 ## Scope and Guarantees
 
-- WAL-disabled mode: no automatic WAL replay. Durability boundary is `flushAndWait()` (or close).
-- WAL-enabled mode: startup can repair invalid WAL tail and replay durable records above checkpoint.
-- No multi-key ACID transactions: operations are per-key, and there is no cross-key atomic batch commit.
-- Durability boundary: calling `flushAndWait()` (or closing the index) persists all writes that happened before the call. During `close()`, the index enters `CLOSING` while pending maintenance and WAL/map flush work are finalized. `flush()` only schedules maintenance; wait for completion if you need a durability guarantee.
-- Atomic file replacement: data files are written to `*.tmp` and made visible via `rename` only after the writer is closed and the transaction is committed. A crash cannot produce partially written visible files.
+- WAL-disabled mode: no automatic WAL replay. Durability boundary is
+  `flushAndWait()` or `close()`.
+- WAL-enabled mode: startup can repair an invalid WAL tail and replay durable
+  records above checkpoint.
+- No multi-key ACID transactions: operations are per-key; there is no
+  cross-key atomic batch commit.
+- Durability boundary: `flushAndWait()` or `close()` persists all writes that
+  happened before the call. `flush()` only schedules maintenance.
+- Atomic file replacement: data files are written to `*.tmp` and made visible
+  by `rename` only after the writer is closed and committed.
 
 ## Where Writes Become Durable
 
-- Index‑level buffer → disk: `SegmentIndex.flush()` schedules draining of the in‑memory unique buffer into segment delta cache files. `flushAndWait()` (and close) wait for completion.
-- Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.
-- Key→segment map (`index.map`): persisted via a transactional sorted data writer during flush or when updated.
+- Segment-local write cache -> disk:
+  `SegmentIndex.maintenance().flush()` schedules per-segment maintenance.
+  `maintenance().flushAndWait()`
+  and `close()` wait until the final mapped stable segments are flushed.
+- Segment compaction:
+  when a segment compacts, the new main SST, sparse index, and Bloom filter
+  are built via transactional writers and atomically replace the old view.
+- Key-to-segment map (`index.map`):
+  persisted through a transactional sorted-data writer whenever routing must be
+  flushed.
+- WAL checkpoint:
+  after the stable segment state and route map are durable, WAL checkpoint
+  advances so replay no longer needs older records.
 
 Relevant code:
-`segmentindex/core/SegmentIndexImpl#flush()`,
-`segmentindex/partition/PartitionRuntime`,
-`segmentindex/mapping/KeyToSegmentMap#optionalyFlush()`.
+`segmentindex/core/execution/MappedSegmentMaintenanceService.java`,
+`segmentindex/core/execution/PointOperationCoordinator.java`,
+`segmentindex/routemap/SegmentRouteMap.java`.
 
 ## Transactional Write Primitives
 
@@ -51,7 +71,7 @@ Key classes:
   - Writes to a temporary file via `BloomFilterWriterTx.open()` and commits with `rename`; also updates the in‑memory hash snapshot on commit.
 
 - Key→segment map (`index.map`)
-  - Writer: `SortedDataFileWriterTx.execute(…)` inside `KeyToSegmentMap.optionalyFlush()`
+  - Writer: `SortedDataFileWriterTx.execute(…)` inside `SegmentRouteMap.flushIfDirty()`
   - Ensures the map is replaced atomically.
 
 ## What Is Not Transactional
@@ -68,9 +88,9 @@ Code: `properties/PropertyStoreImpl` and `SegmentPropertiesManager`.
 
 ## Consistency Check and Repair
 
-- Run `SegmentIndex.checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
+- Run `SegmentIndex.maintenance().checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
 
-Key classes: `segmentindex/IndexConsistencyChecker`, `segment/SegmentConsistencyChecker`.
+Key classes: `segmentindex/RouteMapConsistencyChecker`, `segment/SegmentConsistencyChecker`.
 
 ## Developer Notes: `open()`/`commit()` and `*.tmp`
 
@@ -88,10 +108,12 @@ Examples in code:
 
 - If WAL is disabled, call `flushAndWait()` on periodic boundaries and always before shutdown to persist in‑memory writes.
 - If another thread observes the index during shutdown, expect `getState()` /
-  `metricsSnapshot().getState()` to report `CLOSING` until the final `CLOSED`
+  `runtimeMonitoring().snapshot().state()` to report `CLOSING` until the final `CLOSED`
   transition.
 - If WAL is enabled, configure durability mode (`ASYNC`, `GROUP_SYNC`, `SYNC`) based on loss tolerance and latency targets.
-- After a crash, reopen the index; WAL-enabled indexes recover from WAL first, then `checkAndRepairConsistency()` can be run as an additional integrity check.
+- After a crash, reopen the index; WAL-enabled indexes rebuild routing, replay
+  WAL through the direct write path, and then `checkAndRepairConsistency()` can
+  be run as an additional integrity check.
 
 ## Related Glossary
 

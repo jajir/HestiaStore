@@ -13,7 +13,7 @@
     <name>HestiaStore Monitoring Console Web</name>
 
     <properties>
-        <spring.boot.version>3.5.11</spring.boot.version>
+        <spring.boot.version>4.1.0</spring.boot.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <junit.platform.version>1.12.2</junit.platform.version>
     </properties>
@@ -30,7 +30,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>2.0.17</version>
+                <version>2.0.18</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

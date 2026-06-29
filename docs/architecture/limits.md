@@ -4,7 +4,7 @@ This page lists the most important constraints and design trade‑offs so you ca
 
 ## Durability and Recovery
 
-- WAL is optional and disabled by default (`Wal.EMPTY`). With WAL disabled, durability boundaries are explicit `flushAndWait()` and `close()`. With WAL enabled, writes are appended before apply and startup can replay WAL with safe-tail truncation. See Recovery and Operations/WAL docs.
+- WAL is optional and disabled by default (`IndexWalConfiguration.EMPTY`). With WAL disabled, durability boundaries are explicit `flushAndWait()` and `close()`. With WAL enabled, writes are appended before apply and startup can replay WAL with safe-tail truncation. See Recovery and Operations/WAL docs.
 - Per‑file atomicity only: Writers use temp files + atomic rename; groups of files (e.g., SST + scarce index + bloom) commit in a safe order but not as a single atomic unit. Readers remain consistent because old files stay in place until each rename. See SegmentFullWriterTx, BloomFilterWriterTx.
 - Filesystem requirement: Crash safety relies on same‑directory atomic `rename`. Use local filesystems; be cautious with network filesystems that may not guarantee strict atomicity.
 - Stale lock files: A crash can leave `.lock` behind, preventing open until removed. See `directory/FsFileLock.java` and IndexState*. Remove the file only when certain no process still uses the directory.
@@ -18,15 +18,18 @@ This page lists the most important constraints and design trade‑offs so you ca
 ## Size and Addressing Limits
 
 - Per‑segment SST size bounded by 32‑bit positions: Sparse index stores an `Integer` position and readers cast to `int` (`ChunkEntryFile#openIteratorAtPosition((int)position)`). Keep a single `vNN-index.sst` file below ~2 GiB. Use multiple segments to scale. Code: `chunkentryfile/ChunkEntryFile.java`, `scarceindex/*`.
-- Data‑block and cell sizing constraints: `diskIoBufferSize` must be divisible by 1024; chunk cell size is fixed at 16 bytes. Payloads pad to whole cells (space overhead). Code: `Vldtn#requireIoBufferSize`, `chunkstore/CellPosition.java`.
+- Data-block and cell sizing constraints: `io().diskBufferSizeBytes()` must be
+  divisible by 1024; chunk cell size is fixed at 16 bytes. Payloads pad to
+  whole cells (space overhead). Code: `Vldtn#requireIoBufferSize`,
+  `chunkstore/CellPosition.java`.
 
 ## Configuration Immutability
 
 Once an index is created, several properties cannot be changed when reopening with a config:
 
 - Type descriptors (key/value serialization)
-- Sparse index cadence (`maxNumberOfKeysInSegmentChunk`)
-- Segment sizing limits (e.g., `maxNumberOfKeysInSegment`)
+- Sparse index cadence (`segment().chunkKeyLimit()`)
+- Segment sizing limits (e.g., `segment().maxKeys()`)
 - Bloom filter sizing and hash functions
 - Encoding/decoding filter lists (order and membership)
 
@@ -40,7 +43,12 @@ Attempts to change these raise a validation error in `IndexConfigurationManager`
 
 ## Security Posture
 
-- XOR filter is not encryption: `ChunkFilterXorEncrypt` provides reversible obfuscation only; do not use as security. For encryption at rest, place HestiaStore on an encrypted volume or add a real crypto layer above. See `chunkstore/ChunkFilterXor*`.
+- XOR filter is not encryption: `ChunkFilterXorEncrypt` provides reversible
+  obfuscation only; do not use it as a security control. For authenticated
+  chunk encryption, wire `ChunkFilterAesGcmEncrypt` and
+  `ChunkFilterAesGcmDecrypt` through a provider-backed
+  `ChunkFilterProviderResolver`, or use an encrypted volume. See
+  `chunkstore/ChunkFilterXor*` and `chunkstore/ChunkFilterAesGcm*`.
 - No authentication/authorization: HestiaStore is an embedded library and relies on your process/container isolation.
 
 ## Workloads That Fit Well
@@ -50,7 +58,7 @@ Attempts to change these raise a validation error in `IndexConfigurationManager`
 
 ## Anti‑patterns
 
-- Expecting WAL recovery semantics without enabling WAL via `withWal(...)`.
+- Expecting WAL recovery semantics without enabling WAL via `wal(...)`.
 - Expecting `ASYNC` WAL mode to preserve every acknowledged write after OS/power loss.
 - Very large single segments (>2 GiB `vNN-index.sst`); split into more segments.
 - Heavy mixed concurrent reads/writes with strict low‑latency tail in synchronized mode (coarse locking).
@@ -59,7 +67,8 @@ Attempts to change these raise a validation error in `IndexConfigurationManager`
 
 - Plan periodic `flushAndWait()` and `compact()` windows; after crashes run consistency check and optionally compact.
 - Size Bloom filters for your negative‑lookup rate; monitor `BloomFilterStats`.
-- Tune `maxNumberOfKeysInSegmentChunk` to balance read scan length vs. sparse index size.
+- Tune `segment().chunkKeyLimit()` to balance read scan length vs. sparse
+  index size.
 - Use multiple segments to stay under per‑segment limits and to improve compaction parallelism (future).
 
 ## Related Docs

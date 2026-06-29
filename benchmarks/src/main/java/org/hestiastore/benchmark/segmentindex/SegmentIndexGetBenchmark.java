@@ -2,7 +2,7 @@ package org.hestiastore.benchmark.segmentindex;
 
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -19,8 +19,8 @@ import org.openjdk.jmh.annotations.Warmup;
  *
  * <p>
  * The benchmark intentionally closes and reopens the index after populating it.
- * It can then either read only the persisted view or add a live overlay and
- * measure point lookups that resolve from the active partition layer.
+ * It can then either read only the persisted view or add live updates and
+ * measure point lookups that resolve from the segment write cache.
  * </p>
  */
 @BenchmarkMode(Mode.Throughput)
@@ -43,7 +43,10 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     @Param({ "false", "true" })
     private boolean snappy;
 
-    @Param({ "persisted", "overlay" })
+    @Param({ "0", "128" })
+    private int chunkStoreCachePageLimit;
+
+    @Param({ "persisted", "live" })
     private String readPathMode;
 
     @Override
@@ -55,25 +58,25 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     protected IndexConfiguration<Integer, String> buildConfiguration() {
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-get-benchmark")//
-                .withMaxNumberOfKeysInSegmentCache(8)//
-                .withMaxNumberOfKeysInActivePartition(2048)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(4096)//
-                .withMaxNumberOfKeysInIndexBuffer(12_288)//
-                .withMaxNumberOfKeysInSegmentChunk(maxKeysInChunk)//
-                .withMaxNumberOfKeysInSegment(keyCount * 2)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(keyCount * 2)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(Math.max(8192, keyCount / 2))//
-                .withBloomFilterNumberOfHashFunctions(3)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withIndexWorkerThreadCount(4)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(1)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(false);
+                .segment(segment -> segment.cacheKeyLimit(8)
+                        .chunkKeyLimit(maxKeysInChunk).maxKeys(keyCount * 2)
+                        .cachedSegmentLimit(3).deltaCacheFileLimit(2))//
+                .writePath(writePath -> writePath
+                        .segmentWriteCacheKeyLimit(2048)
+                        .maintenanceWriteCacheKeyLimit(4096)
+                        .indexBufferedWriteKeyLimit(12_288)
+                        .segmentSplitKeyThreshold(keyCount * 2))//
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(Math.max(8192, keyCount / 2))
+                        .hashFunctions(3)
+                        .falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .chunkStoreCache(cache -> cache
+                        .pageLimit(chunkStoreCachePageLimit))//
+                .maintenance(maintenance -> maintenance
+                        .indexThreads(1)//
+                        .registryLifecycleThreads(1)//
+                        .backgroundAutoEnabled(false));
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,
                 snappy);
         return builder.build();
@@ -88,19 +91,19 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
 
     @Override
     protected void afterCreate(final SegmentIndex<Integer, String> created) {
-        created.compactAndWait();
+        created.maintenance().compactAndWait();
     }
 
     @Override
     protected void configureReadState(
             final SegmentIndex<Integer, String> openedIndex) {
         int queryKeyBound = keyCount;
-        if ("overlay".equals(readPathMode)) {
+        if ("live".equals(readPathMode)) {
             queryKeyBound = Math.min(keyCount, 1024);
         }
         setReadKeyBounds(queryKeyBound, keyCount * 2);
-        if ("overlay".equals(readPathMode)) {
-            populateOverlay(openedIndex, queryKeyBound);
+        if ("live".equals(readPathMode)) {
+            populateLiveUpdates(openedIndex, queryKeyBound);
         }
     }
 
@@ -115,15 +118,16 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
                 valueLength, 'x');
     }
 
-    private String buildOverlayValue(final int key) {
-        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("overlay-", key,
+    private String buildLiveValue(final int key) {
+        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("live-", key,
                 valueLength, 'o');
     }
 
-    private void populateOverlay(final SegmentIndex<Integer, String> openedIndex,
+    private void populateLiveUpdates(
+            final SegmentIndex<Integer, String> openedIndex,
             final int queryKeyBound) {
         for (int key = 0; key < queryKeyBound; key++) {
-            openedIndex.put(Integer.valueOf(key), buildOverlayValue(key));
+            openedIndex.put(Integer.valueOf(key), buildLiveValue(key));
         }
     }
 }

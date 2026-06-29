@@ -1,60 +1,50 @@
-# Metrics Snapshot
+# Metrics RouteMapSnapshot
 
-`SegmentIndex.metricsSnapshot()` exposes a stable, read-only metrics contract
-for index-level telemetry.
+`SegmentIndex.runtimeMonitoring().snapshot()` exposes the stable,
+read-only runtime monitoring contract for index-level telemetry.
 
-## Current fields
+## Ownership Convention
 
-- Operation counters:
-  - `getOperationCount`
-  - `putOperationCount`
-  - `deleteOperationCount`
-- Registry and segment state:
-  - `registryCache*`
-  - `segment*`
-  - `totalSegmentKeys`
-  - `totalSegmentCacheKeys`
-  - `totalBufferedWriteKeys`
-- Partitioned ingest overlay:
-  - `maxNumberOfKeysInActivePartition`
-  - `maxNumberOfImmutableRunsPerPartition`
-  - `maxNumberOfKeysInPartitionBuffer`
-  - `maxNumberOfKeysInIndexBuffer`
-  - `partitionCount`
-  - `activePartitionCount`
-  - `drainingPartitionCount`
-  - `immutableRunCount`
-  - `partitionBufferedKeyCount`
-  - `localThrottleCount`
-  - `globalThrottleCount`
-  - `drainScheduleCount`
-  - `drainInFlightCount`
-  - `drainLatencyP95Micros`
-- WAL and latency:
-  - `wal*`
-  - `readLatencyP50/P95/P99Micros`
-  - `writeLatencyP50/P95/P99Micros`
-- Lifecycle:
-  - `state`
+- Runtime packages own their raw monitoring snapshots and name them `*Stats`
+  or `*Monitoring` according to the local package language.
+  Examples include `OperationStatsSnapshot`, `MaintenanceStatsSnapshot`, `SplitStats`,
+  `WalMonitoring`, `ChunkStoreCacheStats`, `SegmentRegistryCacheStats`, and
+  `SegmentStats`.
+- Mutable statistics writers live next to the domain runtime they observe and
+  are named `*StatsRecorder` or `*Telemetry`.
+- RouteMapSnapshot-returning runtime methods use `statsSnapshot()`.
+- `org.hestiastore.index.segmentindex.monitoring` does not record domain
+  events directly. It obtains read-only package-owned snapshots from operation,
+  maintenance, split, WAL, executor, cache, registry, and segment runtimes, then
+  projects them into the public grouped model under
+  `org.hestiastore.index.segmentindex.monitoring.model`.
+
+## Public Groups
+
+- `snapshot.operations()`
+- `snapshot.registryCache()`
+- `snapshot.chunkStoreCache()`
+- `snapshot.segments()`
+- `snapshot.writePath()`
+- `snapshot.maintenance()`
+- `snapshot.split()`
+- `snapshot.latency()`
+- `snapshot.bloomFilter()`
+- `snapshot.wal()`
+- `snapshot.state()` for the index lifecycle state
 
 ## Semantics
 
-- Snapshot is immutable.
+- RouteMapSnapshot is immutable.
 - Counts are monotonic for one index instance lifetime.
 - Counters are process-local and reset when a new index object is created.
 - Field values represent observed operation calls, not necessarily durable
   writes on disk.
-- `partitionBufferedKeyCount` counts only overlay-resident keys; it is a
-  subset of `totalBufferedWriteKeys`.
-- Legacy `split*` and `maintenance*` fields remain in the snapshot for
-  compatibility, but partition-specific fields are the authoritative view for
-  the new ingest runtime.
-- `state` is one of `OPENING`, `READY`, `CLOSING`, `CLOSED`, or `ERROR`.
+- `writePath()` is the canonical write-path view for the direct-to-segment
+  runtime.
+- `split()`, `maintenance()`, `segments()`, `writePath()`, and `wal()` are the
+  authoritative operational view for the current runtime.
+- `snapshot.state()` is one of `OPENING`, `READY`, `CLOSING`, `CLOSED`, or
+  `ERROR`.
 - `CLOSING` means shutdown is in progress and the index is no longer accepting
   new API operations, but final persistence/cleanup work may still be running.
-
-## Compatibility policy
-
-- Existing fields and meaning are stable and cannot change silently.
-- New fields may be added in future versions.
-- Consumers should ignore unknown fields for forward compatibility.

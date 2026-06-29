@@ -1,6 +1,7 @@
 package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
+import java.util.OptionalInt;
 
 /**
  * Defines full binary behavior of a value type used by the storage engine.
@@ -48,6 +49,30 @@ public interface TypeDescriptor<T> {
      * @return type encoder
      */
     TypeEncoder<T> getTypeEncoder();
+
+    /**
+     * Returns an estimated average serialized size in bytes for this type.
+     *
+     * <p>
+     * Fixed-size descriptors should return their constant serialized size.
+     * Variable-size descriptors should return a conservative estimate only when
+     * the descriptor can make one safely. An empty value means that memory
+     * estimation cannot model this type without a custom descriptor or another
+     * explicit source of size information.
+     * </p>
+     * <p>
+     * Empty is different from zero. {@link OptionalInt#empty()} means that the
+     * descriptor does not know a defensible estimate. {@code OptionalInt.of(0)}
+     * is a real estimate for descriptors that serialize no bytes, such as a
+     * null-value marker. Estimation code should treat unknown estimates
+     * explicitly instead of silently guessing.
+     * </p>
+     *
+     * @return estimated average serialized size, or empty when unknown
+     */
+    default OptionalInt getEstimatedAverageSizeInBytes() {
+        return OptionalInt.empty();
+    }
 
     /**
      * Returns the sentinel value used as a tombstone for delete semantics.

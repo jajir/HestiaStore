@@ -6,8 +6,8 @@ This document defines releasable stages for the monitoring/management rollout.
 
 - Scope: `engine` module, immutable snapshot API, no external exporters.
 - Required gates:
-  - Concurrency correctness test: `IntegrationSegmentIndexMetricsSnapshotConcurrencyTest`
-  - Snapshot contract tests pass in `engine`.
+  - Concurrency correctness test: `IntegrationIndexRuntimeSnapshotConcurrencyTest`
+  - RouteMapSnapshot contract tests pass in `engine`.
   - Perf budget: no more than +3% overhead for get/put baseline in internal
     benchmark profile.
 
@@ -42,7 +42,7 @@ This document defines releasable stages for the monitoring/management rollout.
 Run all stage gates:
 
 ```bash
-mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
+mvn -pl engine test -Dtest=IntegrationIndexRuntimeSnapshotConcurrencyTest
 mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
 mvn -pl monitoring-rest-json test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
 mvn -pl monitoring-console-web test

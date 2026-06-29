@@ -34,7 +34,7 @@
                         <div th:if="${!n.error.isEmpty()}" style="margin-top:6px; color:#c54b3b; font-size:12px;"
                             th:text="${n.error}">error detail</div>
                     </td>
-                    <td th:text="${n.formatWholeNumber(n.getOps)}">0</td>
+                    <td th:text="${n.formatWholeNumber(n.readOps)}">0</td>
                     <td th:text="${n.formatWholeNumber(n.putOps)}">0</td>
                     <td th:text="${n.formatWholeNumber(n.deleteOps)}">0</td>
                     <td class="small" th:text="${n.capturedAt}">2026-02-18T00:00:00Z</td>

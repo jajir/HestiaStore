@@ -18,7 +18,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterXorEncrypt;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -34,24 +34,26 @@ class FilteredSegmentIndexIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> createConf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index_filtered")//
-                .addEncodingFilter(new ChunkFilterMagicNumberWriting())//
-                .addEncodingFilter(new ChunkFilterCrc32Writing())//
-                .addEncodingFilter(new ChunkFilterSnappyCompress())//
-                .addEncodingFilter(new ChunkFilterXorEncrypt())//
-                .addDecodingFilter(new ChunkFilterXorDecrypt())//
-                .addDecodingFilter(new ChunkFilterSnappyDecompress())//
-                .addDecodingFilter(new ChunkFilterCrc32Validation())//
-                .addDecodingFilter(new ChunkFilterMagicNumberValidation())//
+                .identity(identity -> identity.keyClass(String.class)
+                        .valueClass(String.class)
+                        .name("test_index_filtered"))//
+                .filters(filters -> filters
+                        .addEncodingFilter(new ChunkFilterMagicNumberWriting())
+                        .addEncodingFilter(new ChunkFilterCrc32Writing())
+                        .addEncodingFilter(new ChunkFilterSnappyCompress())
+                        .addEncodingFilter(new ChunkFilterXorEncrypt())
+                        .addDecodingFilter(new ChunkFilterXorDecrypt())
+                        .addDecodingFilter(new ChunkFilterSnappyDecompress())
+                        .addDecodingFilter(new ChunkFilterCrc32Validation())
+                        .addDecodingFilter(
+                                new ChunkFilterMagicNumberValidation()))//
                 .build();
 
         final IndexConfiguration<String, String> openConf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index_filtered")//
+                .identity(identity -> identity.keyClass(String.class)
+                        .valueClass(String.class)
+                        .name("test_index_filtered"))//
                 .build();
 
         final Map<String, String> entries = new LinkedHashMap<>();
@@ -61,15 +63,14 @@ class FilteredSegmentIndexIT {
 
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory, createConf)) {
             entries.forEach(index::put);
-            index.flush();
-            index.compact();
+            index.maintenance().flush();
+            index.maintenance().compact();
             LOGGER.info("Created index with configuration: {}", createConf);
             logPropertiesFile(directory, "Created index properties file");
         }
 
         try (SegmentIndex<String, String> index = SegmentIndex.open(directory, openConf)) {
-            entries.forEach((key, expectedValue) -> assertEquals(expectedValue,
-                    index.get(key)));
+            entries.forEach((key, expectedValue) -> assertEquals(expectedValue, index.get(key)));
             LOGGER.info("Opened index with configuration: {}", openConf);
             logPropertiesFile(directory, "Opened index properties file");
             LOGGER.info("Files in directory after reopen: {}",

@@ -1,19 +1,16 @@
 package org.hestiastore.index.segmentregistry;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 
 /**
  * Builder for {@link SegmentRegistry} instances.
@@ -29,9 +26,11 @@ public final class SegmentRegistryBuilder<K, V> {
     private Directory directoryFacade;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
-    private IndexConfiguration<K, V> conf;
+    private EffectiveIndexConfiguration<K, V> conf;
     private ExecutorService segmentMaintenanceExecutor;
     private ExecutorService registryMaintenanceExecutor;
+    private SegmentIdAllocator segmentIdAllocator;
+    private ChunkStoreCache<K, V> chunkStoreCache = new LruChunkStoreCache<>(0);
 
     SegmentRegistryBuilder() {
     }
@@ -82,7 +81,7 @@ public final class SegmentRegistryBuilder<K, V> {
      * @return this builder
      */
     public SegmentRegistryBuilder<K, V> withConfiguration(
-            final IndexConfiguration<K, V> conf) {
+            final EffectiveIndexConfiguration<K, V> conf) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         return this;
     }
@@ -116,6 +115,32 @@ public final class SegmentRegistryBuilder<K, V> {
     }
 
     /**
+     * Sets the segment id allocator used for newly created segment ids.
+     *
+     * @param segmentIdAllocator allocator for segment ids
+     * @return this builder
+     */
+    SegmentRegistryBuilder<K, V> withSegmentIdAllocator(
+            final SegmentIdAllocator segmentIdAllocator) {
+        this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
+                "segmentIdAllocator");
+        return this;
+    }
+
+    /**
+     * Sets the index-scoped parsed chunk page cache.
+     *
+     * @param chunkStoreCache parsed chunk page cache
+     * @return this builder
+     */
+    public SegmentRegistryBuilder<K, V> withChunkStoreCache(
+            final ChunkStoreCache<K, V> chunkStoreCache) {
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
+        return this;
+    }
+
+    /**
      * Builds a registry with the configured defaults and overrides.
      *
      * @return registry instance
@@ -127,8 +152,8 @@ public final class SegmentRegistryBuilder<K, V> {
                 keyTypeDescriptor, "keyTypeDescriptor");
         final TypeDescriptor<V> resolvedValueDescriptor = Vldtn.requireNonNull(
                 valueTypeDescriptor, "valueTypeDescriptor");
-        final IndexConfiguration<K, V> resolvedConf = Vldtn.requireNonNull(conf,
-                "conf");
+        final EffectiveIndexConfiguration<K, V> resolvedConf = Vldtn
+                .requireNonNull(conf, "conf");
         final ExecutorService resolvedSegmentMaintenanceExecutor = Vldtn
                 .requireNonNull(segmentMaintenanceExecutor,
                         "segmentMaintenanceExecutor");
@@ -136,56 +161,49 @@ public final class SegmentRegistryBuilder<K, V> {
                 .requireNonNull(registryMaintenanceExecutor,
                         "registryMaintenanceExecutor");
         final int maxSegments = Vldtn
-                .requireNonNull(resolvedConf.getMaxNumberOfSegmentsInCache(),
+                .requireNonNull(resolvedConf.segment().cachedSegmentLimit(),
                         "maxNumberOfSegmentsInCache")
                 .intValue();
         final int maxNumberOfSegmentsInCache = Vldtn.requireGreaterThanZero(
                 maxSegments, "maxNumberOfSegmentsInCache");
-        final int busyBackoffMillis = sanitizeRetryConf(
-                resolvedConf.getIndexBusyBackoffMillis(),
-                IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS);
-        final int busyTimeoutMillis = sanitizeRetryConf(
-                resolvedConf.getIndexBusyTimeoutMillis(),
-                IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
+        final int busyBackoffMillis = resolvedConf.maintenance()
+                .busyBackoffMillis();
+        final int busyTimeoutMillis = resolvedConf.maintenance()
+                .busyTimeoutMillis();
         final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
                 resolvedDirectory, resolvedKeyDescriptor,
                 resolvedValueDescriptor, resolvedConf,
-                resolvedSegmentMaintenanceExecutor);
-        final SegmentIdAllocator resolvedAllocator = new DirectorySegmentIdAllocator(
-                resolvedDirectory);
+                resolvedSegmentMaintenanceExecutor, chunkStoreCache);
+        final SegmentIdAllocator resolvedAllocator = segmentIdAllocator == null
+                ? new DirectorySegmentIdAllocator(resolvedDirectory)
+                : segmentIdAllocator;
         final SegmentRegistryFileSystem resolvedFileSystem = new SegmentRegistryFileSystem(
                 resolvedDirectory);
         // SegmentIndex key-map bootstraps the first logical segment with id 0.
         // Ensure its directory exists so registry loads do not fail on a fresh index.
         resolvedFileSystem.ensureSegmentDirectory(SegmentId.of(0));
-        final IndexRetryPolicy resolvedCloseRetryPolicy = new IndexRetryPolicy(
-                busyBackoffMillis, busyTimeoutMillis);
-        final IndexRetryPolicy resolvedRegistryCloseRetryPolicy = new IndexRetryPolicy(
-                busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS);
+        final BusyRetryPolicy resolvedCloseRetryPolicy = new BusyRetryPolicy(
+                busyBackoffMillis, busyTimeoutMillis,
+                "Maintenance operation");
+        final BusyRetryPolicy resolvedBlockingRetryPolicy = new BusyRetryPolicy(
+                busyBackoffMillis, busyTimeoutMillis,
+                "Segment access operation");
+        final BusyRetryPolicy resolvedRegistryCloseRetryPolicy = new BusyRetryPolicy(
+                busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS,
+                "Maintenance operation");
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
-        final Set<SegmentId> pinnedSegments = ConcurrentHashMap.newKeySet();
-        final SegmentLifecycleMaintenance<K, V> maintenance = new SegmentLifecycleMaintenance<>(
+        final SegmentLoadCloseOperations<K, V> segmentOperations = new SegmentLoadCloseOperations<>(
                 resolvedFactory, resolvedFileSystem, resolvedCloseRetryPolicy,
                 gate);
-        final SegmentRegistryCache<SegmentId, Segment<K, V>> cache = new SegmentRegistryCache<>(
-                maxNumberOfSegmentsInCache, maintenance::loadSegment,
-                maintenance::closeSegmentIfNeeded,
-                resolvedRegistryMaintenanceExecutor,
-                segment -> segment != null
-                        && (segment.getState() == SegmentState.CLOSED
-                                || !pinnedSegments.contains(segment.getId())
-                                        && segment.getState() == SegmentState.READY
-                                        && segment.getNumberOfKeysInWriteCache() == 0));
+        final SegmentUnloadEligibility unloadEligibility = new SegmentUnloadEligibility(
+                gate);
+        final SegmentRegistryCache<K, V> cache = new SegmentRegistryCache<>(
+                maxNumberOfSegmentsInCache, segmentOperations,
+                unloadEligibility,
+                resolvedRegistryMaintenanceExecutor);
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
-                cache, resolvedRegistryCloseRetryPolicy, gate,
-                pinnedSegments);
+                cache, resolvedRegistryCloseRetryPolicy, gate, resolvedFactory,
+                resolvedFactory, resolvedBlockingRetryPolicy);
     }
 
-    private static int sanitizeRetryConf(final Integer configured,
-            final int fallback) {
-        if (configured == null || configured.intValue() < 1) {
-            return fallback;
-        }
-        return configured.intValue();
-    }
 }

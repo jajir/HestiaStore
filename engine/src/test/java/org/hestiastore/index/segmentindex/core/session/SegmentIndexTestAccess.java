@@ -1,0 +1,66 @@
+package org.hestiastore.index.segmentindex.core.session;
+
+import java.lang.reflect.Field;
+
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
+import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
+import org.hestiastore.index.segmentindex.wal.WalRuntime;
+
+/**
+ * Test-only bridge exposing package-private runtime collaborators.
+ */
+public final class SegmentIndexTestAccess {
+
+    private SegmentIndexTestAccess() {
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K> SegmentRouteMap<K> keyToSegmentMap(final Object index) {
+        return (SegmentRouteMap<K>) SegmentIndexRuntimeTestAccess
+                .keyToSegmentMap(runtime(index));
+    }
+
+    public static Object segmentRegistry(final Object index) {
+        return SegmentIndexRuntimeTestAccess.segmentRegistry(runtime(index));
+    }
+
+    public static WalRuntime<?, ?> walRuntime(final Object index) {
+        return SegmentIndexRuntimeTestAccess.walRuntime(runtime(index));
+    }
+
+    public static SegmentIndexStateMachine stateMachine(final Object index) {
+        return unwrap(index).stateMachine();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> EntryIterator<K, V> openSegmentIterator(
+            final Object index,
+            final SegmentWindow segmentWindow,
+            final SegmentIteratorIsolation isolation) {
+        return (EntryIterator<K, V>) unwrap(index).openSegmentIterator(
+                segmentWindow, isolation);
+    }
+
+    private static SegmentIndexSession<?, ?> unwrap(final Object index) {
+        Object current = index;
+        while (!(current instanceof SegmentIndexSession<?, ?>)) {
+            try {
+                final Field delegateField = current.getClass().getDeclaredField(
+                        "delegate");
+                delegateField.setAccessible(true);
+                current = delegateField.get(current);
+            } catch (final ReflectiveOperationException ex) {
+                throw new IllegalStateException(
+                        "Unable to unwrap segment index for test access", ex);
+            }
+        }
+        return (SegmentIndexSession<?, ?>) current;
+    }
+
+    private static Object runtime(final Object index) {
+        return SegmentIndexRuntimeTestAccess.runtimeFromIndex(index);
+    }
+}

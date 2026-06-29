@@ -15,6 +15,7 @@
     <modules>
         <module>engine</module>
         <module>wal-tools</module>
+        <module>index-tools</module>
         <module>monitoring-micrometer</module>
         <module>monitoring-prometheus</module>
         <module>monitoring-rest-json-api</module>
@@ -26,20 +27,25 @@
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <slf4j.version>2.0.17</slf4j.version>
+        <slf4j.version>2.0.18</slf4j.version>
         <log4j.version>3.0.0-beta2</log4j.version>
-        <junit.jupiter.version>6.0.3</junit.jupiter.version>
-        <junit.platform.version>6.0.3</junit.platform.version>
-        <failsafe.plugin.version>3.5.3</failsafe.plugin.version>
-        <surefire.plugin.version>3.5.5</surefire.plugin.version>
+        <junit.jupiter.version>6.1.0</junit.jupiter.version>
+        <junit.platform.version>6.1.0</junit.platform.version>
+        <failsafe.plugin.version>3.5.6</failsafe.plugin.version>
+        <surefire.plugin.version>3.5.6</surefire.plugin.version>
         <mockito.version>5.23.0</mockito.version>
-        <jacoco.version>0.8.14</jacoco.version>
+        <archunit.version>1.4.2</archunit.version>
+        <jacoco.version>0.8.15</jacoco.version>
         <maven.site.plugin.version>4.0.0-M16</maven.site.plugin.version>
-        <project.info.reports.plugin.version>3.5.0</project.info.reports.plugin.version>
+        <project.info.reports.plugin.version>3.9.0</project.info.reports.plugin.version>
+        <jdepend.plugin.version>2.2.1-SNAPSHOT</jdepend.plugin.version>
+        <jdeps.plugin.version>3.2.0</jdeps.plugin.version>
+        <depgraph.plugin.version>4.0.3</depgraph.plugin.version>
+        <antrun.plugin.version>3.2.0</antrun.plugin.version>
         <pmd.plugin.version>3.28.0</pmd.plugin.version>
-        <spotbugs.plugin.version>4.9.8.2</spotbugs.plugin.version>
-        <micrometer.version>1.15.5</micrometer.version>
-        <dependency-check.skip>false</dependency-check.skip>
+        <spotbugs.plugin.version>4.10.2.0</spotbugs.plugin.version>
+        <micrometer.version>1.17.0</micrometer.version>
+        <dependency-check.skip>true</dependency-check.skip>
         <dependency-check.dataDirectory>${user.home}/.cache/dependency-check</dependency-check.dataDirectory>
     </properties>
 
@@ -96,6 +102,11 @@
                 <version>${mockito.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-core</artifactId>
                 <version>${micrometer.version}</version>
@@ -116,9 +127,71 @@
                 <version>${maven.site.plugin.version}</version>
             </plugin>
             <plugin>
+                <groupId>com.github.ferstl</groupId>
+                <artifactId>depgraph-maven-plugin</artifactId>
+                <version>${depgraph.plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>generate-reactor-dependency-json</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <classpathScope>compile</classpathScope>
+                            <graphFormat>json</graphFormat>
+                            <mergeClassifiers>true</mergeClassifiers>
+                            <mergeScopes>true</mergeScopes>
+                            <mergeTypes>true</mergeTypes>
+                            <outputDirectory>${project.build.directory}/site/depgraph</outputDirectory>
+                            <outputFileName>reactor-dependencies</outputFileName>
+                            <reduceEdges>false</reduceEdges>
+                            <showGroupIds>true</showGroupIds>
+                            <showVersions>true</showVersions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${antrun.plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>render-reactor-dependency-site</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/site/depgraph" />
+                                <exec executable="python3" failonerror="true">
+                                    <arg value="${maven.multiModuleProjectDirectory}/scripts/generate_dependency_site_report.py" />
+                                    <arg value="reactor" />
+                                    <arg value="--json" />
+                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.json" />
+                                    <arg value="--html" />
+                                    <arg value="${project.build.directory}/site/module-dependencies.html" />
+                                    <arg value="--dot" />
+                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.dot" />
+                                    <arg value="--png" />
+                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.png" />
+                                    <arg value="--include-group-id" />
+                                    <arg value="${project.groupId}" />
+                                    <arg value="--page-title" />
+                                    <arg value="${project.name} Module Dependencies" />
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>prepare-site-resources</id>
@@ -139,34 +212,6 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>mirror-module-site-under-root</id>
-                        <phase>site</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target xmlns:if="ant:if">
-                                <condition property="isChildModule">
-                                    <not>
-                                        <equals arg1="${project.basedir}"
-                                            arg2="${maven.multiModuleProjectDirectory}" />
-                                    </not>
-                                </condition>
-                                <sync todir="${maven.multiModuleProjectDirectory}/target/site/${project.artifactId}"
-                                    if:set="isChildModule">
-                                    <fileset dir="${project.reporting.outputDirectory}" />
-                                </sync>
-                            </target>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -247,13 +292,25 @@
 
     <profiles>
         <profile>
+            <id>ci-dependency-check</id>
+            <activation>
+                <property>
+                    <name>env.CI</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <dependency-check.skip>false</dependency-check.skip>
+            </properties>
+        </profile>
+        <profile>
             <id>release</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>0.10.0</version>
+                        <version>0.11.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
@@ -264,7 +321,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.1.0</version>
+                        <version>3.2.8</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

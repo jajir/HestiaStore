@@ -5,12 +5,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 import java.util.function.IntFunction;
 
+import org.hestiastore.benchmark.BenchmarkFileSupport;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
@@ -19,51 +17,48 @@ import org.hestiastore.index.chunkstore.ChunkFilterSnappyCompress;
 import org.hestiastore.index.chunkstore.ChunkFilterSnappyDecompress;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 
 final class SegmentIndexBenchmarkSupport {
 
     static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
     static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
-    private static final Comparator<File> REVERSE_FILE_ORDER = Comparator
-            .comparing(File::getAbsolutePath).reversed();
-    private static final Path JMH_TEMP_ROOT = Path.of("target", "jmh-temp");
 
     private SegmentIndexBenchmarkSupport() {
     }
 
     static File createTempDir(final String prefix) throws IOException {
-        Files.createDirectories(JMH_TEMP_ROOT);
-        return Files.createTempDirectory(JMH_TEMP_ROOT, prefix).toFile();
+        return BenchmarkFileSupport.createTempDir(prefix);
     }
 
     static IndexConfigurationBuilder<Integer, String> baseBuilder(
             final String name) {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
-                .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
-                .withName(name)//
-                .withContextLoggingEnabled(false);
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(KEY_DESCRIPTOR)
+                        .valueTypeDescriptor(VALUE_DESCRIPTOR).name(name))//
+                .logging(logging -> logging.contextEnabled(false));
     }
 
     static void addIntegrityAndCompressionFilters(
             final IndexConfigurationBuilder<Integer, String> builder,
             final boolean snappy) {
-        builder.addEncodingFilter(new ChunkFilterCrc32Writing())
-                .addEncodingFilter(new ChunkFilterMagicNumberWriting());
-        builder.addDecodingFilter(new ChunkFilterMagicNumberValidation())
-                .addDecodingFilter(new ChunkFilterCrc32Validation());
-        if (snappy) {
-            builder.addEncodingFilter(new ChunkFilterSnappyCompress());
-            builder.withDecodingFilters(List.of(
-                    new ChunkFilterMagicNumberValidation(),
-                    new ChunkFilterSnappyDecompress(),
-                    new ChunkFilterCrc32Validation()));
-        }
+        builder.filters(filters -> {
+            filters.addEncodingFilter(new ChunkFilterCrc32Writing())
+                    .addEncodingFilter(new ChunkFilterMagicNumberWriting());
+            filters.addDecodingFilter(new ChunkFilterMagicNumberValidation())
+                    .addDecodingFilter(new ChunkFilterCrc32Validation());
+            if (snappy) {
+                filters.addEncodingFilter(new ChunkFilterSnappyCompress());
+                filters.decodingFilters(List.of(
+                        new ChunkFilterMagicNumberValidation(),
+                        new ChunkFilterSnappyDecompress(),
+                        new ChunkFilterCrc32Validation()));
+            }
+        });
     }
 
     static String buildFixedWidthValue(final String prefix, final int key,
@@ -81,51 +76,22 @@ final class SegmentIndexBenchmarkSupport {
             index.put(Integer.valueOf(key), valueBuilder.apply(key));
             pending++;
             if (pending >= flushBatchSize) {
-                index.flushAndWait();
+                index.maintenance().flushAndWait();
                 pending = 0;
             }
         }
         if (pending > 0) {
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
     }
 
     static void deleteRecursively(final File file) {
-        if (file == null || !file.exists()) {
-            return;
-        }
-        final File[] children = file.listFiles();
-        if (children != null) {
-            java.util.Arrays.sort(children, REVERSE_FILE_ORDER);
-            for (final File child : children) {
-                deleteRecursively(child);
-            }
-        }
-        if (!file.delete()) {
-            throw new IllegalStateException(
-                    "Unable to delete benchmark temp path: "
-                            + file.getAbsolutePath());
-        }
+        BenchmarkFileSupport.deleteRecursively(file);
     }
 
-    static void awaitCondition(final BooleanSupplier condition,
+    static void awaitCondition(final java.util.function.BooleanSupplier condition,
             final long timeoutMillis, final String message) {
-        final long deadline = System.nanoTime()
-                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        while (System.nanoTime() < deadline) {
-            if (condition.getAsBoolean()) {
-                return;
-            }
-            try {
-                Thread.sleep(10L);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException(message, e);
-            }
-        }
-        if (!condition.getAsBoolean()) {
-            throw new IllegalStateException(message);
-        }
+        BenchmarkFileSupport.awaitCondition(condition, timeoutMillis, message);
     }
 
     static void copyDirectory(final Path source, final Path target)
@@ -143,56 +109,6 @@ final class SegmentIndexBenchmarkSupport {
                             StandardCopyOption.COPY_ATTRIBUTES);
                 }
             }
-        }
-    }
-
-    static DirectoryTreeStats captureDirectoryTreeStats(final Path root)
-            throws IOException {
-        long regularFileCount = 0L;
-        long directoryCount = 0L;
-        long totalFileBytes = 0L;
-        try (var paths = Files.walk(root)) {
-            for (final Path path : paths.toList()) {
-                if (path.equals(root)) {
-                    continue;
-                }
-                if (Files.isDirectory(path)) {
-                    directoryCount++;
-                    continue;
-                }
-                if (Files.isRegularFile(path)) {
-                    regularFileCount++;
-                    totalFileBytes += Files.size(path);
-                }
-            }
-        }
-        return new DirectoryTreeStats(totalFileBytes, regularFileCount,
-                directoryCount);
-    }
-
-    static final class DirectoryTreeStats {
-
-        private final long totalFileBytes;
-        private final long regularFileCount;
-        private final long directoryCount;
-
-        DirectoryTreeStats(final long totalFileBytes,
-                final long regularFileCount, final long directoryCount) {
-            this.totalFileBytes = totalFileBytes;
-            this.regularFileCount = regularFileCount;
-            this.directoryCount = directoryCount;
-        }
-
-        long getTotalFileBytes() {
-            return totalFileBytes;
-        }
-
-        long getRegularFileCount() {
-            return regularFileCount;
-        }
-
-        long getDirectoryCount() {
-            return directoryCount;
         }
     }
 }

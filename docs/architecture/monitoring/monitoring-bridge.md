@@ -10,7 +10,7 @@ artifact has no runtime dependency on Micrometer or Prometheus.
 - `monitoring-rest-json-api`
   Shared REST/JSON DTO contracts for monitoring and management.
 - `monitoring-micrometer`
-  Micrometer binder over `SegmentIndex.metricsSnapshot()`.
+  Micrometer binder over `SegmentIndex.runtimeMonitoring().snapshot()`.
 - `monitoring-prometheus`
   Prometheus helper based on Micrometer Prometheus registry.
 - `monitoring-rest-json`
@@ -21,7 +21,7 @@ artifact has no runtime dependency on Micrometer or Prometheus.
 ## How runtime data is produced
 
 At runtime, each logical index exposes counters and state via
-`SegmentIndex.metricsSnapshot()`.
+`SegmentIndex.runtimeMonitoring().snapshot()`.
 
 The snapshot includes:
 
@@ -36,7 +36,7 @@ without mutating index state.
 
 ## Runtime model
 
-- Core publishes immutable snapshots via `metricsSnapshot()`.
+- Core publishes immutable snapshots via `runtimeMonitoring().snapshot()`.
 - Monitoring modules are optional and attached by the embedding application.
 - If monitoring modules are not on classpath, core behavior is unchanged.
 
@@ -45,11 +45,9 @@ without mutating index state.
 - `hestiastore_ops_get_total`
 - `hestiastore_ops_put_total`
 - `hestiastore_ops_delete_total`
-- `hestiastore_partition_count`
-- `hestiastore_partition_buffered_key_count`
-- `hestiastore_partition_drain_schedule_total`
-- `hestiastore_partition_drain_in_flight`
-- `hestiastore_partition_drain_latency_p95_micros`
+- `hestiastore_segment_write_cache_key_limit`
+- `hestiastore_segment_write_cache_key_limit_during_maintenance`
+- `hestiastore_index_buffered_write_key_limit`
 - `hestiastore_split_schedule_total`
 - `hestiastore_split_in_flight`
 - `hestiastore_index_up`

@@ -1,6 +1,7 @@
 package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
+import java.util.OptionalInt;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
@@ -44,6 +45,16 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
     @Override
     public TypeEncoder<Double> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
+    }
+
+    /**
+     * Returns eight bytes as the fixed serialized size estimate.
+     *
+     * @return fixed double size estimate
+     */
+    @Override
+    public OptionalInt getEstimatedAverageSizeInBytes() {
+        return OptionalInt.of(REQUIRED_BYTES);
     }
 
     /**

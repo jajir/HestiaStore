@@ -24,12 +24,13 @@ final class SegmentCache<K, V> {
 
     private static final String ENTRY_ARG = "entry";
     private final UniqueCache<K, V> deltaCache;
-    private UniqueCache<K, V> writeCache;
-    private UniqueCache<K, V> frozenWriteCache;
+    private volatile UniqueCache<K, V> writeCache;
+    private volatile UniqueCache<K, V> frozenWriteCache;
     private final Comparator<K> keyComparator;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final AtomicInteger maxNumberOfKeysInSegmentWriteCache;
     private final AtomicInteger maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private final AtomicInteger bufferedWriteKeys = new AtomicInteger();
     private static final int MAX_INITIAL_CAPACITY = 1_000_000;
     private final ReentrantLock capacityLock = new ReentrantLock();
     private final Condition capacityAvailable = capacityLock.newCondition();
@@ -84,8 +85,12 @@ final class SegmentCache<K, V> {
      * @param entry entry to cache
      */
     public void putToWriteCache(final Entry<K, V> entry) {
-        awaitCapacity();
-        writeCache.put(Vldtn.requireNonNull(entry, ENTRY_ARG));
+        final Entry<K, V> nonNullEntry = validateEntry(entry);
+        if (tryPutExistingWriteKey(nonNullEntry)) {
+            return;
+        }
+        reserveWriteSlot();
+        putReservedEntry(nonNullEntry);
     }
 
     /**
@@ -95,16 +100,15 @@ final class SegmentCache<K, V> {
      * @return true when the entry was accepted
      */
     boolean tryPutToWriteCacheWithoutWaiting(final Entry<K, V> entry) {
-        capacityLock.lock();
-        try {
-            if (currentBufferedKeys() >= effectiveWriteCacheLimit()) {
-                return false;
-            }
-            writeCache.put(Vldtn.requireNonNull(entry, ENTRY_ARG));
+        final Entry<K, V> nonNullEntry = validateEntry(entry);
+        if (tryPutExistingWriteKey(nonNullEntry)) {
             return true;
-        } finally {
-            capacityLock.unlock();
         }
+        if (!tryReserveWriteSlot()) {
+            return false;
+        }
+        putReservedEntry(nonNullEntry);
+        return true;
     }
 
     /**
@@ -125,12 +129,14 @@ final class SegmentCache<K, V> {
      */
     public V get(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final V fromWrite = writeCache.get(key);
+        final UniqueCache<K, V> write = writeCache;
+        final V fromWrite = write.get(key);
         if (fromWrite != null) {
             return fromWrite;
         }
-        if (frozenWriteCache != null) {
-            final V fromFrozen = frozenWriteCache.get(key);
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        if (frozen != null) {
+            final V fromFrozen = frozen.get(key);
             if (fromFrozen != null) {
                 return fromFrozen;
             }
@@ -144,19 +150,18 @@ final class SegmentCache<K, V> {
      * @return size of merged view
      */
     public int size() {
-        if (writeCache.isEmpty()
-                && (frozenWriteCache == null || frozenWriteCache.isEmpty())) {
+        final UniqueCache<K, V> write = writeCache;
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        if (write.isEmpty() && isNullOrEmpty(frozen)) {
             return deltaCache.size();
         }
-        if (deltaCache.isEmpty()
-                && (frozenWriteCache == null || frozenWriteCache.isEmpty())) {
-            return writeCache.size();
+        if (deltaCache.isEmpty() && isNullOrEmpty(frozen)) {
+            return write.size();
         }
-        if (deltaCache.isEmpty() && writeCache.isEmpty()
-                && frozenWriteCache != null) {
-            return frozenWriteCache.size();
+        if (deltaCache.isEmpty() && write.isEmpty() && frozen != null) {
+            return frozen.size();
         }
-        return buildMergedCache().size();
+        return buildMergedCache(write, frozen).size();
     }
 
     /**
@@ -181,11 +186,14 @@ final class SegmentCache<K, V> {
      */
     public void evictAll() {
         deltaCache.clear();
-        writeCache.clear();
-        if (frozenWriteCache != null) {
-            frozenWriteCache.clear();
+        final UniqueCache<K, V> write = writeCache;
+        write.clear();
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        if (frozen != null) {
+            frozen.clear();
             frozenWriteCache = null;
         }
+        bufferedWriteKeys.set(0);
         signalCapacityAvailable();
     }
 
@@ -194,11 +202,13 @@ final class SegmentCache<K, V> {
      */
     void clearDeltaCachePreservingWriteCache() {
         deltaCache.clear();
-        if (frozenWriteCache != null) {
-            frozenWriteCache.clear();
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        if (frozen != null) {
+            final int frozenSize = frozen.size();
+            frozen.clear();
             frozenWriteCache = null;
+            releaseWriteSlots(frozenSize);
         }
-        signalCapacityAvailable();
     }
 
     /**
@@ -207,11 +217,12 @@ final class SegmentCache<K, V> {
      * @return sorted list of entries
      */
     public List<Entry<K, V>> getAsSortedList() {
-        if (writeCache.isEmpty() && deltaCache.isEmpty()
-                && (frozenWriteCache == null || frozenWriteCache.isEmpty())) {
+        final UniqueCache<K, V> write = writeCache;
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        if (write.isEmpty() && deltaCache.isEmpty() && isNullOrEmpty(frozen)) {
             return List.of();
         }
-        return buildMergedCache().getAsSortedList();
+        return buildMergedCache(write, frozen).getAsSortedList();
     }
 
     /**
@@ -238,10 +249,11 @@ final class SegmentCache<K, V> {
      * @return iterator over frozen write cache entries
      */
     Iterator<Entry<K, V>> frozenWriteCacheIterator() {
-        if (frozenWriteCache == null || frozenWriteCache.isEmpty()) {
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        if (isNullOrEmpty(frozen)) {
             return List.<Entry<K, V>>of().iterator();
         }
-        final Iterator<K> keys = frozenWriteCache.getSortedKeyIterator();
+        final Iterator<K> keys = frozen.getSortedKeyIterator();
         return new Iterator<>() {
             @Override
             public boolean hasNext() {
@@ -254,7 +266,7 @@ final class SegmentCache<K, V> {
                     throw new NoSuchElementException("No next element.");
                 }
                 final K key = keys.next();
-                final V value = frozenWriteCache.get(key);
+                final V value = frozen.get(key);
                 if (value == null) {
                     return next();
                 }
@@ -269,13 +281,15 @@ final class SegmentCache<K, V> {
      * @return sorted snapshot entries, possibly empty
      */
     void freezeWriteCache() {
-        if (frozenWriteCache != null && !frozenWriteCache.isEmpty()) {
+        final UniqueCache<K, V> currentFrozen = frozenWriteCache;
+        if (currentFrozen != null && !currentFrozen.isEmpty()) {
             return;
         }
-        if (writeCache.isEmpty()) {
+        final UniqueCache<K, V> currentWrite = writeCache;
+        if (currentWrite.isEmpty()) {
             return;
         }
-        frozenWriteCache = writeCache;
+        frozenWriteCache = currentWrite;
         writeCache = buildWriteCache();
     }
 
@@ -285,7 +299,8 @@ final class SegmentCache<K, V> {
      * @return true when a frozen snapshot exists and is not empty
      */
     boolean hasFrozenWriteCache() {
-        return frozenWriteCache != null && !frozenWriteCache.isEmpty();
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        return frozen != null && !frozen.isEmpty();
     }
 
     /**
@@ -293,16 +308,17 @@ final class SegmentCache<K, V> {
      * snapshot.
      */
     void mergeFrozenWriteCacheToDeltaCache() {
-        if (frozenWriteCache == null || frozenWriteCache.isEmpty()) {
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        if (isNullOrEmpty(frozen)) {
             frozenWriteCache = null;
             signalCapacityAvailable();
             return;
         }
-        frozenWriteCache.forEachEntry(
-                (key, value) -> deltaCache.put(Entry.of(key, value)));
-        frozenWriteCache.clear();
+        final int frozenSize = frozen.size();
+        frozen.forEachEntry((key, value) -> deltaCache.put(Entry.of(key, value)));
+        frozen.clear();
         frozenWriteCache = null;
-        signalCapacityAvailable();
+        releaseWriteSlots(frozenSize);
     }
 
     /**
@@ -320,9 +336,8 @@ final class SegmentCache<K, V> {
      * @return total number of cached keys
      */
     int getNumbberOfKeysInCache() {
-        final int frozen = frozenWriteCache == null ? 0
-                : frozenWriteCache.size();
-        return deltaCache.size() + writeCache.size() + frozen;
+        final UniqueCache<K, V> frozen = frozenWriteCache;
+        return deltaCache.size() + writeCache.size() + sizeOf(frozen);
     }
 
     /**
@@ -331,18 +346,56 @@ final class SegmentCache<K, V> {
      * @return total buffered write keys
      */
     private int currentBufferedKeys() {
-        final int frozen = frozenWriteCache == null ? 0
-                : frozenWriteCache.size();
-        return writeCache.size() + frozen;
+        return bufferedWriteKeys.get();
     }
 
     /**
-     * Blocks until there is capacity for another write-cache entry.
+     * Reserves capacity for another write-cache entry.
+     */
+    private void reserveWriteSlot() {
+        while (!tryReserveWriteSlot()) {
+            awaitCapacity();
+        }
+    }
+
+    private boolean tryReserveWriteSlot() {
+        while (true) {
+            final int current = currentBufferedKeys();
+            if (current >= effectiveWriteCacheLimit()) {
+                return false;
+            }
+            if (bufferedWriteKeys.compareAndSet(current, current + 1)) {
+                return true;
+            }
+        }
+    }
+
+    private void putReservedEntry(final Entry<K, V> entry) {
+        final boolean added;
+        try {
+            added = writeCache.putAndReportNewKey(entry);
+        } catch (final RuntimeException e) {
+            releaseWriteSlots(1);
+            throw e;
+        }
+        if (!added) {
+            releaseWriteSlots(1);
+        }
+    }
+
+    private boolean tryPutExistingWriteKey(final Entry<K, V> entry) {
+        final UniqueCache<K, V> write = writeCache;
+        if (write.get(entry.getKey()) == null) {
+            return false;
+        }
+        write.putAndReportNewKey(entry);
+        return true;
+    }
+
+    /**
+     * Blocks until there may be capacity for another write-cache entry.
      */
     private void awaitCapacity() {
-        if (maxNumberOfKeysInSegmentWriteCache.get() <= 0) {
-            return;
-        }
         capacityLock.lock();
         try {
             while (currentBufferedKeys() >= effectiveWriteCacheLimit()) {
@@ -354,6 +407,16 @@ final class SegmentCache<K, V> {
                     "Interrupted while waiting for write cache capacity", ex);
         } finally {
             capacityLock.unlock();
+        }
+    }
+
+    private void releaseWriteSlots(final int slots) {
+        if (slots <= 0) {
+            return;
+        }
+        final int previous = bufferedWriteKeys.getAndAdd(-slots);
+        if (previous >= effectiveWriteCacheLimit()) {
+            signalCapacityAvailable();
         }
     }
 
@@ -386,15 +449,24 @@ final class SegmentCache<K, V> {
      *
      * @return merged cache instance
      */
-    private UniqueCache<K, V> buildMergedCache() {
+    private UniqueCache<K, V> buildMergedCache(final UniqueCache<K, V> write,
+            final UniqueCache<K, V> frozen) {
         final UniqueCache<K, V> merged = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyComparator).buildEmpty();
         addAll(merged, deltaCache.getAsList());
-        if (frozenWriteCache != null && !frozenWriteCache.isEmpty()) {
-            addAll(merged, frozenWriteCache.getAsList());
+        if (!isNullOrEmpty(frozen)) {
+            addAll(merged, frozen.getAsList());
         }
-        addAll(merged, writeCache.getAsList());
+        addAll(merged, write.getAsList());
         return merged;
+    }
+
+    private boolean isNullOrEmpty(final UniqueCache<K, V> cache) {
+        return cache == null || cache.isEmpty();
+    }
+
+    private int sizeOf(final UniqueCache<K, V> cache) {
+        return cache == null ? 0 : cache.size();
     }
 
     private Iterator<Entry<K, V>> iteratorForCaches(
@@ -441,10 +513,9 @@ final class SegmentCache<K, V> {
                     consumeIfEquals(writeCursor, minKey);
 
                     final V value = resolveValue(minKey, write, frozen, delta);
-                    if (value == null) {
-                        continue;
+                    if (value != null) {
+                        return Entry.of(minKey, value);
                     }
-                    return Entry.of(minKey, value);
                 }
                 return null;
             }
@@ -525,6 +596,10 @@ final class SegmentCache<K, V> {
                 .withInitialCapacity(capacityHint)//
                 .withThreadSafe(true)//
                 .buildEmpty();
+    }
+
+    private Entry<K, V> validateEntry(final Entry<K, V> entry) {
+        return Vldtn.requireNonNull(entry, ENTRY_ARG);
     }
 
     /**

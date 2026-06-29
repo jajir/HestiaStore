@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -26,12 +26,13 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Mixed read/write benchmark for partitioned ingest.
+ * Mixed read/write benchmark for the direct-to-segment runtime.
  *
  * <p>
- * `drainOnly` keeps one hot partition under continuous overlay drain pressure.
- * `splitHeavy` keeps growing the routed keyspace so the background split policy
- * has to keep materializing child ranges while reads and writes continue.
+ * `drainOnly` keeps one hot routed range under continuous maintenance
+ * pressure. `splitHeavy` keeps growing the routed key space so the background
+ * split policy has to keep materializing child ranges while reads and writes
+ * continue.
  * </p>
  */
 @BenchmarkMode(Mode.Throughput)
@@ -95,39 +96,32 @@ public class SegmentIndexMixedDrainBenchmark {
         for (int key = 0; key < initialStableKeyCount; key++) {
             index.put(Integer.valueOf(key), buildValue(key));
         }
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
         writeSequence.set(initialStableKeyCount);
     }
 
     private IndexConfiguration<Integer, String> buildConfiguration() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
-                .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
-                .withName("segment-index-mixed-drain-benchmark")//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegmentCache(512)//
-                .withMaxNumberOfKeysInActivePartition(64)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(192)//
-                .withMaxNumberOfKeysInIndexBuffer(
-                        isSplitHeavy() ? 16_384 : 4_096)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(
-                        resolveSplitThreshold())//
-                .withMaxNumberOfKeysInSegmentChunk(64)//
-                .withMaxNumberOfKeysInSegment(10_000)//
-                .withMaxNumberOfSegmentsInCache(8)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(4096)//
-                .withBloomFilterNumberOfHashFunctions(2)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withIndexWorkerThreadCount(4)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(2)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(true)//
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(KEY_DESCRIPTOR)
+                        .valueTypeDescriptor(VALUE_DESCRIPTOR)
+                        .name("segment-index-mixed-drain-benchmark"))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .segment(segment -> segment.cacheKeyLimit(512)
+                        .chunkKeyLimit(64).maxKeys(10_000)
+                        .cachedSegmentLimit(8).deltaCacheFileLimit(2))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)
+                        .maintenanceWriteCacheKeyLimit(192)
+                        .indexBufferedWriteKeyLimit(
+                                isSplitHeavy() ? 16_384 : 4_096)
+                        .segmentSplitKeyThreshold(resolveSplitThreshold()))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(4096)
+                        .hashFunctions(2).falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .maintenance(maintenance -> maintenance
+                        .indexThreads(2).registryLifecycleThreads(1)
+                        .backgroundAutoEnabled(true))//
                 .build();
     }
 

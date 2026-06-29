@@ -7,18 +7,18 @@ import java.util.Objects;
  * Metrics payload returned by management API.
  */
 public record MetricsResponse(String indexName, String state,
-        long getOperationCount, long putOperationCount,
+        long readOperationCount, long putOperationCount,
         long deleteOperationCount, long registryCacheHitCount,
         long registryCacheMissCount, long registryCacheLoadCount,
         long registryCacheEvictionCount, int registryCacheSize,
         int registryCacheLimit, int segmentCacheKeyLimitPerSegment,
-        int maxNumberOfKeysInActivePartition,
-        int maxNumberOfImmutableRunsPerPartition,
-        int maxNumberOfKeysInPartitionBuffer,
-        int maxNumberOfKeysInIndexBuffer,
+        int segmentWriteCacheKeyLimit,
+        int segmentWriteCacheKeyLimitDuringMaintenance,
+        int indexBufferedWriteKeyLimit,
         int segmentCount, int segmentReadyCount,
         int segmentMaintenanceCount, int segmentErrorCount,
-        int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
+        int segmentClosedCount, int unloadedMappedSegmentCount,
+        long totalSegmentKeys,
         long totalSegmentCacheKeys, long totalBufferedWriteKeys,
         long totalDeltaCacheFiles, long compactRequestCount,
         long flushRequestCount, long splitScheduleCount, int splitInFlightCount,
@@ -41,7 +41,7 @@ public record MetricsResponse(String indexName, String state,
     public MetricsResponse {
         indexName = normalize(indexName, "indexName");
         state = normalize(state, "state");
-        requireNotNegative(getOperationCount, "getOperationCount");
+        requireNotNegative(readOperationCount, "readOperationCount");
         requireNotNegative(putOperationCount, "putOperationCount");
         requireNotNegative(deleteOperationCount, "deleteOperationCount");
         requireNotNegative(registryCacheHitCount, "registryCacheHitCount");
@@ -53,20 +53,19 @@ public record MetricsResponse(String indexName, String state,
         requireNotNegative(registryCacheLimit, "registryCacheLimit");
         requireNotNegative(segmentCacheKeyLimitPerSegment,
                 "segmentCacheKeyLimitPerSegment");
-        requireNotNegative(maxNumberOfKeysInActivePartition,
-                "maxNumberOfKeysInActivePartition");
-        requireNotNegative(maxNumberOfImmutableRunsPerPartition,
-                "maxNumberOfImmutableRunsPerPartition");
-        requireNotNegative(maxNumberOfKeysInPartitionBuffer,
-                "maxNumberOfKeysInPartitionBuffer");
-        requireNotNegative(maxNumberOfKeysInIndexBuffer,
-                "maxNumberOfKeysInIndexBuffer");
+        requireNotNegative(segmentWriteCacheKeyLimit,
+                "segmentWriteCacheKeyLimit");
+        requireNotNegative(segmentWriteCacheKeyLimitDuringMaintenance,
+                "segmentWriteCacheKeyLimitDuringMaintenance");
+        requireNotNegative(indexBufferedWriteKeyLimit,
+                "indexBufferedWriteKeyLimit");
         requireNotNegative(segmentCount, "segmentCount");
         requireNotNegative(segmentReadyCount, "segmentReadyCount");
         requireNotNegative(segmentMaintenanceCount, "segmentMaintenanceCount");
         requireNotNegative(segmentErrorCount, "segmentErrorCount");
         requireNotNegative(segmentClosedCount, "segmentClosedCount");
-        requireNotNegative(segmentBusyCount, "segmentBusyCount");
+        requireNotNegative(unloadedMappedSegmentCount,
+                "unloadedMappedSegmentCount");
         requireNotNegative(totalSegmentKeys, "totalSegmentKeys");
         requireNotNegative(totalSegmentCacheKeys, "totalSegmentCacheKeys");
         requireNotNegative(totalBufferedWriteKeys, "totalBufferedWriteKeys");
@@ -106,25 +105,6 @@ public record MetricsResponse(String indexName, String state,
         requireNotNegative(jvmGcCount, "jvmGcCount");
         requireNotNegative(jvmGcTimeMillis, "jvmGcTimeMillis");
         capturedAt = Objects.requireNonNull(capturedAt, "capturedAt");
-    }
-
-    /**
-     * Backward-compatible constructor.
-     */
-    public MetricsResponse(final String indexName, final String state,
-            final long getOperationCount, final long putOperationCount,
-            final long deleteOperationCount, final Instant capturedAt) {
-        this(indexName, state, getOperationCount, putOperationCount,
-                deleteOperationCount,
-                0L, 0L, 0L, 0L,
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0,
-                0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                0, 0, 0, 0, 0,
-                0L, 0L, 0L, 0L, 0L, 0L,
-                0, 0, 0D, 0L, 0L, 0L, 0L,
-                0L, 0L, 0L, 0L, 0L,
-                capturedAt);
     }
 
     private static String normalize(final String value, final String name) {

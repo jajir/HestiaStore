@@ -25,11 +25,9 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    env:
-      MKDOCS_SITE_URL: https://jajir.github.io/HestiaStore/
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0  # mkdocs/ghp-import doesn't need full history, but zero is safest
 

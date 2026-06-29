@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -11,7 +13,7 @@ public final class SegmentTestHelper {
     private SegmentTestHelper() {
     }
 
-    public static void closeAndAwait(final Segment<?, ?> segment) {
+    public static void closeAndAssertClosed(final Segment<?, ?> segment) {
         if (segment == null) {
             return;
         }
@@ -26,10 +28,14 @@ public final class SegmentTestHelper {
                 throw new AssertionError(String.format(
                         "Segment '%s' closed with ERROR.", segment.getId()));
             }
-            final SegmentResult<Void> result = segment.close();
-            if (result.getStatus() == SegmentResultStatus.ERROR) {
+            final OperationResult<Void> result = segment.close();
+            if (result.getStatus() == OperationStatus.ERROR) {
                 throw new AssertionError(String.format(
                         "Segment '%s' failed to close.", segment.getId()));
+            }
+            if (result.getStatus() == OperationStatus.OK
+                    && segment.getState() == SegmentState.CLOSED) {
+                return;
             }
             LockSupport.parkNanos(
                     TimeUnit.MILLISECONDS.toNanos(CLOSE_POLL_MILLIS));

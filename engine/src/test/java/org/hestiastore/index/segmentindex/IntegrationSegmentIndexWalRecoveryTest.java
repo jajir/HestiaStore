@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -21,6 +23,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.WalCorruptionPolicy;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
@@ -30,9 +35,6 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -45,23 +47,17 @@ import org.junit.jupiter.api.Test;
 class IntegrationSegmentIndexWalRecoveryTest {
 
     @Test
-    void crashReopenAfterSplitApplyKeepsChildRoutesAndWalRecoveredOverlay() {
+    void crashReopenRecoversWalBufferedWritesWithoutSplit() {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = integerWalRecoveryConfig(
-                "wal-split-crash-recovery-it", true);
+                "wal-buffered-crash-recovery-it", false);
         final List<Entry<Integer, String>> expected = expectedStableOverlayEntries();
 
         final MemDirectory crashSnapshot;
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
-            seedStableAndOverlaySplitScenario(index);
-            awaitCondition(() -> {
-                final SegmentIndexMetricsSnapshot snapshot = index
-                        .metricsSnapshot();
-                return snapshot.getSegmentCount() > 1
-                        && snapshot.getSplitInFlightCount() == 0
-                        && snapshot.getDrainInFlightCount() == 0;
-            }, 10_000L);
+            seedStableSegment(index);
+            applyOverlayMutations(index);
             assertIntegerIndexSnapshot(index, expected);
 
             crashSnapshot = copyDirectoryWithoutLocks(directory);
@@ -74,8 +70,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertEquals("overlay-44", reopened.get(44));
             assertEquals("overlay-49", reopened.get(49));
             assertIntegerIndexSnapshot(reopened, expected);
-            assertTrue(reopened.metricsSnapshot().getSegmentCount() > 1,
-                    "Expected persisted child routes after crash-style reopen.");
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().segments().count());
         }
     }
 
@@ -90,7 +85,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
             seedStableSegment(index);
-            assertEquals(1, index.metricsSnapshot().getSegmentCount());
+            assertEquals(1, index.runtimeMonitoring().snapshot().segments().count());
             applyOverlayMutations(index);
 
             crashSnapshot = copyDirectoryWithoutLocks(directory);
@@ -119,7 +114,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertEquals("overlay-44", reopened.get(44));
             assertEquals("overlay-49", reopened.get(49));
             assertIntegerIndexSnapshot(reopened, expected);
-            assertEquals(1, reopened.metricsSnapshot().getSegmentCount(),
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().segments().count(),
                     "Interrupted split artifacts must not publish child routes.");
         }
 
@@ -129,37 +124,36 @@ class IntegrationSegmentIndexWalRecoveryTest {
     }
 
     @Test
-    void flushAndWaitAfterSplitBacklogKeepsCrashReopenSnapshotConsistent() {
+    void flushAndWaitKeepsCrashReopenSnapshotConsistentForBufferedWrites() {
         assertCrashReopenAfterMaintenanceBoundary(
                 "wal-flush-split-boundary-it",
-                SegmentIndex::flushAndWait);
+                index -> index.maintenance().flushAndWait());
     }
 
     @Test
-    void compactAndWaitAfterSplitBacklogKeepsCrashReopenSnapshotConsistent() {
+    void compactAndWaitKeepsCrashReopenSnapshotConsistentForBufferedWrites() {
         assertCrashReopenAfterMaintenanceBoundary(
                 "wal-compact-split-boundary-it",
-                SegmentIndex::compactAndWait);
+                index -> index.maintenance().compactAndWait());
     }
 
     @Test
-    void closeAfterScheduledSplitBacklogKeepsReopenSnapshotConsistent() {
+    void closeKeepsReopenSnapshotConsistentForBufferedWrites() {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = integerWalRecoveryConfig(
-                "wal-close-split-boundary-it", true);
+                "wal-close-boundary-it", false);
         final List<Entry<Integer, String>> expected = expectedStableOverlayEntries();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
-            seedStableAndOverlaySplitScenario(index);
-            awaitSplitBacklogScheduledOrApplied(index);
+            seedStableSegment(index);
+            applyOverlayMutations(index);
         }
 
         try (SegmentIndex<Integer, String> reopened = SegmentIndex
                 .open(directory)) {
             assertIntegerIndexSnapshot(reopened, expected);
-            assertTrue(reopened.metricsSnapshot().getSegmentCount() > 1,
-                    "Close must persist child routes when split backlog was scheduled.");
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().segments().count());
         }
     }
 
@@ -168,16 +162,16 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-it")//
-                .withWal(Wal.builder().build())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-it"))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
             index.put("k1", "v1");
             index.put("k2", "v2");
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
         appendGarbageWalTail(directory);
 
@@ -193,17 +187,17 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-fail-fast-it")//
-                .withWal(Wal.builder()
-                        .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
-                        .build())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-fail-fast-it"))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder()
+                        .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
+                        .build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
             index.put("k1", "v1");
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
         appendGarbageWalTail(directory);
 
@@ -215,20 +209,20 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-fail-fast-immutability-it")//
-                .withWal(Wal.builder()
-                        .withSegmentSizeBytes(96L)
-                        .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
-                        .build())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-fail-fast-immutability-it"))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder()
+                        .segmentSizeBytes(96L)
+                        .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
+                        .build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
             for (int i = 0; i < 40; i++) {
                 index.put("k-" + i, "v-" + i);
             }
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
         appendGarbageWalTail(directory);
         final Map<String, byte[]> expectedSnapshot = walSegmentSnapshot(directory);
@@ -245,10 +239,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-cycle-it")//
-                .withWal(Wal.builder().build())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-cycle-it"))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
                 .build();
         final Map<String, String> expected = new HashMap<>();
         final int keySpace = 12;
@@ -288,10 +282,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-random-cycle-it")//
-                .withWal(Wal.builder().build())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-random-cycle-it"))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
                 .build();
         final Map<String, String> expected = new HashMap<>();
         final Random random = new Random(42L);
@@ -344,7 +338,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             expected.put(key, value);
         }
         if ((cycle & 1) == 0) {
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
     }
 
@@ -364,7 +358,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 expected.put(key, value);
             }
             if (random.nextInt(11) == 0) {
-                index.flushAndWait();
+                index.maintenance().flushAndWait();
             }
         }
     }
@@ -402,17 +396,13 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory crashSnapshot;
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
-            seedStableAndOverlaySplitScenario(index);
-            awaitSplitBacklogScheduledOrApplied(index);
+            seedStableSegment(index);
+            applyOverlayMutations(index);
 
             maintenanceAction.accept(index);
             awaitCondition(() -> {
-                final SegmentIndexMetricsSnapshot snapshot = index
-                        .metricsSnapshot();
-                return snapshot.getSplitInFlightCount() == 0
-                        && snapshot.getDrainInFlightCount() == 0
-                        && snapshot.getImmutableRunCount() == 0
-                        && snapshot.getDrainingPartitionCount() == 0;
+                final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                return snapshot.split().inFlightCount() == 0;
             }, 10_000L);
             assertIntegerIndexSnapshot(index, expected);
 
@@ -429,24 +419,25 @@ class IntegrationSegmentIndexWalRecoveryTest {
             final String indexName,
             final boolean backgroundMaintenanceAutoEnabled) {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName(indexName)//
-                .withWal(Wal.builder().build())//
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(32) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(
-                        backgroundMaintenanceAutoEnabled) //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity
+                        .keyTypeDescriptor(new TypeDescriptorInteger()))//
+                .identity(identity -> identity
+                        .valueTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity.name(indexName))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(128)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(
+                        backgroundMaintenanceAutoEnabled)) //
                 .build();
     }
 
@@ -466,22 +457,14 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 }).toList();
     }
 
-    private static void seedStableAndOverlaySplitScenario(
-            final SegmentIndex<Integer, String> index) {
-        seedStableSegment(index);
-        applyOverlayMutations(index);
-        lowerSplitThreshold(index, 16);
-    }
-
     private static void seedStableSegment(
             final SegmentIndex<Integer, String> index) {
         for (int i = 0; i < 48; i++) {
             index.put(i, "stable-" + i);
         }
-        index.flushAndWait();
-        awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
-                && index.metricsSnapshot().getSplitInFlightCount() == 0
-                && index.metricsSnapshot().getDrainInFlightCount() == 0,
+        index.maintenance().flushAndWait();
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() == 1
+                && index.runtimeMonitoring().snapshot().split().inFlightCount() == 0,
                 10_000L);
     }
 
@@ -491,30 +474,6 @@ class IntegrationSegmentIndexWalRecoveryTest {
         index.delete(18);
         index.put(44, "overlay-44");
         index.put(49, "overlay-49");
-    }
-
-    private static void lowerSplitThreshold(
-            final SegmentIndex<Integer, String> index,
-            final int threshold) {
-        final long revision = index.controlPlane().configuration()
-                .getConfigurationActual().getRevision();
-        final RuntimePatchResult patchResult = index.controlPlane()
-                .configuration()
-                .apply(new RuntimeConfigPatch(Map.of(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                        Integer.valueOf(threshold)), false,
-                        Long.valueOf(revision)));
-        assertTrue(patchResult.isApplied());
-    }
-
-    private static void awaitSplitBacklogScheduledOrApplied(
-            final SegmentIndex<Integer, String> index) {
-        awaitCondition(() -> {
-            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
-            return snapshot.getSplitScheduleCount() > 0L
-                    || snapshot.getSplitInFlightCount() > 0
-                    || snapshot.getSegmentCount() > 1;
-        }, 10_000L);
     }
 
     private static void assertIntegerIndexSnapshot(
@@ -588,21 +547,20 @@ class IntegrationSegmentIndexWalRecoveryTest {
             final FsDirectory directory = new FsDirectory(tempDir.toFile());
             final IndexConfiguration<String, String> conf = IndexConfiguration
                     .<String, String>builder()//
-                    .withKeyClass(String.class)//
-                    .withValueClass(String.class)//
-                    .withName("wal-disabled-it")//
+                    .identity(identity -> identity.keyClass(String.class))//
+                    .identity(identity -> identity.valueClass(String.class))//
+                    .identity(identity -> identity.name("wal-disabled-it"))//
                     .build();
 
             try (SegmentIndex<String, String> index = SegmentIndex
                     .create(directory, conf)) {
                 index.put("k1", "v1");
-                index.flushAndWait();
-                final SegmentIndexMetricsSnapshot snapshot = index
-                        .metricsSnapshot();
-                assertFalse(snapshot.isWalEnabled());
-                assertEquals(0L, snapshot.getWalAppendCount());
-                assertEquals(0L, snapshot.getWalSyncCount());
-                assertEquals(0L, snapshot.getWalRetainedBytes());
+                index.maintenance().flushAndWait();
+                final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                assertFalse(snapshot.wal().enabled());
+                assertEquals(0L, snapshot.wal().appendCount());
+                assertEquals(0L, snapshot.wal().syncCount());
+                assertEquals(0L, snapshot.wal().retainedBytes());
             }
 
             assertFalse(Files.exists(tempDir.resolve("wal")));
@@ -614,16 +572,16 @@ class IntegrationSegmentIndexWalRecoveryTest {
     @Test
     void walRetentionPressureForcesCheckpointAndWritesKeepProgressing() {
         final MemDirectory directory = new MemDirectory();
-        final Wal wal = Wal.builder()//
-                .withSegmentSizeBytes(96L)//
-                .withMaxBytesBeforeForcedCheckpoint(192L)//
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()//
+                .segmentSizeBytes(96L)//
+                .maxBytesBeforeForcedCheckpoint(192L)//
                 .build();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-retention-pressure-it")//
-                .withWal(wal)//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-retention-pressure-it"))//
+                .wal(walSection -> walSection.configuration(wal))//
                 .build();
 
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
@@ -631,14 +589,14 @@ class IntegrationSegmentIndexWalRecoveryTest {
             for (int i = 0; i < 300; i++) {
                 index.put("bp-" + i, "value-" + i);
             }
-            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
-            assertTrue(snapshot.isWalEnabled());
-            assertTrue(snapshot.getWalAppendCount() >= 300L);
-            assertTrue(snapshot.getWalCheckpointLsn() > 0L,
+            final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+            assertTrue(snapshot.wal().enabled());
+            assertTrue(snapshot.wal().appendCount() >= 300L);
+            assertTrue(snapshot.wal().checkpointLsn() > 0L,
                     "Expected forced checkpoint under retention pressure.");
-            assertTrue(snapshot.getWalDurableLsn() >= snapshot.getWalCheckpointLsn());
-            assertEquals(0L, snapshot.getWalSyncFailureCount());
-            assertTrue(snapshot.getWalRetainedBytes() <= wal
+            assertTrue(snapshot.wal().durableLsn() >= snapshot.wal().checkpointLsn());
+            assertEquals(0L, snapshot.wal().syncFailureCount());
+            assertTrue(snapshot.wal().retainedBytes() <= wal
                     .getMaxBytesBeforeForcedCheckpoint()
                     + wal.getSegmentSizeBytes());
             assertEquals("value-299", index.get("bp-299"));
@@ -650,16 +608,16 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final TestLogAppender appender = TestLogAppender.attachWarnRootAppender();
         try {
             final MemDirectory directory = new MemDirectory();
-            final Wal wal = Wal.builder()//
-                    .withSegmentSizeBytes(96L)//
-                    .withMaxBytesBeforeForcedCheckpoint(192L)//
+            final IndexWalConfiguration wal = IndexWalConfiguration.builder()//
+                    .segmentSizeBytes(96L)//
+                    .maxBytesBeforeForcedCheckpoint(192L)//
                     .build();
             final IndexConfiguration<String, String> conf = IndexConfiguration
                     .<String, String>builder()//
-                    .withKeyClass(String.class)//
-                    .withValueClass(String.class)//
-                    .withName("wal-retention-pressure-log-throttle-it")//
-                    .withWal(wal)//
+                    .identity(identity -> identity.keyClass(String.class))//
+                    .identity(identity -> identity.valueClass(String.class))//
+                    .identity(identity -> identity.name("wal-retention-pressure-log-throttle-it"))//
+                    .wal(walSection -> walSection.configuration(wal))//
                     .build();
 
             try (SegmentIndex<String, String> index = SegmentIndex
@@ -684,16 +642,16 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .attachRootAppender(Level.INFO);
         try {
             final MemDirectory directory = new MemDirectory();
-            final Wal wal = Wal.builder()//
-                    .withSegmentSizeBytes(96L)//
-                    .withMaxBytesBeforeForcedCheckpoint(192L)//
+            final IndexWalConfiguration wal = IndexWalConfiguration.builder()//
+                    .segmentSizeBytes(96L)//
+                    .maxBytesBeforeForcedCheckpoint(192L)//
                     .build();
             final IndexConfiguration<String, String> conf = IndexConfiguration
                     .<String, String>builder()//
-                    .withKeyClass(String.class)//
-                    .withValueClass(String.class)//
-                    .withName("wal-retention-pressure-structured-events-it")//
-                    .withWal(wal)//
+                    .identity(identity -> identity.keyClass(String.class))//
+                    .identity(identity -> identity.valueClass(String.class))//
+                    .identity(identity -> identity.name("wal-retention-pressure-structured-events-it"))//
+                    .wal(walSection -> walSection.configuration(wal))//
                     .build();
 
             try (SegmentIndex<String, String> index = SegmentIndex

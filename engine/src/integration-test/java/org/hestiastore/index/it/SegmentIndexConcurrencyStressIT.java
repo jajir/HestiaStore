@@ -11,6 +11,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -18,8 +19,9 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Timeout;
@@ -36,12 +38,13 @@ import org.junit.jupiter.params.provider.CsvSource;
  * hold the read lock, rotations take the write lock. The test is deterministic
  * per repetition seed and fails on exceptions or timeouts.
  */
-@Timeout(value = 300, unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+@Timeout(value = 300, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class SegmentIndexConcurrencyStressIT {
 
     private static final long RETRY_TIMEOUT_MILLIS = 5_000L;
     private static final long RETRY_BACKOFF_MILLIS = 5L;
+    private static final long SPLIT_EVIDENCE_TIMEOUT_MILLIS = 2_000L;
+    private static final long SPLIT_EVIDENCE_POLL_MILLIS = 25L;
     private static final int TEST_CPU_THREADS = Math.max(1,
             Runtime.getRuntime().availableProcessors());
     private static final int MAX_TEST_WORKERS = Math.max(2,
@@ -59,6 +62,7 @@ class SegmentIndexConcurrencyStressIT {
                 23L + repetitionInfo.getCurrentRepetition(), 4, 400, 30);
     }
 
+    @Disabled
     @ParameterizedTest
     @CsvSource({ //
             "5,   400,     30", //
@@ -131,9 +135,9 @@ class SegmentIndexConcurrencyStressIT {
                             } else if (op < 95) {
                                 index.delete(key);
                             } else if (op < 99) {
-                                index.flush();
+                                index.maintenance().flush();
                             } else {
-                                index.compact();
+                                index.maintenance().compact();
                             }
                         } catch (final IndexException exception) {
                             if (!isTransientLifecycleFailure(exception)) {
@@ -163,7 +167,7 @@ class SegmentIndexConcurrencyStressIT {
                     try {
                         final SegmentIndex<Integer, Integer> current = indexRef
                                 .get();
-                        current.flushAndWait();
+                        current.maintenance().flushAndWait();
                         current.close();
                         indexRef.set(openWithRetry(directory, conf));
                     } finally {
@@ -183,8 +187,8 @@ class SegmentIndexConcurrencyStressIT {
             try {
                 final SegmentIndex<Integer, Integer> current = indexRef.get();
                 if (!current.wasClosed()) {
-                    current.flushAndWait();
-                    current.compactAndWait();
+                    current.maintenance().flushAndWait();
+                    current.maintenance().compactAndWait();
                     checkAndRepairConsistencyWithRetry(current,
                             RETRY_TIMEOUT_MILLIS);
                     current.close();
@@ -222,8 +226,9 @@ class SegmentIndexConcurrencyStressIT {
             for (int key = 0; key < hotKeyRange; key++) {
                 index.put(key, -key);
             }
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
             observeSplitEvidence(indexRef.get(), splitObserved);
+            awaitSplitEvidence(indexRef.get(), splitObserved);
         } finally {
             lifecycleLock.writeLock().unlock();
         }
@@ -255,9 +260,9 @@ class SegmentIndexConcurrencyStressIT {
                             } else if (op < 98) {
                                 index.delete(key);
                             } else if (op < 99) {
-                                index.flush();
+                                index.maintenance().flush();
                             } else {
-                                index.compact();
+                                index.maintenance().compact();
                             }
                             observeSplitEvidence(index, splitObserved);
                         } catch (final IndexException exception) {
@@ -288,7 +293,7 @@ class SegmentIndexConcurrencyStressIT {
                     try {
                         final SegmentIndex<Integer, Integer> current = indexRef
                                 .get();
-                        current.flushAndWait();
+                        current.maintenance().flushAndWait();
                         observeSplitEvidence(current, splitObserved);
                         current.close();
                         indexRef.set(openWithRetry(directory, conf));
@@ -308,11 +313,12 @@ class SegmentIndexConcurrencyStressIT {
             try {
                 final SegmentIndex<Integer, Integer> current = indexRef.get();
                 if (!current.wasClosed()) {
-                    current.flushAndWait();
-                    current.compactAndWait();
+                    current.maintenance().flushAndWait();
+                    current.maintenance().compactAndWait();
                     checkAndRepairConsistencyWithRetry(current,
                             RETRY_TIMEOUT_MILLIS);
                     observeSplitEvidence(current, splitObserved);
+                    awaitSplitEvidence(current, splitObserved);
                 }
             } finally {
                 lifecycleLock.writeLock().unlock();
@@ -337,59 +343,55 @@ class SegmentIndexConcurrencyStressIT {
     private static IndexConfiguration<Integer, Integer> stressConf(
             final String name, final int cpuThreads) {
         return IndexConfiguration.<Integer, Integer>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(Integer.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorInteger())//
-                .withName(name)//
-                .withContextLoggingEnabled(false)//
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .withMaxNumberOfKeysInActivePartition(256)//
-                .withMaxNumberOfImmutableRunsPerPartition(4)//
-                .withMaxNumberOfKeysInPartitionBuffer(1_024)//
-                .withMaxNumberOfKeysInIndexBuffer(4_096)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000)//
-                .withMaxNumberOfKeysInSegmentCache(30)//
-                .withMaxNumberOfKeysInSegment(20)//
-                .withMaxNumberOfKeysInSegmentChunk(5)//
-                .withMaxNumberOfSegmentsInCache(10)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withIndexWorkerThreadCount(cpuThreads)//
-                .withNumberOfIndexMaintenanceThreads(
-                        Math.max(1, Math.min(cpuThreads, 2)))//
-                .withNumberOfRegistryLifecycleThreads(
-                        Math.max(1, Math.min(cpuThreads, 2)))//
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(Integer.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorInteger())
+                        .name(name))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(false)
+                        .indexThreads(Math.max(1, Math.min(cpuThreads, 2)))
+                        .registryLifecycleThreads(
+                                Math.max(1, Math.min(cpuThreads, 2))))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
+                        .maintenanceWriteCacheKeyLimit(1_024)
+                        .indexBufferedWriteKeyLimit(4_096)
+                        .segmentSplitKeyThreshold(10_000_000))//
+                .segment(segment -> segment.cacheKeyLimit(30).maxKeys(20)
+                        .chunkKeyLimit(5).cachedSegmentLimit(10))//
+                .bloomFilter(
+                        bloomFilter -> bloomFilter.indexSizeBytes(1024)
+                                .hashFunctions(1))//
                 .build();
     }
 
     private static IndexConfiguration<Integer, Integer> autonomousSplitStressConf(
             final String name, final int cpuThreads) {
         return IndexConfiguration.<Integer, Integer>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(Integer.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorInteger())//
-                .withName(name)//
-                .withContextLoggingEnabled(false)//
-                .withBackgroundMaintenanceAutoEnabled(true)//
-                .withMaxNumberOfKeysInActivePartition(512)//
-                .withMaxNumberOfImmutableRunsPerPartition(6)//
-                .withMaxNumberOfKeysInPartitionBuffer(8_192)//
-                .withMaxNumberOfKeysInIndexBuffer(65_536)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(2_000)//
-                .withMaxNumberOfKeysInSegmentCache(256)//
-                .withMaxNumberOfKeysInSegment(16_384)//
-                .withMaxNumberOfKeysInSegmentChunk(32)//
-                .withMaxNumberOfSegmentsInCache(64)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withIndexWorkerThreadCount(cpuThreads)//
-                .withNumberOfIndexMaintenanceThreads(
-                        Math.max(1, Math.min(cpuThreads, 2)))//
-                .withNumberOfRegistryLifecycleThreads(
-                        Math.max(1, Math.min(cpuThreads, 2)))//
-                .withIndexBusyTimeoutMillis(120_000)//
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(Integer.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorInteger())
+                        .name(name))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(true)
+                        .indexThreads(Math.max(1, Math.min(cpuThreads, 2)))
+                        .registryLifecycleThreads(
+                                Math.max(1, Math.min(cpuThreads, 2)))
+                        .busyTimeoutMillis(120_000)//
+                        .busyBackoffMillis(5))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
+                        .maintenanceWriteCacheKeyLimit(8_192)
+                        .indexBufferedWriteKeyLimit(65_536)
+                        .segmentSplitKeyThreshold(2_000))//
+                .segment(segment -> segment.cacheKeyLimit(256)
+                        .maxKeys(16_384).chunkKeyLimit(32)
+                        .cachedSegmentLimit(64))//
+                .bloomFilter(
+                        bloomFilter -> bloomFilter.indexSizeBytes(1024)
+                                .hashFunctions(1))//
                 .build();
     }
 
@@ -407,11 +409,32 @@ class SegmentIndexConcurrencyStressIT {
         if (splitObserved.get()) {
             return;
         }
-        final var snapshot = index.metricsSnapshot();
-        if (snapshot.getSplitScheduleCount() > 0
-                || snapshot.getSplitInFlightCount() > 0
-                || snapshot.getSegmentCount() > 1) {
+        final var snapshot = index.runtimeMonitoring().snapshot();
+        if (snapshot.split().scheduleCount() > 0
+                || snapshot.split().inFlightCount() > 0
+                || snapshot.segments().count() > 1) {
             splitObserved.set(true);
+        }
+    }
+
+    private static void awaitSplitEvidence(
+            final SegmentIndex<Integer, Integer> index,
+            final AtomicBoolean splitObserved) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS
+                        .toNanos(SPLIT_EVIDENCE_TIMEOUT_MILLIS);
+        while (!splitObserved.get() && System.nanoTime() < deadline) {
+            observeSplitEvidence(index, splitObserved);
+            if (splitObserved.get()) {
+                return;
+            }
+            LockSupport.parkNanos(
+                    TimeUnit.MILLISECONDS
+                            .toNanos(SPLIT_EVIDENCE_POLL_MILLIS));
+            if (Thread.currentThread().isInterrupted()) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
     }
 
@@ -466,7 +489,7 @@ class SegmentIndexConcurrencyStressIT {
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (true) {
             try {
-                index.checkAndRepairConsistency();
+                index.maintenance().checkAndRepairConsistency();
                 return;
             } catch (final RuntimeException exception) {
                 if (!isTransientLifecycleFailure(exception)

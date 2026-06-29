@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ class IndexPropertiesSchemaTest {
         IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
 
         final PropertyView view = store.snapshot();
-        assertEquals(IndexPropertiesSchema.CURRENT_SCHEMA_VERSION,
+        assertEquals(IndexPropertiesSchema.CURRENT_SEGMENT_SCHEMA_VERSION,
                 view.getInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY));
         assertEquals(0L, view.getLong(
                 IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_DELTA_CACHE));
@@ -84,33 +84,31 @@ class IndexPropertiesSchemaTest {
         IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA.ensure(store);
 
         final PropertyView view = store.snapshot();
-        assertEquals(IndexPropertiesSchema.CURRENT_SCHEMA_VERSION,
+        assertEquals(
+                IndexPropertiesSchema.CURRENT_INDEX_CONFIGURATION_SCHEMA_VERSION,
                 view.getInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY));
         assertEquals(
-                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
+                IndexConfigurationDefaults.DEFAULT_SEGMENT_CACHE_KEY_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
-        final int expectedActivePartition = IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
+        final int expectedSegmentWriteCacheKeyLimit = IndexConfigurationDefaults.DEFAULT_SEGMENT_CACHE_KEY_LIMIT
                 / 2;
-        final int expectedPartitionBuffer = Math.max(
-                expectedActivePartition * 2, expectedActivePartition + 1);
-        assertEquals(expectedActivePartition, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION));
-        assertEquals(
-                IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
+        final int expectedMaintenanceLimit = Math.max(
+                expectedSegmentWriteCacheKeyLimit * 2,
+                expectedSegmentWriteCacheKeyLimit + 1);
+        assertEquals(expectedSegmentWriteCacheKeyLimit, view.getInt(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT));
+        assertEquals(expectedMaintenanceLimit, view.getInt(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
+        assertEquals(expectedMaintenanceLimit
+                * IndexConfigurationDefaults.DEFAULT_CACHED_SEGMENT_LIMIT,
                 view.getInt(
-                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION));
-        assertEquals(expectedPartitionBuffer, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
-        assertEquals(expectedPartitionBuffer
-                * IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
-                view.getInt(
-                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER));
-        assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES,
+                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT));
+        assertEquals(IndexConfigurationDefaults.DEFAULT_DELTA_CACHE_FILE_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));
         assertEquals(
-                IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
+                IndexConfigurationDefaults.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS));
         assertEquals("", view.getString(
@@ -137,7 +135,7 @@ class IndexPropertiesSchemaTest {
     }
 
     @Test
-    void indexConfigurationSchemaMigratesLegacyMaintenanceKeysIntoNewNames() {
+    void indexConfigurationSchemaRejectsLegacyMaintenanceKeys() {
         final PropertyStore store = PropertyStoreImpl.fromDirectory(
                 asyncDirectory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
@@ -163,12 +161,45 @@ class IndexPropertiesSchemaTest {
             writer.setString("segmentIndexMaintenanceThreads", "6");
         }
 
-        IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA.ensure(store);
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA
+                        .ensure(store));
+        assertTrue(error.getMessage().contains(
+                "Unsupported legacy properties for 'index-configuration'"));
+    }
 
-        final PropertyView view = store.snapshot();
-        assertEquals(6, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS));
-        assertEquals("false", view.getString(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED));
+    @Test
+    void indexConfigurationSchemaRejectsSchemaVersionOne() {
+        final PropertyStore store = PropertyStoreImpl.fromDirectory(
+                asyncDirectory,
+                IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
+                false);
+        try (PropertyTransaction tx = store.beginTransaction()) {
+            final PropertyWriter writer = tx.openPropertyWriter();
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_CLASS,
+                    String.class.getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_VALUE_CLASS,
+                    Long.class.getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_TYPE_DESCRIPTOR,
+                    "test-key-descriptor");
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_VALUE_TYPE_DESCRIPTOR,
+                    "test-value-descriptor");
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_NAME,
+                    "schema-version-one-test");
+            writer.setInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY, 1);
+        }
+
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA
+                        .ensure(store));
+        assertTrue(error.getMessage().contains(
+                "Unsupported schema version 1 for 'index-configuration'; expected 2"));
     }
 }

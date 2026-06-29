@@ -27,6 +27,23 @@ recoverable.
 
 This is the simplest and lowest-risk procedure.
 
+Concrete example:
+
+```bash
+APP_SERVICE=hestia-orders
+SOURCE_INDEX=/srv/hestia/indexes/orders
+BACKUP_ROOT=/srv/hestia/fs-backups
+BACKUP_DIR="$BACKUP_ROOT/orders-2026-04-21"
+
+sudo systemctl stop "$APP_SERVICE"
+mkdir -p "$BACKUP_DIR"
+rsync -a --delete "$SOURCE_INDEX/" "$BACKUP_DIR/"
+sudo systemctl start "$APP_SERVICE"
+```
+
+If you need a portable logical artifact instead of a raw directory copy, use
+[Export & Import](export-import.md).
+
 ### Acceptable: coordinated snapshot
 
 If you cannot fully stop the host process:
@@ -50,6 +67,15 @@ without validation.
 4. Optionally run `compact()` if you want a cleaner on-disk layout.
 5. Take a fresh backup only after the index is healthy again.
 
+Concrete example with WAL verification:
+
+```bash
+RESTORE_INDEX=/srv/hestia/indexes/orders
+WAL_VERIFY=/opt/hestiastore/wal-tools/bin/wal_verify
+
+"$WAL_VERIFY" "$RESTORE_INDEX/wal" --json
+```
+
 ## Restore procedure
 
 1. Restore the full directory to the target host or path.
@@ -58,6 +84,20 @@ without validation.
 4. Run `checkAndRepairConsistency()`.
 5. Perform spot-check reads on known keys.
 6. Resume application traffic only after the checks pass.
+
+Concrete filesystem restore example:
+
+```bash
+BACKUP_DIR=/srv/hestia/fs-backups/orders-2026-04-21
+RESTORE_INDEX=/srv/hestia-restored/indexes/orders
+
+mkdir -p "$RESTORE_INDEX"
+rsync -a --delete "$BACKUP_DIR/" "$RESTORE_INDEX/"
+```
+
+If you need to restore into a newly created index with edited configuration or
+move data into another system, prefer [Export & Import](export-import.md)
+instead of raw directory restore.
 
 ## WAL-specific notes
 
@@ -74,3 +114,17 @@ without validation.
 - Expected keys can be read.
 - Monitoring shows healthy state after restore.
 - A new backup window is scheduled after major repair or compaction work.
+
+Simple operator flow:
+
+```bash
+APP_SERVICE=hestia-orders-restore
+BACKUP_DIR=/srv/hestia/fs-backups/orders-2026-04-21
+RESTORE_INDEX=/srv/hestia-restored/indexes/orders
+WAL_VERIFY=/opt/hestiastore/wal-tools/bin/wal_verify
+
+mkdir -p "$RESTORE_INDEX"
+rsync -a --delete "$BACKUP_DIR/" "$RESTORE_INDEX/"
+"$WAL_VERIFY" "$RESTORE_INDEX/wal" --json
+sudo systemctl start "$APP_SERVICE"
+```

@@ -1,21 +1,27 @@
 package org.hestiastore.index.segmentregistry;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,7 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentRegistryBuilderTest {
 
     @Mock
-    private IndexConfiguration<Integer, String> conf;
+    private EffectiveIndexConfiguration<Integer, String> conf;
 
     @Test
     void builderRejectsNullDirectory() {
@@ -80,9 +86,7 @@ class SegmentRegistryBuilderTest {
         final MemDirectory directory = new MemDirectory();
         directory.mkdir("segment-00005");
         final Directory asyncDirectory = directory;
-        when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
-        when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
-        when(conf.getIndexBusyTimeoutMillis()).thenReturn(10);
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
         final ExecutorService stableSegmentMaintenanceExecutor = Executors
                 .newSingleThreadExecutor();
         final ExecutorService registryMaintenanceExecutor = Executors
@@ -93,16 +97,16 @@ class SegmentRegistryBuilderTest {
                     .withDirectoryFacade(asyncDirectory)
                     .withKeyTypeDescriptor(new TypeDescriptorInteger())
                     .withValueTypeDescriptor(new TypeDescriptorShortString())
-                    .withConfiguration(conf)
+                    .withConfiguration(effective(conf))
                     .withSegmentMaintenanceExecutor(
                             stableSegmentMaintenanceExecutor)
                     .withRegistryMaintenanceExecutor(
                             registryMaintenanceExecutor)
                     .build();
             try {
-                assertEquals(SegmentId.of(6),
-                        registry.allocateSegmentId().getValue());
                 final SegmentRegistryImpl<Integer, String> impl = (SegmentRegistryImpl<Integer, String>) registry;
+                assertEquals(SegmentId.of(6),
+                        impl.allocateSegmentId().getValue());
                 assertNotNull(readField(impl, "cache"),
                         "Expected prebuilt cache wiring");
                 assertNotNull(readField(impl, "segmentIdAllocator"),
@@ -135,6 +139,72 @@ class SegmentRegistryBuilderTest {
         }
     }
 
+    @Test
+    void closeFlushesDirtySegmentWhenRegistryFreezes() {
+        final MemDirectory directory = new MemDirectory();
+        final ExecutorService stableSegmentMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        final ExecutorService registryMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        try {
+            final SegmentRegistry<Integer, String> registry = SegmentRegistry
+                    .<Integer, String>builder()
+                    .withDirectoryFacade(directory)
+                    .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                    .withValueTypeDescriptor(new TypeDescriptorShortString())
+                    .withConfiguration(effective(newConfiguration()))
+                    .withSegmentMaintenanceExecutor(
+                            stableSegmentMaintenanceExecutor)
+                    .withRegistryMaintenanceExecutor(
+                            registryMaintenanceExecutor)
+                    .build();
+            final BlockingSegment<Integer, String> created = registry
+                    .createSegment();
+            assertNotNull(created);
+            assertSame(OperationStatus.OK,
+                    created.getSegment().put(1, "value").getStatus());
+            registry.close();
+        } finally {
+            stableSegmentMaintenanceExecutor.shutdownNow();
+            registryMaintenanceExecutor.shutdownNow();
+        }
+    }
+
+    @Test
+    void createBlockingSegmentReturnsBlockingAccessToCreatedSegment() {
+        final MemDirectory directory = new MemDirectory();
+        final ExecutorService stableSegmentMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        final ExecutorService registryMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        try {
+            final SegmentRegistry<Integer, String> registry = SegmentRegistry
+                    .<Integer, String>builder()
+                    .withDirectoryFacade(directory)
+                    .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                    .withValueTypeDescriptor(new TypeDescriptorShortString())
+                    .withConfiguration(effective(newConfiguration()))
+                    .withSegmentMaintenanceExecutor(
+                            stableSegmentMaintenanceExecutor)
+                    .withRegistryMaintenanceExecutor(
+                            registryMaintenanceExecutor)
+                    .build();
+            try {
+                final BlockingSegment<Integer, String> handle = registry
+                        .createSegment();
+
+                handle.put(1, "value");
+
+                assertEquals("value", handle.get(1));
+            } finally {
+                registry.close();
+            }
+        } finally {
+            stableSegmentMaintenanceExecutor.shutdownNow();
+            registryMaintenanceExecutor.shutdownNow();
+        }
+    }
+
     private static Object readField(final Object target, final String name) {
         try {
             final Field field = target.getClass().getDeclaredField(name);
@@ -156,6 +226,32 @@ class SegmentRegistryBuilderTest {
                 .withConfiguration(conf)
                 .withSegmentMaintenanceExecutor(
                         stableSegmentMaintenanceExecutor)
+                .build();
+    }
+
+    private static IndexConfiguration<Integer, String> newConfiguration() {
+        return IndexConfiguration.<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("segment-registry-builder-test"))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath
+                        .maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2).maxKeys(100)
+                        .cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1)
+                        .indexSizeBytes(1024)
+                        .falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .maintenance(maintenance -> maintenance.busyBackoffMillis(1)
+                        .busyTimeoutMillis(10))
+                .filters(filters -> filters
+                        .encodingFilters(List.of(new ChunkFilterDoNothing()))
+                        .decodingFilters(List.of(new ChunkFilterDoNothing())))
                 .build();
     }
 }

@@ -2,17 +2,20 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import java.util.OptionalLong;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
+import org.hestiastore.index.segmentindex.monitoring.SegmentIndexRuntimeMonitoring;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.core.SegmentIndexFactory;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexBootstrapOperation;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeHandle;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -30,8 +33,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * applied to the provided configuration, then both the configuration and
      * the on-disk structures are persisted.
      * <p>
-     * The returned index owns the supplied directory facade and will close it
-     * when the index is closed if it implements {@link CloseableResource}.
+     * The returned index does not own the supplied directory facade. Callers that
+     * pass a closeable directory remain responsible for closing it.
      * </p>
      *
      * @param directory backing directory for the index
@@ -40,15 +43,54 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        return SegmentIndexFactory.create(directory, indexConf);
+        return operation(directory, indexConf, null).create();
+    }
+
+    /**
+     * Creates a brand new index using caller-owned runtime resources.
+     * <p>
+     * The returned index does not own the supplied runtime. The caller remains
+     * responsible for closing the runtime after all indexes using it have been
+     * closed.
+     * </p>
+     *
+     * @param directory backing directory for the index
+     * @param indexConf requested configuration overrides
+     * @param runtime caller-owned shared runtime
+     * @return a newly created index instance
+     */
+    static <M, N> SegmentIndex<M, N> create(final Directory directory,
+            final IndexConfiguration<M, N> indexConf,
+            final HestiaStoreRuntime runtime) {
+        return operation(directory, indexConf, null, runtime).create();
+    }
+
+    /**
+     * Creates a brand new index using an explicit chunk filter provider
+     * resolver.
+     *
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   backing directory for the index
+     * @param indexConf                   requested configuration overrides
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
+     *                                    chunk filter specs; must not be null
+     * @return a newly created index instance
+     */
+    static <M, N> SegmentIndex<M, N> create(final Directory directory,
+            final IndexConfiguration<M, N> indexConf,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return operation(directory, indexConf,
+                requireChunkFilterProviderResolver(
+                        chunkFilterProviderResolver)).create();
     }
 
     /**
      * Opens an existing index, merging the provided configuration overrides
      * with the stored configuration on disk.
      * <p>
-     * The returned index owns the supplied directory facade and will close it
-     * when the index is closed if it implements {@link CloseableResource}.
+     * The returned index does not own the supplied directory facade. Callers that
+     * pass a closeable directory remain responsible for closing it.
      * </p>
      *
      * @param directory backing directory that already contains the index
@@ -57,28 +99,101 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        return SegmentIndexFactory.open(directory, indexConf);
+        return operation(directory, indexConf, null).open();
+    }
+
+    /**
+     * Opens an existing index using caller-owned runtime resources.
+     * <p>
+     * The returned index does not own the supplied runtime. The caller remains
+     * responsible for closing the runtime after all indexes using it have been
+     * closed.
+     * </p>
+     *
+     * @param directory backing directory that already contains the index
+     * @param indexConf configuration overrides to apply
+     * @param runtime caller-owned shared runtime
+     * @return index instance backed by the updated configuration
+     */
+    static <M, N> SegmentIndex<M, N> open(final Directory directory,
+            final IndexConfiguration<M, N> indexConf,
+            final HestiaStoreRuntime runtime) {
+        return operation(directory, indexConf, null, runtime).open();
+    }
+
+    /**
+     * Opens an existing index with an explicit chunk filter provider resolver.
+     *
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   backing directory that already contains
+     *                                    the index
+     * @param indexConf                   configuration overrides to apply
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
+     *                                    chunk filter specs; must not be null
+     * @return index instance backed by the updated configuration
+     */
+    static <M, N> SegmentIndex<M, N> open(final Directory directory,
+            final IndexConfiguration<M, N> indexConf,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return operation(directory, indexConf,
+                requireChunkFilterProviderResolver(
+                        chunkFilterProviderResolver)).open();
     }
 
     /**
      * Opens an existing index using the configuration stored on disk.
      * <p>
-     * The returned index owns the supplied directory facade and will close it
-     * when the index is closed if it implements {@link CloseableResource}.
+     * The returned index does not own the supplied directory facade. Callers that
+     * pass a closeable directory remain responsible for closing it.
      * </p>
      *
      * @param directory backing directory with an existing index
      * @return index instance backed by the persisted configuration
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory) {
-        return SegmentIndexFactory.open(directory);
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                null).open();
+    }
+
+    /**
+     * Opens an existing index using stored configuration and caller-owned
+     * runtime resources.
+     *
+     * @param directory backing directory with an existing index
+     * @param runtime caller-owned shared runtime
+     * @return index instance backed by the persisted configuration
+     */
+    static <M, N> SegmentIndex<M, N> open(final Directory directory,
+            final HestiaStoreRuntime runtime) {
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                null, runtime).open();
+    }
+
+    /**
+     * Opens an existing index using stored configuration and an explicit chunk
+     * filter provider resolver.
+     *
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   backing directory with an existing
+     *                                    index
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
+     *                                    chunk filter specs; must not be null
+     * @return index instance backed by the persisted configuration
+     */
+    static <M, N> SegmentIndex<M, N> open(final Directory directory,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                requireChunkFilterProviderResolver(
+                        chunkFilterProviderResolver)).open();
     }
 
     /**
      * Attempts to open an index when it may or may not exist.
      * <p>
-     * The returned index owns the supplied directory facade and will close it
-     * when the index is closed if it implements {@link CloseableResource}.
+     * The returned index does not own the supplied directory facade. Callers that
+     * pass a closeable directory remain responsible for closing it.
      * </p>
      *
      * @param directory backing directory that may contain an index
@@ -86,7 +201,90 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
-        return SegmentIndexFactory.tryOpen(directory);
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                null).tryOpen();
+    }
+
+    /**
+     * Attempts to open an index using caller-owned runtime resources.
+     *
+     * @param directory backing directory that may contain an index
+     * @param runtime caller-owned shared runtime
+     * @return optional index instance if the configuration was found
+     */
+    static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
+            final Directory directory,
+            final HestiaStoreRuntime runtime) {
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                null, runtime).tryOpen();
+    }
+
+    /**
+     * Attempts to open an index using an explicit chunk filter provider
+     * resolver.
+     *
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   backing directory that may contain an
+     *                                    index
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
+     *                                    chunk filter specs; must not be null
+     * @return optional index instance if the configuration was found
+     */
+    static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
+            final Directory directory,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return SegmentIndex.<M, N>operation(directory, emptyConfiguration(),
+                requireChunkFilterProviderResolver(
+                        chunkFilterProviderResolver)).tryOpen();
+    }
+
+    private static <M, N> SegmentIndexBootstrapOperation<M, N> operation(
+            final Directory directory,
+            final IndexConfiguration<M, N> userProvidedConfiguration,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return operation(
+                Vldtn.requireNonNull(directory, "directory"),
+                Vldtn.requireNonNull(userProvidedConfiguration,
+                        "userProvidedConfiguration"),
+                chunkFilterProviderResolver,
+                HestiaStoreRuntimeAccess.owned());
+    }
+
+    private static <M, N> SegmentIndexBootstrapOperation<M, N> operation(
+            final Directory directory,
+            final IndexConfiguration<M, N> userProvidedConfiguration,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver,
+            final HestiaStoreRuntime runtime) {
+        return operation(
+                Vldtn.requireNonNull(directory, "directory"),
+                Vldtn.requireNonNull(userProvidedConfiguration,
+                        "userProvidedConfiguration"),
+                chunkFilterProviderResolver,
+                HestiaStoreRuntimeAccess.borrowed(runtime));
+    }
+
+    private static <M, N> SegmentIndexBootstrapOperation<M, N> operation(
+            final Directory directory,
+            final IndexConfiguration<M, N> userProvidedConfiguration,
+            final ChunkFilterProviderResolver chunkFilterProviderResolver,
+            final SegmentIndexRuntimeHandle runtimeHandle) {
+        return new SegmentIndexBootstrapOperation<>(
+                Vldtn.requireNonNull(directory, "directory"),
+                Vldtn.requireNonNull(userProvidedConfiguration,
+                        "userProvidedConfiguration"),
+                chunkFilterProviderResolver,
+                Vldtn.requireNonNull(runtimeHandle, "runtimeHandle"));
+    }
+
+    private static ChunkFilterProviderResolver requireChunkFilterProviderResolver(
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return Vldtn.requireNonNull(chunkFilterProviderResolver,
+                "chunkFilterProviderResolver");
+    }
+
+    private static <M, N> IndexConfiguration<M, N> emptyConfiguration() {
+        return IndexConfiguration.<M, N>builder().build();
     }
 
     /**
@@ -97,16 +295,6 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      *              not be a tombstone value)
      */
     void put(K key, V value);
-
-    /**
-     * Asynchronously inserts or updates a single entry.
-     *
-     * @param key   key to write (must not be null)
-     * @param value value to associate with the key (must not be null and must
-     *              not be a tombstone value)
-     * @return completion that finishes when the write completes
-     */
-    CompletionStage<Void> putAsync(K key, V value);
 
     /**
      * Convenience overload that accepts a pre-built {@link Entry}.
@@ -127,60 +315,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     V get(K key);
 
     /**
-     * Performs an asynchronous point lookup for the given key.
-     *
-     * @param key key to search for
-     * @return completion that supplies the stored value or {@code null} when no
-     *         entry exists
-     */
-    CompletionStage<V> getAsync(K key);
-
-    /**
      * Deletes (tombstones) the provided key.
      *
      * @param key key to remove from the index
      */
     void delete(K key);
-
-    /**
-     * Asynchronously tombstones the provided key.
-     *
-     * @param key key to remove from the index
-     * @return completion that finishes when the delete completes
-     */
-    CompletionStage<Void> deleteAsync(K key);
-
-    /**
-     * Starts a compaction pass over in-memory and on-disk data structures. This
-     * is the explicit index-level entry point for compaction; automatic split
-     * logic does not invoke compaction.
-     *
-     * The call returns after compaction is accepted by each segment.
-     */
-    void compact();
-
-    /**
-     * Starts flushing in-memory data to disk. The call returns after flush is
-     * accepted by each segment.
-     */
-    void flush();
-
-    /**
-     * Starts a compaction pass and waits until all segment maintenance
-     * operations complete. Do not call from a segment maintenance executor
-     * thread.
-     *
-     * This is the explicit index-level entry point for compaction; automatic
-     * split logic does not invoke compaction.
-     */
-    void compactAndWait();
-
-    /**
-     * Starts flushing in-memory data to disk and waits until all segment
-     * maintenance operations complete. Do not call from a segment maintenance
-     * executor thread.
-     */
-    void flushAndWait();
 
     /**
      * Went through all records. In fact read all index data. Doesn't use
@@ -243,56 +382,6 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     /**
-     * Checks the internal consistency of all index segments and associated data
-     * descriptions.
-     * <p>
-     * This method traverses all segments and verifies that the index structure,
-     * segment data, and metadata are valid and consistent. If correctable
-     * inconsistencies are found, this method attempts to repair them
-     * automatically. If an uncorrectable problem is detected, the method throws
-     * an exception or signals failure, depending on the implementation.
-     * <p>
-     * <b>Typical consistency checks include:</b>
-     * <ul>
-     * <li>Validating segment structure and integrity</li>
-     * <li>Checking for corrupt or missing metadata</li>
-     * <li>Verifying key/value data descriptions are correct and complete</li>
-     * <li>Ensuring no orphaned or unreachable segments</li>
-     * </ul>
-     * <p>
-     * <b>Behavior:</b>
-     * <ul>
-     * <li>If all issues are correctable, the method repairs them and returns
-     * normally.</li>
-     * <li>If uncorrectable inconsistencies are found, the method throws an
-     * {@code IndexException} or fails with an error.</li>
-     * </ul>
-     * <p>
-     * <b>Implementation note:</b> Callers should invoke this method
-     * periodically or after unexpected shutdowns to maintain data integrity.
-     *
-     * @throws IndexException if an uncorrectable inconsistency is detected.
-     */
-    void checkAndRepairConsistency();
-
-    /**
-     * Returns the configuration this index was opened with (merged with
-     * defaults where appropriate).
-     *
-     * @return effective configuration
-     */
-    IndexConfiguration<K, V> getConfiguration();
-
-    /**
-     * Returns the current lifecycle state of this index instance.
-     * Typical transitions are `OPENING -> READY -> CLOSING -> CLOSED`, with
-     * `ERROR` as a terminal failure state.
-     *
-     * @return index state
-     */
-    SegmentIndexState getState();
-
-    /**
      * Closes the index and releases owned resources.
      * Other threads may observe {@link SegmentIndexState#CLOSING} while close
      * is waiting for in-flight maintenance and durability boundaries to
@@ -302,30 +391,39 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     void close();
 
     /**
-     * Returns an immutable snapshot of index-level operation counters and
-     * lifecycle state.
+     * Returns runtime monitoring view for this index.
      *
-     * Implementations should override this method to expose non-zero counters.
-     * The default keeps backward compatibility for custom implementations that
-     * have not yet added metrics support.
-     *
-     * @return metrics snapshot
+     * @return runtime monitoring view
      */
-    default SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return new SegmentIndexMetricsSnapshot(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0,
-                0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0D, 0L, 0L, 0L, 0L, List.of(),
-                getState());
+    SegmentIndexRuntimeMonitoring runtimeMonitoring();
+
+    /**
+     * Returns memory-estimation diagnostics captured during successful startup.
+     * <p>
+     * Implementations that do not capture startup diagnostics return an incomplete
+     * report.
+     * </p>
+     *
+     * @return startup memory-estimation report
+     */
+    default MemoryEstimateReport startupMemoryEstimate() {
+        return new MemoryEstimateReport(
+                List.of("startup memory estimate unavailable for this implementation"),
+                false, OptionalLong.empty());
     }
 
     /**
-     * Returns runtime monitoring/tuning control-plane entry point.
+     * Returns runtime tuning API.
      *
-     * @return index control plane
+     * @return runtime tuning API
      */
-    default IndexControlPlane controlPlane() {
-        throw new UnsupportedOperationException(
-                "controlPlane() is not supported by this implementation.");
-    }
+    RuntimeTuning runtimeTuning();
+
+    /**
+     * Returns operational maintenance API.
+     *
+     * @return maintenance API
+     */
+    SegmentIndexMaintenance maintenance();
 
 }

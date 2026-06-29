@@ -1,45 +1,57 @@
 package org.hestiastore.index.segmentindex.wal;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
-import java.util.zip.CRC32;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.EncodedBytes;
-import org.hestiastore.index.datatype.TypeDecoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.Wal;
-import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 
 /**
- * WAL runtime that handles append, recovery, checkpoints, rotation and
- * retention cleanup.
+ * Active WAL runtime facade.
+ *
+ * <p>
+ * The implementation is split across metadata/catalog, writer, recovery,
+ * segment management, and sync-policy collaborators.
+ *
+ * <p>
+ * Concurrency invariant: all stateful operations other than best-effort
+ * durability reads run under {@link #monitor}. Collaborators assume the caller
+ * already owns that monitor for their `...Locked()` methods.
  *
  * @param <K> key type
  * @param <V> value type
  */
-@SuppressWarnings({ "java:S3776", "java:S6541", "java:S6206" })
-public final class WalRuntime<K, V> implements AutoCloseable {
+public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable {
+
+    /**
+     * Directory name that stores WAL metadata and segment files under an index
+     * directory.
+     */
+    public static final String WAL_DIRECTORY = WalMetadataCatalog.WAL_DIRECTORY;
+
+    private static final String DEFAULT_THREAD_NAME_PREFIX = "hestia";
+    private static final String DEFAULT_INDEX_NAME = "standalone";
+    private static final String POOL_NAME_WAL_APPEND = "wal-append";
+    private static final String POOL_NAME_WAL_GROUP_SYNC = "wal-group-sync";
+    private static final String ARG_THREAD_NAME_PREFIX = "threadNamePrefix";
+    private static final String ARG_INDEX_NAME = "indexName";
+    // ponytail: fixed internal queue; make configurable only if benchmarks need it.
+    private static final int APPEND_QUEUE_CAPACITY = 8192;
+    private static final int APPEND_DRAIN_LIMIT = 256;
 
     /**
      * WAL operation kind.
@@ -59,9 +71,9 @@ public final class WalRuntime<K, V> implements AutoCloseable {
 
         static Operation fromCode(final byte code) {
             return switch (code) {
-            case 1 -> PUT;
-            case 2 -> DELETE;
-            default -> null;
+                case 1 -> PUT;
+                case 2 -> DELETE;
+                default -> throw new IndexException("Invalid WAL operation code.");
             };
         }
     }
@@ -106,8 +118,77 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     /**
      * Recovery summary.
      */
-    public record RecoveryResult(long lastReplayedLsn, long maxLsn,
-            boolean truncatedTail) {
+    public static final class RecoveryResult {
+        private final long lastReplayedLsn;
+        private final long maxLsn;
+        private final boolean truncatedTail;
+
+        /**
+         * Creates a recovery summary.
+         *
+         * @param lastReplayedLsn last LSN replayed into the index
+         * @param maxLsn          maximum valid WAL LSN seen during recovery
+         * @param truncatedTail   whether recovery truncated an invalid WAL tail
+         */
+        public RecoveryResult(final long lastReplayedLsn, final long maxLsn,
+                final boolean truncatedTail) {
+            this.lastReplayedLsn = lastReplayedLsn;
+            this.maxLsn = maxLsn;
+            this.truncatedTail = truncatedTail;
+        }
+
+        /**
+         * Returns the last LSN replayed into the index.
+         *
+         * @return last replayed LSN
+         */
+        public long lastReplayedLsn() {
+            return lastReplayedLsn;
+        }
+
+        /**
+         * Returns the maximum valid WAL LSN seen during recovery.
+         *
+         * @return maximum WAL LSN
+         */
+        public long maxLsn() {
+            return maxLsn;
+        }
+
+        /**
+         * Returns whether recovery truncated an invalid WAL tail.
+         *
+         * @return true when WAL tail was truncated
+         */
+        public boolean truncatedTail() {
+            return truncatedTail;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof RecoveryResult other)) {
+                return false;
+            }
+            return lastReplayedLsn == other.lastReplayedLsn
+                    && maxLsn == other.maxLsn
+                    && truncatedTail == other.truncatedTail;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(Long.valueOf(lastReplayedLsn),
+                    Long.valueOf(maxLsn), Boolean.valueOf(truncatedTail));
+        }
+
+        @Override
+        public String toString() {
+            return "RecoveryResult[lastReplayedLsn=" + lastReplayedLsn
+                    + ", maxLsn=" + maxLsn + ", truncatedTail="
+                    + truncatedTail + "]";
+        }
     }
 
     /**
@@ -118,130 +199,195 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         void accept(ReplayRecord<K, V> replayRecord);
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(WalRuntime.class);
-
-    private static final String WAL_DIRECTORY = "wal";
-    private static final String FORMAT_FILE = "format.meta";
-    private static final String CHECKPOINT_FILE = "checkpoint.meta";
-    private static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
-    private static final String FORMAT_FILE_TMP = "format.meta.tmp";
-    private static final String CHECKPOINT_KEY_LSN = "lsn";
-    private static final String CHECKPOINT_KEY_CHECKSUM = "checksum";
-    private static final String SEGMENT_SUFFIX = ".wal";
-    private static final int SEGMENT_FILE_DIGITS = 20;
-    private static final String SEGMENT_FILE_FORMAT = "%020d" + SEGMENT_SUFFIX;
-    private static final int FORMAT_VERSION = 1;
-    private static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
-    private static final int MAX_RECORD_BODY_SIZE = 32 * 1024 * 1024;
-    private static final int BUFFER_SIZE = 8 * 1024;
-    private static final long CHECKPOINT_CLEANUP_LOG_INTERVAL_NANOS = TimeUnit.SECONDS
-            .toNanos(5L);
-
-    private final boolean enabled;
-    private final Wal wal;
+    private final Object monitor;
+    private final WalRuntimeMetrics metrics;
+    private final AtomicBoolean closed;
     private final WalStorage storage;
-    private final TypeEncoder<K> keyEncoder;
-    private final TypeDecoder<K> keyDecoder;
-    private final TypeEncoder<V> valueEncoder;
-    private final TypeDecoder<V> valueDecoder;
-    private final Object monitor = new Object();
-    private final List<SegmentInfo> segments = new ArrayList<>();
-    private final AtomicLong durableLsn = new AtomicLong(0L);
+    private final WalMetadataCatalog metadataCatalog;
+    private final WalSegmentCatalog segmentCatalog;
+    private final WalSyncPolicy syncPolicy;
+    private final WalWriter<K, V> writer;
+    private final WalRecoveryManager<K, V> recoveryManager;
     private final ScheduledExecutorService groupSyncExecutor;
+    private final BlockingQueue<WalAppendTask<K, V>> appendQueue = new ArrayBlockingQueue<>(APPEND_QUEUE_CAPACITY);
+    private final Thread appendWorker;
 
-    private final LongAdder appendCount = new LongAdder();
-    private final LongAdder appendBytes = new LongAdder();
-    private final LongAdder syncCount = new LongAdder();
-    private final LongAdder syncTotalNanos = new LongAdder();
-    private final LongAdder syncBatchBytesTotal = new LongAdder();
-    private final LongAdder syncFailureCount = new LongAdder();
-    private final LongAdder corruptionCount = new LongAdder();
-    private final LongAdder truncationCount = new LongAdder();
-    private final AtomicLong syncMaxNanos = new AtomicLong(0L);
-    private final AtomicLong syncBatchBytesMax = new AtomicLong(0L);
-
-    private long nextLsn = 1L;
     private long checkpointLsn = 0L;
-    private long retainedBytes = 0L;
-    private long pendingSyncHighLsn = 0L;
-    private long pendingSyncBytes = 0L;
-    private long checkpointCleanupLastLogNanos = 0L;
-    private long checkpointCleanupSuppressedEvents = 0L;
-    private long checkpointCleanupSuppressedDeletedSegments = 0L;
-    private long checkpointCleanupSuppressedDeletedBytes = 0L;
-    private final Set<String> pendingSyncSegmentNames = new LinkedHashSet<>();
-    private RuntimeException syncFailure;
-    private boolean closed;
 
-    private WalRuntime(final Wal wal, final WalStorage storage,
-            final TypeDescriptor<K> keyDescriptor,
-            final TypeDescriptor<V> valueDescriptor) {
-        this.wal = Wal.orEmpty(wal);
-        this.enabled = this.wal.isEnabled();
-        this.storage = storage;
-        this.keyEncoder = keyDescriptor == null ? null
-                : keyDescriptor.getTypeEncoder();
-        this.keyDecoder = keyDescriptor == null ? null
-                : keyDescriptor.getTypeDecoder();
-        this.valueEncoder = valueDescriptor == null ? null
-                : valueDescriptor.getTypeEncoder();
-        this.valueDecoder = valueDescriptor == null ? null
-                : valueDescriptor.getTypeDecoder();
-        if (enabled && this.wal.getDurabilityMode() == WalDurabilityMode.GROUP_SYNC
-                && this.wal.getGroupSyncDelayMillis() > 0) {
-            this.groupSyncExecutor = Executors.newSingleThreadScheduledExecutor(
-                    new NamedDaemonThreadFactory("hestiastore-wal-group-sync"));
-            this.groupSyncExecutor.scheduleWithFixedDelay(
-                    this::syncGroupPendingSafely,
-                    this.wal.getGroupSyncDelayMillis(),
-                    this.wal.getGroupSyncDelayMillis(), TimeUnit.MILLISECONDS);
-        } else {
-            this.groupSyncExecutor = null;
-        }
+    @SuppressWarnings("java:S107")
+    WalRuntime(final Object monitor,
+            final WalRuntimeMetrics metrics, final AtomicBoolean closed,
+            final WalStorage storage,
+            final WalMetadataCatalog metadataCatalog,
+            final WalSegmentCatalog segmentCatalog,
+            final WalSyncPolicy syncPolicy, final WalWriter<K, V> writer,
+            final WalRecoveryManager<K, V> recoveryManager,
+            final ScheduledExecutorService groupSyncExecutor,
+            final String appendThreadNamePrefix) {
+        this.monitor = Vldtn.requireNonNull(monitor, "monitor");
+        this.metrics = Vldtn.requireNonNull(metrics, "metrics");
+        this.closed = Vldtn.requireNonNull(closed, "closed");
+        this.storage = Vldtn.requireNonNull(storage, "storage");
+        this.metadataCatalog = metadataCatalog;
+        this.segmentCatalog = segmentCatalog;
+        this.syncPolicy = syncPolicy;
+        this.writer = writer;
+        this.recoveryManager = recoveryManager;
+        this.groupSyncExecutor = groupSyncExecutor;
+        this.appendWorker = new NamedDaemonThreadFactory(
+                appendThreadNamePrefix).newThread(this::runAppendWorker);
+        appendWorker.start();
     }
 
     /**
      * Creates WAL runtime for the given index directory.
+     * <p>
+     * Direct WAL runtimes use the {@code hestia-standalone-wal-group-sync-*}
+     * thread-name scope. Segment indexes should use the overload that accepts the
+     * runtime thread-name prefix and index name.
+     * </p>
      *
-     * @param <K>            key type
-     * @param <V>            value type
-     * @param indexDirectory index directory
-     * @param wal            WAL config
-     * @param keyDescriptor  key descriptor
+     * @param <K>             key type
+     * @param <V>             value type
+     * @param indexDirectory  index directory
+     * @param wal             WAL config
+     * @param keyDescriptor   key descriptor
      * @param valueDescriptor value descriptor
      * @return runtime instance
      */
     public static <K, V> WalRuntime<K, V> open(final Directory indexDirectory,
-            final Wal wal, final TypeDescriptor<K> keyDescriptor,
+            final IndexWalConfiguration wal,
+            final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
-        Vldtn.requireNonNull(indexDirectory, "indexDirectory");
-        final Wal resolvedWal = Wal.orEmpty(wal);
-        if (!resolvedWal.isEnabled()) {
-            return new WalRuntime<>(resolvedWal, null, null, null);
-        }
-        final Directory walDirectory = indexDirectory
-                .openSubDirectory(WAL_DIRECTORY);
-        final WalStorage storage = WalStorageFactory.create(walDirectory);
-        final WalRuntime<K, V> runtime = new WalRuntime<>(resolvedWal, storage,
-                keyDescriptor, valueDescriptor);
-        runtime.ensureFormatMarker();
+        return openWithGroupSyncThreadNamePrefix(indexDirectory, wal,
+                keyDescriptor, valueDescriptor,
+                poolThreadNamePrefix(DEFAULT_THREAD_NAME_PREFIX,
+                        DEFAULT_INDEX_NAME,
+                        POOL_NAME_WAL_APPEND),
+                poolThreadNamePrefix(DEFAULT_THREAD_NAME_PREFIX,
+                        DEFAULT_INDEX_NAME,
+                        POOL_NAME_WAL_GROUP_SYNC));
+    }
+
+    /**
+     * Creates WAL runtime for the given index directory and index-owned thread
+     * name scope.
+     *
+     * @param <K>              key type
+     * @param <V>              value type
+     * @param indexDirectory   index directory
+     * @param wal              WAL config
+     * @param keyDescriptor    key descriptor
+     * @param valueDescriptor  value descriptor
+     * @param threadNamePrefix runtime-wide thread-name prefix
+     * @param indexName        index name used in index-owned thread names
+     * @return runtime instance
+     */
+    public static <K, V> WalRuntime<K, V> open(final Directory indexDirectory,
+            final IndexWalConfiguration wal,
+            final TypeDescriptor<K> keyDescriptor,
+            final TypeDescriptor<V> valueDescriptor,
+            final String threadNamePrefix,
+            final String indexName) {
+        return openWithGroupSyncThreadNamePrefix(indexDirectory, wal,
+                keyDescriptor, valueDescriptor,
+                poolThreadNamePrefix(
+                        Vldtn.requireNotBlank(threadNamePrefix,
+                                ARG_THREAD_NAME_PREFIX),
+                        Vldtn.requireNotBlank(indexName, ARG_INDEX_NAME),
+                        POOL_NAME_WAL_APPEND),
+                poolThreadNamePrefix(
+                        Vldtn.requireNotBlank(threadNamePrefix,
+                                ARG_THREAD_NAME_PREFIX),
+                        Vldtn.requireNotBlank(indexName, ARG_INDEX_NAME),
+                        POOL_NAME_WAL_GROUP_SYNC));
+    }
+
+    private static <K, V> WalRuntime<K, V> openWithGroupSyncThreadNamePrefix(
+            final Directory indexDirectory,
+            final IndexWalConfiguration wal,
+            final TypeDescriptor<K> keyDescriptor,
+            final TypeDescriptor<V> valueDescriptor,
+            final String appendThreadNamePrefix,
+            final String groupSyncThreadNamePrefix) {
+        final Directory directory = Vldtn.requireNonNull(indexDirectory,
+                "indexDirectory");
+        final IndexWalConfiguration resolvedWal = requireEnabledWal(wal);
+        final Directory walDirectory = directory.openSubDirectory(WAL_DIRECTORY);
+        final WalRuntime<K, V> runtime = createRuntime(resolvedWal,
+                WalStorageFactory.create(walDirectory), keyDescriptor,
+                valueDescriptor,
+                Vldtn.requireNotBlank(appendThreadNamePrefix,
+                        "appendThreadNamePrefix"),
+                Vldtn.requireNotBlank(groupSyncThreadNamePrefix,
+                        "groupSyncThreadNamePrefix"));
+        runtime.metadataCatalog.ensureFormatMarker();
         return runtime;
     }
 
-    static <K, V> WalRuntime<K, V> openForTests(final Wal wal,
+    private static IndexWalConfiguration requireEnabledWal(
+            final IndexWalConfiguration wal) {
+        final IndexWalConfiguration resolvedWal = IndexWalConfiguration
+                .orEmpty(wal);
+        Vldtn.requireTrue(resolvedWal.isEnabled(),
+                "WAL configuration must be enabled to create WalRuntime.");
+        return resolvedWal;
+    }
+
+    private static <K, V> WalRuntime<K, V> createRuntime(
+            final IndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
-            final TypeDescriptor<V> valueDescriptor) {
-        final WalRuntime<K, V> runtime = new WalRuntime<>(Wal.orEmpty(wal),
-                Vldtn.requireNonNull(storage, "storage"), keyDescriptor,
-                valueDescriptor);
-        if (runtime.enabled) {
-            runtime.ensureFormatMarker();
-        }
-        return runtime;
+            final TypeDescriptor<V> valueDescriptor,
+            final String appendThreadNamePrefix,
+            final String groupSyncThreadNamePrefix) {
+        final Object monitor = new Object();
+        final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
+        final AtomicBoolean closed = new AtomicBoolean();
+        final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
+                storage);
+        final WalRecordCodec<K, V> recordCodec = new WalRecordCodec<>(
+                keyDescriptor == null ? null : keyDescriptor.getTypeEncoder(),
+                keyDescriptor == null ? null : keyDescriptor.getTypeDecoder(),
+                valueDescriptor == null ? null
+                        : valueDescriptor.getTypeEncoder(),
+                valueDescriptor == null ? null
+                        : valueDescriptor.getTypeDecoder());
+        final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(wal,
+                storage, metadataCatalog);
+        final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage,
+                metrics, monitor, segmentCatalog, closed);
+        final WalWriter<K, V> writer = new WalWriter<>(storage,
+                recordCodec, segmentCatalog, metrics);
+        final WalRecoveryManager<K, V> recoveryManager = new WalRecoveryManager<>(wal, storage, metadataCatalog,
+                recordCodec, segmentCatalog, metrics);
+        return new WalRuntime<>(monitor, metrics, closed, storage, metadataCatalog,
+                segmentCatalog, syncPolicy, writer, recoveryManager,
+                newGroupSyncExecutor(wal, syncPolicy,
+                        groupSyncThreadNamePrefix),
+                appendThreadNamePrefix);
     }
 
-    public boolean isEnabled() {
-        return enabled;
+    private static ScheduledExecutorService newGroupSyncExecutor(
+            final IndexWalConfiguration wal,
+            final WalSyncPolicy syncPolicy,
+            final String groupSyncThreadNamePrefix) {
+        if (!wal.isGroupSyncDurabilityMode()
+                || wal.getGroupSyncDelayMillis() <= 0) {
+            return null;
+        }
+        final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
+                new NamedDaemonThreadFactory(
+                        groupSyncThreadNamePrefix));
+        executor.scheduleWithFixedDelay(syncPolicy::syncGroupPendingSafely,
+                wal.getGroupSyncDelayMillis(), wal.getGroupSyncDelayMillis(),
+                TimeUnit.MILLISECONDS);
+        return executor;
+    }
+
+    private static String poolThreadNamePrefix(final String prefix,
+            final String indexName,
+            final String poolName) {
+        return prefix + "-" + indexName + "-" + poolName;
     }
 
     /**
@@ -252,111 +398,24 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      * @return recovery summary
      */
     public RecoveryResult recover(final ReplayConsumer<K, V> replayConsumer) {
-        if (!enabled) {
-            return new RecoveryResult(0L, 0L, false);
-        }
         Vldtn.requireNonNull(replayConsumer, "replayConsumer");
         synchronized (monitor) {
-            checkSyncFailure();
+            syncPolicy.checkSyncFailure();
             ensureOpen();
-            ensureFormatMarker();
-            checkpointLsn = readCheckpointLsn();
-            retainedBytes = 0L;
-            pendingSyncBytes = 0L;
-            pendingSyncSegmentNames.clear();
-            segments.clear();
-            final List<SegmentInfo> discoveredSegments = discoverSegmentsStrict();
-            logger.info(
-                    "event=wal_recovery_start checkpointLsn={} segmentCount={} corruptionPolicy={}",
-                    checkpointLsn, discoveredSegments.size(),
-                    wal.getCorruptionPolicy());
-            boolean truncatedTail = false;
-            long maxLsn = checkpointLsn;
-            long lastReplayedLsn = checkpointLsn;
-            long lastSeenLsn = 0L;
-            for (int i = 0; i < discoveredSegments.size(); i++) {
-                final SegmentInfo current = discoveredSegments.get(i);
-                final ScanResult scan = scanAndReplaySegment(current.name(),
-                        checkpointLsn, lastSeenLsn, replayConsumer);
-                if (scan.maxLsn() > maxLsn) {
-                    maxLsn = scan.maxLsn();
-                }
-                if (scan.lastReplayedLsn() > lastReplayedLsn) {
-                    lastReplayedLsn = scan.lastReplayedLsn();
-                }
-                if (scan.lastSeenLsn() > lastSeenLsn) {
-                    lastSeenLsn = scan.lastSeenLsn();
-                }
-                if (scan.invalidTail()) {
-                    truncatedTail = true;
-                    logger.warn(
-                            "event=wal_recovery_invalid_tail segment={} validBytes={} observedMaxLsn={} policy={}",
-                            current.name(), scan.validBytes(), scan.maxLsn(),
-                            wal.getCorruptionPolicy());
-                    handleInvalidTail(current.name(), scan.validBytes());
-                    final int deletedAfterCorruption = deleteSegmentsAfter(
-                            discoveredSegments, i + 1);
-                    if (deletedAfterCorruption > 0) {
-                        logger.warn(
-                                "event=wal_recovery_drop_newer_segments deletedSegments={} fromSegmentIndex={}",
-                                deletedAfterCorruption, i + 1);
-                    }
-                    if (scan.validBytes() > 0L) {
-                        final long segmentMaxLsn = scan.maxLsn() > 0L
-                                ? scan.maxLsn()
-                                : current.baseLsn();
-                        segments.add(new SegmentInfo(current.name(),
-                                current.baseLsn(), scan.validBytes(),
-                                segmentMaxLsn));
-                        retainedBytes += scan.validBytes();
-                    }
-                    break;
-                }
-                if (scan.validBytes() > 0L) {
-                    final long segmentMaxLsn = scan.maxLsn() > 0L
-                            ? scan.maxLsn()
-                            : current.baseLsn();
-                    segments.add(new SegmentInfo(current.name(),
-                            current.baseLsn(), scan.validBytes(),
-                            segmentMaxLsn));
-                    retainedBytes += scan.validBytes();
-                } else {
-                    final String name = current.name();
-                    storage.delete(name);
-                    storage.syncMetadata();
-                    logger.info(
-                            "event=wal_recovery_drop_empty_segment segment={}",
-                            name);
-                }
-            }
-            if (lastSeenLsn > 0L && checkpointLsn > lastSeenLsn) {
-                final long previousCheckpointLsn = checkpointLsn;
-                checkpointLsn = lastSeenLsn;
-                writeCheckpointLsnAtomic(checkpointLsn);
-                maxLsn = lastSeenLsn;
-                logger.warn(
-                        "event=wal_recovery_checkpoint_clamp previousCheckpointLsn={} clampedCheckpointLsn={} maxLsn={}",
-                        previousCheckpointLsn, checkpointLsn, maxLsn);
-            }
-            if (lastReplayedLsn > maxLsn) {
-                lastReplayedLsn = maxLsn;
-            }
-            durableLsn.set(maxLsn);
-            pendingSyncHighLsn = maxLsn;
-            nextLsn = Math.max(1L, maxLsn + 1L);
-            syncFailure = null;
-            logger.info(
-                    "event=wal_recovery_complete maxLsn={} checkpointLsn={} lastReplayedLsn={} truncatedTail={} segmentCount={}",
-                    maxLsn, checkpointLsn, lastReplayedLsn, truncatedTail,
-                    segments.size());
-            return new RecoveryResult(lastReplayedLsn, maxLsn, truncatedTail);
+            final WalRecoveryOutcome outcome = recoveryManager
+                    .recover(replayConsumer);
+            checkpointLsn = outcome.checkpointLsn();
+            syncPolicy.resetAfterRecovery(outcome.maxLsn());
+            writer.resetNextLsn(Math.max(1L, outcome.maxLsn() + 1L));
+            return new RecoveryResult(outcome.lastReplayedLsn(),
+                    outcome.maxLsn(), outcome.truncatedTail());
         }
     }
 
     /**
      * Appends a PUT record and returns assigned LSN.
      *
-     * @param key key
+     * @param key   key
      * @param value value
      * @return assigned LSN
      */
@@ -380,947 +439,217 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      * @param checkpointLsn checkpoint LSN fully reflected in stable state
      */
     public void onCheckpoint(final long checkpointLsn) {
-        if (!enabled) {
-            return;
-        }
         synchronized (monitor) {
-            checkSyncFailure();
+            syncPolicy.checkSyncFailure();
             ensureOpen();
             final long effectiveCheckpoint = Math.max(this.checkpointLsn,
                     checkpointLsn);
             if (effectiveCheckpoint == this.checkpointLsn) {
-                cleanupEligibleSegments();
+                segmentCatalog.cleanupEligibleSegments(this.checkpointLsn);
                 return;
             }
             this.checkpointLsn = effectiveCheckpoint;
-            writeCheckpointLsnAtomic(this.checkpointLsn);
-            cleanupEligibleSegments();
+            metadataCatalog.writeCheckpointLsnAtomic(this.checkpointLsn);
+            segmentCatalog.cleanupEligibleSegments(this.checkpointLsn);
         }
     }
 
     public boolean isRetentionPressure() {
-        if (!enabled) {
-            return false;
-        }
         synchronized (monitor) {
-            if (retainedBytes <= wal.getMaxBytesBeforeForcedCheckpoint()) {
-                return false;
-            }
-            // A single active segment cannot be checkpoint-deleted; do not
-            // enter forced-checkpoint backpressure in this unsatisfiable state.
-            return segments.size() > 1;
+            return segmentCatalog.isRetentionPressure();
         }
     }
 
     public long retainedBytes() {
-        if (!enabled) {
-            return 0L;
-        }
         synchronized (monitor) {
-            return retainedBytes;
+            return segmentCatalog.retainedBytes();
         }
     }
 
     public long durableLsn() {
-        return durableLsn.get();
+        return syncPolicy.durableLsn();
     }
 
     public boolean hasSyncFailure() {
-        if (!enabled) {
-            return false;
-        }
         synchronized (monitor) {
-            return syncFailure != null;
+            return syncPolicy.hasSyncFailure();
         }
     }
 
-    public WalStats statsSnapshot() {
-        if (!enabled) {
-            return new WalStats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L, 0L,
-                    0L, 0L, 0L);
-        }
+    /**
+     * Returns the current immutable WAL monitoring snapshot.
+     *
+     * @return WAL monitoring snapshot
+     */
+    @Override
+    public WalMonitoring statsSnapshot() {
         synchronized (monitor) {
-            return new WalStats(appendCount.sum(), appendBytes.sum(),
-                    syncCount.sum(), syncFailureCount.sum(),
-                    corruptionCount.sum(), truncationCount.sum(), retainedBytes,
-                    segments.size(), durableLsn.get(), checkpointLsn,
-                    pendingSyncBytes, syncTotalNanos.sum(), syncMaxNanos.get(),
-                    syncBatchBytesTotal.sum(), syncBatchBytesMax.get());
+            return metrics.snapshot(segmentCatalog.retainedBytes(),
+                    segmentCatalog.segmentCount(), syncPolicy.durableLsn(),
+                    checkpointLsn, syncPolicy.pendingSyncBytes());
         }
     }
 
     @Override
     public void close() {
-        if (!enabled) {
-            return;
-        }
         synchronized (monitor) {
-            if (closed) {
+            if (closed.get()) {
                 return;
             }
-            closed = true;
+            closed.set(true);
             monitor.notifyAll();
         }
         if (groupSyncExecutor != null) {
             groupSyncExecutor.shutdownNow();
         }
+        stopAppendWorker();
         synchronized (monitor) {
-            if (wal.getDurabilityMode() != WalDurabilityMode.ASYNC
-                    && syncFailure == null) {
-                try {
-                    syncGroupPendingLocked();
-                } catch (RuntimeException ex) {
-                    markSyncFailure(ex);
-                }
-            }
+            syncPolicy.closeAndFlushPending();
         }
+        storage.close();
     }
 
     private long append(final Operation operation, final K key, final V value) {
-        if (!enabled) {
-            return 0L;
-        }
-        Objects.requireNonNull(key, "key");
-        if (operation == Operation.PUT) {
-            Objects.requireNonNull(value, "value");
-        }
-        synchronized (monitor) {
-            checkSyncFailure();
-            ensureOpen();
-            final long lsn = nextLsn;
-            final byte[] recordBytes = encodeRecord(operation, lsn, key, value);
-            ensureActiveSegmentFor(recordBytes.length);
-            final SegmentInfo activeSegment = segments.get(segments.size() - 1);
-            storage.append(activeSegment.name(), recordBytes, 0,
-                    recordBytes.length);
-            activeSegment.grow(recordBytes.length, lsn);
-            retainedBytes += recordBytes.length;
-            appendCount.increment();
-            appendBytes.add(recordBytes.length);
-            nextLsn = lsn + 1L;
-
-            if (wal.getDurabilityMode() == WalDurabilityMode.ASYNC) {
-                return lsn;
-            }
-
-            pendingSyncHighLsn = Math.max(pendingSyncHighLsn, lsn);
-            pendingSyncBytes += recordBytes.length;
-            pendingSyncSegmentNames.add(activeSegment.name());
-
-            if (wal.getDurabilityMode() == WalDurabilityMode.SYNC
-                    || wal.getGroupSyncDelayMillis() <= 0
-                    || pendingSyncBytes >= wal.getGroupSyncMaxBatchBytes()) {
-                syncGroupPendingLocked();
-            }
-
-            if (wal.getDurabilityMode() == WalDurabilityMode.GROUP_SYNC) {
-                waitUntilDurableLocked(lsn);
-            }
-            return lsn;
-        }
+        final WalAppendTask<K, V> task = new WalAppendTask<>(operation, key,
+                value);
+        enqueueAppend(task);
+        final long lsn = awaitWrittenLsn(task);
+        syncPolicy.waitUntilDurable(lsn);
+        return lsn;
     }
 
-    private void ensureActiveSegmentFor(final int nextRecordBytes) {
-        if (segments.isEmpty()) {
-            createSegment(nextLsn);
-            return;
-        }
-        final SegmentInfo active = segments.get(segments.size() - 1);
-        if (active.sizeBytes() + nextRecordBytes <= wal.getSegmentSizeBytes()) {
-            return;
-        }
-        createSegment(nextLsn);
-    }
-
-    private void createSegment(final long baseLsn) {
-        final String name = toSegmentFileName(baseLsn);
-        storage.touch(name);
-        segments.add(new SegmentInfo(name, baseLsn, 0L, baseLsn));
-    }
-
-    private byte[] encodeRecord(final Operation operation, final long lsn,
-            final K key, final V value) {
-        final byte[] keyBytes = encodeKey(key);
-        final byte[] valueBytes = operation == Operation.PUT ? encodeValue(value)
-                : new byte[0];
-        final int bodyLen = MIN_RECORD_BODY_SIZE + keyBytes.length
-                + valueBytes.length;
-        if (bodyLen > MAX_RECORD_BODY_SIZE) {
-            throw new IllegalArgumentException(String.format(
-                    "WAL record body is too large: %s", bodyLen));
-        }
-        final byte[] body = new byte[bodyLen];
-        int offset = 0;
-        offset += 4; // CRC placeholder
-        putLong(body, offset, lsn);
-        offset += 8;
-        body[offset++] = operation.code();
-        putInt(body, offset, keyBytes.length);
-        offset += 4;
-        putInt(body, offset, valueBytes.length);
-        offset += 4;
-        System.arraycopy(keyBytes, 0, body, offset, keyBytes.length);
-        offset += keyBytes.length;
-        System.arraycopy(valueBytes, 0, body, offset, valueBytes.length);
-        final int crc = computeCrc32(body, 4, body.length - 4);
-        putInt(body, 0, crc);
-        final byte[] encoded = new byte[4 + body.length];
-        putInt(encoded, 0, body.length);
-        System.arraycopy(body, 0, encoded, 4, body.length);
-        return encoded;
-    }
-
-    private ScanResult scanAndReplaySegment(final String fileName,
-            final long replayAfterLsn,
-            final long minimumLsnExclusive,
-            final ReplayConsumer<K, V> replayConsumer) {
-        long offset = 0L;
-        long validOffset = 0L;
-        long maxLsn = 0L;
-        long lastReplayedLsn = replayAfterLsn;
-        long previousLsn = minimumLsnExclusive;
+    private void enqueueAppend(final WalAppendTask<K, V> task) {
         while (true) {
-            final byte[] lenBytes = new byte[4];
-            final int lenRead = readFullyAllowEof(fileName, offset, lenBytes, 0,
-                    4);
-            if (lenRead == -1) {
-                break;
+            if (Thread.interrupted()) {
+                Thread.currentThread().interrupt();
+                throw new IndexException("Interrupted while enqueueing WAL append.");
             }
-            if (lenRead != 4) {
-                return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        previousLsn, true);
-            }
-            final int bodyLen = readInt(lenBytes, 0);
-            if (bodyLen < MIN_RECORD_BODY_SIZE || bodyLen > MAX_RECORD_BODY_SIZE) {
-                return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        previousLsn, true);
-            }
-            final byte[] body = new byte[bodyLen];
-            if (!readFully(fileName, offset + 4L, body, 0, bodyLen)) {
-                return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        previousLsn, true);
-            }
-            final int storedCrc = readInt(body, 0);
-            final int computedCrc = computeCrc32(body, 4, bodyLen - 4);
-            if (storedCrc != computedCrc) {
-                return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        previousLsn, true);
-            }
-            int position = 4;
-            final long lsn = readLong(body, position);
-            position += 8;
-            final Operation operation = Operation.fromCode(body[position++]);
-            if (operation == null) {
-                return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        previousLsn, true);
-            }
-            final int keyLen = readInt(body, position);
-            position += 4;
-            final int valueLen = readInt(body, position);
-            position += 4;
-            if (keyLen <= 0 || valueLen < 0
-                    || position + keyLen + valueLen != body.length) {
-                return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        previousLsn, true);
-            }
-            if (lsn <= 0L || lsn <= previousLsn) {
-                return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        previousLsn, true);
-            }
-            final byte[] keyBytes = new byte[keyLen];
-            System.arraycopy(body, position, keyBytes, 0, keyLen);
-            position += keyLen;
-            final byte[] valueBytes = new byte[valueLen];
-            if (valueLen > 0) {
-                System.arraycopy(body, position, valueBytes, 0, valueLen);
-            }
-            final K key = decodeKey(keyBytes);
-            final V value = operation == Operation.PUT ? decodeValue(valueBytes)
-                    : null;
-            if (operation == Operation.DELETE && valueLen != 0) {
-                return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        previousLsn, true);
-            }
-            offset += 4L + bodyLen;
-            validOffset = offset;
-            previousLsn = lsn;
-            if (lsn > maxLsn) {
-                maxLsn = lsn;
-            }
-            if (lsn > replayAfterLsn) {
-                replayConsumer.accept(new ReplayRecord<>(lsn, operation, key,
-                        value));
-                if (lsn > lastReplayedLsn) {
-                    lastReplayedLsn = lsn;
+            synchronized (monitor) {
+                syncPolicy.checkSyncFailure();
+                ensureOpen();
+                if (appendQueue.offer(task)) {
+                    return;
                 }
             }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
         }
-        return new ScanResult(validOffset, maxLsn, lastReplayedLsn, previousLsn,
-                false);
     }
 
-    private void handleInvalidTail(final String fileName, final long validBytes) {
-        corruptionCount.increment();
-        if (wal.getCorruptionPolicy() == WalCorruptionPolicy.FAIL_FAST) {
-            logger.error(
-                    "event=wal_recovery_tail_repair action=fail_fast segment={} validBytes={}",
-                    fileName, validBytes);
-            throw new IndexException(
-                    String.format("WAL corruption detected in '%s'.", fileName));
-        }
-        truncationCount.increment();
-        if (validBytes <= 0L) {
-            storage.delete(fileName);
-            storage.syncMetadata();
-            logger.warn(
-                    "event=wal_recovery_tail_repair action=delete_segment segment={} validBytes={}",
-                    fileName, validBytes);
-            return;
-        }
-        storage.truncate(fileName, validBytes);
-        storage.sync(fileName);
-        logger.warn(
-                "event=wal_recovery_tail_repair action=truncate_segment segment={} validBytes={}",
-                fileName, validBytes);
-    }
-
-    private int deleteSegmentsAfter(final List<SegmentInfo> discoveredSegments,
-            final int startIndex) {
-        int deletedCount = 0;
-        for (int i = startIndex; i < discoveredSegments.size(); i++) {
-            storage.delete(discoveredSegments.get(i).name());
-            deletedCount++;
-        }
-        if (deletedCount > 0) {
-            storage.syncMetadata();
-        }
-        return deletedCount;
-    }
-
-    private void cleanupEligibleSegments() {
-        if (segments.size() <= 1) {
-            return;
-        }
-        final List<SegmentInfo> retained = new ArrayList<>(segments.size());
-        int deletedCount = 0;
-        long deletedBytes = 0L;
-        for (int i = 0; i < segments.size(); i++) {
-            final SegmentInfo segment = segments.get(i);
-            final boolean active = i == segments.size() - 1;
-            if (!active && segment.maxLsn() <= checkpointLsn) {
-                storage.delete(segment.name());
-                retainedBytes -= segment.sizeBytes();
-                deletedBytes += segment.sizeBytes();
-                deletedCount++;
-            } else {
-                retained.add(segment);
+    private long awaitWrittenLsn(final WalAppendTask<K, V> task) {
+        try {
+            return task.writtenLsn().get().longValue();
+        } catch (final InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted while waiting for WAL append.",
+                    ex);
+        } catch (final ExecutionException ex) {
+            final Throwable cause = ex.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
             }
+            throw new IndexException("WAL append failed.", cause);
         }
-        segments.clear();
-        segments.addAll(retained);
-        if (deletedCount > 0) {
-            storage.syncMetadata();
-        }
-        if (retainedBytes < 0L) {
-            retainedBytes = 0L;
-        }
-        logCheckpointCleanupIfNeeded(deletedCount, deletedBytes);
     }
 
-    private void logCheckpointCleanupIfNeeded(final int deletedCount,
-            final long deletedBytes) {
-        if (deletedCount <= 0) {
-            return;
-        }
-        final long nowNanos = System.nanoTime();
-        if (checkpointCleanupLastLogNanos != 0L
-                && nowNanos
-                        - checkpointCleanupLastLogNanos < CHECKPOINT_CLEANUP_LOG_INTERVAL_NANOS) {
-            checkpointCleanupSuppressedEvents++;
-            checkpointCleanupSuppressedDeletedSegments += deletedCount;
-            checkpointCleanupSuppressedDeletedBytes += deletedBytes;
-            return;
-        }
-        final long suppressedEvents = checkpointCleanupSuppressedEvents;
-        final long suppressedDeletedSegments = checkpointCleanupSuppressedDeletedSegments;
-        final long suppressedDeletedBytes = checkpointCleanupSuppressedDeletedBytes;
-        checkpointCleanupSuppressedEvents = 0L;
-        checkpointCleanupSuppressedDeletedSegments = 0L;
-        checkpointCleanupSuppressedDeletedBytes = 0L;
-        checkpointCleanupLastLogNanos = nowNanos;
-        logger.info(
-                "event=wal_checkpoint_cleanup checkpointLsn={} deletedSegments={} deletedBytes={} retainedSegments={} retainedBytes={} suppressedEvents={} suppressedDeletedSegments={} suppressedDeletedBytes={}",
-                checkpointLsn, deletedCount, deletedBytes, segments.size(),
-                retainedBytes, suppressedEvents, suppressedDeletedSegments,
-                suppressedDeletedBytes);
-    }
-
-    private void syncGroupPendingSafely() {
-        if (!enabled) {
-            return;
-        }
-        synchronized (monitor) {
-            if (closed) {
+    private void runAppendWorker() {
+        final List<WalAppendTask<K, V>> batch = new ArrayList<>(
+                APPEND_DRAIN_LIMIT);
+        boolean stop = false;
+        while (!stop) {
+            batch.clear();
+            try {
+                stop = takeAppendBatch(batch);
+                appendBatch(batch);
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                failQueuedAppends(new IndexException(
+                        "WAL append worker interrupted.", ex));
                 return;
             }
-            try {
-                syncGroupPendingLocked();
-            } catch (RuntimeException ex) {
-                markSyncFailure(ex);
-            }
         }
     }
 
-    private void syncGroupPendingLocked() {
-        if (!enabled || wal.getDurabilityMode() == WalDurabilityMode.ASYNC) {
-            return;
+    private boolean takeAppendBatch(final List<WalAppendTask<K, V>> batch)
+            throws InterruptedException {
+        final WalAppendTask<K, V> first = appendQueue.take();
+        boolean stop = first.stop();
+        if (!stop) {
+            batch.add(first);
         }
-        checkSyncFailure();
-        if (pendingSyncHighLsn <= durableLsn.get()) {
-            pendingSyncBytes = 0L;
-            pendingSyncSegmentNames.clear();
-            return;
-        }
-        if (pendingSyncSegmentNames.isEmpty()) {
-            return;
-        }
-        final long batchBytes = pendingSyncBytes;
-        final long startedNanos = System.nanoTime();
-        try {
-            final Set<String> remaining = new HashSet<>(pendingSyncSegmentNames);
-            for (final SegmentInfo segment : segments) {
-                if (remaining.remove(segment.name())) {
-                    storage.sync(segment.name());
-                }
+        appendQueue.drainTo(batch, APPEND_DRAIN_LIMIT - batch.size());
+        for (int i = batch.size() - 1; i >= 0; i--) {
+            if (batch.get(i).stop()) {
+                batch.remove(i);
+                stop = true;
             }
-            for (final String segmentName : remaining) {
-                storage.sync(segmentName);
-            }
-            storage.syncMetadata();
-            durableLsn.set(pendingSyncHighLsn);
-            pendingSyncBytes = 0L;
-            pendingSyncSegmentNames.clear();
-            syncCount.increment();
-            final long elapsedNanos = Math.max(0L,
-                    System.nanoTime() - startedNanos);
-            syncTotalNanos.add(elapsedNanos);
-            syncBatchBytesTotal.add(Math.max(0L, batchBytes));
-            updateMax(syncMaxNanos, elapsedNanos);
-            updateMax(syncBatchBytesMax, Math.max(0L, batchBytes));
-            synchronized (monitor) {
-                monitor.notifyAll();
-            }
-        } catch (RuntimeException ex) {
-            markSyncFailure(ex);
-            checkSyncFailure();
         }
+        return stop;
     }
 
-    private void waitUntilDurableLocked(final long lsn) {
-        while (durableLsn.get() < lsn) {
-            checkSyncFailure();
-            if (closed) {
-                throw new IndexException(
-                        "WAL runtime closed while waiting for durability.");
-            }
-            try {
-                synchronized (monitor) {
-                    monitor.wait(Math.max(1L,
-                            wal.getGroupSyncDelayMillis()));
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IndexException(
-                        "Interrupted while waiting for group WAL sync.", e);
-            }
+    private void appendBatch(final List<WalAppendTask<K, V>> batch) {
+        if (batch.isEmpty()) {
+            return;
         }
-    }
-
-    private void markSyncFailure(final RuntimeException ex) {
-        if (syncFailure == null) {
-            syncFailure = ex;
-        }
-        syncFailureCount.increment();
-        logger.error(
-                "event=wal_sync_failure durableLsn={} pendingHighLsn={} pendingSyncBytes={} segmentCount={} syncFailureCount={}",
-                durableLsn.get(), pendingSyncHighLsn, pendingSyncBytes,
-                segments.size(), syncFailureCount.sum(), ex);
         synchronized (monitor) {
+            for (final WalAppendTask<K, V> task : batch) {
+                appendTask(task);
+            }
             monitor.notifyAll();
         }
     }
 
-    private void checkSyncFailure() {
-        if (syncFailure != null) {
-            throw new IndexException("WAL sync failure", syncFailure);
+    private void appendTask(final WalAppendTask<K, V> task) {
+        try {
+            syncPolicy.checkSyncFailure();
+            final WalAppendResult result = writer.append(task.operation(),
+                    task.key(), task.value());
+            syncPolicy.afterAppend(result.lsn(), result.recordBytes(),
+                    result.segmentName());
+            task.complete(result.lsn());
+        } catch (final RuntimeException ex) {
+            task.fail(ex);
         }
     }
 
-    private static void updateMax(final AtomicLong target, final long candidate) {
+    private void stopAppendWorker() {
+        enqueueStopTask();
+        try {
+            appendWorker.join();
+        } catch (final InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted while stopping WAL append worker.",
+                    ex);
+        }
+    }
+
+    private void enqueueStopTask() {
+        final WalAppendTask<K, V> stopTask = WalAppendTask.stopTask();
         while (true) {
-            final long current = target.get();
-            if (candidate <= current) {
-                return;
+            try {
+                if (appendQueue.offer(stopTask, 10L, TimeUnit.MILLISECONDS)) {
+                    return;
+                }
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IndexException("Interrupted while stopping WAL append worker.",
+                        ex);
             }
-            if (target.compareAndSet(current, candidate)) {
-                return;
+        }
+    }
+
+    private void failQueuedAppends(final RuntimeException failure) {
+        WalAppendTask<K, V> task = appendQueue.poll();
+        while (task != null) {
+            if (!task.stop()) {
+                task.fail(failure);
             }
+            task = appendQueue.poll();
         }
     }
 
     private void ensureOpen() {
-        if (closed) {
+        if (closed.get()) {
             throw new IndexException("WAL runtime is already closed.");
-        }
-    }
-
-    private List<SegmentInfo> discoverSegmentsStrict() {
-        final List<String> segmentNames;
-        try (StreamCloseable names = new StreamCloseable(storage.listFileNames())) {
-            segmentNames = names.stream().filter(name -> name.endsWith(SEGMENT_SUFFIX))
-                    .sorted().toList();
-        }
-        final List<SegmentInfo> discovered = new ArrayList<>(segmentNames.size());
-        final Set<Long> uniqueBaseLsns = new HashSet<>();
-        for (final String name : segmentNames) {
-            final long baseLsn = parseSegmentBaseLsn(name);
-            if (baseLsn < 0L) {
-                throw new IndexException(String.format(
-                        "Invalid WAL segment name '%s'.", name));
-            }
-            if (!storage.exists(name)) {
-                throw new IndexException(String.format(
-                        "WAL segment entry '%s' is not a regular file.",
-                        name));
-            }
-            if (!uniqueBaseLsns.add(baseLsn)) {
-                throw new IndexException(String.format(
-                        "Duplicate WAL segment base LSN detected for '%s'.",
-                        baseLsn));
-            }
-            discovered.add(new SegmentInfo(name, baseLsn, 0L, baseLsn));
-        }
-        discovered.sort(Comparator.comparingLong(SegmentInfo::baseLsn));
-        return discovered;
-    }
-
-    private long parseSegmentBaseLsn(final String fileName) {
-        final String raw = fileName.substring(0,
-                fileName.length() - SEGMENT_SUFFIX.length());
-        if (raw.length() != SEGMENT_FILE_DIGITS) {
-            return -1L;
-        }
-        for (int i = 0; i < raw.length(); i++) {
-            if (!Character.isDigit(raw.charAt(i))) {
-                return -1L;
-            }
-        }
-        try {
-            return Long.parseLong(raw);
-        } catch (NumberFormatException ex) {
-            return -1L;
-        }
-    }
-
-    private String toSegmentFileName(final long baseLsn) {
-        return String.format(Locale.ROOT, SEGMENT_FILE_FORMAT, baseLsn);
-    }
-
-    private long readCheckpointLsn() {
-        reconcileCheckpointMetadataTempFile();
-        if (!storage.exists(CHECKPOINT_FILE)) {
-            return 0L;
-        }
-        final byte[] data = storage.readAll(CHECKPOINT_FILE);
-        if (data.length == 0) {
-            return 0L;
-        }
-        return parseCheckpointMetadata(data);
-    }
-
-    private void reconcileCheckpointMetadataTempFile() {
-        if (!storage.exists(CHECKPOINT_FILE_TMP)) {
-            return;
-        }
-        if (storage.exists(CHECKPOINT_FILE)) {
-            storage.delete(CHECKPOINT_FILE_TMP);
-            storage.syncMetadata();
-            return;
-        }
-        final byte[] temporary = storage.readAll(CHECKPOINT_FILE_TMP);
-        if (temporary.length == 0) {
-            storage.delete(CHECKPOINT_FILE_TMP);
-            storage.syncMetadata();
-            return;
-        }
-        try {
-            final long parsed = parseCheckpointMetadata(temporary);
-            storage.rename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE);
-            storage.sync(CHECKPOINT_FILE);
-            storage.syncMetadata();
-            logger.info(
-                    "event=wal_checkpoint_metadata_tmp_recovered checkpointLsn={}",
-                    parsed);
-        } catch (RuntimeException ex) {
-            logger.warn(
-                    "event=wal_checkpoint_metadata_tmp_dropped reason=invalid error={}",
-                    ex.getMessage());
-            storage.delete(CHECKPOINT_FILE_TMP);
-            storage.syncMetadata();
-        }
-    }
-
-    private long parseCheckpointMetadata(final byte[] data) {
-        final String text = new String(data, StandardCharsets.US_ASCII).trim();
-        if (text.isEmpty()) {
-            return 0L;
-        }
-        if (!text.contains("=")) {
-            return parseLegacyCheckpointMetadata(text);
-        }
-        return parseChecksummedCheckpointMetadata(text);
-    }
-
-    private long parseLegacyCheckpointMetadata(final String text) {
-        try {
-            final long parsed = Long.parseLong(text);
-            if (parsed < 0L) {
-                throw new IndexException(String.format(
-                        "Invalid WAL checkpoint metadata: negative LSN '%s'.",
-                        parsed));
-            }
-            return parsed;
-        } catch (IndexException ex) {
-            throw ex;
-        } catch (RuntimeException ex) {
-            throw new IndexException("Invalid WAL checkpoint metadata.", ex);
-        }
-    }
-
-    private long parseChecksummedCheckpointMetadata(final String text) {
-        Long lsn = null;
-        Integer checksum = null;
-        for (final String line : text.split("\\R")) {
-            final String[] parts = line.split("=", 2);
-            if (parts.length != 2) {
-                continue;
-            }
-            final String key = parts[0].trim();
-            final String value = parts[1].trim();
-            try {
-                if (CHECKPOINT_KEY_LSN.equals(key)) {
-                    lsn = Long.valueOf(value);
-                } else if (CHECKPOINT_KEY_CHECKSUM.equals(key)) {
-                    checksum = Integer.valueOf(value);
-                }
-            } catch (RuntimeException ex) {
-                throw new IndexException("Invalid WAL checkpoint metadata.",
-                        ex);
-            }
-        }
-        if (lsn == null || checksum == null) {
-            throw new IndexException("Invalid WAL checkpoint metadata.");
-        }
-        if (lsn.longValue() < 0L) {
-            throw new IndexException(String.format(
-                    "Invalid WAL checkpoint metadata: negative LSN '%s'.",
-                    lsn));
-        }
-        final byte[] payload = checkpointPayload(lsn.longValue());
-        final int expectedChecksum = computeCrc32(payload, 0, payload.length);
-        if (checksum.intValue() != expectedChecksum) {
-            throw new IndexException(String.format(
-                    "Invalid WAL checkpoint metadata checksum: expected=%s actual=%s.",
-                    expectedChecksum, checksum));
-        }
-        return lsn.longValue();
-    }
-
-    private void writeCheckpointLsnAtomic(final long checkpointLsn) {
-        final byte[] data = checkpointMetadata(checkpointLsn);
-        storage.overwrite(CHECKPOINT_FILE_TMP, data, 0, data.length);
-        storage.sync(CHECKPOINT_FILE_TMP);
-        storage.rename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE);
-        storage.sync(CHECKPOINT_FILE);
-        storage.syncMetadata();
-    }
-
-    private byte[] checkpointMetadata(final long checkpointLsn) {
-        final byte[] payload = checkpointPayload(checkpointLsn);
-        final int checksum = computeCrc32(payload, 0, payload.length);
-        final String text = CHECKPOINT_KEY_LSN + "=" + checkpointLsn + "\n"
-                + CHECKPOINT_KEY_CHECKSUM + "=" + checksum + "\n";
-        return text.getBytes(StandardCharsets.US_ASCII);
-    }
-
-    private byte[] checkpointPayload(final long checkpointLsn) {
-        return (CHECKPOINT_KEY_LSN + "=" + checkpointLsn + "\n")
-                .getBytes(StandardCharsets.US_ASCII);
-    }
-
-    private void ensureFormatMarker() {
-        if (!enabled) {
-            return;
-        }
-        final byte[] payload = formatPayload();
-        reconcileFormatMetadataTempFile(payload);
-        if (!storage.exists(FORMAT_FILE)) {
-            writeFormatMarker(payload);
-            return;
-        }
-        final byte[] existing = storage.readAll(FORMAT_FILE);
-        final FormatMeta meta = parseFormatMeta(existing);
-        final int expectedChecksum = computeCrc32(payload, 0, payload.length);
-        if (meta.version() != FORMAT_VERSION || meta.checksum() != expectedChecksum) {
-            throw new IndexException(String.format(
-                    "Unsupported or corrupted WAL format metadata: version=%s checksum=%s expectedVersion=%s expectedChecksum=%s",
-                    meta.version(), meta.checksum(), FORMAT_VERSION,
-                    expectedChecksum));
-        }
-    }
-
-    private void reconcileFormatMetadataTempFile(final byte[] payload) {
-        if (!storage.exists(FORMAT_FILE_TMP)) {
-            return;
-        }
-        if (storage.exists(FORMAT_FILE)) {
-            storage.delete(FORMAT_FILE_TMP);
-            storage.syncMetadata();
-            return;
-        }
-        final int expectedChecksum = computeCrc32(payload, 0, payload.length);
-        try {
-            final byte[] temporary = storage.readAll(FORMAT_FILE_TMP);
-            final FormatMeta meta = parseFormatMeta(temporary);
-            if (meta.version() == FORMAT_VERSION
-                    && meta.checksum() == expectedChecksum) {
-                storage.rename(FORMAT_FILE_TMP, FORMAT_FILE);
-                storage.sync(FORMAT_FILE);
-                storage.syncMetadata();
-                logger.info(
-                        "event=wal_format_metadata_tmp_recovered version={} checksum={}",
-                        meta.version(), meta.checksum());
-                return;
-            }
-            logger.warn(
-                    "event=wal_format_metadata_tmp_dropped reason=unsupported version={} checksum={} expectedVersion={} expectedChecksum={}",
-                    meta.version(), meta.checksum(), FORMAT_VERSION,
-                    expectedChecksum);
-        } catch (RuntimeException ex) {
-            logger.warn(
-                    "event=wal_format_metadata_tmp_dropped reason=invalid error={}",
-                    ex.getMessage());
-        }
-        storage.delete(FORMAT_FILE_TMP);
-        storage.syncMetadata();
-    }
-
-    private void writeFormatMarker(final byte[] payload) {
-        final int checksum = computeCrc32(payload, 0, payload.length);
-        final byte[] data = ("version=" + FORMAT_VERSION + "\nchecksum="
-                + checksum + "\n").getBytes(StandardCharsets.US_ASCII);
-        storage.overwrite(FORMAT_FILE_TMP, data, 0, data.length);
-        storage.sync(FORMAT_FILE_TMP);
-        storage.rename(FORMAT_FILE_TMP, FORMAT_FILE);
-        storage.sync(FORMAT_FILE);
-        storage.syncMetadata();
-    }
-
-    private byte[] formatPayload() {
-        return ("version=" + FORMAT_VERSION + "\n")
-                .getBytes(StandardCharsets.US_ASCII);
-    }
-
-    private FormatMeta parseFormatMeta(final byte[] bytes) {
-        final String text = new String(bytes, StandardCharsets.US_ASCII).trim();
-        if (text.isEmpty()) {
-            throw new IndexException("WAL format metadata is empty.");
-        }
-        Integer version = null;
-        Integer checksum = null;
-        final String[] lines = text.split("\\R");
-        for (final String line : lines) {
-            final String[] parts = line.split("=", 2);
-            if (parts.length != 2) {
-                continue;
-            }
-            final String key = parts[0].trim();
-            final String value = parts[1].trim();
-            if ("version".equals(key)) {
-                version = parseFormatInt(key, value);
-            } else if (CHECKPOINT_KEY_CHECKSUM.equals(key)) {
-                checksum = parseFormatInt(key, value);
-            }
-        }
-        if (version == null || checksum == null) {
-            throw new IndexException("Invalid WAL format metadata.");
-        }
-        return new FormatMeta(version.intValue(), checksum.intValue());
-    }
-
-    private int parseFormatInt(final String key, final String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (RuntimeException ex) {
-            throw new IndexException(String.format(
-                    "Invalid WAL format metadata value for key '%s': '%s'.",
-                    key, value), ex);
-        }
-    }
-
-    private int readFullyAllowEof(final String fileName, final long position,
-            final byte[] destination, final int offset, final int length) {
-        int totalRead = 0;
-        long currentPosition = position;
-        while (totalRead < length) {
-            final int read = storage.read(fileName, currentPosition, destination,
-                    offset + totalRead, length - totalRead);
-            if (read < 0) {
-                return totalRead == 0 ? -1 : totalRead;
-            }
-            if (read == 0) {
-                continue;
-            }
-            totalRead += read;
-            currentPosition += read;
-        }
-        return totalRead;
-    }
-
-    private boolean readFully(final String fileName, final long position,
-            final byte[] destination, final int offset, final int length) {
-        int totalRead = 0;
-        long currentPosition = position;
-        while (totalRead < length) {
-            final int read = storage.read(fileName, currentPosition, destination,
-                    offset + totalRead, length - totalRead);
-            if (read < 0) {
-                return false;
-            }
-            if (read == 0) {
-                continue;
-            }
-            totalRead += read;
-            currentPosition += read;
-        }
-        return true;
-    }
-
-    private byte[] encodeKey(final K key) {
-        final EncodedBytes encoded = keyEncoder.encode(key, new byte[0]);
-        return toExactArray(encoded, "key");
-    }
-
-    private byte[] encodeValue(final V value) {
-        final EncodedBytes encoded = valueEncoder.encode(value, new byte[0]);
-        return toExactArray(encoded, "value");
-    }
-
-    private byte[] toExactArray(final EncodedBytes encoded,
-            final String fieldName) {
-        final EncodedBytes validated = Vldtn.requireNonNull(encoded, "encoded");
-        final int length = Vldtn.requireGreaterThanOrEqualToZero(
-                validated.getLength(), fieldName + "Length");
-        final byte[] bytes = validated.getBytes();
-        if (bytes.length == length) {
-            return bytes;
-        }
-        return Arrays.copyOf(bytes, length);
-    }
-
-    private K decodeKey(final byte[] keyBytes) {
-        return keyDecoder.decode(keyBytes);
-    }
-
-    private V decodeValue(final byte[] valueBytes) {
-        return valueDecoder.decode(valueBytes);
-    }
-
-    static int computeCrc32(final byte[] data, final int offset,
-            final int length) {
-        final CRC32 crc32 = new CRC32();
-        crc32.update(data, offset, length);
-        return (int) crc32.getValue();
-    }
-
-    static void putInt(final byte[] bytes, final int offset, final int value) {
-        bytes[offset] = (byte) (value >>> 24);
-        bytes[offset + 1] = (byte) (value >>> 16);
-        bytes[offset + 2] = (byte) (value >>> 8);
-        bytes[offset + 3] = (byte) value;
-    }
-
-    static int readInt(final byte[] bytes, final int offset) {
-        return ((bytes[offset] & 0xFF) << 24)
-                | ((bytes[offset + 1] & 0xFF) << 16)
-                | ((bytes[offset + 2] & 0xFF) << 8)
-                | (bytes[offset + 3] & 0xFF);
-    }
-
-    static void putLong(final byte[] bytes, final int offset, final long value) {
-        bytes[offset] = (byte) (value >>> 56);
-        bytes[offset + 1] = (byte) (value >>> 48);
-        bytes[offset + 2] = (byte) (value >>> 40);
-        bytes[offset + 3] = (byte) (value >>> 32);
-        bytes[offset + 4] = (byte) (value >>> 24);
-        bytes[offset + 5] = (byte) (value >>> 16);
-        bytes[offset + 6] = (byte) (value >>> 8);
-        bytes[offset + 7] = (byte) value;
-    }
-
-    static long readLong(final byte[] bytes, final int offset) {
-        return ((long) (bytes[offset] & 0xFF) << 56)
-                | ((long) (bytes[offset + 1] & 0xFF) << 48)
-                | ((long) (bytes[offset + 2] & 0xFF) << 40)
-                | ((long) (bytes[offset + 3] & 0xFF) << 32)
-                | ((long) (bytes[offset + 4] & 0xFF) << 24)
-                | ((long) (bytes[offset + 5] & 0xFF) << 16)
-                | ((long) (bytes[offset + 6] & 0xFF) << 8)
-                | ((long) bytes[offset + 7] & 0xFF);
-    }
-
-    private record ScanResult(long validBytes, long maxLsn, long lastReplayedLsn,
-            long lastSeenLsn, boolean invalidTail) {
-    }
-
-    private record FormatMeta(int version, int checksum) {
-    }
-
-    private static final class SegmentInfo {
-        private final String name;
-        private final long baseLsn;
-        private long sizeBytes;
-        private long maxLsn;
-
-        SegmentInfo(final String name, final long baseLsn, final long sizeBytes,
-                final long maxLsn) {
-            this.name = name;
-            this.baseLsn = baseLsn;
-            this.sizeBytes = sizeBytes;
-            this.maxLsn = maxLsn;
-        }
-
-        String name() {
-            return name;
-        }
-
-        long baseLsn() {
-            return baseLsn;
-        }
-
-        long sizeBytes() {
-            return sizeBytes;
-        }
-
-        long maxLsn() {
-            return maxLsn;
-        }
-
-        void grow(final long bytes, final long lsn) {
-            this.sizeBytes += bytes;
-            if (lsn > this.maxLsn) {
-                this.maxLsn = lsn;
-            }
         }
     }
 
@@ -1331,7 +660,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         private final AtomicLong sequence = new AtomicLong(0L);
 
         NamedDaemonThreadFactory(final String namePrefix) {
-            this.namePrefix = Vldtn.requireNonNull(namePrefix, "namePrefix");
+            this.namePrefix = Vldtn.requireNotBlank(namePrefix, "namePrefix");
         }
 
         @Override
@@ -1343,20 +672,4 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
     }
 
-    private static final class StreamCloseable implements AutoCloseable {
-        private final java.util.stream.Stream<String> stream;
-
-        StreamCloseable(final java.util.stream.Stream<String> stream) {
-            this.stream = Vldtn.requireNonNull(stream, "stream");
-        }
-
-        java.util.stream.Stream<String> stream() {
-            return stream;
-        }
-
-        @Override
-        public void close() {
-            stream.close();
-        }
-    }
 }

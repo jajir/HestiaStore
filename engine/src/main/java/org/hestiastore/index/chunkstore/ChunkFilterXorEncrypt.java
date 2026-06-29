@@ -22,7 +22,7 @@ public class ChunkFilterXorEncrypt implements ChunkFilter {
         final int length = payload.length();
         final byte[] target = new byte[length];
         for (int i = 0; i < length; i++) {
-            final int shift = (i % Long.BYTES) * 8;
+            final int shift = i % Long.BYTES * 8;
             final int keyByte = (int) ((DEFAULT_KEY >>> shift) & 0xFF);
             target[i] = (byte) (payload.getByte(i) ^ keyByte);
         }

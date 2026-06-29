@@ -1,26 +1,25 @@
 package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.hestiastore.index.segmentregistry.SegmentTestFixtures.SEGMENT_DIR_NAME;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
+import org.hestiastore.index.BusyRetryPolicy;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentregistry.SegmentTestFixtures.FailingRootDeleteDirectory;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -29,10 +28,8 @@ class SegmentRegistryImplCloseTest {
     @Test
     void closeRetriesUntilLoadingEntryBecomesReadyAndRemoved() throws Exception {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
-        final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache = new SegmentRegistryCache<>(
-                4, id -> {
-                    throw new IllegalStateException("Loader should not be used");
-                }, segment -> {
+        final SegmentRegistryCache<Integer, String> cache = newCache(4,
+                segment -> {
                 });
         final SegmentRegistryImpl<Integer, String> registry = newRegistry(cache,
                 gate, 1, 2_000);
@@ -48,13 +45,13 @@ class SegmentRegistryImplCloseTest {
 
         final ExecutorService closer = Executors.newSingleThreadExecutor();
         try {
-            final Future<SegmentRegistryResult<Void>> closeFuture = closer
-                    .submit(registry::close);
+            final Future<?> closeFuture = closer.submit(() -> {
+                registry.close();
+                return null;
+            });
             entry.finishLoad(segment);
 
-            final SegmentRegistryResult<Void> result = closeFuture.get(1,
-                    TimeUnit.SECONDS);
-            assertSame(SegmentRegistryResultStatus.OK, result.getStatus());
+            closeFuture.get(1, TimeUnit.SECONDS);
             assertTrue(readCacheMap(cache).isEmpty(),
                     "Cache should be empty after close drain");
             assertEquals(SegmentRegistryState.CLOSED, gate.getState());
@@ -64,12 +61,10 @@ class SegmentRegistryImplCloseTest {
     }
 
     @Test
-    void closeReturnsErrorWhenCacheCannotDrainBeforeTimeout() {
+    void closeThrowsWhenCacheCannotDrainBeforeTimeout() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
-        final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache = new SegmentRegistryCache<>(
-                4, id -> {
-                    throw new IllegalStateException("Loader should not be used");
-                }, segment -> {
+        final SegmentRegistryCache<Integer, String> cache = newCache(4,
+                segment -> {
                 });
         final SegmentRegistryImpl<Integer, String> registry = newRegistry(cache,
                 gate, 1, 40);
@@ -80,66 +75,65 @@ class SegmentRegistryImplCloseTest {
         readCacheMap(cache).put(segmentId, loadingEntry);
 
         final long startNanos = System.nanoTime();
-        final SegmentRegistryResult<Void> result = registry.close();
+        final IndexException result = assertThrows(IndexException.class,
+                registry::close);
         final long durationMillis = TimeUnit.NANOSECONDS
                 .toMillis(System.nanoTime() - startNanos);
 
-        assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
+        assertTrue(result.getMessage().contains("ERROR"));
         assertEquals(SegmentRegistryState.ERROR, gate.getState());
         assertTrue(durationMillis >= 30L,
                 "Close should retry until timeout budget is consumed");
     }
 
-    @Test
-    void deleteSegmentReturnsErrorWhenFileSystemCannotRemoveDirectory() {
-        final FailingRootDeleteDirectory directory = new FailingRootDeleteDirectory(
-                SEGMENT_DIR_NAME);
-        directory.mkdir(SEGMENT_DIR_NAME);
-        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
-        final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache = new SegmentRegistryCache<>(
-                4, id -> {
-                    throw new IllegalStateException("Loader should not be used");
-                }, segment -> {
-                });
-        final SegmentRegistryImpl<Integer, String> registry = newRegistry(
-                directory, cache, gate, 1, 100);
-
-        final SegmentRegistryResult<Void> result = registry
-                .deleteSegment(SegmentId.of(1));
-
-        assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
-        assertTrue(cache.isEmpty(),
-                "Delete should leave cache unchanged when no entries exist.");
-        assertTrue(directory.isFileExists(SEGMENT_DIR_NAME));
-    }
-
     private static SegmentRegistryImpl<Integer, String> newRegistry(
-            final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache,
+            final SegmentRegistryCache<Integer, String> cache,
             final SegmentRegistryStateMachine gate, final int backoffMillis,
             final int timeoutMillis) {
-        return newRegistry(new MemDirectory(), cache, gate, backoffMillis,
-                timeoutMillis);
-    }
-
-    private static SegmentRegistryImpl<Integer, String> newRegistry(
-            final Directory directory,
-            final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache,
-            final SegmentRegistryStateMachine gate, final int backoffMillis,
-            final int timeoutMillis) {
+        final Directory directory = new MemDirectory();
         final SegmentRegistryFileSystem fs = new SegmentRegistryFileSystem(
                 directory);
         final AtomicInteger counter = new AtomicInteger();
         final SegmentIdAllocator allocator = () -> SegmentId
                 .of(counter.getAndIncrement());
-        final IndexRetryPolicy closeRetryPolicy = new IndexRetryPolicy(
+        final BusyRetryPolicy closeRetryPolicy = new BusyRetryPolicy(
+                backoffMillis, timeoutMillis);
+        @SuppressWarnings("unchecked")
+        final PreparedSegmentWriterFactory<Integer, String> writerFactory = Mockito
+                .mock(PreparedSegmentWriterFactory.class);
+        final SegmentRuntimeTuner runtimeTuner = Mockito
+                .mock(SegmentRuntimeTuner.class);
+        final BusyRetryPolicy blockingRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
-                gate, ConcurrentHashMap.<SegmentId>newKeySet());
+                gate, writerFactory, runtimeTuner, blockingRetryPolicy);
+    }
+
+    private static SegmentRegistryCache<Integer, String> newCache(
+            final int limit,
+            final Consumer<Segment<Integer, String>> unloader) {
+        @SuppressWarnings("unchecked")
+        final SegmentLoadCloseOperations<Integer, String> segmentOperations = Mockito
+                .mock(SegmentLoadCloseOperations.class);
+        Mockito.when(segmentOperations.loadSegment(Mockito.any(SegmentId.class)))
+                .thenThrow(new IllegalStateException(
+                        "Loader should not be used"));
+        Mockito.doAnswer(invocation -> {
+            unloader.accept(invocation.getArgument(0));
+            return null;
+        }).when(segmentOperations)
+                .closeSegmentIfNeeded(Mockito.<Segment<Integer, String>>any());
+        final SegmentUnloadEligibility unloadEligibility = Mockito
+                .mock(SegmentUnloadEligibility.class);
+        Mockito.when(unloadEligibility.canUnload(Mockito.any()))
+                .thenReturn(true);
+        return new SegmentRegistryCache<>(limit, segmentOperations,
+                unloadEligibility, Runnable::run);
     }
 
     @SuppressWarnings("unchecked")
     private static Map<SegmentId, SegmentRegistryCache.Entry<Segment<Integer, String>>> readCacheMap(
-            final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache) {
+            final SegmentRegistryCache<Integer, String> cache) {
         try {
             final Field mapField = SegmentRegistryCache.class
                     .getDeclaredField("map");

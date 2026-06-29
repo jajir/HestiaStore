@@ -41,12 +41,12 @@ range scans, and operational simplicity inside a single application process.
   caching, filters, or custom data types.
 - [Operations](operations/index.md) if you need WAL, monitoring, backups, or
   tuning guidance.
+- [Export & Import](operations/export-import.md) if you need the standalone
+  operational CLI for logical backup, migration, or export to other systems.
 - [Architecture](architecture/index.md) if you need implementation detail and
   internal contracts.
-- [Contribute & Community](community/index.md) if you need contribution
-  workflow, community policy, or changelog history.
-- [Development](development/index.md) if you need maintainer runbooks, release
-  workflow, or engineering references.
+- [Contribute & Community](development/index.md) if you are contributing code,
+  documentation, or release work.
 
 ## Key capabilities
 
@@ -75,6 +75,14 @@ runs, so treat the charts as relative comparisons, not absolute guarantees.
 
 ![Sequential read benchmark comparison](./images/out-sequential.svg)
 
+### Multithread write throughput
+
+![Multithread write benchmark comparison](./images/out-multithread-write.svg)
+
+### Multithread read throughput
+
+![Multithread read benchmark comparison](./images/out-multithread-read.svg)
+
 Detailed methodology, workload notes, and links to raw artifacts are available
 on the [Benchmarks](why-hestiastore/benchmarks.md) page.
 
@@ -83,16 +91,17 @@ on the [Benchmarks](why-hestiastore/benchmarks.md) page.
 ```java
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 
 Directory directory = new MemDirectory();
 
 IndexConfiguration<String, String> conf = IndexConfiguration
     .<String, String>builder()
-    .withKeyClass(String.class)
-    .withValueClass(String.class)
-    .withName("example")
+    .identity(identity -> identity
+        .name("example")
+        .keyClass(String.class)
+        .valueClass(String.class))
     .build();
 
 try (SegmentIndex<String, String> index = SegmentIndex.create(directory, conf)) {
@@ -110,8 +119,6 @@ For the next step after this example, go to [Quick Start](how-to-use/quick-start
 - [Benchmarks](why-hestiastore/benchmarks.md) for evaluation
 - [Quality & Testing](why-hestiastore/quality.md) for delivery confidence
 - [Security](SECURITY.md) for reporting and posture
-- [Contribute & Community](community/index.md) for contributor process and
-  project history
 - [Release Process](development/release.md) for maintainers
 
 ## Support

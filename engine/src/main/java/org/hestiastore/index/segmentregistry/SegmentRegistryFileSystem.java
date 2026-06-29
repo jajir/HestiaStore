@@ -5,12 +5,16 @@ import java.util.stream.Stream;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Filesystem operations used by {@link SegmentRegistryImpl}.
  */
 final class SegmentRegistryFileSystem {
 
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(SegmentRegistryFileSystem.class);
     private static final String SEGMENT_ID_ARG = "segmentId";
     private final Directory directoryFacade;
 
@@ -40,11 +44,10 @@ final class SegmentRegistryFileSystem {
      * Deletes all files and directories owned by the specified segment.
      *
      * @param segmentId segment identifier
-     * @return {@code true} when the segment directory no longer exists
      */
-    boolean deleteSegmentFiles(final SegmentId segmentId) {
+    void deleteSegmentFiles(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
-        return deleteDirectory(segmentId.getName());
+        deleteDirectory(segmentId.getName());
     }
 
     /**
@@ -66,17 +69,15 @@ final class SegmentRegistryFileSystem {
      * </p>
      *
      * @param directoryName directory to remove
-     * @return {@code true} when the directory no longer exists
      */
-    private boolean deleteDirectory(final String directoryName) {
+    private void deleteDirectory(final String directoryName) {
         if (!exists(directoryName)) {
-            return true;
+            return;
         }
         final Directory directory = directoryFacade
                 .openSubDirectory(directoryName);
-        final boolean cleared = clearDirectory(directory);
-        final boolean removed = removeDirectory(directoryFacade, directoryName);
-        return cleared && removed && !exists(directoryName);
+        clearDirectory(directory);
+        removeDirectory(directoryName);
     }
 
     /**
@@ -89,22 +90,17 @@ final class SegmentRegistryFileSystem {
      * </p>
      *
      * @param directory directory to clear
-     * @return {@code true} when all entries were removed
      */
-    private boolean clearDirectory(final Directory directory) {
-        final String[] fileNames;
+    private void clearDirectory(final Directory directory) {
         try (Stream<String> files = directory.getFileNames()) {
-            fileNames = files.toArray(String[]::new);
-        } catch (final RuntimeException e) {
-            return false;
+            files.forEach(fileName -> {
+                if (tryDeleteFile(directory, fileName)
+                        || !exists(directory, fileName)) {
+                    return;
+                }
+                deleteSubDirectory(directory, fileName);
+            });
         }
-        boolean cleared = true;
-        for (final String fileName : fileNames) {
-            if (!deleteEntry(directory, fileName)) {
-                cleared = false;
-            }
-        }
-        return cleared;
     }
 
     /**
@@ -117,52 +113,42 @@ final class SegmentRegistryFileSystem {
         return directoryFacade.isFileExists(fileName);
     }
 
-    private boolean deleteEntry(final Directory directory,
-            final String fileName) {
-        boolean deletedAsFile = false;
+    private void removeDirectory(final String directoryName) {
         try {
-            deletedAsFile = directory.deleteFile(fileName);
-        } catch (final RuntimeException e) {
-            deletedAsFile = false;
+            directoryFacade.rmdir(directoryName);
+        } catch (final RuntimeException ex) {
+            LOGGER.debug("Unable to remove segment directory '{}'.",
+                    directoryName, ex);
         }
-        if (deletedAsFile) {
-            return true;
-        }
-        if (!entryExists(directory, fileName)) {
-            return true;
-        }
-        return deleteNestedDirectory(directory, fileName);
     }
 
-    private boolean deleteNestedDirectory(final Directory directory,
-            final String directoryName) {
+    private boolean tryDeleteFile(final Directory directory,
+            final String fileName) {
         try {
-            final Directory subDirectory = directory
-                    .openSubDirectory(directoryName);
-            final boolean cleared = clearDirectory(subDirectory);
-            final boolean removed = removeDirectory(directory, directoryName);
-            return cleared && removed && !entryExists(directory, directoryName);
-        } catch (final RuntimeException e) {
+            return directory.deleteFile(fileName);
+        } catch (final RuntimeException ex) {
             return false;
         }
     }
 
-    private static boolean removeDirectory(final Directory directory,
-            final String directoryName) {
-        try {
-            directory.rmdir(directoryName);
-        } catch (final RuntimeException e) {
-            return !entryExists(directory, directoryName);
-        }
-        return !entryExists(directory, directoryName);
-    }
-
-    private static boolean entryExists(final Directory directory,
-            final String fileName) {
+    private boolean exists(final Directory directory, final String fileName) {
         try {
             return directory.isFileExists(fileName);
-        } catch (final RuntimeException e) {
-            return true;
+        } catch (final RuntimeException ex) {
+            return false;
+        }
+    }
+
+    private void deleteSubDirectory(final Directory directory,
+            final String directoryName) {
+        try {
+            final Directory subDirectory = directory
+                    .openSubDirectory(directoryName);
+            clearDirectory(subDirectory);
+            directory.rmdir(directoryName);
+        } catch (final RuntimeException ex) {
+            LOGGER.debug("Unable to delete segment subdirectory '{}'.",
+                    directoryName, ex);
         }
     }
 

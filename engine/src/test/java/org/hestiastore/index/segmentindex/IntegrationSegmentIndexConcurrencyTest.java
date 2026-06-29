@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -44,7 +47,7 @@ class IntegrationSegmentIndexConcurrencyTest {
         try {
             runParallelPuts(index, executor, scenario.keyCount());
 
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
 
             final List<Entry<Integer, String>> expected = expectedEntries(
                     scenario.keyCount());
@@ -86,7 +89,7 @@ class IntegrationSegmentIndexConcurrencyTest {
             writerTask.get(5, TimeUnit.SECONDS);
             executor.shutdownNow();
 
-            index.flush();
+            index.maintenance().flush();
             assertEquals("v-9", index.get(1));
         } finally {
             index.close();
@@ -120,8 +123,8 @@ class IntegrationSegmentIndexConcurrencyTest {
             final var maint = executor.submit(() -> {
                 start.await();
                 for (int i = 0; i < 5; i++) {
-                    index.flushAndWait();
-                    index.compactAndWait();
+                    index.maintenance().flushAndWait();
+                    index.maintenance().compactAndWait();
                 }
                 return null;
             });
@@ -132,8 +135,8 @@ class IntegrationSegmentIndexConcurrencyTest {
             maint.get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             executor.shutdownNow();
 
-            index.flushAndWait();
-            index.compactAndWait();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
             awaitIdle(index);
             verifySegmentIndexDataWithDiagnostics(index, expectedEntries(40));
         } finally {
@@ -146,62 +149,60 @@ class IntegrationSegmentIndexConcurrencyTest {
         final int activePartitionSize = 16;
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi) //
-                .withValueTypeDescriptor(tds) //
-                .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInActivePartition(activePartitionSize) //
-                .withMaxNumberOfImmutableRunsPerPartition(4) //
-                .withMaxNumberOfKeysInPartitionBuffer(64) //
-                .withMaxNumberOfKeysInIndexBuffer(128) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000) //
-                .withMaxNumberOfKeysInSegment(64) //
-                .withMaxNumberOfKeysInSegmentChunk(8) //
-                .withMaxNumberOfSegmentsInCache(5) //
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withIndexBusyBackoffMillis(INDEX_BUSY_BACKOFF_MILLIS) //
-                .withIndexBusyTimeoutMillis(INDEX_BUSY_TIMEOUT_MILLIS) //
-                .withBackgroundMaintenanceAutoEnabled(true) //
-                .withIndexWorkerThreadCount(cpuThreads)//
-                .withName("concurrency_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi)) //
+                .identity(identity -> identity.valueTypeDescriptor(tds)) //
+                .segment(segment -> segment.cacheKeyLimit(3)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(activePartitionSize)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(64)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(128)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(10_000_000)) //
+                .segment(segment -> segment.maxKeys(64)) //
+                .segment(segment -> segment.chunkKeyLimit(8)) //
+                .segment(segment -> segment.cachedSegmentLimit(5)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.busyBackoffMillis(INDEX_BUSY_BACKOFF_MILLIS)) //
+                .maintenance(maintenance -> maintenance.busyTimeoutMillis(INDEX_BUSY_TIMEOUT_MILLIS)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true)) //
+                .identity(identity -> identity.name("concurrency_index")) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }
 
     private SegmentIndex<Integer, String> newIndex(final Directory directory,
             final ParallelPutsScenario scenario) {
-        final int activePartitionSize = scenario.maxNumberOfKeysInActivePartition();
-        final int partitionBufferSize = Math.max(activePartitionSize + 1,
+        final int segmentWriteCacheKeyLimit = scenario.segmentWriteCacheKeyLimit();
+        final int maintenanceWriteCacheKeyLimit = Math.max(segmentWriteCacheKeyLimit + 1,
                 scenario.keyCount());
-        final int indexBufferSize = Math.max(partitionBufferSize,
-                partitionBufferSize * 2);
+        final int indexBufferedWriteKeyLimit = Math.max(maintenanceWriteCacheKeyLimit,
+                maintenanceWriteCacheKeyLimit * 2);
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi) //
-                .withValueTypeDescriptor(tds) //
-                .withMaxNumberOfKeysInSegmentCache(
-                        scenario.maxNumberOfKeysInSegmentCache()) //
-                .withMaxNumberOfKeysInActivePartition(activePartitionSize) //
-                .withMaxNumberOfImmutableRunsPerPartition(4) //
-                .withMaxNumberOfKeysInPartitionBuffer(partitionBufferSize) //
-                .withMaxNumberOfKeysInIndexBuffer(indexBufferSize) //
-                .withMaxNumberOfKeysInSegmentChunk(
-                        scenario.maxNumberOfKeysInSegmentChunk()) //
-                .withMaxNumberOfKeysInSegment(
-                        scenario.maxNumberOfKeysInSegment()) //
-                .withMaxNumberOfSegmentsInCache(
-                        scenario.maxNumberOfSegmentsInCache()) //
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withIndexBusyBackoffMillis(INDEX_BUSY_BACKOFF_MILLIS) //
-                .withIndexBusyTimeoutMillis(INDEX_BUSY_TIMEOUT_MILLIS) //
-                .withBackgroundMaintenanceAutoEnabled(true) //
-                .withIndexWorkerThreadCount(scenario.cpuThreads())//
-                .withName("concurrency_index_" + scenario.name()) //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi)) //
+                .identity(identity -> identity.valueTypeDescriptor(tds)) //
+                .segment(segment -> segment.cacheKeyLimit(
+                        scenario.maxNumberOfKeysInSegmentCache())) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(segmentWriteCacheKeyLimit)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(maintenanceWriteCacheKeyLimit)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(indexBufferedWriteKeyLimit)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(10_000_000)) //
+                .segment(segment -> segment.chunkKeyLimit(
+                        scenario.maxNumberOfKeysInSegmentChunk())) //
+                .segment(segment -> segment.maxKeys(
+                        scenario.maxNumberOfKeysInSegment())) //
+                .segment(segment -> segment.cachedSegmentLimit(
+                        scenario.maxNumberOfSegmentsInCache())) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.busyBackoffMillis(INDEX_BUSY_BACKOFF_MILLIS)) //
+                .maintenance(maintenance -> maintenance.busyTimeoutMillis(INDEX_BUSY_TIMEOUT_MILLIS)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true)) //
+                .identity(identity -> identity.name(
+                        "concurrency_index_" + scenario.name())) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }
@@ -261,13 +262,8 @@ class IntegrationSegmentIndexConcurrencyTest {
         final long deadline = System.nanoTime()
                 + TimeUnit.SECONDS.toNanos(10L);
         while (System.nanoTime() < deadline) {
-            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
-            if (snapshot.getActivePartitionCount() == 0
-                    && snapshot.getPartitionBufferedKeyCount() == 0
-                    && snapshot.getDrainInFlightCount() == 0
-                    && snapshot.getImmutableRunCount() == 0
-                    && snapshot.getDrainingPartitionCount() == 0
-                    && snapshot.getSplitInFlightCount() == 0) {
+            final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+            if (snapshot.split().inFlightCount() == 0) {
                 return;
             }
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
@@ -294,7 +290,7 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private record ParallelPutsScenario(String name, int keyCount,
             int maxNumberOfKeysInSegmentCache,
-            int maxNumberOfKeysInActivePartition,
+            int segmentWriteCacheKeyLimit,
             int maxNumberOfKeysInSegmentChunk, int maxNumberOfKeysInSegment,
             int maxNumberOfSegmentsInCache,
             int cpuThreads, int writerThreads) {

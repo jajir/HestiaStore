@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -13,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,16 +23,29 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.monitoring.SegmentIndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexBloomFilterMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexChunkStoreCacheMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexLatencyMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexMaintenanceMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexOperationMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRegistryCacheMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSegmentMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSplitMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexWalMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexWritePathMetrics;
+import org.hestiastore.index.segmentindex.SegmentIndexMaintenance;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
 import org.hestiastore.monitoring.json.api.ActionType;
@@ -42,6 +57,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -69,7 +86,13 @@ class ManagementAgentServerTest {
         server.start();
 
         client = HttpClient.newHttpClient();
-        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule())
+                .setVisibility(PropertyAccessor.FIELD,
+                        JsonAutoDetect.Visibility.ANY)
+                .setVisibility(PropertyAccessor.GETTER,
+                        JsonAutoDetect.Visibility.NONE)
+                .setVisibility(PropertyAccessor.IS_GETTER,
+                        JsonAutoDetect.Visibility.NONE);
         baseUrl = "http://127.0.0.1:" + server.getPort();
     }
 
@@ -83,6 +106,16 @@ class ManagementAgentServerTest {
                 index.close();
             }
         }
+    }
+
+    @Test
+    void requestThreadFactoryUsesHestiaThreadNames() {
+        final Thread thread = ManagementAgentServer.requestThreadFactory()
+                .newThread(() -> {
+                });
+
+        assertTrue(thread.getName().startsWith("hestia-management-http-"));
+        assertFalse(thread.isDaemon());
     }
 
     @Test
@@ -106,19 +139,41 @@ class ManagementAgentServerTest {
         assertTrue(report.jvm().heapMaxBytes() >= 0L);
         assertTrue(report.jvm().gcCount() >= 0L);
         assertTrue(report.indexes().stream()
-                .allMatch(idx -> idx.segmentRuntimeSnapshots() != null));
+                .allMatch(idx -> idx.segments().runtimeMetrics() != null));
         assertTrue(report.indexes().stream()
-                .allMatch(idx -> idx.partitionCount() >= 1));
+                .allMatch(idx -> idx.segments().count() >= 0));
         for (final JsonNode indexNode : reportJson.path("indexes")) {
-            assertTrue(indexNode.has("maxNumberOfKeysInActivePartition"));
-            assertTrue(indexNode.has("maxNumberOfImmutableRunsPerPartition"));
-            assertTrue(indexNode.has("maxNumberOfKeysInPartitionBuffer"));
-            assertTrue(indexNode.has("maxNumberOfKeysInIndexBuffer"));
-            assertTrue(!indexNode.has("maxNumberOfKeysInSegmentWriteCache"));
-            assertTrue(!indexNode.has(
-                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
-            assertTrue(indexNode.has("drainLatencyP95Micros"));
+            assertTrue(indexNode.path("writePath")
+                    .has("segmentWriteCacheKeyLimit"));
+            assertTrue(indexNode.path("writePath")
+                    .has("segmentWriteCacheKeyLimitDuringMaintenance"));
+            assertTrue(indexNode.path("writePath")
+                    .has("indexBufferedWriteKeyLimit"));
+            assertTrue(!indexNode.has("maxNumberOfKeysInActivePartition"));
+            assertTrue(!indexNode.has("maxNumberOfImmutableRunsPerPartition"));
+            assertFalse(indexNode.toString().contains("drain"));
         }
+    }
+
+    @Test
+    void reportEndpointMapsWalFieldsInApiOrder() throws Exception {
+        final String indexName = "wal-report-index";
+        final SegmentIndexWalMetrics wal =
+                new SegmentIndexWalMetrics(true, 1L, 2L, 3L, 4L, 5L, 6L, 7L,
+                        8, 9L, 10L, 11L, 12L, 13L, 14L, 15L, 16L);
+        server.addIndex(indexName, monitoredIndexWithSnapshot(
+                runtimeSnapshotWithWal(indexName, wal)));
+
+        final HttpResponse<String> response = send("GET",
+                ManagementApiPaths.REPORT, null);
+        assertEquals(200, response.statusCode());
+        final JsonNode indexNode = findIndexNode(
+                objectMapper.readTree(response.body()), indexName);
+        final JsonNode walNode = indexNode.path("wal");
+
+        assertEquals(11L, walNode.path("pendingSyncBytes").asLong());
+        assertEquals(12L, walNode.path("appliedLsn").asLong());
+        assertEquals(2L, walNode.path("checkpointLagLsn").asLong());
     }
 
     @Test
@@ -274,11 +329,11 @@ class ManagementAgentServerTest {
         assertTrue(
                 payload.supportedKeys().contains("maxNumberOfSegmentsInCache"));
         assertTrue(payload.supportedKeys()
-                .contains("maxNumberOfKeysInActivePartition"));
+                .contains("segmentWriteCacheKeyLimit"));
         assertTrue(payload.supportedKeys()
-                .contains("maxNumberOfKeysInPartitionBuffer"));
+                .contains("segmentWriteCacheKeyLimitDuringMaintenance"));
         assertTrue(payload.supportedKeys()
-                .contains("maxNumberOfKeysInPartitionBeforeSplit"));
+                .contains("segmentSplitKeyThreshold"));
         assertFalse(payload.supportedKeys()
                 .contains("backgroundMaintenanceAutoEnabled"));
         assertFalse(payload.original().containsKey("diskIoBufferSize"));
@@ -308,6 +363,20 @@ class ManagementAgentServerTest {
         final ErrorResponse payload = objectMapper.readValue(response.body(),
                 ErrorResponse.class);
         assertEquals("CONFIG_KEY_NOT_SUPPORTED", payload.code());
+    }
+
+    @Test
+    void configPatchValidationUsesRuntimeFieldPath() throws Exception {
+        final HttpResponse<String> response = send("PATCH",
+                ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
+                "{\"values\":{\"maxNumberOfSegmentsInCache\":\"2\"},\"dryRun\":true}");
+
+        assertEquals(400, response.statusCode());
+        final ErrorResponse payload = objectMapper.readValue(response.body(),
+                ErrorResponse.class);
+        assertEquals("INVALID_REQUEST", payload.code());
+        assertTrue(payload.message()
+                .contains("segment.cachedSegmentLimit: value must be >= 3"));
     }
 
     @Test
@@ -379,36 +448,34 @@ class ManagementAgentServerTest {
         final SegmentIndex<Integer, String> extra = createPartitionedIndex(
                 "buffered-overlay-report-index", false);
         indexes.add(extra);
-        server.addIndex(extra.getConfiguration().getIndexName(), extra);
+        server.addIndex(extra.runtimeMonitoring().snapshot().indexName(),
+                extra);
 
         for (int i = 0; i < 6; i++) {
             extra.put(i, "value-" + i);
         }
-        final SegmentIndexMetricsSnapshot snapshot = extra.metricsSnapshot();
+        final SegmentIndexRuntimeSnapshot snapshot = extra.runtimeMonitoring().snapshot();
 
         final HttpResponse<String> reportResp = send("GET",
                 ManagementApiPaths.REPORT, null);
         assertEquals(200, reportResp.statusCode());
         final JsonNode reportJson = objectMapper.readTree(reportResp.body());
         final JsonNode indexNode = findIndexNode(reportJson,
-                extra.getConfiguration().getIndexName());
+                extra.runtimeMonitoring().snapshot().indexName());
 
-        assertEquals(snapshot.getTotalBufferedWriteKeys(),
-                indexNode.path("totalBufferedWriteKeys").asLong());
-        assertEquals(snapshot.getPartitionCount(),
-                indexNode.path("partitionCount").asInt());
-        assertEquals(snapshot.getActivePartitionCount(),
-                indexNode.path("activePartitionCount").asInt());
-        assertEquals(snapshot.getDrainingPartitionCount(),
-                indexNode.path("drainingPartitionCount").asInt());
-        assertEquals(snapshot.getImmutableRunCount(),
-                indexNode.path("immutableRunCount").asInt());
-        assertEquals(snapshot.getPartitionBufferedKeyCount(),
-                indexNode.path("partitionBufferedKeyCount").asInt());
-        assertEquals(snapshot.getDrainScheduleCount(),
-                indexNode.path("drainScheduleCount").asLong());
-        assertEquals(snapshot.getDrainInFlightCount(),
-                indexNode.path("drainInFlightCount").asInt());
+        assertEquals(snapshot.writePath().totalBufferedWriteKeys(),
+                indexNode.path("writePath").path("totalBufferedWriteKeys")
+                        .asLong());
+        assertEquals(snapshot.writePath().segmentWriteCacheKeyLimit(),
+                indexNode.path("writePath").path("segmentWriteCacheKeyLimit")
+                        .asInt());
+        assertEquals(snapshot.writePath().segmentWriteCacheKeyLimitDuringMaintenance(),
+                indexNode.path("writePath")
+                        .path("segmentWriteCacheKeyLimitDuringMaintenance")
+                        .asInt());
+        assertEquals(snapshot.writePath().indexBufferedWriteKeyLimit(),
+                indexNode.path("writePath").path("indexBufferedWriteKeyLimit")
+                        .asInt());
     }
 
     @Test
@@ -416,64 +483,57 @@ class ManagementAgentServerTest {
         final SegmentIndex<Integer, String> extra = createPartitionedIndex(
                 "split-report-index", true);
         indexes.add(extra);
-        server.addIndex(extra.getConfiguration().getIndexName(), extra);
+        server.addIndex(extra.runtimeMonitoring().snapshot().indexName(),
+                extra);
 
         for (int i = 0; i < 48; i++) {
             extra.put(i, "stable-" + i);
         }
-        extra.flushAndWait();
-        awaitCondition(() -> extra.metricsSnapshot().getSegmentCount() == 1
-                && extra.metricsSnapshot().getSplitInFlightCount() == 0
-                && extra.metricsSnapshot().getDrainInFlightCount() == 0,
+        extra.maintenance().flushAndWait();
+        awaitCondition(() -> extra.runtimeMonitoring().snapshot().segments().count() == 1
+                && extra.runtimeMonitoring().snapshot().split().inFlightCount() == 0,
                 10_000L);
 
-        final long revision = extra.controlPlane().configuration()
-                .getConfigurationActual().getRevision();
-        final RuntimePatchResult patchResult = extra.controlPlane()
-                .configuration()
-                .apply(new RuntimeConfigPatch(Map.of(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                        Integer.valueOf(16)), false, Long.valueOf(revision)));
-        assertTrue(patchResult.isApplied());
+        final long revision = extra.runtimeTuning().current().revision();
+        final RuntimeTuningResult patchResult = extra.runtimeTuning()
+                .apply(RuntimeTuningPatch.builder()
+                        .expectedRevision(revision)
+                        .segmentSplitKeyThreshold(16)
+                        .build());
+        assertTrue(patchResult.applied());
 
         awaitCondition(() -> {
-            final SegmentIndexMetricsSnapshot snapshot = extra
-                    .metricsSnapshot();
-            return snapshot.getSegmentCount() > 1
-                    && snapshot.getSplitInFlightCount() == 0
-                    && snapshot.getDrainInFlightCount() == 0;
+            final SegmentIndexRuntimeSnapshot snapshot = extra.runtimeMonitoring().snapshot();
+            return snapshot.segments().count() > 1
+                    && snapshot.split().inFlightCount() == 0;
         }, 10_000L);
 
-        final SegmentIndexMetricsSnapshot snapshot = awaitStableSplitMetrics(
-                extra, 10_000L);
-        final JsonNode indexNode = awaitIndexNodeWithMatchingSplitMetrics(extra,
-                extra.getConfiguration().getIndexName(), 10_000L);
+        final Map.Entry<SegmentIndexRuntimeSnapshot, JsonNode> splitMetricsMatch =
+                awaitIndexNodeWithMatchingSplitMetrics(extra,
+                        extra.runtimeMonitoring().snapshot().indexName(),
+                        10_000L);
+        final SegmentIndexRuntimeSnapshot snapshot = splitMetricsMatch.getKey();
+        final JsonNode indexNode = splitMetricsMatch.getValue();
 
-        assertEquals(snapshot.getSegmentCount(),
-                indexNode.path("segmentCount").asInt());
-        assertEquals(snapshot.getSplitScheduleCount(),
-                indexNode.path("splitScheduleCount").asLong());
-        assertEquals(snapshot.getSplitInFlightCount(),
-                indexNode.path("splitInFlightCount").asInt());
-        assertEquals(snapshot.getDrainScheduleCount(),
-                indexNode.path("drainScheduleCount").asLong());
-        assertEquals(snapshot.getDrainInFlightCount(),
-                indexNode.path("drainInFlightCount").asInt());
-        assertEquals(snapshot.getDrainLatencyP95Micros(),
-                indexNode.path("drainLatencyP95Micros").asLong());
+        assertEquals(snapshot.segments().count(),
+                indexNode.path("segments").path("count").asInt());
+        assertEquals(snapshot.split().scheduleCount(),
+                indexNode.path("split").path("scheduleCount").asLong());
+        assertEquals(snapshot.split().inFlightCount(),
+                indexNode.path("split").path("inFlightCount").asInt());
     }
 
     private SegmentIndex<Integer, String> createIndex(final String name) {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
-                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
-                .withBloomFilterIndexSizeInBytes(0) //
-                .withContextLoggingEnabled(false) //
-                .withName(name) //
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name(name)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(0)) //
+                .logging(logging -> logging.contextEnabled(false)) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }
@@ -483,24 +543,22 @@ class ManagementAgentServerTest {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
-                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(32) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withContextLoggingEnabled(false) //
-                .withBackgroundMaintenanceAutoEnabled(
-                        backgroundMaintenanceAutoEnabled) //
-                .withName(name) //
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name(name)) //
+                .segment(segment -> segment.cacheKeyLimit(8).maxKeys(128)
+                        .chunkKeyLimit(4)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)
+                        .maintenanceWriteCacheKeyLimit(96)
+                        .indexBufferedWriteKeyLimit(192)
+                        .segmentSplitKeyThreshold(512)) //
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(1024 * 128).hashFunctions(3)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(
+                        backgroundMaintenanceAutoEnabled)) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }
@@ -512,8 +570,50 @@ class ManagementAgentServerTest {
                 return indexNode;
             }
         }
-        assertNotNull(null, "Missing index report for " + indexName);
-        return null;
+        return fail("Missing index report for " + indexName);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentIndex<Integer, String> monitoredIndexWithSnapshot(
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        final SegmentIndexRuntimeMonitoring monitoring = () -> snapshot;
+        final InvocationHandler handler = (proxy, method, args) -> {
+            return switch (method.getName()) {
+                case "runtimeMonitoring" -> monitoring;
+                case "wasClosed" -> false;
+                case "close" -> null;
+                case "toString" -> "monitoredIndex("
+                        + snapshot.indexName() + ")";
+                case "hashCode" -> System.identityHashCode(proxy);
+                case "equals" -> proxy == args[0];
+                default -> throw new UnsupportedOperationException(
+                        method.getName());
+            };
+        };
+        return (SegmentIndex<Integer, String>) Proxy.newProxyInstance(
+                SegmentIndex.class.getClassLoader(),
+                new Class<?>[] { SegmentIndex.class }, handler);
+    }
+
+    private static SegmentIndexRuntimeSnapshot runtimeSnapshotWithWal(
+            final String indexName, final SegmentIndexWalMetrics wal) {
+        final SegmentIndexExecutorMetrics executor =
+                new SegmentIndexExecutorMetrics(0, 0, 0, 0L, 0L, 0L);
+        return new SegmentIndexRuntimeSnapshot(indexName, SegmentIndexState.READY,
+                Instant.EPOCH,
+                new SegmentIndexOperationMetrics(0L, 0L, 0L),
+                new SegmentIndexRegistryCacheMetrics(0L, 0L, 0L, 0L, 0, 0),
+                new SegmentIndexChunkStoreCacheMetrics(0, 0, 0L, 0L, 0L, 0L,
+                        0L, 0L),
+                new SegmentIndexSegmentMetrics(0, 0, 0, 0, 0, 0, 0, 0L, 0L,
+                        0L, List.of()),
+                new SegmentIndexWritePathMetrics(0, 0, 0, 0L),
+                new SegmentIndexMaintenanceMetrics(0L, 0L, 0L, 0L, 0L, 0L,
+                        executor, executor),
+                new SegmentIndexSplitMetrics(0L, 0, 0, 0L, 0L, executor),
+                new SegmentIndexLatencyMetrics(0L, 0L, 0L, 0L, 0L, 0L),
+                new SegmentIndexBloomFilterMetrics(0, 0, 0D, 0L, 0L, 0L, 0L),
+                wal);
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,
@@ -533,95 +633,88 @@ class ManagementAgentServerTest {
                 "Condition not reached within " + timeoutMillis + " ms.");
     }
 
-    private static SegmentIndexMetricsSnapshot awaitStableSplitMetrics(
-            final SegmentIndex<Integer, String> index,
-            final long timeoutMillis) {
-        final long deadline = System.nanoTime()
-                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        SegmentIndexMetricsSnapshot previous = null;
-        while (System.nanoTime() < deadline) {
-            final SegmentIndexMetricsSnapshot current = index.metricsSnapshot();
-            if (sameSplitMetrics(previous, current)) {
-                return current;
-            }
-            previous = current;
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
-            if (Thread.currentThread().isInterrupted()) {
-                throw new AssertionError("Interrupted while waiting");
-            }
-        }
-        assertNotNull(previous,
-                "Split metrics snapshot was never observed while waiting.");
-        assertTrue(false,
-                "Stable split metrics were not observed within "
-                        + timeoutMillis + " ms.");
-        return previous;
-    }
-
     private static boolean sameSplitMetrics(
-            final SegmentIndexMetricsSnapshot left,
-            final SegmentIndexMetricsSnapshot right) {
+            final SegmentIndexRuntimeSnapshot left,
+            final SegmentIndexRuntimeSnapshot right) {
         return left != null && right != null
-                && left.getSegmentCount() == right.getSegmentCount()
-                && left.getSplitScheduleCount() == right.getSplitScheduleCount()
-                && left.getSplitInFlightCount() == right.getSplitInFlightCount()
-                && left.getDrainScheduleCount() == right.getDrainScheduleCount()
-                && left.getDrainInFlightCount() == right.getDrainInFlightCount()
-                && left.getDrainLatencyP95Micros() == right
-                        .getDrainLatencyP95Micros();
+                && left.segments().count() == right.segments().count()
+                && left.split().scheduleCount() == right.split().scheduleCount()
+                && left.split().inFlightCount() == right.split().inFlightCount();
     }
 
-    private JsonNode awaitIndexNodeWithMatchingSplitMetrics(
-            final SegmentIndex<Integer, String> index, final String indexName,
-            final long timeoutMillis) throws Exception {
+    private Map.Entry<SegmentIndexRuntimeSnapshot, JsonNode> awaitIndexNodeWithMatchingSplitMetrics(
+            final SegmentIndex<Integer, String> index,
+            final String indexName, final long timeoutMillis)
+            throws Exception {
         final long deadline = System.nanoTime()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        SegmentIndexRuntimeSnapshot lastSnapshot = null;
         JsonNode lastIndexNode = null;
         while (System.nanoTime() < deadline) {
-            final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
+            final SegmentIndexRuntimeSnapshot before = index.runtimeMonitoring().snapshot();
             final HttpResponse<String> reportResp = send("GET",
                     ManagementApiPaths.REPORT, null);
             assertEquals(200, reportResp.statusCode());
             final JsonNode reportJson = objectMapper.readTree(reportResp.body());
             final JsonNode indexNode = findIndexNode(reportJson, indexName);
-            final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
+            final SegmentIndexRuntimeSnapshot after = index.runtimeMonitoring().snapshot();
             if (sameSplitMetrics(before, after)
                     && splitMetricsMatch(indexNode, after)) {
-                return indexNode;
+                return Map.entry(after, indexNode);
             }
+            lastSnapshot = after;
             lastIndexNode = indexNode;
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
             if (Thread.currentThread().isInterrupted()) {
                 throw new AssertionError("Interrupted while waiting");
             }
         }
+        assertNotNull(lastSnapshot,
+                "Split metrics snapshot was never observed while waiting.");
         assertNotNull(lastIndexNode,
                 "Index report was never observed while waiting.");
         assertTrue(false,
                 "Index report split metrics did not match a stable snapshot within "
                         + timeoutMillis + " ms.");
-        return lastIndexNode;
+        return Map.entry(lastSnapshot, lastIndexNode);
     }
 
     private static boolean splitMetricsMatch(final JsonNode indexNode,
-            final SegmentIndexMetricsSnapshot snapshot) {
-        return snapshot.getSegmentCount() == indexNode.path("segmentCount")
-                .asInt()
-                && snapshot.getSplitScheduleCount() == indexNode
-                        .path("splitScheduleCount").asLong()
-                && snapshot.getSplitInFlightCount() == indexNode
-                        .path("splitInFlightCount").asInt()
-                && snapshot.getDrainScheduleCount() == indexNode
-                        .path("drainScheduleCount").asLong()
-                && snapshot.getDrainInFlightCount() == indexNode
-                        .path("drainInFlightCount").asInt()
-                && snapshot.getDrainLatencyP95Micros() == indexNode
-                        .path("drainLatencyP95Micros").asLong();
+            final SegmentIndexRuntimeSnapshot snapshot) {
+        return snapshot.segments().count() == indexNode.path("segments")
+                .path("count").asInt()
+                && snapshot.split().scheduleCount() == indexNode
+                        .path("split").path("scheduleCount").asLong()
+                && snapshot.split().inFlightCount() == indexNode
+                        .path("split").path("inFlightCount").asInt();
     }
 
     @SuppressWarnings("unchecked")
     private SegmentIndex<Integer, String> instrumentAction(
             final SegmentIndex<Integer, String> delegate,
+            final String actionMethodName,
+            final AtomicInteger invocationCount,
+            final RuntimeException failure) {
+        final SegmentIndexMaintenance maintenance = instrumentMaintenance(
+                delegate.maintenance(), actionMethodName, invocationCount,
+                failure);
+        final InvocationHandler handler = (proxy, method, args) -> {
+            if ("maintenance".equals(method.getName())) {
+                return maintenance;
+            }
+            try {
+                return method.invoke(delegate, args);
+            } catch (final InvocationTargetException e) {
+                throw e.getCause();
+            }
+        };
+        return (SegmentIndex<Integer, String>) Proxy.newProxyInstance(
+                SegmentIndex.class.getClassLoader(),
+                new Class<?>[] { SegmentIndex.class }, handler);
+    }
+
+    private SegmentIndexMaintenance instrumentMaintenance(
+            final SegmentIndexMaintenance delegate,
             final String actionMethodName,
             final AtomicInteger invocationCount,
             final RuntimeException failure) {
@@ -638,9 +731,9 @@ class ManagementAgentServerTest {
                 throw e.getCause();
             }
         };
-        return (SegmentIndex<Integer, String>) Proxy.newProxyInstance(
-                SegmentIndex.class.getClassLoader(),
-                new Class<?>[] { SegmentIndex.class }, handler);
+        return (SegmentIndexMaintenance) Proxy.newProxyInstance(
+                SegmentIndexMaintenance.class.getClassLoader(),
+                new Class<?>[] { SegmentIndexMaintenance.class }, handler);
     }
 
     private HttpResponse<String> send(final String method, final String path,

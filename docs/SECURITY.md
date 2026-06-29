@@ -4,26 +4,27 @@ Security and quality are important considerations in the HestiaStore project. Wh
 
 ## Dependency Scanning
 
-HestiaStore uses the [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) Maven plugin to automatically scan project dependencies for known vulnerabilities. The scan is performed during the Maven `verify` phase. This helps detect issues in third-party libraries such as outdated or vulnerable versions of common libraries.
+HestiaStore uses the [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) Maven plugin to scan project dependencies for known vulnerabilities. The scan is enabled in CI during the Maven `verify` phase. Local builds skip the scan by default; run `mvn verify -Ddependency-check.skip=false` to execute it locally. This helps detect issues in third-party libraries such as outdated or vulnerable versions of common libraries.
 
 The OWASP dependency report is also included in the Maven Site documentation.
 
 ## Data Storage Security
 
-Currently, HestiaStore does **not** support a persistent, remote or encrypted storage backend. All data is stored in the local file system or memory, depending on the `Directory` implementation (e.g. `FsDirectory` or `MemDirectory`). Support for more advanced persistent stores with security features like encryption may be added in the future.
+HestiaStore stores data in the local file system or memory, depending on the
+`Directory` implementation (for example `FsDirectory` or `MemDirectory`). It
+does not provide a remote storage backend, and it does not manage keys or
+enable encryption automatically. Integrators that need encrypted payloads can
+wire the provider-backed `ChunkFilterAesGcmEncrypt` and
+`ChunkFilterAesGcmDecrypt` filters with application-managed keys.
 
 ## Static Code Analysis
 
 HestiaStore uses the following tools to enforce code quality and detect potential bugs:
 
 - **PMD**: Checks for common coding errors, best practices violations, and potential bugs.
-- **CPD**: Detects copy/paste duplication that can make changes harder to maintain safely.
 - **SpotBugs** (formerly FindBugs): Performs bytecode-level bug detection for possible concurrency issues, null pointer dereferences, etc.
 
-These reports are available through the Maven Site. In this multi-module build,
-`mvn site` also mirrors module sites into the root tree so local browsing works
-from `target/site/index.html`, while keeping the original module output in
-paths such as `engine/target/site/`.
+Both reports are available through the Maven Site (`mvn site`).
 
 ## Testing and Coverage
 
@@ -67,17 +68,21 @@ HestiaStore provides limited protections:
 
 - Optional Write-Ahead Logging (WAL) with CRC-protected records, recovery replay, and invalid-tail handling when enabled.
 - Manual compaction and `checkAndRepairConsistency()` assist in recovery from logical inconsistencies.
-- No built-in cryptographic MAC/signature verification is currently used.
+- No global cryptographic MAC/signature layer is enabled by default. Optional
+  AES-GCM chunk filters can provide authenticated encryption for chunk payloads
+  when explicitly configured.
 
 ## Encryption
 
 HestiaStore does not implement:
 
-- Encryption at rest
+- Automatic key management or KMS integration
 - Encryption in memory
-- Encrypted segment files
+- Encryption by default for segment files
 
-Users requiring data confidentiality should enable full-disk encryption or isolate the storage backend appropriately.
+Users requiring data confidentiality should either configure the provider-backed
+AES-GCM chunk filters with application-managed keys or enable full-disk
+encryption and isolate the storage backend appropriately.
 
 ## Denial of Service Considerations
 
@@ -100,19 +105,20 @@ Users embedding HestiaStore must take responsibility for:
 
 Planned or considered improvements include:
 
-- Optional encryption of segment data
+- Built-in key management and turnkey encrypted segment configuration
 - Checksumming of stored values
 - Sandboxed key/value type descriptors
 
 ## Summary
 
 - ✅ Vulnerability scanning via OWASP Dependency Check
-- ✅ Static analysis via PMD, CPD, and SpotBugs
+- ✅ Static analysis via PMD and SpotBugs
 - ✅ Unit tests with coverage reporting via JaCoCo
-- ⏳ Persistent encrypted storage is not yet supported
+- ⚠️ Payload encryption is opt-in and requires application-managed key wiring
 - ✅ Basic threat model documented
 - ✅ Optional WAL-based local crash recovery is available
-- ⚠️ Assumes trusted host environment (no access control or encryption)
+- ⚠️ Assumes trusted host environment unless integrators add their own access
+  control and optional payload encryption
 - 🚧 Future improvements under consideration (checksums, encryption)
 
 If you encounter any problems, discover vulnerabilities, or have questions, please report them by opening an [issue in the project's GitHub repository](https://github.com/jajir/HestiaStore/issues).

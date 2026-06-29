@@ -4,15 +4,15 @@ This runbook defines a safe rollout process for enabling WAL on production index
 
 Scope:
 
-- WAL is opt-in per index (`withWal(...)`).
-- Default remains disabled (`Wal.EMPTY`).
+- WAL is opt-in per index through the grouped `wal(...)` builder section.
+- Default remains disabled (`IndexWalConfiguration.EMPTY`).
 - One WAL lives inside each index directory (`<index>/wal`).
 
 ## Goals
 
 - Enable WAL on a small subset of indexes first.
 - Detect durability/performance regressions early.
-- Roll back quickly to `Wal.EMPTY` when risk signals appear.
+- Roll back quickly to `IndexWalConfiguration.EMPTY` when risk signals appear.
 
 ## Preconditions
 
@@ -20,11 +20,23 @@ Scope:
 2. `wal-tools` distribution is available for verification:
 
 ```bash
-mvn -pl wal-tools -am -DskipTests package
-unzip wal-tools/target/wal-tools-<version>.zip -d /tmp
+sha256sum -c wal-tools-<version>.zip.sha256
+unzip wal-tools-<version>.zip -d /opt/hestia/wal-tools
 ```
 
-3. Monitoring is collecting `SegmentIndex.metricsSnapshot()` WAL fields.
+Concrete example:
+
+```bash
+VERSION=1.2.3
+RELEASE_DIR=/srv/releases/hestiastore
+WAL_TOOLS_DIR=/opt/hestia/wal-tools
+
+cd "$RELEASE_DIR"
+sha256sum -c "wal-tools-${VERSION}.zip.sha256"
+unzip -o "wal-tools-${VERSION}.zip" -d "$WAL_TOOLS_DIR"
+```
+
+3. Monitoring is collecting `SegmentIndex.runtimeMonitoring().snapshot().wal()` fields.
 4. Target indexes for canary are chosen (low business criticality first).
 
 ## Canary Plan
@@ -36,8 +48,8 @@ Duration: 24h minimum on target indexes.
 Collect baseline:
 
 - write latency
-- `getWalPendingSyncBytes()` (should be 0 when disabled)
-- `getWalSyncAvgNanos()` (should be 0 when disabled)
+- `wal().pendingSyncBytes()` (should be 0 when disabled)
+- `wal().syncAverageNanos()` (should be 0 when disabled)
 - index throughput
 
 ### Phase 1 - Enable WAL on canary indexes only
@@ -45,21 +57,19 @@ Collect baseline:
 Use explicit WAL config:
 
 ```java
-Wal wal = Wal.builder()
-    .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
-    .withSegmentSizeBytes(64L * 1024L * 1024L)
-    .withGroupSyncDelayMillis(5L)
-    .withGroupSyncMaxBatchBytes(1L * 1024L * 1024L)
-    .withMaxBytesBeforeForcedCheckpoint(512L * 1024L * 1024L)
-    .withCorruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)
-    .build();
-
 IndexConfiguration<String, String> conf = IndexConfiguration
     .<String, String>builder()
-    .withKeyClass(String.class)
-    .withValueClass(String.class)
-    .withName("orders-canary")
-    .withWal(wal)
+    .identity(identity -> identity
+        .name("orders-canary")
+        .keyClass(String.class)
+        .valueClass(String.class))
+    .wal(wal -> wal
+        .durability(WalDurabilityMode.GROUP_SYNC)
+        .segmentSizeBytes(64L * 1024L * 1024L)
+        .groupSyncDelayMillis(5)
+        .groupSyncMaxBatchBytes(1024 * 1024)
+        .maxBytesBeforeForcedCheckpoint(512L * 1024L * 1024L)
+        .corruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL))
     .build();
 ```
 
@@ -70,8 +80,18 @@ Open/create the canary index with this config.
 Run WAL verification during rollout windows:
 
 ```bash
-/tmp/wal-tools-<version>/bin/wal_verify /path/to/index/wal
-/tmp/wal-tools-<version>/bin/wal_verify /path/to/index/wal --json
+/opt/hestia/wal-tools/bin/wal_verify /path/to/index/wal
+/opt/hestia/wal-tools/bin/wal_verify /path/to/index/wal --json
+```
+
+Concrete example:
+
+```bash
+WAL_VERIFY=/opt/hestia/wal-tools/bin/wal_verify
+CANARY_WAL=/srv/hestia/indexes/orders-canary/wal
+
+"$WAL_VERIFY" "$CANARY_WAL"
+"$WAL_VERIFY" "$CANARY_WAL" --json
 ```
 
 If verification fails (`exit code 2`), stop rollout and execute rollback.
@@ -79,7 +99,13 @@ If verification fails (`exit code 2`), stop rollout and execute rollback.
 Use dump for diagnostics:
 
 ```bash
-/tmp/wal-tools-<version>/bin/wal_dump /path/to/index/wal --json
+/opt/hestia/wal-tools/bin/wal_dump /path/to/index/wal --json
+```
+
+Concrete example:
+
+```bash
+/opt/hestia/wal-tools/bin/wal_dump /srv/hestia/indexes/orders-canary/wal --json
 ```
 
 ### Phase 3 - Expand rollout
@@ -100,17 +126,17 @@ Use these as initial operational thresholds (tune by workload).
 
 | Signal | Warning | Rollback Trigger |
 |---|---|---|
-| `getWalSyncFailureCount()` | any increase | immediate rollback |
-| `getWalCorruptionCount()` | any increase | immediate rollback |
-| `getWalTruncationCount()` | any increase outside planned restart | immediate rollback |
-| `getWalRetainedBytes()` | > 80% of `maxBytesBeforeForcedCheckpoint` for 10m | > 100% for 10m |
-| `getWalCheckpointLagLsn()` | continuously increasing for 10m | increasing for 30m with no stabilization |
-| `getWalPendingSyncBytes()` | sustained growth for 10m | sustained growth for 30m |
-| `getWalSyncAvgNanos()` | > 2x baseline for 15m | > 4x baseline for 15m |
+| `wal().syncFailureCount()` | any increase | immediate rollback |
+| `wal().corruptionCount()` | any increase | immediate rollback |
+| `wal().truncationCount()` | any increase outside planned restart | immediate rollback |
+| `wal().retainedBytes()` | > 80% of `maxBytesBeforeForcedCheckpoint` for 10m | > 100% for 10m |
+| `wal().checkpointLagLsn()` | continuously increasing for 10m | increasing for 30m with no stabilization |
+| `wal().pendingSyncBytes()` | sustained growth for 10m | sustained growth for 30m |
+| `wal().syncAverageNanos()` | > 2x baseline for 15m | > 4x baseline for 15m |
 
 Critical signals (`sync failure`, `corruption`, `unexpected truncation`) are fail-fast.
 
-## Rollback Procedure (to `Wal.EMPTY`)
+## Rollback Procedure (to `IndexWalConfiguration.EMPTY`)
 
 1. Stop traffic to affected canary indexes (or switch to read-only).
 2. Take a filesystem backup/snapshot of affected index directories.
@@ -119,19 +145,20 @@ Critical signals (`sync failure`, `corruption`, `unexpected truncation`) are fai
 ```java
 IndexConfiguration<String, String> rollbackConf = IndexConfiguration
     .<String, String>builder()
-    .withKeyClass(String.class)
-    .withValueClass(String.class)
-    .withName("orders-canary")
-    .withWal(Wal.EMPTY)
+    .identity(identity -> identity
+        .name("orders-canary")
+        .keyClass(String.class)
+        .valueClass(String.class))
+    .wal(wal -> wal.disabled())
     .build();
 
 try (SegmentIndex<String, String> index = SegmentIndex.open(directory, rollbackConf)) {
-    index.flushAndWait();
+    index.maintenance().flushAndWait();
 }
 ```
 
 4. Run integrity checks:
-   - `index.checkAndRepairConsistency()`
+   - `index.maintenance().checkAndRepairConsistency()`
    - point-read spot checks on business keys
 5. Keep `wal/` files for incident forensics until postmortem is complete.
 6. Resume traffic only after checks pass.
@@ -140,10 +167,10 @@ try (SegmentIndex<String, String> index = SegmentIndex.open(directory, rollbackC
 
 Promote to next stage only when all are true:
 
-1. No increase in `getWalSyncFailureCount()`.
-2. No increase in `getWalCorruptionCount()`.
-3. No unexpected `getWalTruncationCount()` increments.
-4. `getWalRetainedBytes()` remains below forced-checkpoint threshold with headroom.
+1. No increase in `wal().syncFailureCount()`.
+2. No increase in `wal().corruptionCount()`.
+3. No unexpected `wal().truncationCount()` increments.
+4. `wal().retainedBytes()` remains below forced-checkpoint threshold with headroom.
 5. Write latency SLO remains within agreed variance from baseline.
 
 ## Incident Data to Capture

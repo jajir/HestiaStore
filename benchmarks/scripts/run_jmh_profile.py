@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import platform
 import subprocess
@@ -35,12 +34,6 @@ def resolve_profile_path(repo_root: Path, profile_arg: str) -> Path:
     if profile_path.is_file():
         return profile_path
     raise FileNotFoundError(f"Unable to resolve benchmark profile '{profile_arg}'.")
-
-
-def source_path_for_include(repo_root: Path, include: str) -> Path:
-    return repo_root / "benchmarks" / "src" / "main" / "java" / Path(
-        *include.split(".")
-    ).with_suffix(".java")
 
 
 def run_command(cmd: list[str], cwd: Path, stdout_path: Path | None = None) -> None:
@@ -140,15 +133,13 @@ def normalize_result(result_path: Path) -> dict[str, Any]:
             "params": row.get("params", {}),
             "primaryMetric": {
                 "score": row["primaryMetric"]["score"],
-                "scoreError": normalize_optional_number(
-                    row["primaryMetric"].get("scoreError")),
+                "scoreError": row["primaryMetric"].get("scoreError"),
                 "scoreUnit": row["primaryMetric"]["scoreUnit"],
             },
             "secondaryMetrics": {
                 name: {
                     "score": metric["score"],
-                    "scoreError": normalize_optional_number(
-                        metric.get("scoreError")),
+                    "scoreError": metric.get("scoreError"),
                     "scoreUnit": metric["scoreUnit"],
                 }
                 for name, metric in row.get("secondaryMetrics", {}).items()
@@ -157,23 +148,6 @@ def normalize_result(result_path: Path) -> dict[str, Any]:
             "vmVersion": row.get("vmVersion"),
         })
     return {"results": normalized_rows}
-
-
-def normalize_optional_number(value: Any) -> float | None:
-    if value is None:
-        return None
-    if isinstance(value, (int, float)):
-        numeric = float(value)
-    elif isinstance(value, str):
-        try:
-            numeric = float(value)
-        except ValueError:
-            return None
-    else:
-        return None
-    if not math.isfinite(numeric):
-        return None
-    return numeric
 
 
 def main() -> int:
@@ -203,47 +177,22 @@ def main() -> int:
         "host": host_metadata(),
         "benchmarks": [],
     }
-    skipped_benchmarks: list[dict[str, str]] = []
 
     for benchmark in profile["benchmarks"]:
         label = benchmark["label"]
-        include = benchmark["include"]
-        source_path = source_path_for_include(repo_root, include)
-        if not source_path.is_file():
-            skipped_benchmarks.append({
-                "label": label,
-                "include": include,
-                "reason": "missing_benchmark_source",
-                "sourcePath": os.path.relpath(source_path, repo_root),
-            })
-            print(
-                f"Skipping benchmark '{label}' ({include}): "
-                f"missing source file {source_path}",
-            )
-            continue
         raw_path = raw_dir / f"{label}.json"
         log_path = logs_dir / f"{label}.log"
-        cmd = ["java", "-jar", str(jar_path), include, *benchmark["args"], "-rf", "json", "-rff", str(raw_path)]
+        cmd = ["java", "-jar", str(jar_path), benchmark["include"], *benchmark["args"], "-rf", "json", "-rff", str(raw_path)]
         run_command(cmd, cwd=repo_root, stdout_path=log_path)
         normalized = normalize_result(raw_path)
         run_summary["benchmarks"].append({
             "label": label,
-            "include": include,
+            "include": benchmark["include"],
             "args": benchmark["args"],
             "rawResult": os.path.relpath(raw_path, output_dir),
             "log": os.path.relpath(log_path, output_dir),
             "normalized": normalized,
         })
-
-    if skipped_benchmarks:
-        run_summary["skippedBenchmarks"] = skipped_benchmarks
-    if not run_summary["benchmarks"]:
-        (output_dir / "summary.json").write_text(
-            json.dumps(run_summary, indent=2, sort_keys=True),
-            encoding="utf-8",
-        )
-        print("No runnable benchmarks found for the selected profile.", file=sys.stderr)
-        return 1
 
     (output_dir / "summary.json").write_text(
         json.dumps(run_summary, indent=2, sort_keys=True),

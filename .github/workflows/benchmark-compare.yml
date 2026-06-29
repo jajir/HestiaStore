@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - devel
   workflow_dispatch:
     inputs:
       profile:
@@ -56,15 +57,21 @@ concurrency:
 
 jobs:
   compare:
+    name: compare (${{ matrix.profile }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJson(github.event_name == 'schedule' && '[{"profile":"segment-index-nightly"},{"profile":"diskio-nightly"}]' || format('[{{"profile":"{0}"}}]', github.event_name == 'workflow_dispatch' && inputs.profile || 'segment-index-pr-smoke')) }}
     permissions:
       contents: write
       issues: write
       pull-requests: write
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
@@ -89,37 +96,42 @@ jobs:
       run: |
         set -euo pipefail
 
-        PROFILE="segment-index-pr-smoke"
+        PROFILE="${{ matrix.profile }}"
         FAIL_ON_REGRESSION="false"
         HISTORY_BRANCH="perf-artifacts"
         HISTORY_CHANNEL="main"
+        BASELINE_CHANNEL="main"
         PR_NUMBER=""
         PUBLISH_HISTORY="false"
         FALLBACK_BASELINE_REF=""
 
         if [ "${{ github.event_name }}" = "schedule" ]; then
-          PROFILE="segment-index-nightly"
           CANDIDATE_REF="${GITHUB_SHA}"
           FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
           PUBLISH_HISTORY="true"
         elif [ "${{ github.event_name }}" = "push" ]; then
           CANDIDATE_REF="${GITHUB_SHA}"
           FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
+          HISTORY_CHANNEL="${GITHUB_REF_NAME}"
+          BASELINE_CHANNEL="${GITHUB_REF_NAME}"
           PUBLISH_HISTORY="true"
         elif [ "${{ github.event_name }}" = "pull_request" ]; then
           CANDIDATE_REF="${{ github.event.pull_request.head.sha }}"
-          BASE_BRANCH="origin/${{ github.event.pull_request.base.ref }}"
+          BASE_BRANCH_NAME="${{ github.event.pull_request.base.ref }}"
+          BASE_BRANCH="origin/${BASE_BRANCH_NAME}"
+          BASELINE_CHANNEL="${BASE_BRANCH_NAME}"
           HISTORY_CHANNEL="pr-${{ github.event.pull_request.number }}"
           PR_NUMBER="${{ github.event.pull_request.number }}"
           if [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
             PUBLISH_HISTORY="true"
           fi
-          git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}" "${CANDIDATE_REF}"
-          FALLBACK_BASELINE_REF="$(git merge-base "${CANDIDATE_REF}" "${BASE_BRANCH}")"
+          git fetch --no-tags origin "${BASE_BRANCH_NAME}" "${CANDIDATE_REF}"
+          FALLBACK_BASELINE_REF="${BASE_BRANCH}"
         else
           FAIL_ON_REGRESSION="${{ inputs.fail_on_regression }}"
           HISTORY_BRANCH="${{ inputs.history_branch }}"
           HISTORY_CHANNEL="${{ inputs.history_channel }}"
+          BASELINE_CHANNEL="${HISTORY_CHANNEL}"
           PR_NUMBER="${{ inputs.history_pr_number }}"
           PUBLISH_HISTORY="${{ inputs.publish_history }}"
           CANDIDATE_REF="${{ inputs.candidate_ref }}"
@@ -145,6 +157,7 @@ jobs:
         echo "fail_on_regression=${FAIL_ON_REGRESSION}" >> "${GITHUB_OUTPUT}"
         echo "history_branch=${HISTORY_BRANCH}" >> "${GITHUB_OUTPUT}"
         echo "history_channel=${HISTORY_CHANNEL}" >> "${GITHUB_OUTPUT}"
+        echo "baseline_channel=${BASELINE_CHANNEL}" >> "${GITHUB_OUTPUT}"
         echo "pr_number=${PR_NUMBER}" >> "${GITHUB_OUTPUT}"
         echo "publish_history=${PUBLISH_HISTORY}" >> "${GITHUB_OUTPUT}"
 
@@ -222,7 +235,7 @@ jobs:
           --history-dir "${{ steps.history.outputs.history_dir }}" \
           --profile "${{ steps.refs.outputs.profile }}" \
           --profile-spec "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
-          --channel main > "${RUNNER_TEMP}/baseline-summary-path.txt"; then
+          --channel "${{ steps.refs.outputs.baseline_channel }}" > "${RUNNER_TEMP}/baseline-summary-path.txt"; then
           BASELINE_SUMMARY="$(cat "${RUNNER_TEMP}/baseline-summary-path.txt")"
         fi
 
@@ -289,7 +302,6 @@ jobs:
           --output-dir "${RUNNER_TEMP}/benchmark-results/candidate"
 
     - name: Compare baseline and candidate
-      id: compare
       shell: bash
       run: |
         set -euo pipefail
@@ -307,81 +319,10 @@ jobs:
             BASELINE_SUMMARY="${RUNNER_TEMP}/benchmark-results/candidate/summary.json"
           fi
         fi
-        FINAL_CANDIDATE_SUMMARY="${RUNNER_TEMP}/benchmark-results/candidate/summary.json"
-        INITIAL_COMPARISON_MD="${RUNNER_TEMP}/benchmark-results/comparison.initial.md"
-        INITIAL_COMPARISON_JSON="${RUNNER_TEMP}/benchmark-results/comparison.initial.json"
-        NOISY_REGRESSION_RELATIVE_ERROR_PCT=25
-        MAX_CANDIDATE_RUNS=3
 
         python3 benchmarks/scripts/compare_jmh_profile.py \
           --baseline "${BASELINE_SUMMARY}" \
-          --candidate "${FINAL_CANDIDATE_SUMMARY}" \
-          --markdown-out "${INITIAL_COMPARISON_MD}" \
-          --json-out "${INITIAL_COMPARISON_JSON}"
-
-        export INITIAL_COMPARISON_JSON
-        export NOISY_REGRESSION_RELATIVE_ERROR_PCT
-        RERUN_LABELS="$(python3 - <<'PY'
-        import json
-        import os
-
-        comparison_path = os.environ["INITIAL_COMPARISON_JSON"]
-        relative_error_threshold = float(
-            os.environ["NOISY_REGRESSION_RELATIVE_ERROR_PCT"])
-        with open(comparison_path, "r", encoding="utf-8") as handle:
-            comparison = json.load(handle)
-
-        labels = []
-        for metric in comparison.get("metrics", []):
-            if metric.get("status") != "worse":
-                continue
-            if metric.get("metric") != "primary":
-                continue
-            relative_errors = [
-                value
-                for value in (
-                    metric.get("baselineScoreErrorPct"),
-                    metric.get("candidateScoreErrorPct"),
-                )
-                if value is not None
-            ]
-            if relative_errors and max(relative_errors) >= relative_error_threshold:
-                labels.append(metric["label"])
-        print(",".join(sorted(set(labels))))
-        PY
-        )"
-        RERUN_NOTE=""
-
-        if [ -n "${RERUN_LABELS}" ]; then
-          SUBSET_PROFILE="${RUNNER_TEMP}/benchmark-results/rerun-profile.json"
-          python3 benchmarks/scripts/filter_jmh_profile.py \
-            --profile "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
-            --labels "${RERUN_LABELS}" \
-            --output "${SUBSET_PROFILE}"
-
-          for rerun_index in $(seq 2 "${MAX_CANDIDATE_RUNS}"); do
-            RERUN_DIR="${RUNNER_TEMP}/benchmark-results/candidate/reruns/run-${rerun_index}"
-            python3 benchmarks/scripts/run_jmh_profile.py \
-              --repo-root "${{ steps.candidate-worktree.outputs.candidate_dir }}" \
-              --profile "${SUBSET_PROFILE}" \
-              --output-dir "${RERUN_DIR}"
-          done
-
-          python3 benchmarks/scripts/aggregate_jmh_profile_summaries.py \
-            --base-summary "${FINAL_CANDIDATE_SUMMARY}" \
-            --supplemental-summary "${RUNNER_TEMP}/benchmark-results/candidate/reruns/run-2/summary.json" \
-            --supplemental-summary "${RUNNER_TEMP}/benchmark-results/candidate/reruns/run-3/summary.json" \
-            --labels "${RERUN_LABELS}" \
-            --output "${RUNNER_TEMP}/benchmark-results/candidate/summary.median.json"
-          mv "${RUNNER_TEMP}/benchmark-results/candidate/summary.median.json" \
-            "${FINAL_CANDIDATE_SUMMARY}"
-
-          RERUN_NOTE="- Candidate labels rerun 3x total and median-merged because the initial regression exceeded threshold with high relative score error: \`${RERUN_LABELS}\`"
-        fi
-
-        python3 benchmarks/scripts/compare_jmh_profile.py \
-          --baseline "${BASELINE_SUMMARY}" \
-          --candidate "${FINAL_CANDIDATE_SUMMARY}" \
+          --candidate "${RUNNER_TEMP}/benchmark-results/candidate/summary.json" \
           --markdown-out "${RUNNER_TEMP}/benchmark-results/comparison.md" \
           --json-out "${RUNNER_TEMP}/benchmark-results/comparison.json" \
           "${EXTRA_ARGS[@]}"
@@ -399,39 +340,14 @@ jobs:
           mv "${TMP_FILE}" "${RUNNER_TEMP}/benchmark-results/comparison.md"
         fi
 
-        if [ -n "${RERUN_NOTE}" ]; then
-          TMP_FILE="${RUNNER_TEMP}/benchmark-results/comparison.rerun.md"
-          {
-            echo "# Benchmark Comparison"
-            echo
-            echo "${RERUN_NOTE}"
-            echo
-            tail -n +2 "${RUNNER_TEMP}/benchmark-results/comparison.md"
-          } > "${TMP_FILE}"
-          mv "${TMP_FILE}" "${RUNNER_TEMP}/benchmark-results/comparison.md"
-        fi
-
         PREVIOUS_PR_SUMMARY="${{ steps.previous-pr-baseline.outputs.summary }}"
         if [ -n "${PREVIOUS_PR_SUMMARY}" ]; then
           python3 benchmarks/scripts/compare_jmh_profile.py \
             --baseline "${PREVIOUS_PR_SUMMARY}" \
-            --candidate "${FINAL_CANDIDATE_SUMMARY}" \
+            --candidate "${RUNNER_TEMP}/benchmark-results/candidate/summary.json" \
             --markdown-out "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md" \
             --json-out "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.json"
-          if [ -n "${RERUN_NOTE}" ]; then
-            TMP_FILE="${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.rerun.md"
-            {
-              echo "# Benchmark Comparison"
-              echo
-              echo "${RERUN_NOTE}"
-              echo
-              tail -n +2 "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md"
-            } > "${TMP_FILE}"
-            mv "${TMP_FILE}" "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md"
-          fi
         fi
-
-        echo "rerun_labels=${RERUN_LABELS}" >> "${GITHUB_OUTPUT}"
 
     - name: Add job summary
       shell: bash
@@ -484,7 +400,7 @@ jobs:
         emit_publish_outputs() {
           export METADATA_PATH
           export OUTPUT_PATH
-          python3 -c 'import json, os, pathlib; metadata_path = pathlib.Path(os.environ["METADATA_PATH"]); output_path = pathlib.Path(os.environ["OUTPUT_PATH"]); metadata = json.loads(metadata_path.read_text(encoding="utf-8")); lines = [f"{key}={value}" for key in ("latestPointerPath", "runPath", "summaryPath", "comparisonMarkdownPath", "comparisonJsonPath") if (value := metadata.get(key))]; pr_number = metadata.get("prNumber"); lines.extend([f"publishedPrNumber={pr_number}"] if pr_number else []); output_path.write_text("\\n".join(lines) + ("\\n" if lines else ""), encoding="utf-8")'
+          python3 -c 'import json, os, pathlib; metadata_path = pathlib.Path(os.environ["METADATA_PATH"]); output_path = pathlib.Path(os.environ["OUTPUT_PATH"]); metadata = json.loads(metadata_path.read_text(encoding="utf-8")); lines = [f"{key}={value}" for key in ("latestPointerPath", "runPath", "summaryPath", "comparisonMarkdownPath", "comparisonJsonPath") if (value := metadata.get(key))]; pr_number = metadata.get("prNumber"); lines.extend([f"publishedPrNumber={pr_number}"] if pr_number else []); output_path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")'
         }
 
         for attempt in $(seq 1 "${MAX_PUSH_ATTEMPTS}"); do
@@ -542,7 +458,8 @@ jobs:
         RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         HISTORY_BASE_URL="${{ github.server_url }}/${{ github.repository }}"
         ARTIFACT_NAME="benchmark-compare-${{ steps.refs.outputs.profile }}-${{ github.run_id }}"
-        BASELINE_POINTER_URL="${HISTORY_BASE_URL}/blob/${{ steps.refs.outputs.history_branch }}/history/${{ steps.refs.outputs.profile }}/latest-main.json"
+        BASELINE_CHANNEL="${{ steps.refs.outputs.baseline_channel }}"
+        BASELINE_POINTER_URL="${HISTORY_BASE_URL}/blob/${{ steps.refs.outputs.history_branch }}/history/${{ steps.refs.outputs.profile }}/latest-${BASELINE_CHANNEL}.json"
 
         {
           echo "<!-- benchmark-compare:${{ steps.refs.outputs.profile }} -->"
@@ -558,14 +475,14 @@ jobs:
             echo "- Previous PR baseline: latest stored PR snapshot before this run"
           fi
           if [ -n "${{ steps.stored-baseline.outputs.baseline_summary }}" ]; then
-            echo "- Baseline source: [canonical latest-main.json](${BASELINE_POINTER_URL})"
+            echo "- Baseline source: [canonical latest-${BASELINE_CHANNEL}.json](${BASELINE_POINTER_URL})"
           elif [ "${{ steps.fallback-compat.outputs.can_run }}" = "true" ]; then
-            echo "- Baseline source: fallback git baseline \`${{ steps.refs.outputs.fallback_baseline_ref }}\`"
+            echo "- Baseline source: fallback ${BASELINE_CHANNEL} baseline \`${{ steps.refs.outputs.fallback_baseline_ref }}\`"
           else
             echo "- Baseline source: bootstrap mode without prior canonical baseline"
           fi
           echo
-          echo "<details><summary>Comparison vs canonical baseline</summary>"
+          echo "<details><summary>Comparison vs ${BASELINE_CHANNEL} baseline</summary>"
           echo
           cat "${RUNNER_TEMP}/benchmark-results/comparison.md"
           echo
@@ -584,7 +501,7 @@ jobs:
 
     - name: Upsert PR benchmark comment
       if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         COMMENT_PATH: ${{ steps.prepare-pr-comment.outputs.comment_path }}
       with:

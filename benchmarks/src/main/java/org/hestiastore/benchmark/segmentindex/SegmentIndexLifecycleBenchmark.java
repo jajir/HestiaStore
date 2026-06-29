@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.directory.FsDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.Wal;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.WalDurabilityMode;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -59,7 +59,7 @@ public class SegmentIndexLifecycleBenchmark {
         try (SegmentIndex<Integer, String> created = SegmentIndex
                 .create(new FsDirectory(baselineDir), conf)) {
             populateIndex(created);
-            created.flushAndWait();
+            created.maintenance().flushAndWait();
         }
     }
 
@@ -76,7 +76,8 @@ public class SegmentIndexLifecycleBenchmark {
     @Threads(1)
     public int openExisting() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
-            return workingCopy.index.metricsSnapshot().getSegmentCount();
+            return workingCopy.index.runtimeMonitoring().snapshot()
+                    .segments().count();
         }
     }
 
@@ -84,8 +85,9 @@ public class SegmentIndexLifecycleBenchmark {
     @Threads(1)
     public int openAndCheckAndRepairConsistency() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
-            workingCopy.index.checkAndRepairConsistency();
-            return workingCopy.index.metricsSnapshot().getSegmentCount();
+            workingCopy.index.maintenance().checkAndRepairConsistency();
+            return workingCopy.index.runtimeMonitoring().snapshot()
+                    .segments().count();
         }
     }
 
@@ -93,8 +95,9 @@ public class SegmentIndexLifecycleBenchmark {
     @Threads(1)
     public int openAndCompact() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
-            workingCopy.index.compactAndWait();
-            return workingCopy.index.metricsSnapshot().getSegmentCount();
+            workingCopy.index.maintenance().compactAndWait();
+            return workingCopy.index.runtimeMonitoring().snapshot()
+                    .segments().count();
         }
     }
 
@@ -117,37 +120,33 @@ public class SegmentIndexLifecycleBenchmark {
         final int maxKeysBeforeSplit = Math.max(65_536, keyCount * 4);
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-lifecycle-benchmark")//
-                .withWal(resolveWal())//
-                .withMaxNumberOfKeysInSegmentCache(16)//
-                .withMaxNumberOfKeysInActivePartition(256)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(512)//
-                .withMaxNumberOfKeysInIndexBuffer(4096)//
-                .withMaxNumberOfKeysInSegmentChunk(64)//
-                .withMaxNumberOfKeysInSegment(512)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(maxKeysBeforeSplit)//
-                .withMaxNumberOfSegmentsInCache(4)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(Math.max(16_384, keyCount))//
-                .withBloomFilterNumberOfHashFunctions(3)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withIndexWorkerThreadCount(4)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(1)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(false);
+                .wal(wal -> wal.configuration(resolveWal()))//
+                .segment(segment -> segment.cacheKeyLimit(16)
+                        .chunkKeyLimit(64).maxKeys(512)
+                        .cachedSegmentLimit(4).deltaCacheFileLimit(2))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
+                        .maintenanceWriteCacheKeyLimit(512)
+                        .indexBufferedWriteKeyLimit(4096)
+                        .segmentSplitKeyThreshold(maxKeysBeforeSplit))//
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(Math.max(16_384, keyCount))
+                        .hashFunctions(3)
+                        .falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .maintenance(maintenance -> maintenance
+                        .indexThreads(1).registryLifecycleThreads(1)
+                        .backgroundAutoEnabled(false));
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,
                 snappy);
         return builder.build();
     }
 
-    private Wal resolveWal() {
+    private IndexWalConfiguration resolveWal() {
         if ("sync".equals(walMode)) {
-            return Wal.builder().withDurabilityMode(WalDurabilityMode.SYNC)
+            return IndexWalConfiguration.builder().durability(WalDurabilityMode.SYNC)
                     .build();
         }
-        return Wal.EMPTY;
+        return IndexWalConfiguration.EMPTY;
     }
 
     private void populateIndex(final SegmentIndex<Integer, String> created) {
@@ -156,14 +155,14 @@ public class SegmentIndexLifecycleBenchmark {
             created.put(Integer.valueOf(key), buildValue(key));
             pending++;
             if (pending >= 256) {
-                created.flushAndWait();
+                created.maintenance().flushAndWait();
                 pending = 0;
             }
         }
         if (pending > 0) {
-            created.flushAndWait();
+            created.maintenance().flushAndWait();
         }
-        created.compactAndWait();
+        created.maintenance().compactAndWait();
     }
 
     private String buildValue(final int key) {

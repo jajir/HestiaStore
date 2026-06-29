@@ -3,9 +3,12 @@ package org.hestiastore.index.segment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 
@@ -38,8 +41,9 @@ public final class SegmentBuilder<K, V> {
     private int bloomFilterIndexSizeInBytes = SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
     private double bloomFilterProbabilityOfFalsePositive = SegmentConf.UNSET_BLOOM_FILTER_PROBABILITY;
     private int diskIoBufferSize = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
-    private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
-    private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
+    private final List<Supplier<? extends ChunkFilter>> encodingChunkFilters = new ArrayList<>();
+    private final List<Supplier<? extends ChunkFilter>> decodingChunkFilters = new ArrayList<>();
+    private ChunkStoreCache<K, V> chunkStoreCache = new LruChunkStoreCache<>(0);
     private Executor maintenanceExecutor;
     private SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private boolean directoryLockingEnabled = true;
@@ -224,7 +228,6 @@ public final class SegmentBuilder<K, V> {
         return this;
     }
 
-
     /**
      * Provide an executor used for maintenance operations (flush/compact).
      *
@@ -272,6 +275,26 @@ public final class SegmentBuilder<K, V> {
         final List<ChunkFilter> validated = Vldtn.requireNotEmpty(filters,
                 "encodingChunkFilters");
         encodingChunkFilters.clear();
+        validated.forEach(filter -> encodingChunkFilters.add(() -> filter));
+        return this;
+    }
+
+    /**
+     * Sets encoding filters as runtime suppliers.
+     *
+     * <p>
+     * Use this variant when filters should be created lazily for each runtime
+     * segment component instead of reusing fixed instances.
+     * </p>
+     *
+     * @param filters non-empty list of encoding filter suppliers
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withEncodingChunkFilterSuppliers(
+            final List<Supplier<? extends ChunkFilter>> filters) {
+        final List<Supplier<? extends ChunkFilter>> validated = Vldtn
+                .requireNotEmpty(filters, "encodingChunkFilters");
+        encodingChunkFilters.clear();
         encodingChunkFilters.addAll(List.copyOf(validated));
         return this;
     }
@@ -287,6 +310,26 @@ public final class SegmentBuilder<K, V> {
         final List<ChunkFilter> validated = Vldtn.requireNotEmpty(filters,
                 "decodingChunkFilters");
         decodingChunkFilters.clear();
+        validated.forEach(filter -> decodingChunkFilters.add(() -> filter));
+        return this;
+    }
+
+    /**
+     * Sets decoding filters as runtime suppliers.
+     *
+     * <p>
+     * Use this variant when filters should be created lazily for each runtime
+     * segment component instead of reusing fixed instances.
+     * </p>
+     *
+     * @param filters non-empty list of decoding filter suppliers
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withDecodingChunkFilterSuppliers(
+            final List<Supplier<? extends ChunkFilter>> filters) {
+        final List<Supplier<? extends ChunkFilter>> validated = Vldtn
+                .requireNotEmpty(filters, "decodingChunkFilters");
+        decodingChunkFilters.clear();
         decodingChunkFilters.addAll(List.copyOf(validated));
         return this;
     }
@@ -301,6 +344,19 @@ public final class SegmentBuilder<K, V> {
             final SegmentMaintenancePolicy<K, V> maintenancePolicy) {
         this.maintenancePolicy = Vldtn.requireNonNull(maintenancePolicy,
                 "maintenancePolicy");
+        return this;
+    }
+
+    /**
+     * Sets the index-scoped parsed chunk page cache.
+     *
+     * @param chunkStoreCache parsed chunk page cache
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withChunkStoreCache(
+            final ChunkStoreCache<K, V> chunkStoreCache) {
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
         return this;
     }
 
@@ -321,6 +377,11 @@ public final class SegmentBuilder<K, V> {
      * stream of entries. Entries must be unique, sorted by key in ascending
      * order, and must not contain tombstones. The returned transaction writes
      * directly to the main index and scarce index files.
+     *
+     * The transaction runs synchronously in the caller thread. It does not use
+     * the segment maintenance executor, does not publish the built segment into
+     * any higher-level registry or route map, and does not provide external
+     * concurrency coordination beyond the file transactions it opens.
      *
      * @return transaction for streaming the segment contents
      */
@@ -372,10 +433,12 @@ public final class SegmentBuilder<K, V> {
             final SegmentCache<K, V> segmentCache = context
                     .createSegmentCache();
             deltaCacheController.setSegmentCache(segmentCache);
+            initializeEmptyPersistedBaseIfNeeded(context,
+                    deltaCacheController, segmentCache);
             final SegmentReadPath<K, V> readPath = new SegmentReadPath<>(
                     context.segmentFiles, context.segmentConf,
                     context.segmentResources, segmentSearcher, segmentCache,
-                    context.versionController);
+                    context.versionController, chunkStoreCache);
             final SegmentWritePath<K, V> writePath = new SegmentWritePath<>(
                     segmentCache, context.versionController);
             final SegmentMaintenancePath<K, V> maintenancePath = new SegmentMaintenancePath<>(
@@ -404,6 +467,45 @@ public final class SegmentBuilder<K, V> {
     private SegmentBuildContext<K, V> prepareBuildContext(
             final SegmentDirectoryLayout layout) {
         return new SegmentBuildContext<>(this, layout);
+    }
+
+    private void initializeEmptyPersistedBaseIfNeeded(
+            final SegmentBuildContext<K, V> context,
+            final SegmentDeltaCacheController<K, V> deltaCacheController,
+            final SegmentCache<K, V> segmentCache) {
+        Vldtn.requireNonNull(context, "context");
+        Vldtn.requireNonNull(deltaCacheController, "deltaCacheController");
+        Vldtn.requireNonNull(segmentCache, "segmentCache");
+        if (!shouldInitializeEmptyPersistedBase(context)) {
+            return;
+        }
+        new SegmentFullWriterTx<>(context.segmentFiles,
+                context.segmentPropertiesManager,
+                context.segmentConf.getMaxNumberOfKeysInChunk(),
+                context.segmentResources, deltaCacheController)
+                .execute(writer -> {
+                });
+    }
+
+    private boolean shouldInitializeEmptyPersistedBase(
+            final SegmentBuildContext<K, V> context) {
+        final SegmentFiles<K, V> segmentFiles = context.segmentFiles;
+        final Directory directory = segmentFiles.getDirectory();
+        if (directory.isFileExists(segmentFiles.getIndexFileName())
+                || directory.isFileExists(segmentFiles.getScarceFileName())
+                || directory.isFileExists(segmentFiles.getBloomFilterFileName())) {
+            return false;
+        }
+        return context.segmentPropertiesManager.getDeltaFileCount() == 0
+                && segmentCacheFilesAbsent(context);
+    }
+
+    private boolean segmentCacheFilesAbsent(
+            final SegmentBuildContext<K, V> context) {
+        final SegmentFiles<K, V> segmentFiles = context.segmentFiles;
+        final Directory directory = segmentFiles.getDirectory();
+        return context.segmentPropertiesManager.getCacheDeltaFileNames().stream()
+                .noneMatch(directory::isFileExists);
     }
 
     private SegmentDirectoryLayout resolveLayout() {
@@ -482,10 +584,20 @@ public final class SegmentBuilder<K, V> {
     }
 
     List<ChunkFilter> getEncodingChunkFilters() {
+        return encodingChunkFilters.stream()
+                .map(supplier -> (ChunkFilter) supplier.get()).toList();
+    }
+
+    List<Supplier<? extends ChunkFilter>> getEncodingChunkFilterSuppliers() {
         return encodingChunkFilters;
     }
 
     List<ChunkFilter> getDecodingChunkFilters() {
+        return decodingChunkFilters.stream()
+                .map(supplier -> (ChunkFilter) supplier.get()).toList();
+    }
+
+    List<Supplier<? extends ChunkFilter>> getDecodingChunkFilterSuppliers() {
         return decodingChunkFilters;
     }
 

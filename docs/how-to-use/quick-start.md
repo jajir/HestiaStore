@@ -8,7 +8,7 @@ steps: persistence, reopening, iteration, and maintenance.
 ```java
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 
 public class Example {
@@ -17,9 +17,10 @@ public class Example {
 
     IndexConfiguration<String, String> conf = IndexConfiguration
         .<String, String>builder()
-        .withKeyClass(String.class)
-        .withValueClass(String.class)
-        .withName("example")
+        .identity(identity -> identity
+            .name("example")
+            .keyClass(String.class)
+            .valueClass(String.class))
         .build();
 
     try (SegmentIndex<String, String> index = SegmentIndex.create(directory, conf)) {
@@ -83,9 +84,9 @@ index.getStream(window).forEach(entry -> System.out.println(entry));
 - `compact()` rewrites fragmented data into a cleaner layout.
 
 ```java
-index.flush();
-index.checkAndRepairConsistency();
-index.compact();
+index.maintenance().flush();
+index.maintenance().checkAndRepairConsistency();
+index.maintenance().compact();
 ```
 
 ## Practical limits to know early

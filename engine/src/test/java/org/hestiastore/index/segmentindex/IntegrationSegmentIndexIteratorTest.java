@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+
 import static org.hestiastore.index.datatype.NullValue.NULL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -7,16 +9,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -52,13 +55,13 @@ class IntegrationSegmentIndexIteratorTest {
     void test_simple_index_building() {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
         final SegmentIndex<Integer, String> index = SegmentIndex.create(directory, conf);
         data.stream().forEach(index::put);
-        index.compact();
+        index.maintenance().compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
 
@@ -66,13 +69,13 @@ class IntegrationSegmentIndexIteratorTest {
     void test_null_value() {
         final IndexConfiguration<Integer, NullValue> conf = IndexConfiguration
                 .<Integer, NullValue>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(NullValue.class)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(NullValue.class))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
         final SegmentIndex<Integer, NullValue> index = SegmentIndex.create(directory, conf);
         data2.stream().forEach(index::put);
-        index.compact();
+        index.maintenance().compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
 
@@ -80,14 +83,14 @@ class IntegrationSegmentIndexIteratorTest {
     void test_string_defaults() {
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
         final SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
         index.put("a", "a");
         index.put("b", "b");
-        index.compact();
+        index.maintenance().compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
     // TEST nkey class non existing conf
@@ -97,7 +100,7 @@ class IntegrationSegmentIndexIteratorTest {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
 
         data.stream().forEach(index1::put);
-        index1.compactAndWait();
+        index1.maintenance().compactAndWait();
         logger.debug("verify that after that point no segment "
                 + "is loaded into memory.");
         index1.getStream(SegmentWindow.unbounded()).forEach(entry -> {
@@ -115,8 +118,8 @@ class IntegrationSegmentIndexIteratorTest {
             index.put(2, "stable-2");
             index.put(3, "stable-3");
             index.put(4, "stable-4");
-            index.flushAndWait();
-            index.compactAndWait();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
 
             index.delete(1);
             index.put(2, "overlay-2");
@@ -141,32 +144,50 @@ class IntegrationSegmentIndexIteratorTest {
     }
 
     @Test
-    void fullIsolationStreamKeepsSnapshotOpenedBeforeLaterWrites() {
+    void fullIsolationStreamBlocksLaterWritesUntilSnapshotCloses() {
         try (SegmentIndex<Integer, String> index = makeSegmentIndex()) {
             index.put(1, "stable-1");
             index.put(2, "stable-2");
-            index.flushAndWait();
-            index.compactAndWait();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
             index.put(3, "overlay-before-open");
 
             final List<Entry<Integer, String>> snapshotView;
             try (var stream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
-                index.put(2, "overlay-after-open");
-                index.delete(1);
-                index.put(4, "overlay-after-open");
+                final ExecutorService executor = Executors.newFixedThreadPool(3);
+                try {
+                    final var updateExisting = java.util.concurrent.CompletableFuture
+                            .runAsync(() -> index.put(2, "overlay-after-open"),
+                                    executor);
+                    final var deleteExisting = java.util.concurrent.CompletableFuture
+                            .runAsync(() -> index.delete(1), executor);
+                    final var insertNew = java.util.concurrent.CompletableFuture
+                            .runAsync(() -> index.put(4, "overlay-after-open"),
+                                    executor);
 
-                assertNull(index.get(1));
-                assertEquals("overlay-after-open", index.get(2));
-                assertEquals("overlay-before-open", index.get(3));
-                assertEquals("overlay-after-open", index.get(4));
+                    awaitCondition(() -> !updateExisting.isDone()
+                            && !deleteExisting.isDone()
+                            && !insertNew.isDone(), 5_000L);
 
-                snapshotView = stream.toList();
+                    snapshotView = stream.toList();
+
+                    awaitCondition(() -> updateExisting.isDone()
+                            && deleteExisting.isDone() && insertNew.isDone(),
+                            5_000L);
+                } finally {
+                    executor.shutdownNow();
+                }
             }
 
             assertEquals(List.of(Entry.of(1, "stable-1"),
                     Entry.of(2, "stable-2"),
                     Entry.of(3, "overlay-before-open")), snapshotView);
+
+            assertNull(index.get(1));
+            assertEquals("overlay-after-open", index.get(2));
+            assertEquals("overlay-before-open", index.get(3));
+            assertEquals("overlay-after-open", index.get(4));
 
             try (var stream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
@@ -178,67 +199,45 @@ class IntegrationSegmentIndexIteratorTest {
     }
 
     @Test
-    void fullIsolationStreamsRemainConsistentWhileSplitReassignsOverlayToChildRoutes() {
+    void fullIsolationStreamDelaysSplitRemapUntilSnapshotCloses() {
         try (SegmentIndex<Integer, String> index = makeAutonomousSplitIndex()) {
             for (int i = 0; i < 48; i++) {
                 index.put(i, "stable-" + i);
             }
-            index.flushAndWait();
-            awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
-                    && index.metricsSnapshot().getSplitInFlightCount() == 0
-                    && index.metricsSnapshot().getDrainInFlightCount() == 0,
+            index.maintenance().flushAndWait();
+            awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() == 1
+                    && index.runtimeMonitoring().snapshot().split().inFlightCount() == 0,
                     10_000L);
 
-            index.put(5, "overlay-5");
-            index.delete(18);
-            index.put(44, "overlay-44");
-            index.put(49, "overlay-49");
-
-            final List<Entry<Integer, String>> expected = IntStream
-                    .concat(IntStream.range(0, 48), IntStream.of(49))
-                    .filter(key -> key != 18)
-                    .mapToObj(key -> {
-                        if (key == 5) {
-                            return Entry.of(key, "overlay-5");
-                        }
-                        if (key == 44) {
-                            return Entry.of(key, "overlay-44");
-                        }
-                        if (key == 49) {
-                            return Entry.of(key, "overlay-49");
-                        }
-                        return Entry.of(key, "stable-" + key);
-                    }).toList();
+            final List<Entry<Integer, String>> expected = IntStream.range(0, 48)
+                    .mapToObj(key -> Entry.of(key, "stable-" + key)).toList();
 
             try (var preSplitStream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
-                final long revision = index.controlPlane().configuration()
-                        .getConfigurationActual().getRevision();
-                final RuntimePatchResult patchResult = index.controlPlane()
-                        .configuration()
-                        .apply(new RuntimeConfigPatch(Map.of(
-                                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                                Integer.valueOf(16)), false,
-                                Long.valueOf(revision)));
-                assertTrue(patchResult.isApplied());
-
-                awaitCondition(() -> {
-                    assertFullIsolationSnapshot(index, expected);
-                    final SegmentIndexMetricsSnapshot snapshot = index
-                            .metricsSnapshot();
-                    return snapshot.getSegmentCount() > 1
-                            && snapshot.getSplitInFlightCount() == 0;
-                }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
+                final long revision = index.runtimeTuning()
+                        .current().revision();
+                final RuntimeTuningResult patchResult = index.runtimeTuning()
+                        .apply(RuntimeTuningPatch.builder()
+                                .expectedRevision(revision)
+                                .segmentSplitKeyThreshold(16)
+                                .build());
+                assertTrue(patchResult.applied());
 
                 assertEquals(expected, preSplitStream.toList());
+                assertEquals(1, index.runtimeMonitoring().snapshot().segments().count());
             }
 
-            assertEquals("overlay-5", index.get(5));
-            assertNull(index.get(18));
-            assertEquals("overlay-44", index.get(44));
-            assertEquals("overlay-49", index.get(49));
+            awaitCondition(() -> {
+                final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                return snapshot.segments().count() > 1
+                        && snapshot.split().inFlightCount() == 0;
+            }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
+
+            assertEquals("stable-5", index.get(5));
+            assertEquals("stable-18", index.get(18));
+            assertEquals("stable-44", index.get(44));
             assertFullIsolationSnapshot(index, expected);
-            assertTrue(index.metricsSnapshot().getSegmentCount() > 1);
+            assertTrue(index.runtimeMonitoring().snapshot().segments().count() > 1);
         }
     }
 
@@ -248,10 +247,9 @@ class IntegrationSegmentIndexIteratorTest {
             for (int i = 0; i < 48; i++) {
                 index.put(i, "stable-" + i);
             }
-            index.flushAndWait();
-            awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
-                    && index.metricsSnapshot().getSplitInFlightCount() == 0
-                    && index.metricsSnapshot().getDrainInFlightCount() == 0,
+            index.maintenance().flushAndWait();
+            awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() == 1
+                    && index.runtimeMonitoring().snapshot().split().inFlightCount() == 0,
                     10_000L);
 
             try (var stream = index.getStream(SegmentWindow.unbounded(),
@@ -261,22 +259,19 @@ class IntegrationSegmentIndexIteratorTest {
                 assertTrue(iterator.hasNext());
                 consumed.add(iterator.next());
 
-                final long revision = index.controlPlane().configuration()
-                        .getConfigurationActual().getRevision();
-                final RuntimePatchResult patchResult = index.controlPlane()
-                        .configuration()
-                        .apply(new RuntimeConfigPatch(Map.of(
-                                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                                Integer.valueOf(16)), false,
-                                Long.valueOf(revision)));
-                assertTrue(patchResult.isApplied());
+                final long revision = index.runtimeTuning()
+                        .current().revision();
+                final RuntimeTuningResult patchResult = index.runtimeTuning()
+                        .apply(RuntimeTuningPatch.builder()
+                                .expectedRevision(revision)
+                                .segmentSplitKeyThreshold(16)
+                                .build());
+                assertTrue(patchResult.applied());
 
                 awaitCondition(() -> {
-                    final SegmentIndexMetricsSnapshot snapshot = index
-                            .metricsSnapshot();
-                    return snapshot.getSegmentCount() > 1
-                            && snapshot.getSplitInFlightCount() == 0
-                            && snapshot.getDrainInFlightCount() == 0;
+                    final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                    return snapshot.segments().count() > 1
+                            && snapshot.split().inFlightCount() == 0;
                 }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
 
                 while (iterator.hasNext()) {
@@ -294,22 +289,22 @@ class IntegrationSegmentIndexIteratorTest {
     private SegmentIndex<Integer, String> makeSegmentIndex() {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_INTEGER) //
-                .withValueTypeDescriptor(TD_STRING) //
-                .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInActivePartition(64) //
-                .withMaxNumberOfKeysInPartitionBuffer(128) //
-                .withMaxNumberOfKeysInIndexBuffer(256) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentChunk(1) //
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(4) //
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_INTEGER)) //
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING)) //
+                .segment(segment -> segment.cacheKeyLimit(3)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(128)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(256)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(4)) //
+                .segment(segment -> segment.chunkKeyLimit(1)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .identity(identity -> identity.name("test_index"))//
                 .build();
         return SegmentIndex.<Integer, String>create(directory, conf);
     }
@@ -317,22 +312,21 @@ class IntegrationSegmentIndexIteratorTest {
     private SegmentIndex<Integer, String> makeAutonomousSplitIndex() {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_INTEGER) //
-                .withValueTypeDescriptor(TD_STRING) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(32) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(true) //
-                .withName("test_index_autonomous_split")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_INTEGER)) //
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING)) //
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(128)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true)) //
+                .identity(identity -> identity.name("test_index_autonomous_split"))//
                 .build();
         return SegmentIndex.<Integer, String>create(directory, conf);
     }

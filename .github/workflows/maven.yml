@@ -23,7 +23,7 @@ jobs:
     steps:
     
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     
     - name: Set up JDK 17
       uses: actions/setup-java@v5
@@ -43,7 +43,7 @@ jobs:
         echo "github.ref: ${{ github.ref }}"
 
     - name: Cache local Maven repository
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -61,7 +61,7 @@ jobs:
     - name: Restore Dependency-Check data
       if: github.event_name != 'pull_request'
       id: dependency-check-cache-restore
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       with:
         path: ${{ steps.dependency-check-cache.outputs.path }}
         key: ${{ steps.dependency-check-cache.outputs.key }}
@@ -93,7 +93,7 @@ jobs:
 
     - name: Save Dependency-Check data
       if: always() && github.event_name != 'pull_request' && !cancelled() && steps.dependency-check-cache-restore.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@v6
       with:
         path: ${{ steps.dependency-check-cache.outputs.path }}
         key: ${{ steps.dependency-check-cache.outputs.key }}
@@ -139,7 +139,7 @@ jobs:
         esac
     
     - name: Create badge
-      uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
+      uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325
       with:
         label: Tests
         status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests, ${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.runs }} runs: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
@@ -168,7 +168,7 @@ jobs:
         echo "OWASP_BADGE_COLOR=31c653" >> "$GITHUB_ENV"
 
     - name: OWASP vulnerabilities - Generate badge
-      uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
+      uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325
       with:
         label: 'OWASP Vulnerabilities'
         status: ${{ env.VULN_COUNT }}
@@ -239,7 +239,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Set up JDK 17
       uses: actions/setup-java@v5
@@ -249,7 +249,7 @@ jobs:
         cache: maven
 
     - name: Cache local Maven repository
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}

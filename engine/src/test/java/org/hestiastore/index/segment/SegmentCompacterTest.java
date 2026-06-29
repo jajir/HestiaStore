@@ -1,13 +1,19 @@
 package org.hestiastore.index.segment;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
+
+import org.hestiastore.index.directory.FsDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,6 +29,9 @@ class SegmentCompacterTest {
 
     @Mock
     private SegmentFiles<Integer, String> files;
+
+    @TempDir
+    private File tempDir;
 
     private SegmentCompacter<Integer, String> sc;
 
@@ -63,5 +72,21 @@ class SegmentCompacterTest {
 
         verify(segment).switchActiveVersion(2L);
         verify(versionController).changeVersion();
+    }
+
+    @Test
+    void cleanupOldVersion_ignores_missing_directory_listing() {
+        final FsDirectory directory = new FsDirectory(tempDir);
+        when(segment.getId()).thenReturn(SegmentId.of(1));
+        when(files.getActiveVersion()).thenReturn(1L);
+        when(files.getDirectory()).thenReturn(directory);
+        when(segment.getSegmentFiles()).thenReturn(files);
+
+        final SegmentCompacter.CompactionPlan<Integer, String> plan = sc
+                .prepareCompactionPlan(segment);
+
+        assertTrue(tempDir.delete());
+
+        assertDoesNotThrow(() -> sc.cleanupCompaction(plan));
     }
 }

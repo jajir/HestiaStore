@@ -19,10 +19,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.core.SegmentIndexImpl;
-import org.hestiastore.index.segmentindex.core.SegmentIndexTestAccess;
-import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexTestAccess;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,10 +103,9 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
             return toList(index.getStream(SegmentWindow.unbounded()));
         }
-        final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
-        @SuppressWarnings("unchecked")
-        final EntryIterator<M, N> iterator = (EntryIterator<M, N>) impl
-                .openSegmentIterator(SegmentWindow.unbounded(), isolation);
+        final EntryIterator<M, N> iterator = SegmentIndexTestAccess
+                .openSegmentIterator(index, SegmentWindow.unbounded(),
+                        isolation);
         try {
             final List<Entry<M, N>> out = new ArrayList<>();
             while (iterator.hasNext()) {
@@ -142,8 +138,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
     protected void awaitMaintenanceIdle(final SegmentIndex<?, ?> index) {
         final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (System.nanoTime() < deadline) {
-            final SegmentRegistryImpl<?, ?> registry = readSegmentRegistry(
-                    index);
+            final Object registry = readSegmentRegistry(index);
             final Map<SegmentId, Segment<?, ?>> segments = readSegmentsMap(
                     registry);
             boolean idle = true;
@@ -169,27 +164,27 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         Assertions.fail("Timed out waiting for maintenance to finish");
     }
 
-    private static SegmentRegistryImpl<?, ?> readSegmentRegistry(
-            final SegmentIndex<?, ?> index) {
-        final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
-        return SegmentIndexTestAccess.segmentRegistry(impl);
+    private static Object readSegmentRegistry(final SegmentIndex<?, ?> index) {
+        return SegmentIndexTestAccess.segmentRegistry(index);
     }
 
     @SuppressWarnings("unchecked")
     private static Map<SegmentId, Segment<?, ?>> readSegmentsMap(
-            final SegmentRegistryImpl<?, ?> registry) {
+            final Object registry) {
         try {
-            final Field cacheField = SegmentRegistryImpl.class
-                    .getDeclaredField("cache");
+            final Field cacheField = registry.getClass().getDeclaredField(
+                    "cache");
             cacheField.setAccessible(true);
             final Object cache = cacheField.get(registry);
-            final Field mapField = SegmentRegistryCache.class
+            final Class<?> cacheClass = Class.forName(
+                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache");
+            final Field mapField = cacheClass
                     .getDeclaredField("map");
             mapField.setAccessible(true);
             final Map<SegmentId, ?> entries = (Map<SegmentId, ?>) mapField
                     .get(cache);
             final Class<?> entryClass = Class.forName(
-                    SegmentRegistryCache.class.getName() + "$Entry");
+                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
             final Field valueField = entryClass.getDeclaredField("value");
             valueField.setAccessible(true);
             final Map<SegmentId, Segment<?, ?>> segments = new HashMap<>();
@@ -206,23 +201,6 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             throw new IllegalStateException(
                     "Unable to read segments cache for test", ex);
         }
-    }
-
-    private static SegmentIndexImpl<?, ?> unwrapSegmentIndex(
-            final SegmentIndex<?, ?> index) {
-        Object current = index;
-        while (!(current instanceof SegmentIndexImpl<?, ?>)) {
-            try {
-                final Field field = current.getClass()
-                        .getDeclaredField("index");
-                field.setAccessible(true);
-                current = field.get(current);
-            } catch (final ReflectiveOperationException ex) {
-                throw new IllegalStateException(
-                        "Unable to unwrap index for test", ex);
-            }
-        }
-        return (SegmentIndexImpl<?, ?>) current;
     }
 
 }

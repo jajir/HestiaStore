@@ -64,7 +64,7 @@ public final class ByteSequenceSlice extends ByteSequenceCaching {
         }
         final int newLength = toExclusive - fromInclusive;
         if (newLength == 0) {
-            return ByteSequence.EMPTY;
+            return EMPTY;
         }
         if (fromInclusive == 0 && toExclusive == length) {
             return this;

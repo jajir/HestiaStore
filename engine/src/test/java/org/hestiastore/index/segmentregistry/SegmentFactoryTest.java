@@ -1,15 +1,31 @@
 package org.hestiastore.index.segmentregistry;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.chunkstore.ChunkData;
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.chunkstore.ChunkFilterProvider;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
+import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -17,10 +33,14 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildResult;
 import org.hestiastore.index.segment.SegmentBuildStatus;
+import org.hestiastore.index.segment.SegmentBuilder;
 import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentTestHelper;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class SegmentFactoryTest {
@@ -33,7 +53,7 @@ class SegmentFactoryTest {
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf,
+                new TypeDescriptorShortString(), effective(conf),
                 stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
@@ -44,7 +64,7 @@ class SegmentFactoryTest {
             assertNotNull(segment);
             assertEquals(segmentId, segment.getId());
         } finally {
-            SegmentTestHelper.closeAndAwait(segment);
+            SegmentTestHelper.closeAndAssertClosed(segment);
             stableSegmentMaintenancePool.shutdownNow();
         }
     }
@@ -57,7 +77,7 @@ class SegmentFactoryTest {
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf,
+                new TypeDescriptorShortString(), effective(conf),
                 stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(7);
         final String lockFileName = new SegmentDirectoryLayout(segmentId)
@@ -72,39 +92,239 @@ class SegmentFactoryTest {
             assertEquals(SegmentBuildStatus.OK, buildResult.getStatus());
             assertTrue(segmentDirectory.isFileExists(lockFileName));
         } finally {
-            SegmentTestHelper.closeAndAwait(segment);
+            SegmentTestHelper.closeAndAssertClosed(segment);
             stableSegmentMaintenancePool.shutdownNow();
         }
         assertFalse(segmentDirectory.isFileExists(lockFileName));
     }
 
+    @Test
+    void openWriterTx_materializesSegmentFilesSynchronously() {
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final Directory directory = new MemDirectory();
+        final ExecutorService stableSegmentMaintenancePool = Executors
+                .newSingleThreadExecutor();
+        final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
+                directory, new TypeDescriptorInteger(),
+                new TypeDescriptorShortString(), effective(conf),
+                stableSegmentMaintenancePool);
+        final SegmentId segmentId = SegmentId.of(9);
+
+        try {
+            factory.openWriterTx(segmentId).execute(writer -> {
+                writer.write(1, "a");
+                writer.write(2, "b");
+            });
+
+            final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
+                    .buildSegment(segmentId);
+            final Segment<Integer, String> segment = buildResult.getValue();
+            try {
+                assertEquals(SegmentBuildStatus.OK, buildResult.getStatus());
+                assertEquals(List.of(Entry.of(1, "a"), Entry.of(2, "b")),
+                        readEntries(segment));
+            } finally {
+                SegmentTestHelper.closeAndAssertClosed(segment);
+            }
+        } finally {
+            stableSegmentMaintenancePool.shutdownNow();
+        }
+    }
+
+    @Test
+    void newSegmentBuilderUsesSupplierBackedChunkFiltersFromConfiguration() {
+        final AtomicInteger sequence = new AtomicInteger();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("segment-factory-supplier-test"))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath
+                        .maintenanceWriteCacheKeyLimit(10))
+                .segment(segment -> segment.chunkKeyLimit(4)
+                        .deltaCacheFileLimit(2).maxKeys(50)
+                        .cachedSegmentLimit(5))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1)
+                        .indexSizeBytes(128)
+                        .falsePositiveProbability(0.01))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(false)
+                        .indexThreads(1).busyBackoffMillis(1)
+                        .busyTimeoutMillis(1000))
+                .logging(logging -> logging.contextEnabled(false))
+                .filters(filters -> filters.encodingFilterRegistrations(List.of())
+                        .decodingFilterRegistrations(List.of())
+                        .addEncodingFilter(ChunkFilterSpec.ofProvider("test")
+                                .withParameter("keyRef", "orders-main"))
+                        .addDecodingFilter(ChunkFilterSpec.ofProvider("test")
+                                .withParameter("keyRef", "orders-main")))
+                .build();
+        final ExecutorService stableSegmentMaintenancePool = Executors
+                .newSingleThreadExecutor();
+        final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
+                .builder().withDefaultProviders()
+                .withProvider(new ChunkFilterProvider() {
+                    @Override
+                    public String getProviderId() {
+                        return "test";
+                    }
+
+                    @Override
+                    public Supplier<? extends ChunkFilter> createEncodingSupplier(
+                            final ChunkFilterSpec spec) {
+                        return () -> new TrackingChunkFilter(
+                                sequence.incrementAndGet());
+                    }
+
+                    @Override
+                    public Supplier<? extends ChunkFilter> createDecodingSupplier(
+                            final ChunkFilterSpec spec) {
+                        return () -> new TrackingChunkFilter(
+                                sequence.incrementAndGet());
+                    }
+                })
+                .build();
+        final EffectiveIndexConfiguration<Integer, String> runtimeConfiguration = effective(conf, registry);
+        final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
+                new MemDirectory(), new TypeDescriptorInteger(),
+                new TypeDescriptorShortString(), runtimeConfiguration,
+                stableSegmentMaintenancePool);
+
+        try {
+            final SegmentBuilder<Integer, String> builder = invokeNewSegmentBuilder(
+                    factory, SegmentId.of(8));
+            final List<Supplier<? extends ChunkFilter>> suppliers = readEncodingSuppliers(
+                    builder);
+            final TrackingChunkFilter first = (TrackingChunkFilter) suppliers
+                    .get(0).get();
+            final TrackingChunkFilter second = (TrackingChunkFilter) suppliers
+                    .get(0).get();
+
+            assertTrue(first.getId() > 0);
+            assertEquals(first.getId() + 1, second.getId());
+            assertNotSame(first, second);
+        } finally {
+            stableSegmentMaintenancePool.shutdownNow();
+        }
+    }
+
+    @Test
+    void updateRuntimeLimitsRejectsInvalidPartitionBufferRelationship() {
+        final ExecutorService stableSegmentMaintenancePool = Executors
+                .newSingleThreadExecutor();
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
+                new MemDirectory(), new TypeDescriptorInteger(),
+                new TypeDescriptorShortString(), effective(conf),
+                stableSegmentMaintenancePool);
+        try {
+            final IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> factory
+                            .updateRuntimeLimits(new SegmentRuntimeLimits(10, 5,
+                                    5)));
+            assertEquals(
+                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance must be greater than maxNumberOfKeysInSegmentWriteCache",
+                    exception.getMessage());
+        } finally {
+            stableSegmentMaintenancePool.shutdownNow();
+        }
+    }
+
     private static IndexConfiguration<Integer, String> newConfiguration() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInPartitionBuffer(10)//
-                .withMaxNumberOfKeysInSegmentChunk(4)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withMaxNumberOfKeysInSegment(50)//
-                .withMaxNumberOfSegmentsInCache(5)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(128)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .withIndexWorkerThreadCount(1)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(1)//
-                .withIndexBusyBackoffMillis(1)//
-                .withIndexBusyTimeoutMillis(1000)//
-                .withContextLoggingEnabled(false)//
-                .withName("segment-factory-test")//
+                .identity(identity -> identity.keyClass(Integer.class)//
+                        .valueClass(String.class)//
+                        .keyTypeDescriptor(new TypeDescriptorInteger())//
+                        .valueTypeDescriptor(new TypeDescriptorShortString())//
+                        .name("segment-factory-test"))//
+                .segment(segment -> segment.cacheKeyLimit(10))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+                .writePath(writePath -> writePath
+                        .maintenanceWriteCacheKeyLimit(10))//
+                .segment(segment -> segment.chunkKeyLimit(4)//
+                        .deltaCacheFileLimit(2)//
+                        .maxKeys(50)//
+                        .cachedSegmentLimit(5))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1)//
+                        .indexSizeBytes(128)//
+                        .falsePositiveProbability(0.01))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .filters(filters -> filters
+                        .encodingFilters(List.of(new ChunkFilterDoNothing()))//
+                        .decodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(false)//
+                        //
+                        .indexThreads(1)//
+                        .busyBackoffMillis(1)//
+                        .busyTimeoutMillis(1000))//
+                .logging(logging -> logging.contextEnabled(false))//
                 .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentBuilder<Integer, String> invokeNewSegmentBuilder(
+            final SegmentFactory<Integer, String> factory,
+            final SegmentId segmentId) {
+        try {
+            final var method = SegmentFactory.class.getDeclaredMethod(
+                    "newSegmentBuilder", SegmentId.class);
+            method.setAccessible(true);
+            return (SegmentBuilder<Integer, String>) method.invoke(factory,
+                    segmentId);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to invoke SegmentFactory.newSegmentBuilder", ex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Supplier<? extends ChunkFilter>> readEncodingSuppliers(
+            final SegmentBuilder<Integer, String> builder) {
+        try {
+            final Field field = SegmentBuilder.class
+                    .getDeclaredField("encodingChunkFilters");
+            field.setAccessible(true);
+            return (List<Supplier<? extends ChunkFilter>>) field.get(builder);
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex);
+        }
+    }
+
+    private static List<Entry<Integer, String>> readEntries(
+            final Segment<Integer, String> segment) {
+        final List<Entry<Integer, String>> entries = new ArrayList<>();
+        try (EntryIterator<Integer, String> iterator = segment
+                .openIterator(SegmentIteratorIsolation.FULL_ISOLATION)
+                .getValue()) {
+            while (iterator.hasNext()) {
+                entries.add(iterator.next());
+            }
+        }
+        return entries;
+    }
+
+    private static final class TrackingChunkFilter implements ChunkFilter {
+
+        private final int id;
+
+        private TrackingChunkFilter(final int id) {
+            this.id = id;
+        }
+
+        private int getId() {
+            return id;
+        }
+
+        @Override
+        public ChunkData apply(final ChunkData input) {
+            return input;
+        }
     }
 }

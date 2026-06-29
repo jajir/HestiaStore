@@ -67,7 +67,7 @@ public final class MutableBytes extends ByteSequenceCaching
                 "fromInclusive");
         final int sliceLength = toExclusive - fromInclusive;
         if (sliceLength == 0) {
-            return ByteSequence.EMPTY;
+            return EMPTY;
         }
         if (fromInclusive == 0 && toExclusive == data.length) {
             return ByteSequenceView.of(data);

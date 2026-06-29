@@ -1,0 +1,57 @@
+package org.hestiastore.index.segmentindex.configuration.api;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.List;
+
+import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
+import org.junit.jupiter.api.Test;
+
+class IndexConfigurationContractTest {
+
+    @Test
+    void derivesCanonicalWritePathDefaultsFromSegmentCache() {
+        final IndexConfigurationDefaults contract = new IndexConfigurationDefaults() {
+            @Override
+            public IndexSegmentConfiguration segment() {
+                return new IndexSegmentConfiguration(100, 10, 9, 10, 3);
+            }
+        };
+
+        final int segmentWriteCacheLimit = contract.writePath()
+                .segmentWriteCacheKeyLimit();
+        assertEquals(4, segmentWriteCacheLimit);
+
+        final int expectedPartitionBufferLimit = Math.max(
+                segmentWriteCacheLimit + 1,
+                (int) Math.ceil(segmentWriteCacheLimit * 1.4));
+        assertEquals(expectedPartitionBufferLimit,
+                contract.writePath()
+                        .segmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(Math.max(expectedPartitionBufferLimit,
+                expectedPartitionBufferLimit
+                        * contract.segment().cachedSegmentLimit()),
+                contract.writePath().indexBufferedWriteKeyLimit());
+    }
+
+    @Test
+    void providesDefaultChunkFilters() {
+        final IndexConfigurationDefaults contract = new IndexConfigurationDefaults() {
+        };
+
+        assertEquals(Boolean.TRUE,
+                contract.maintenance().backgroundAutoEnabled());
+        assertEquals(128, contract.chunkStoreCache().pageLimit());
+
+        final List<ChunkFilterSpec> encoding =
+                contract.filters().encodingChunkFilterSpecs();
+        assertEquals(List.of(ChunkFilterSpecs.crc32(),
+                ChunkFilterSpecs.magicNumber()), encoding);
+
+        final List<ChunkFilterSpec> decoding =
+                contract.filters().decodingChunkFilterSpecs();
+        assertEquals(List.of(ChunkFilterSpecs.magicNumber(),
+                ChunkFilterSpecs.crc32()), decoding);
+    }
+}

@@ -69,7 +69,7 @@ public final class ByteSequenceView implements ByteSequence {
         }
         final int sliceLength = toExclusive - fromInclusive;
         if (sliceLength == 0) {
-            return ByteSequence.EMPTY;
+            return EMPTY;
         }
         if (sliceLength == data.length) {
             return this;

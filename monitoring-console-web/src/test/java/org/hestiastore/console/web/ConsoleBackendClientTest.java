@@ -86,79 +86,143 @@ class ConsoleBackendClientTest {
                       "indexName": "orders",
                       "state": "READY",
                       "ready": true,
-                      "getOperationCount": 11,
-                      "putOperationCount": 12,
-                      "deleteOperationCount": 13,
-                      "registryCacheHitCount": 14,
-                      "registryCacheMissCount": 15,
-                      "registryCacheLoadCount": 16,
-                      "registryCacheEvictionCount": 17,
-                      "registryCacheSize": 18,
-                      "registryCacheLimit": 19,
-                      "segmentCacheKeyLimitPerSegment": 20,
-                      "maxNumberOfKeysInActivePartition": 7,
-                      "maxNumberOfImmutableRunsPerPartition": 2,
-                      "maxNumberOfKeysInPartitionBuffer": 11,
-                      "maxNumberOfKeysInIndexBuffer": 29,
-                      "segmentCount": 3,
-                      "segmentReadyCount": 2,
-                      "segmentMaintenanceCount": 1,
-                      "segmentErrorCount": 0,
-                      "segmentClosedCount": 0,
-                      "segmentBusyCount": 0,
-                      "totalSegmentKeys": 21,
-                      "totalSegmentCacheKeys": 22,
-                      "totalBufferedWriteKeys": 23,
-                      "totalDeltaCacheFiles": 24,
-                      "compactRequestCount": 25,
-                      "flushRequestCount": 26,
-                      "splitScheduleCount": 37,
-                      "splitInFlightCount": 2,
-                      "maintenanceQueueSize": 27,
-                      "maintenanceQueueCapacity": 28,
-                      "splitQueueSize": 29,
-                      "splitQueueCapacity": 30,
-                      "partitionCount": 3,
-                      "activePartitionCount": 2,
-                      "drainingPartitionCount": 1,
-                      "immutableRunCount": 4,
-                      "partitionBufferedKeyCount": 17,
-                      "localThrottleCount": 19,
-                      "globalThrottleCount": 23,
-                      "drainScheduleCount": 31,
-                      "drainInFlightCount": 5,
-                      "drainLatencyP95Micros": 43,
-                      "readLatencyP50Micros": 31,
-                      "readLatencyP95Micros": 32,
-                      "readLatencyP99Micros": 33,
-                      "writeLatencyP50Micros": 34,
-                      "writeLatencyP95Micros": 35,
-                      "writeLatencyP99Micros": 36,
-                      "bloomFilterHashFunctions": 3,
-                      "bloomFilterIndexSizeInBytes": 1024,
-                      "bloomFilterProbabilityOfFalsePositive": 0.01,
-                      "bloomFilterRequestCount": 38,
-                      "bloomFilterRefusedCount": 39,
-                      "bloomFilterPositiveCount": 40,
-                      "bloomFilterFalsePositiveCount": 41,
-                      "segmentRuntimeSnapshots": [
-                        {
-                          "segmentId": "seg-1",
-                          "state": "READY",
-                          "numberOfKeysInDeltaCache": 1,
-                          "numberOfKeysInSegment": 2,
-                          "numberOfKeysInScarceIndex": 3,
-                          "numberOfKeysInSegmentCache": 4,
-                          "numberOfKeysInWriteCache": 5,
-                          "numberOfDeltaCacheFiles": 6,
-                          "compactRequestCount": 7,
-                          "flushRequestCount": 8,
-                          "bloomFilterRequestCount": 9,
-                          "bloomFilterRefusedCount": 10,
-                          "bloomFilterPositiveCount": 11,
-                          "bloomFilterFalsePositiveCount": 12
+                      "operations": {
+                        "readOperationCount": 11,
+                        "putOperationCount": 12,
+                        "deleteOperationCount": 13
+                      },
+                      "registryCache": {
+                        "hitCount": 14,
+                        "missCount": 15,
+                        "loadCount": 16,
+                        "evictionCount": 17,
+                        "size": 18,
+                        "limit": 19
+                      },
+                      "chunkStoreCache": {
+                        "pageLimit": 42,
+                        "pageCount": 43,
+                        "entryCount": 44,
+                        "hitCount": 45,
+                        "missCount": 46,
+                        "loadCount": 47,
+                        "evictionCount": 48,
+                        "invalidationCount": 49
+                      },
+                      "segments": {
+                        "cacheKeyLimitPerSegment": 20,
+                        "count": 3,
+                        "readyCount": 2,
+                        "maintenanceCount": 1,
+                        "errorCount": 0,
+                        "closedCount": 0,
+                        "unloadedMappedSegmentCount": 0,
+                        "totalKeys": 21,
+                        "totalCacheKeys": 22,
+                        "totalDeltaCacheFiles": 24,
+                        "runtimeMetrics": [
+                          {
+                            "segmentId": "seg-1",
+                            "state": "READY",
+                            "numberOfKeysInDeltaCache": 1,
+                            "numberOfKeysInSegment": 2,
+                            "numberOfKeysInScarceIndex": 3,
+                            "numberOfKeysInSegmentCache": 4,
+                            "numberOfKeysInWriteCache": 5,
+                            "numberOfDeltaCacheFiles": 6,
+                            "compactRequestCount": 7,
+                            "flushRequestCount": 8,
+                            "bloomFilterRequestCount": 9,
+                            "bloomFilterRefusedCount": 10,
+                            "bloomFilterPositiveCount": 11,
+                            "bloomFilterFalsePositiveCount": 12
+                          }
+                        ]
+                      },
+                      "writePath": {
+                        "segmentWriteCacheKeyLimit": 7,
+                        "segmentWriteCacheKeyLimitDuringMaintenance": 11,
+                        "indexBufferedWriteKeyLimit": 29,
+                        "totalBufferedWriteKeys": 23
+                      },
+                      "maintenance": {
+                        "compactRequestCount": 25,
+                        "flushRequestCount": 26,
+                        "flushAcceptedToReadyP95Micros": 53,
+                        "compactAcceptedToReadyP95Micros": 54,
+                        "flushBusyRetryCount": 55,
+                        "compactBusyRetryCount": 56,
+                        "indexExecutor": {
+                          "activeThreadCount": 0,
+                          "queueSize": 27,
+                          "queueCapacity": 28,
+                          "completedTaskCount": 57,
+                          "rejectedTaskCount": 58,
+                          "callerRunsCount": 59
+                        },
+                        "stableSegmentExecutor": {
+                          "activeThreadCount": 0,
+                          "queueSize": 0,
+                          "queueCapacity": 0,
+                          "completedTaskCount": 0,
+                          "rejectedTaskCount": 0,
+                          "callerRunsCount": 0
                         }
-                      ]
+                      },
+                      "split": {
+                        "scheduleCount": 37,
+                        "inFlightCount": 2,
+                        "blockedCount": 0,
+                        "taskStartDelayP95Micros": 60,
+                        "taskRunLatencyP95Micros": 61,
+                        "executor": {
+                          "activeThreadCount": 0,
+                          "queueSize": 29,
+                          "queueCapacity": 30,
+                          "completedTaskCount": 62,
+                          "rejectedTaskCount": 63,
+                          "callerRunsCount": 64
+                        }
+                      },
+                      "latency": {
+                        "readP50Micros": 31,
+                        "readP95Micros": 32,
+                        "readP99Micros": 33,
+                        "writeP50Micros": 34,
+                        "writeP95Micros": 35,
+                        "writeP99Micros": 36
+                      },
+                      "bloomFilter": {
+                        "hashFunctions": 3,
+                        "indexSizeInBytes": 1024,
+                        "probabilityOfFalsePositive": 0.01,
+                        "requestCount": 38,
+                        "refusedCount": 39,
+                        "positiveCount": 40,
+                        "falsePositiveCount": 41
+                      },
+                      "wal": {
+                        "enabled": false,
+                        "appendCount": 0,
+                        "appendBytes": 0,
+                        "syncCount": 0,
+                        "syncFailureCount": 0,
+                        "corruptionCount": 0,
+                        "truncationCount": 0,
+                        "retainedBytes": 0,
+                        "segmentCount": 0,
+                        "durableLsn": 0,
+                        "checkpointLsn": 0,
+                        "pendingSyncBytes": 0,
+                        "appliedLsn": 0,
+                        "checkpointLagLsn": 0,
+                        "syncTotalNanos": 0,
+                        "syncMaxNanos": 0,
+                        "syncBatchBytesTotal": 0,
+                        "syncBatchBytesMax": 0,
+                        "syncAverageNanos": 0,
+                        "syncAverageBatchBytes": 0
+                      }
                     }
                   ],
                   "capturedAt": "2026-03-12T12:00:00Z"
@@ -179,20 +243,12 @@ class ConsoleBackendClientTest {
         assertEquals("orders", row.indexName());
         assertEquals("READY", row.state());
         assertTrue(row.ready());
-        assertEquals(7, row.maxNumberOfKeysInActivePartition());
-        assertEquals(2, row.maxNumberOfImmutableRunsPerPartition());
-        assertEquals(11, row.maxNumberOfKeysInPartitionBuffer());
-        assertEquals(29, row.maxNumberOfKeysInIndexBuffer());
-        assertEquals(3, row.partitionCount());
-        assertEquals(2, row.activePartitionCount());
-        assertEquals(1, row.drainingPartitionCount());
-        assertEquals(4, row.immutableRunCount());
-        assertEquals(17, row.partitionBufferedKeyCount());
-        assertEquals(19L, row.localThrottleCount());
-        assertEquals(23L, row.globalThrottleCount());
-        assertEquals(31L, row.drainScheduleCount());
-        assertEquals(5, row.drainInFlightCount());
-        assertEquals(43L, row.drainLatencyP95Micros());
+        assertEquals(7, row.segmentWriteCacheKeyLimit());
+        assertEquals(11, row.segmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(29, row.indexBufferedWriteKeyLimit());
+        assertEquals(3, row.segmentCount());
+        assertEquals(2, row.segmentReadyCount());
+        assertEquals(1, row.segmentMaintenanceCount());
         assertEquals(37L, row.splitScheduleCount());
         assertEquals(2, row.splitInFlightCount());
         assertEquals(1, row.segmentRuntimeSnapshots().size());

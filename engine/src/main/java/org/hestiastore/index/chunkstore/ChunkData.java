@@ -114,7 +114,7 @@ public class ChunkData {
         if (cellLength != payloadLength) {
             payload = payload.slice(0, payloadLength);
         }
-        return Optional.of(ChunkData.ofSequence(chunkHeader.getFlags(),
+        return Optional.of(ofSequence(chunkHeader.getFlags(),
                 chunkHeader.getCrc(), chunkHeader.getMagicNumber(),
                 chunkHeader.getVersion(), payload));
     }

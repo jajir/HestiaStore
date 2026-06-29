@@ -1,6 +1,6 @@
 {
   "profile": "segment-index-nightly",
-  "description": "Longer canonical hot-path benchmark set for trend tracking on main/nightly runs.",
+  "description": "Longer canonical SegmentIndex benchmark set for trend tracking on main/nightly runs.",
   "benchmarks": [
     {
       "label": "segment-index-get-persisted",
@@ -20,7 +20,7 @@
       ]
     },
     {
-      "label": "segment-index-get-overlay",
+      "label": "segment-index-get-live",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
       "args": [
         "-wi", "2",
@@ -29,7 +29,7 @@
         "-r", "2s",
         "-w", "2s",
         "-t", "4",
-        "-p", "readPathMode=overlay",
+        "-p", "readPathMode=live",
         "-p", "snappy=true",
         "-p", "keyCount=12000",
         "-p", "maxKeysInChunk=256",
@@ -104,8 +104,8 @@
       ]
     },
     {
-      "label": "segment-index-hot-partition-put",
-      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
+      "label": "segment-index-hot-route-put",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -138,60 +138,6 @@
         "-w", "2s",
         "-p", "hotKeySpace=256",
         "-p", "workloadMode=splitHeavy"
-      ]
-    },
-    {
-      "label": "sorted-data-diff-key-read-compact",
-      "include": "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
-      "args": [
-        "-wi", "2",
-        "-i", "5",
-        "-f", "1",
-        "-r", "2s",
-        "-w", "2s",
-        "-p", "entryCount=1024",
-        "-p", "keyLength=24",
-        "-p", "valueLength=16"
-      ]
-    },
-    {
-      "label": "sorted-data-diff-key-read-large",
-      "include": "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
-      "args": [
-        "-wi", "2",
-        "-i", "5",
-        "-f", "1",
-        "-r", "2s",
-        "-w", "2s",
-        "-p", "entryCount=8192",
-        "-p", "keyLength=48",
-        "-p", "valueLength=64"
-      ]
-    },
-    {
-      "label": "single-chunk-entry-write-compact",
-      "include": "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
-      "args": [
-        "-wi", "2",
-        "-i", "5",
-        "-f", "1",
-        "-r", "2s",
-        "-w", "2s",
-        "-p", "entriesPerChunk=64",
-        "-p", "valueLength=16"
-      ]
-    },
-    {
-      "label": "single-chunk-entry-write-large",
-      "include": "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
-      "args": [
-        "-wi", "2",
-        "-i", "5",
-        "-f", "1",
-        "-r", "2s",
-        "-w", "2s",
-        "-p", "entriesPerChunk=1024",
-        "-p", "valueLength=64"
       ]
     }
   ]

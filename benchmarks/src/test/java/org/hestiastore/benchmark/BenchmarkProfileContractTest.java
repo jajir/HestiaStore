@@ -29,28 +29,29 @@ class BenchmarkProfileContractTest {
     private static final String LEGACY_BACKGROUND_MAINTENANCE_METHOD = "withSegmentMaintenanceAutoEnabled";
     private static final Set<String> REQUIRED_PR_SEGMENT_INDEX_LABELS = Set.of(
             "segment-index-get-persisted",
-            "segment-index-get-overlay",
+            "segment-index-get-live",
             "segment-index-get-multisegment-hot",
             "segment-index-persisted-mutation",
-            "segment-index-hot-partition-put",
+            "segment-index-hot-route-put",
             "segment-index-mixed-drain",
-            "segment-index-mixed-split-heavy",
-            "sorted-data-diff-key-read",
-            "single-chunk-entry-write");
+            "segment-index-mixed-split-heavy");
     private static final Set<String> REQUIRED_NIGHTLY_SEGMENT_INDEX_LABELS = Set.of(
             "segment-index-get-persisted",
-            "segment-index-get-overlay",
+            "segment-index-get-live",
             "segment-index-get-multisegment-hot",
             "segment-index-get-multisegment-cold",
             "segment-index-persisted-mutation",
             "segment-index-lifecycle",
-            "segment-index-hot-partition-put",
+            "segment-index-hot-route-put",
             "segment-index-mixed-drain",
-            "segment-index-mixed-split-heavy",
-            "sorted-data-diff-key-read-compact",
-            "sorted-data-diff-key-read-large",
-            "single-chunk-entry-write-compact",
-            "single-chunk-entry-write-large");
+            "segment-index-mixed-split-heavy");
+    private static final Set<String> REQUIRED_NIGHTLY_DISKIO_LABELS = Set.of(
+            "diskio-sequential-write-1k",
+            "diskio-sequential-write-4k",
+            "diskio-sequential-write-32k",
+            "diskio-sequential-read-1k",
+            "diskio-sequential-read-4k",
+            "diskio-sequential-read-32k");
 
     @Test
     void allBenchmarkProfilesUseUniqueLabelsAndResolvableBenchmarkClasses()
@@ -83,7 +84,7 @@ class BenchmarkProfileContractTest {
     }
 
     @Test
-    void canonicalBenchmarkProfilesCoverRequiredScenarios() throws Exception {
+    void canonicalSegmentIndexProfilesCoverRequiredScenarios() throws Exception {
         final Map<String, BenchmarkProfile> profilesByName = new HashMap<>();
         for (final BenchmarkProfile profile : loadProfiles()) {
             profilesByName.put(profile.profile(), profile);
@@ -93,6 +94,7 @@ class BenchmarkProfileContractTest {
                 profilesByName.get("segment-index-pr-smoke"));
         assertCanonicalNightlySegmentIndexProfile(
                 profilesByName.get("segment-index-nightly"));
+        assertCanonicalDiskIoNightlyProfile(profilesByName.get("diskio-nightly"));
     }
 
     @Test
@@ -124,17 +126,17 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-get-persisted"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
                 Map.of("readPathMode", "persisted"));
-        assertEntry(byLabel.get("segment-index-get-overlay"),
+        assertEntry(byLabel.get("segment-index-get-live"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
-                Map.of("readPathMode", "overlay"));
+                Map.of("readPathMode", "live"));
         assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
                 Map.of("workingSetMode", "hot"));
         assertEntry(byLabel.get("segment-index-persisted-mutation"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
                 Map.of("walMode", "sync"));
-        assertEntry(byLabel.get("segment-index-hot-partition-put"),
-                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
+        assertEntry(byLabel.get("segment-index-hot-route-put"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
                 Map.of());
         assertEntry(byLabel.get("segment-index-mixed-drain"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
@@ -142,13 +144,6 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-mixed-split-heavy"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
                 Map.of("workloadMode", "splitHeavy"));
-        assertEntry(byLabel.get("sorted-data-diff-key-read"),
-                "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
-                Map.of("entryCount", "8192", "keyLength", "48", "valueLength",
-                        "64"));
-        assertEntry(byLabel.get("single-chunk-entry-write"),
-                "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
-                Map.of("entriesPerChunk", "256", "valueLength", "64"));
     }
 
     private void assertCanonicalNightlySegmentIndexProfile(
@@ -165,9 +160,9 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-get-persisted"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
                 Map.of("readPathMode", "persisted"));
-        assertEntry(byLabel.get("segment-index-get-overlay"),
+        assertEntry(byLabel.get("segment-index-get-live"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
-                Map.of("readPathMode", "overlay"));
+                Map.of("readPathMode", "live"));
         assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
                 Map.of("workingSetMode", "hot"));
@@ -180,8 +175,8 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-lifecycle"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark",
                 Map.of("walMode", "sync"));
-        assertEntry(byLabel.get("segment-index-hot-partition-put"),
-                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
+        assertEntry(byLabel.get("segment-index-hot-route-put"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
                 Map.of());
         assertEntry(byLabel.get("segment-index-mixed-drain"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
@@ -189,20 +184,37 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-mixed-split-heavy"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
                 Map.of("workloadMode", "splitHeavy"));
-        assertEntry(byLabel.get("sorted-data-diff-key-read-compact"),
-                "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
-                Map.of("entryCount", "1024", "keyLength", "24", "valueLength",
-                        "16"));
-        assertEntry(byLabel.get("sorted-data-diff-key-read-large"),
-                "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
-                Map.of("entryCount", "8192", "keyLength", "48", "valueLength",
-                        "64"));
-        assertEntry(byLabel.get("single-chunk-entry-write-compact"),
-                "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
-                Map.of("entriesPerChunk", "64", "valueLength", "16"));
-        assertEntry(byLabel.get("single-chunk-entry-write-large"),
-                "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
-                Map.of("entriesPerChunk", "1024", "valueLength", "64"));
+    }
+
+    private void assertCanonicalDiskIoNightlyProfile(
+            final BenchmarkProfile profile) {
+        assertNotNull(profile, "Missing canonical diskio nightly profile");
+        final Map<String, BenchmarkEntry> byLabel = new LinkedHashMap<>();
+        for (final BenchmarkEntry benchmark : profile.benchmarks()) {
+            byLabel.put(benchmark.label(), benchmark);
+        }
+        assertEquals(REQUIRED_NIGHTLY_DISKIO_LABELS, byLabel.keySet(),
+                () -> "Unexpected benchmark labels in profile "
+                        + profile.profile());
+
+        assertEntry(byLabel.get("diskio-sequential-write-1k"),
+                "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "1024"));
+        assertEntry(byLabel.get("diskio-sequential-write-4k"),
+                "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "4096"));
+        assertEntry(byLabel.get("diskio-sequential-write-32k"),
+                "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "32768"));
+        assertEntry(byLabel.get("diskio-sequential-read-1k"),
+                "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "1024"));
+        assertEntry(byLabel.get("diskio-sequential-read-4k"),
+                "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "4096"));
+        assertEntry(byLabel.get("diskio-sequential-read-32k"),
+                "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "32768"));
     }
 
     private void assertEntry(final BenchmarkEntry entry, final String include,
