@@ -38,7 +38,7 @@
         <jacoco.version>0.8.15</jacoco.version>
         <maven.site.plugin.version>4.0.0-M16</maven.site.plugin.version>
         <project.info.reports.plugin.version>3.9.0</project.info.reports.plugin.version>
-        <jdepend.plugin.version>2.2.1-SNAPSHOT</jdepend.plugin.version>
+        <jdepend.plugin.version>2.2.0</jdepend.plugin.version>
         <jdeps.plugin.version>3.2.0</jdeps.plugin.version>
         <depgraph.plugin.version>4.0.3</depgraph.plugin.version>
         <antrun.plugin.version>3.2.0</antrun.plugin.version>
