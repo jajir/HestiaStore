@@ -244,9 +244,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return operation(
-                Vldtn.requireNonNull(directory, "directory"),
-                Vldtn.requireNonNull(userProvidedConfiguration,
-                        "userProvidedConfiguration"),
+                requireDirectory(directory),
+                requireUserProvidedConfiguration(userProvidedConfiguration),
                 chunkFilterProviderResolver,
                 HestiaStoreRuntimeAccess.owned());
     }
@@ -257,9 +256,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final ChunkFilterProviderResolver chunkFilterProviderResolver,
             final HestiaStoreRuntime runtime) {
         return operation(
-                Vldtn.requireNonNull(directory, "directory"),
-                Vldtn.requireNonNull(userProvidedConfiguration,
-                        "userProvidedConfiguration"),
+                requireDirectory(directory),
+                requireUserProvidedConfiguration(userProvidedConfiguration),
                 chunkFilterProviderResolver,
                 HestiaStoreRuntimeAccess.borrowed(runtime));
     }
@@ -270,11 +268,20 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final ChunkFilterProviderResolver chunkFilterProviderResolver,
             final SegmentIndexRuntimeHandle runtimeHandle) {
         return new SegmentIndexBootstrapOperation<>(
-                Vldtn.requireNonNull(directory, "directory"),
-                Vldtn.requireNonNull(userProvidedConfiguration,
-                        "userProvidedConfiguration"),
+                requireDirectory(directory),
+                requireUserProvidedConfiguration(userProvidedConfiguration),
                 chunkFilterProviderResolver,
                 Vldtn.requireNonNull(runtimeHandle, "runtimeHandle"));
+    }
+
+    private static Directory requireDirectory(final Directory directory) {
+        return Vldtn.requireNonNull(directory, "directory");
+    }
+
+    private static <M, N> IndexConfiguration<M, N> requireUserProvidedConfiguration(
+            final IndexConfiguration<M, N> userProvidedConfiguration) {
+        return Vldtn.requireNonNull(userProvidedConfiguration,
+                "userProvidedConfiguration");
     }
 
     private static ChunkFilterProviderResolver requireChunkFilterProviderResolver(

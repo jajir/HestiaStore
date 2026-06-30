@@ -322,7 +322,7 @@ public final class ByteSequences {
      */
     public static int contentHashCode(final ByteSequence sequence) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence,
-                "sequence");
+                SEQUENCE_PROPERTY);
         int result = 1;
         for (int index = 0; index < validated.length(); index++) {
             result = 31 * result + validated.getByte(index);

@@ -13,6 +13,8 @@ import org.hestiastore.index.Vldtn;
  */
 public final class ChunkFilterSpecs {
 
+    private static final String FILTER_CLASS_ARG = "filterClass";
+
     private ChunkFilterSpecs() {
     }
 
@@ -75,7 +77,7 @@ public final class ChunkFilterSpecs {
     public static ChunkFilterSpec javaClass(
             final Class<? extends ChunkFilter> filterClass) {
         final Class<? extends ChunkFilter> requiredClass = Vldtn
-                .requireNonNull(filterClass, "filterClass");
+                .requireNonNull(filterClass, FILTER_CLASS_ARG);
         return javaClass(requiredClass.getName());
     }
 
@@ -143,7 +145,7 @@ public final class ChunkFilterSpecs {
     public static ChunkFilterSpec forEncodingFilter(
             final Class<? extends ChunkFilter> filterClass) {
         final Class<? extends ChunkFilter> requiredClass = Vldtn
-                .requireNonNull(filterClass, "filterClass");
+                .requireNonNull(filterClass, FILTER_CLASS_ARG);
         if (ChunkFilterDoNothing.class.equals(requiredClass)) {
             return doNothing();
         }
@@ -171,7 +173,7 @@ public final class ChunkFilterSpecs {
     public static ChunkFilterSpec forDecodingFilter(
             final Class<? extends ChunkFilter> filterClass) {
         final Class<? extends ChunkFilter> requiredClass = Vldtn
-                .requireNonNull(filterClass, "filterClass");
+                .requireNonNull(filterClass, FILTER_CLASS_ARG);
         if (ChunkFilterDoNothing.class.equals(requiredClass)) {
             return doNothing();
         }

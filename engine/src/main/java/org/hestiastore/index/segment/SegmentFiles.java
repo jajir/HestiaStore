@@ -31,6 +31,10 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
 public final class SegmentFiles<K, V> {
 
     static final String CACHE_FILE_NAME_EXTENSION = ".cache";
+    private static final String ENCODING_CHUNK_FILTERS_ARG =
+            "encodingChunkFilters";
+    private static final String DECODING_CHUNK_FILTERS_ARG =
+            "decodingChunkFilters";
 
     private final Directory directoryFacade;
     private volatile long activeVersion;
@@ -65,9 +69,9 @@ public final class SegmentFiles<K, V> {
         this(directoryFacade, new SegmentDirectoryLayout(id), activeVersion,
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
                 createFilterChainFactory(encodingChunkFilters,
-                        "encodingChunkFilters"),
+                        ENCODING_CHUNK_FILTERS_ARG),
                 createFilterChainFactory(decodingChunkFilters,
-                        "decodingChunkFilters"));
+                        DECODING_CHUNK_FILTERS_ARG));
     }
 
     /**
@@ -102,9 +106,9 @@ public final class SegmentFiles<K, V> {
                 activeVersion,
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
                 createFilterChainFactoryFromSuppliers(encodingChunkFilters,
-                        "encodingChunkFilters"),
+                        ENCODING_CHUNK_FILTERS_ARG),
                 createFilterChainFactoryFromSuppliers(decodingChunkFilters,
-                        "decodingChunkFilters"));
+                        DECODING_CHUNK_FILTERS_ARG));
     }
 
     /**
@@ -131,9 +135,9 @@ public final class SegmentFiles<K, V> {
         this(directoryFacade, layout, activeVersion, keyTypeDescriptor,
                 valueTypeDescriptor, diskIoBufferSize,
                 createFilterChainFactory(encodingChunkFilters,
-                        "encodingChunkFilters"),
+                        ENCODING_CHUNK_FILTERS_ARG),
                 createFilterChainFactory(decodingChunkFilters,
-                        "decodingChunkFilters"));
+                        DECODING_CHUNK_FILTERS_ARG));
     }
 
     /**
@@ -164,9 +168,9 @@ public final class SegmentFiles<K, V> {
         return new SegmentFiles<>(directoryFacade, layout, activeVersion,
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
                 createFilterChainFactoryFromSuppliers(encodingChunkFilters,
-                        "encodingChunkFilters"),
+                        ENCODING_CHUNK_FILTERS_ARG),
                 createFilterChainFactoryFromSuppliers(decodingChunkFilters,
-                        "decodingChunkFilters"));
+                        DECODING_CHUNK_FILTERS_ARG));
     }
 
     private SegmentFiles(final Directory directoryFacade,
@@ -188,9 +192,9 @@ public final class SegmentFiles<K, V> {
                 "valueTypeDescriptor");
         this.diskIoBufferSize = diskIoBufferSize;
         this.encodingChunkFilters = Vldtn.requireNonNull(encodingChunkFilters,
-                "encodingChunkFilters");
+                ENCODING_CHUNK_FILTERS_ARG);
         this.decodingChunkFilters = Vldtn.requireNonNull(decodingChunkFilters,
-                "decodingChunkFilters");
+                DECODING_CHUNK_FILTERS_ARG);
     }
 
     /**

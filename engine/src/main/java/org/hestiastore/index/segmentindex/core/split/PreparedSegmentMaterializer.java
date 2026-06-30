@@ -145,7 +145,7 @@ final class PreparedSegmentMaterializer<K, V> {
 
     private WriteTransaction<K, V> openPreparedWriterTx(
             final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         return materialization.openWriterTx(segmentId);
     }
 

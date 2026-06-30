@@ -35,6 +35,7 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
     private static final SegmentIdTypeDescriptor tdSegId = new SegmentIdTypeDescriptor();
 
     private static final String FILE_NAME = "index.map";
+    private static final String SEGMENT_ID_ARG = "segmentId";
 
     /**
      * When new index is created than this is id of first segment.
@@ -218,7 +219,7 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
         try {
             ensureOpen();
             Vldtn.requireNonNull(key, "key");
-            Vldtn.requireNonNull(segmentId, "segmentId");
+            Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
             if (isBoundaryKeyBoundToOtherSegment(key, segmentId)) {
                 throw new IllegalArgumentException(
                         duplicateBoundaryKeyMessage(key, list.get(key)));
@@ -239,7 +240,7 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
         writeLock.lock();
         try {
             ensureOpen();
-            Vldtn.requireNonNull(segmentId, "segmentId");
+            Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
             Vldtn.requireNonNull(newMaxKey, "newMaxKey");
             Map.Entry<K, SegmentId> existing = null;
             for (final Map.Entry<K, SegmentId> entry : list.entrySet()) {
@@ -282,7 +283,7 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
 
     private void removeSegment(final SegmentId segmentId) {
         ensureOpen();
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         if (list.isEmpty()) {
             return;
         }

@@ -571,17 +571,17 @@
                                 <td th:text="${row.originalDisplay()}">128</td>
                                 <td th:text="${row.currentDisplay()}">256</td>
                                 <td>
-                                    <label class="sr-only" th:if="${row.editable}"
+                                    <label class="sr-only" for="runtime-config-value" th:if="${row.editable}"
                                         th:for="${'runtime-config-value-' + row.key}"
                                         th:text="${'New value for ' + row.key}">New value</label>
-                                    <input th:if="${row.editable}" class="cfg-input" type="number" step="1"
+                                    <input id="runtime-config-value" th:if="${row.editable}" class="cfg-input" type="number" step="1"
                                         th:name="${'value.' + row.key}" th:value="${row.inputValue()}"
                                         th:id="${'runtime-config-value-' + row.key}"
                                         th:attr="data-current=${row.inputValue()}">
-                                    <label class="sr-only" th:unless="${row.editable}"
+                                    <label class="sr-only" for="runtime-config-readonly" th:unless="${row.editable}"
                                         th:for="${'runtime-config-readonly-' + row.key}"
                                         th:text="${'Current value for ' + row.key}">Current value</label>
-                                    <input th:unless="${row.editable}" class="cfg-input" type="text" disabled
+                                    <input id="runtime-config-readonly" th:unless="${row.editable}" class="cfg-input" type="text" disabled
                                         th:id="${'runtime-config-readonly-' + row.key}"
                                         th:value="${row.currentDisplay()}">
                                 </td>

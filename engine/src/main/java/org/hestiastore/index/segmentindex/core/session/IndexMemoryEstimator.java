@@ -27,6 +27,7 @@ final class IndexMemoryEstimator {
 
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final String UNAVAILABLE = "unavailable";
+    private static final String UNKNOWN = "unknown";
     private static final String NOTICE =
             "Rough estimate only; not a JVM cap or measured allocation.";
     private static final String RUNTIME_NOTE =
@@ -443,7 +444,7 @@ final class IndexMemoryEstimator {
 
     private static String estimateText(final OptionalInt estimate) {
         return estimate.isPresent() ? formatBytes(estimate.getAsInt())
-                : "unknown";
+                : UNKNOWN;
     }
 
     private static String estimateText(final OptionalLong estimate) {
@@ -459,13 +460,13 @@ final class IndexMemoryEstimator {
     private static String aboutText(final OptionalInt estimate) {
         return estimate.isPresent()
                 ? "about " + formatBytes(estimate.getAsInt())
-                : "unknown";
+                : UNKNOWN;
     }
 
     private static String aboutText(final OptionalLong estimate) {
         return estimate.isPresent()
                 ? "about " + formatBytes(estimate.getAsLong())
-                : "unknown";
+                : UNKNOWN;
     }
 
     private static void appendIndented(final StringBuilder out,

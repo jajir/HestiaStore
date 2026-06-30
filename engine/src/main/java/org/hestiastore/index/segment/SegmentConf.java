@@ -12,6 +12,8 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 @SuppressWarnings({ "java:S107", "java:S1133" })
 public class SegmentConf {
 
+    private static final String FILTERS_ARG = "filters";
+
     /**
      * Sentinel value for unset Bloom filter hash function count.
      */
@@ -338,7 +340,7 @@ public class SegmentConf {
         public Builder withEncodingChunkFilters(
                 final List<ChunkFilter> filters) {
             encodingChunkFilters = List
-                    .copyOf(Objects.requireNonNull(filters, "filters").stream()
+                    .copyOf(Objects.requireNonNull(filters, FILTERS_ARG).stream()
                             .map(filter -> (Supplier<? extends ChunkFilter>) () -> filter)
                             .toList());
             return this;
@@ -353,7 +355,7 @@ public class SegmentConf {
         public Builder withDecodingChunkFilters(
                 final List<ChunkFilter> filters) {
             decodingChunkFilters = List
-                    .copyOf(Objects.requireNonNull(filters, "filters").stream()
+                    .copyOf(Objects.requireNonNull(filters, FILTERS_ARG).stream()
                             .map(filter -> (Supplier<? extends ChunkFilter>) () -> filter)
                             .toList());
             return this;
@@ -368,7 +370,7 @@ public class SegmentConf {
         Builder withEncodingChunkFilterSuppliers(
                 final List<Supplier<? extends ChunkFilter>> filters) {
             encodingChunkFilters = List.copyOf(
-                    Objects.requireNonNull(filters, "filters"));
+                    Objects.requireNonNull(filters, FILTERS_ARG));
             return this;
         }
 
@@ -381,7 +383,7 @@ public class SegmentConf {
         Builder withDecodingChunkFilterSuppliers(
                 final List<Supplier<? extends ChunkFilter>> filters) {
             decodingChunkFilters = List.copyOf(
-                    Objects.requireNonNull(filters, "filters"));
+                    Objects.requireNonNull(filters, FILTERS_ARG));
             return this;
         }
 

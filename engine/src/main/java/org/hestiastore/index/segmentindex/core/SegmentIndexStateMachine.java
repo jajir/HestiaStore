@@ -10,6 +10,9 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
  */
 public final class SegmentIndexStateMachine implements SegmentIndexStateView {
 
+    private static final String UNSUPPORTED_STATE_PREFIX =
+            "Unsupported SegmentIndex state: ";
+
     private final AtomicReference<SegmentIndexState> state =
             new AtomicReference<>(SegmentIndexState.OPENING);
     private volatile Throwable failure;
@@ -113,7 +116,7 @@ public final class SegmentIndexStateMachine implements SegmentIndexStateView {
                         failure);
             default:
                 throw new IllegalStateException(
-                        "Unsupported SegmentIndex state: " + current);
+                        UNSUPPORTED_STATE_PREFIX + current);
         }
     }
 
@@ -134,7 +137,7 @@ public final class SegmentIndexStateMachine implements SegmentIndexStateView {
                         "Can't make ready index in ERROR.");
             default:
                 return new IllegalStateException(
-                        "Unsupported SegmentIndex state: " + current);
+                        UNSUPPORTED_STATE_PREFIX + current);
         }
     }
 
@@ -152,7 +155,7 @@ public final class SegmentIndexStateMachine implements SegmentIndexStateView {
                         "Can't close already closed index.");
             default:
                 return new IllegalStateException(
-                        "Unsupported SegmentIndex state: " + current);
+                        UNSUPPORTED_STATE_PREFIX + current);
         }
     }
 
@@ -167,7 +170,7 @@ public final class SegmentIndexStateMachine implements SegmentIndexStateView {
                         "Can't finish close from READY state.");
             default:
                 return new IllegalStateException(
-                        "Unsupported SegmentIndex state: " + current);
+                        UNSUPPORTED_STATE_PREFIX + current);
         }
     }
 }

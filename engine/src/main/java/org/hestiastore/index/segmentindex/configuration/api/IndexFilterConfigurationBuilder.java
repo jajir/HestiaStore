@@ -20,6 +20,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
  */
 public final class IndexFilterConfigurationBuilder<K, V> {
 
+    private static final String FILTER_ARG = "filter";
+    private static final String FILTER_CLASS_ARG = "filterClass";
+
     private final List<ChunkFilterSpec> encodingChunkFilters = new ArrayList<>();
     private final List<ChunkFilterSpec> decodingChunkFilters = new ArrayList<>();
     private ChunkFilterProviderResolver chunkFilterProviderResolver;
@@ -36,7 +39,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
     public IndexFilterConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilter value) {
         final ChunkFilter requiredFilter = Vldtn.requireNonNull(value,
-                "filter");
+                FILTER_ARG);
         addEncodingFilter(resolvePersistableInstanceSpec(requiredFilter, true));
         return this;
     }
@@ -50,7 +53,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
     public IndexFilterConfigurationBuilder<K, V> addEncodingFilter(
             final Class<? extends ChunkFilter> value) {
         final Class<? extends ChunkFilter> requiredClass = Vldtn
-                .requireNonNull(value, "filterClass");
+                .requireNonNull(value, FILTER_CLASS_ARG);
         addEncodingFilter(ChunkFilterSpecs.forEncodingFilter(requiredClass));
         return this;
     }
@@ -101,7 +104,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> encodingFilterClasses(
             final Collection<Class<? extends ChunkFilter>> values) {
-        replaceSpecs(values, "filterClasses", "filterClass",
+        replaceSpecs(values, "filterClasses", FILTER_CLASS_ARG,
                 encodingChunkFilters, ChunkFilterSpecs::forEncodingFilter);
         return this;
     }
@@ -114,7 +117,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> encodingFilters(
             final Collection<ChunkFilter> values) {
-        replaceSpecs(values, "filters", "filter", encodingChunkFilters,
+        replaceSpecs(values, "filters", FILTER_ARG, encodingChunkFilters,
                 filter -> resolvePersistableInstanceSpec(filter, true));
         return this;
     }
@@ -128,7 +131,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
     public IndexFilterConfigurationBuilder<K, V> addDecodingFilter(
             final ChunkFilter value) {
         final ChunkFilter requiredFilter = Vldtn.requireNonNull(value,
-                "filter");
+                FILTER_ARG);
         addDecodingFilter(resolvePersistableInstanceSpec(requiredFilter, false));
         return this;
     }
@@ -142,7 +145,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
     public IndexFilterConfigurationBuilder<K, V> addDecodingFilter(
             final Class<? extends ChunkFilter> value) {
         final Class<? extends ChunkFilter> requiredClass = Vldtn
-                .requireNonNull(value, "filterClass");
+                .requireNonNull(value, FILTER_CLASS_ARG);
         addDecodingFilter(ChunkFilterSpecs.forDecodingFilter(requiredClass));
         return this;
     }
@@ -193,7 +196,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> decodingFilterClasses(
             final Collection<Class<? extends ChunkFilter>> values) {
-        replaceSpecs(values, "filterClasses", "filterClass",
+        replaceSpecs(values, "filterClasses", FILTER_CLASS_ARG,
                 decodingChunkFilters, ChunkFilterSpecs::forDecodingFilter);
         return this;
     }
@@ -206,7 +209,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> decodingFilters(
             final Collection<ChunkFilter> values) {
-        replaceSpecs(values, "filters", "filter", decodingChunkFilters,
+        replaceSpecs(values, "filters", FILTER_ARG, decodingChunkFilters,
                 filter -> resolvePersistableInstanceSpec(filter, false));
         return this;
     }
@@ -254,7 +257,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
     private ChunkFilterSpec resolvePersistableInstanceSpec(
             final ChunkFilter filter, final boolean encoding) {
         final ChunkFilter requiredFilter = Vldtn.requireNonNull(filter,
-                "filter");
+                FILTER_ARG);
         final ChunkFilterSpec spec = encoding
                 ? ChunkFilterSpecs.forEncodingFilter(requiredFilter)
                 : ChunkFilterSpecs.forDecodingFilter(requiredFilter);

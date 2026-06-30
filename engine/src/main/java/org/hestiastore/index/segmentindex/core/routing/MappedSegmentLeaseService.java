@@ -29,6 +29,7 @@ public final class MappedSegmentLeaseService<K, V> {
     private static final String OPERATION_READ = "acquireForRead";
     private static final String OPERATION_WRITE = "acquireForWrite";
     private static final String OPERATION_MAPPED_SEGMENT = "acquireMappedSegment";
+    private static final String SEGMENT_ID_ARG = "segmentId";
 
     private final SegmentRouteMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
@@ -157,7 +158,7 @@ public final class MappedSegmentLeaseService<K, V> {
     public Optional<MappedSegmentLease<K, V>> tryAcquireMappedSegment(
             final SegmentId segmentId) {
         final SegmentId nonNullSegmentId = Vldtn.requireNonNull(segmentId,
-                "segmentId");
+                SEGMENT_ID_ARG);
         final RouteMapSnapshot<K> snapshot = keyToSegmentMap.snapshot();
         if (!isRoutedSegment(snapshot, nonNullSegmentId)) {
             return Optional.empty();
@@ -181,7 +182,7 @@ public final class MappedSegmentLeaseService<K, V> {
     public MappedSegmentLease<K, V> acquireMappedSegment(
             final SegmentId segmentId) {
         final SegmentId nonNullSegmentId = Vldtn.requireNonNull(segmentId,
-                "segmentId");
+                SEGMENT_ID_ARG);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final RouteMapSnapshot<K> snapshot = keyToSegmentMap.snapshot();
@@ -228,7 +229,7 @@ public final class MappedSegmentLeaseService<K, V> {
     public Optional<MappedSegmentLease<K, V>> tryAcquireLoadedMappedSegment(
             final SegmentId segmentId) {
         final SegmentId nonNullSegmentId = Vldtn.requireNonNull(segmentId,
-                "segmentId");
+                SEGMENT_ID_ARG);
         final RouteMapSnapshot<K> snapshot = keyToSegmentMap.snapshot();
         if (!isRoutedSegment(snapshot, nonNullSegmentId)) {
             return Optional.empty();
@@ -252,7 +253,7 @@ public final class MappedSegmentLeaseService<K, V> {
     public Optional<RouteSplitLease<K, V>> tryAcquireForSplit(
             final SegmentId segmentId) {
         final SegmentId nonNullSegmentId = Vldtn.requireNonNull(segmentId,
-                "segmentId");
+                SEGMENT_ID_ARG);
         final Optional<RouteDrain> drainResult = segmentTopology.tryBeginDrain(
                 nonNullSegmentId);
         if (drainResult.isEmpty()) {

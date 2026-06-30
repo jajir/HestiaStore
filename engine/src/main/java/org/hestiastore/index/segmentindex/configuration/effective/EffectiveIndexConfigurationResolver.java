@@ -29,6 +29,8 @@ public final class EffectiveIndexConfigurationResolver {
     private static final IndexConfigurationDefaults DEFAULT_CONTRACT =
             new IndexConfigurationDefaults() {
             };
+    private static final String REQUEST_ARG = "request";
+    private static final String FALLBACK_ARG = "fallback";
 
     private EffectiveIndexConfigurationResolver() {
     }
@@ -36,7 +38,7 @@ public final class EffectiveIndexConfigurationResolver {
     public static <K, V> EffectiveIndexConfiguration<K, V> resolveForCreate(
             final IndexConfiguration<K, V> request) {
         final IndexConfiguration<K, V> validatedRequest = Vldtn.requireNonNull(
-                request, "request");
+                request, REQUEST_ARG);
         return resolveForCreate(validatedRequest,
                 validatedRequest.filters().getChunkFilterProviderResolver());
     }
@@ -45,7 +47,7 @@ public final class EffectiveIndexConfigurationResolver {
             final IndexConfiguration<K, V> request,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         final IndexConfiguration<K, V> validatedRequest = Vldtn.requireNonNull(
-                request, "request");
+                request, REQUEST_ARG);
         final ChunkFilterProviderResolver validatedResolver = Vldtn
                 .requireNonNull(chunkFilterProviderResolver,
                         "chunkFilterProviderResolver");
@@ -59,7 +61,7 @@ public final class EffectiveIndexConfigurationResolver {
             final EffectiveIndexConfiguration<K, V> stored,
             final IndexConfiguration<K, V> request) {
         final IndexConfiguration<K, V> validatedRequest = Vldtn.requireNonNull(
-                request, "request");
+                request, REQUEST_ARG);
         return mergeWithStored(stored, validatedRequest,
                 validatedRequest.filters().getChunkFilterProviderResolver());
     }
@@ -71,7 +73,7 @@ public final class EffectiveIndexConfigurationResolver {
         final EffectiveIndexConfiguration<K, V> validatedStored =
                 Vldtn.requireNonNull(stored, "stored");
         final IndexConfiguration<K, V> validatedRequest = Vldtn.requireNonNull(
-                request, "request");
+                request, REQUEST_ARG);
         final ChunkFilterProviderResolver validatedResolver = Vldtn
                 .requireNonNull(chunkFilterProviderResolver,
                         "chunkFilterProviderResolver");
@@ -429,7 +431,7 @@ public final class EffectiveIndexConfigurationResolver {
     }
 
     private static int intOr(final Integer value, final Integer fallback) {
-        return intOr(value, Vldtn.requireNonNull(fallback, "fallback")
+        return intOr(value, Vldtn.requireNonNull(fallback, FALLBACK_ARG)
                 .intValue());
     }
 
@@ -439,7 +441,7 @@ public final class EffectiveIndexConfigurationResolver {
 
     private static boolean booleanOr(final Boolean value,
             final Boolean fallback) {
-        return booleanOr(value, Vldtn.requireNonNull(fallback, "fallback")
+        return booleanOr(value, Vldtn.requireNonNull(fallback, FALLBACK_ARG)
                 .booleanValue());
     }
 
@@ -450,7 +452,7 @@ public final class EffectiveIndexConfigurationResolver {
 
     private static double doubleOr(final Double value, final Double fallback) {
         return value == null
-                ? Vldtn.requireNonNull(fallback, "fallback").doubleValue()
+                ? Vldtn.requireNonNull(fallback, FALLBACK_ARG).doubleValue()
                 : value.doubleValue();
     }
 }
