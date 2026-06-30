@@ -1,0 +1,184 @@
+package org.hestiastore.index.segmentregistry;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+class SegmentLifecycleMaintenanceTest {
+
+    private static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
+    private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
+    private static final List<ChunkFilter> FILTERS = List
+            .of(new ChunkFilterDoNothing());
+
+    @Test
+    void loadSegment_returnsLoadedSegment_whenDirectoryExistsAndGateReady() {
+        try (Fixture fixture = new Fixture()) {
+            final SegmentId segmentId = SegmentId.of(1);
+            fixture.createSegmentDirectory(segmentId);
+            fixture.gate.finishFreezeToReady();
+
+            final Segment<Integer, String> loaded = fixture.maintenance
+                    .loadSegment(segmentId);
+
+            assertNotNull(loaded);
+            assertEquals(segmentId, loaded.getId());
+            fixture.maintenance.closeSegmentIfNeeded(loaded);
+        }
+    }
+
+    @Test
+    void loadSegment_throwsBusyException_whenDirectoryMissing() {
+        try (Fixture fixture = new Fixture()) {
+            fixture.gate.finishFreezeToReady();
+            final SegmentId missingSegmentId = SegmentId.of(10);
+            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
+
+            final SegmentBusyException ex = assertThrows(
+                    SegmentBusyException.class,
+                    () -> maintenance.loadSegment(missingSegmentId));
+            assertSame(SegmentBusyException.class, ex.getClass());
+        }
+    }
+
+    @Test
+    void loadSegment_throwsBusyException_whenRegistryStateIsNotReady() {
+        try (Fixture fixture = new Fixture()) {
+            final SegmentId segmentId = SegmentId.of(2);
+            fixture.createSegmentDirectory(segmentId);
+            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
+
+            assertThrows(SegmentBusyException.class,
+                    () -> maintenance.loadSegment(segmentId));
+        }
+    }
+
+    @Test
+    void closeSegmentIfNeeded_retriesWhenBusyAndEventuallyCloses() {
+        try (Fixture fixture = new Fixture()) {
+            @SuppressWarnings("unchecked")
+            final Segment<Integer, String> segment = Mockito.mock(Segment.class);
+            when(segment.getState()).thenReturn(SegmentState.READY,
+                    SegmentState.READY, SegmentState.CLOSED);
+            when(segment.close()).thenReturn(SegmentResult.busy())
+                    .thenReturn(SegmentResult.ok());
+
+            fixture.maintenance.closeSegmentIfNeeded(segment);
+
+            verify(segment, times(2)).close();
+        }
+    }
+
+    @Test
+    void closeSegmentIfNeeded_closesLoadedSegmentToClosedState() {
+        try (Fixture fixture = new Fixture()) {
+            final SegmentId segmentId = SegmentId.of(3);
+            fixture.createSegmentDirectory(segmentId);
+            fixture.gate.finishFreezeToReady();
+            final Segment<Integer, String> loaded = fixture.maintenance
+                    .loadSegment(segmentId);
+
+            fixture.maintenance.closeSegmentIfNeeded(loaded);
+
+            assertEquals(SegmentState.CLOSED, loaded.getState());
+        }
+    }
+
+    @Test
+    void loadSegment_blocks_reopen_when_segment_directory_locking_is_enabled() {
+        try (Fixture fixture = new Fixture()) {
+            final SegmentId segmentId = SegmentId.of(4);
+            fixture.createSegmentDirectory(segmentId);
+            fixture.gate.finishFreezeToReady();
+            final Segment<Integer, String> loaded = fixture.maintenance
+                    .loadSegment(segmentId);
+            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
+            try {
+                assertThrows(SegmentBusyException.class,
+                        () -> maintenance.loadSegment(segmentId));
+            } finally {
+                fixture.maintenance.closeSegmentIfNeeded(loaded);
+            }
+        }
+    }
+
+    private static final class Fixture implements AutoCloseable {
+        private final MemDirectory directory = new MemDirectory();
+        private final Directory asyncDirectory = directory;
+        private final ExecutorService stableSegmentMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        private final IndexConfiguration<Integer, String> conf = newConfiguration();
+
+        private final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
+                asyncDirectory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
+                stableSegmentMaintenanceExecutor);
+        private final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
+                asyncDirectory);
+        private final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        private final SegmentLifecycleMaintenance<Integer, String> maintenance = new SegmentLifecycleMaintenance<>(
+                segmentFactory, fileSystem, new IndexRetryPolicy(1, 1000),
+                gate);
+
+        private void createSegmentDirectory(final SegmentId segmentId) {
+            directory.mkdir(segmentId.getName());
+        }
+
+        @Override
+        public void close() {
+            stableSegmentMaintenanceExecutor.shutdownNow();
+        }
+    }
+
+    private static IndexConfiguration<Integer, String> newConfiguration() {
+        return IndexConfiguration.<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withMaxNumberOfKeysInActivePartition(5)//
+                .withMaxNumberOfKeysInPartitionBuffer(10)//
+                .withMaxNumberOfKeysInSegmentChunk(4)//
+                .withMaxNumberOfDeltaCacheFiles(2)//
+                .withMaxNumberOfKeysInSegment(50)//
+                .withMaxNumberOfSegmentsInCache(5)//
+                .withBloomFilterNumberOfHashFunctions(1)//
+                .withBloomFilterIndexSizeInBytes(128)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01)//
+                .withDiskIoBufferSizeInBytes(1024)//
+                .withEncodingFilters(FILTERS)//
+                .withDecodingFilters(FILTERS)//
+                .withBackgroundMaintenanceAutoEnabled(false)//
+                .withIndexWorkerThreadCount(1)//
+                .withNumberOfStableSegmentMaintenanceThreads(1)//
+                .withNumberOfIndexMaintenanceThreads(1)//
+                .withIndexBusyBackoffMillis(1)//
+                .withIndexBusyTimeoutMillis(1000)//
+                .withContextLoggingEnabled(false)//
+                .withName("segment-lifecycle-maintenance-test")//
+                .build();
+    }
+}

@@ -1,0 +1,35 @@
+@startuml
+left to right direction
+hide stereotype
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #4D4D4D
+skinparam RectangleBorderColor #4D4D4D
+skinparam RectangleFontColor #1F1F1F
+skinparam NoteBorderColor #4D4D4D
+skinparam NoteBackgroundColor #FFF2CC
+skinparam rectangle {
+  RoundCorner 18
+}
+
+rectangle "main\nrelease-ready branch" as main #FCE5CD
+rectangle "devel\nintegration branch" as devel #D9EAD3
+rectangle "feature/*\nstart from devel" as feature #D0E0E3
+rectangle "hotfix/*\nstart from main" as hotfix #F4CCCC
+rectangle "release on main\nversion bump, tag, deploy" as release #EAD1DC
+
+devel --> feature : create task branch
+feature --> devel : PR to devel
+
+main --> hotfix : create urgent fix branch
+hotfix --> main : PR to main
+hotfix --> devel : sync merged hotfix back
+
+devel --> main : release promotion
+main --> release : publish from main
+
+note bottom
+One branch maps to one pull request.
+Do not open the same topic branch to both devel and main.
+end note
+@enduml

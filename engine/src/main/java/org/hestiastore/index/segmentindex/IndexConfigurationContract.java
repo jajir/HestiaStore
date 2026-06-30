@@ -1,0 +1,275 @@
+package org.hestiastore.index.segmentindex;
+
+import java.util.List;
+
+import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
+import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
+
+/**
+ * Define contract, that define index configuration.
+ * 
+ * @author honza
+ *
+ */
+public interface IndexConfigurationContract {
+    int MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
+    int MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = 10_000_000;
+    int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
+    int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1_000;
+    int MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
+    int MAX_NUMBER_OF_DELTA_CACHE_FILES = 10;
+    int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
+
+    int BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 3;
+    int BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 5_000_000;
+    double BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
+
+    int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
+    int INDEX_WORKER_THREAD_COUNT = 1;
+    int DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS = 10;
+    int DEFAULT_INDEX_MAINTENANCE_THREADS = 10;
+    int DEFAULT_REGISTRY_LIFECYCLE_THREADS = 3;
+    int DEFAULT_INDEX_BUSY_BACKOFF_MILLIS = 5;
+    int DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS = 30_000;
+    boolean DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED = true;
+
+    /**
+     * Returns the default maximum number of keys in the in-memory segment
+     * cache.
+     *
+     * @return default max keys in segment cache
+     */
+    default int getMaxNumberOfKeysInSegmentCache() {
+        return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
+    }
+
+    /**
+     * Returns the default maximum number of keys per segment chunk.
+     *
+     * @return default max keys per chunk
+     */
+    default int getMaxNumberOfKeysInSegmentChunk() {
+        return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
+    }
+
+    /**
+     * Returns the default maximum number of delta cache files allowed for a
+     * segment before maintenance should be triggered.
+     *
+     * @return default max delta cache files per segment
+     */
+    default int getMaxNumberOfDeltaCacheFiles() {
+        return MAX_NUMBER_OF_DELTA_CACHE_FILES;
+    }
+
+    /**
+     * Returns the default maximum number of keys per segment.
+     *
+     * @return default max keys per segment
+     */
+    default int getMaxNumberOfKeysInSegment() {
+        return MAX_NUMBER_OF_KEYS_IN_SEGMENT;
+    }
+
+    /**
+     * Returns the default maximum number of keys accepted into the active
+     * partition before it is rotated to an immutable run.
+     *
+     * @return default active partition key count
+     */
+    default int getMaxNumberOfKeysInActivePartition() {
+        return getMaxNumberOfKeysInSegmentCache() / 2;
+    }
+
+    /**
+     * Returns the default immutable run queue depth per partition.
+     *
+     * @return default immutable run count
+     */
+    default int getMaxNumberOfImmutableRunsPerPartition() {
+        return DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION;
+    }
+
+    /**
+     * Returns the default buffered key limit inside one partition.
+     *
+     * @return default buffered key count per partition
+     */
+    default int getMaxNumberOfKeysInPartitionBuffer() {
+        return Math.max(getMaxNumberOfKeysInActivePartition() + 1,
+                (int) Math.ceil(getMaxNumberOfKeysInActivePartition() * 1.4));
+    }
+
+    /**
+     * Returns the default buffered key limit across the whole index overlay.
+     *
+     * @return default total buffered key count
+     */
+    default int getMaxNumberOfKeysInIndexBuffer() {
+        return Math.max(getMaxNumberOfKeysInPartitionBuffer(),
+                getMaxNumberOfKeysInPartitionBuffer()
+                        * getMaxNumberOfSegmentsInCache());
+    }
+
+    /**
+     * Returns the default split/drain threshold for a routed partition.
+     *
+     * @return default partition split threshold
+     */
+    default int getMaxNumberOfKeysInPartitionBeforeSplit() {
+        return MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
+    }
+
+    /**
+     * Returns the default maximum number of segments kept in the in-memory
+     * cache.
+     *
+     * @return default max segments in cache
+     */
+    default int getMaxNumberOfSegmentsInCache() {
+        return MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
+    }
+
+    /**
+     * Returns the default disk I/O buffer size in bytes.
+     *
+     * @return default disk I/O buffer size in bytes
+     */
+    default int getDiskIoBufferSizeInBytes() {
+        return DISK_IO_BUFFER_SIZE_IN_BYTES;
+    }
+
+    /**
+     * Returns the default Bloom filter hash function count.
+     *
+     * @return default Bloom filter hash function count
+     */
+    default int getBloomFilterNumberOfHashFunctions() {
+        return BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
+    }
+
+    /**
+     * Returns the default Bloom filter index size in bytes.
+     *
+     * @return default Bloom filter size in bytes
+     */
+    default int getBloomFilterIndexSizeInBytes() {
+        return BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
+    }
+
+    /**
+     * Returns the default Bloom filter false-positive probability.
+     *
+     * @return default false-positive probability
+     */
+    default double getBloomFilterProbabilityOfFalsePositive() {
+        return BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE;
+    }
+
+    /**
+     * Returns the default number of index worker threads used for index
+     * operations.
+     *
+     * @return default index worker thread count
+     */
+    default int getIndexWorkerThreadCount() {
+        return INDEX_WORKER_THREAD_COUNT;
+    }
+
+    /**
+     * Returns the default number of stable-segment maintenance threads.
+     *
+     * @return default stable-segment maintenance thread count
+     */
+    default int getNumberOfStableSegmentMaintenanceThreads() {
+        return DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS;
+    }
+
+    /**
+     * Returns the default number of split maintenance threads.
+     *
+     * @return default split maintenance thread count
+     */
+    default int getNumberOfIndexMaintenanceThreads() {
+        return DEFAULT_INDEX_MAINTENANCE_THREADS;
+    }
+
+    /**
+     * Returns the default number of registry lifecycle threads used for
+     * segment load/unload operations.
+     *
+     * @return default registry lifecycle thread count
+     */
+    default int getNumberOfRegistryLifecycleThreads() {
+        return DEFAULT_REGISTRY_LIFECYCLE_THREADS;
+    }
+
+    /**
+     * Returns the default busy backoff delay in milliseconds.
+     *
+     * @return default busy backoff in milliseconds
+     */
+    default int getIndexBusyBackoffMillis() {
+        return DEFAULT_INDEX_BUSY_BACKOFF_MILLIS;
+    }
+
+    /**
+     * Returns the default busy retry timeout in milliseconds.
+     *
+     * @return default busy retry timeout in milliseconds
+     */
+    default int getIndexBusyTimeoutMillis() {
+        return DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS;
+    }
+
+    /**
+     * Returns whether auto maintenance is enabled by default.
+     *
+     * @return true when auto maintenance is enabled by default
+     */
+    default boolean isBackgroundMaintenanceAutoEnabled() {
+        return DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED;
+    }
+
+    /**
+     * Returns whether MDC-based context logging is enabled by default.
+     *
+     * @return true when context logging is enabled by default
+     */
+    default boolean isContextLoggingEnabled() {
+        return true;
+    }
+
+    /**
+     * Returns default WAL configuration.
+     *
+     * @return default WAL settings
+     */
+    default Wal getWal() {
+        return Wal.EMPTY;
+    }
+
+    /**
+     * Returns the default encoding chunk filter chain.
+     *
+     * @return default encoding filters
+     */
+    default List<ChunkFilter> getEncodingChunkFilters() {
+        return List.of(new ChunkFilterCrc32Writing(),
+                new ChunkFilterMagicNumberWriting());
+    }
+
+    /**
+     * Returns the default decoding chunk filter chain.
+     *
+     * @return default decoding filters
+     */
+    default List<ChunkFilter> getDecodingChunkFilters() {
+        return List.of(new ChunkFilterMagicNumberValidation(),
+                new ChunkFilterCrc32Validation());
+    }
+
+}
