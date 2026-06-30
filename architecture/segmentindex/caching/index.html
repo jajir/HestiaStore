@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../community/" class="md-tabs__link">
+        <a href="../../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../operations/tuning/" class="md-nav__link">
         
   
@@ -1408,6 +1495,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1615,6 +1730,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../chain-of-filters/" class="md-nav__link">
         
   
@@ -1679,34 +1822,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -1949,6 +2064,8 @@
       
         
       
+        
+      
     
     
     
@@ -2049,6 +2166,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2219,10 +2364,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#partition-overlay" class="md-nav__link">
+  <a href="#segment-write-cache" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Partition overlay
+        Segment write cache
       
     </span>
   </a>
@@ -2412,7 +2557,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2789,7 +2934,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2816,15 +2965,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2832,43 +2980,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../../community/contributing/" class="md-nav__link">
+      <a href="../../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2889,14 +3029,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2917,14 +3057,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../community/changelog/" class="md-nav__link">
+      <a href="../../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2984,8 +3236,6 @@
       
         
       
-        
-      
     
     
     
@@ -3012,7 +3262,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -3034,7 +3284,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -3049,14 +3299,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/git-workflow/" class="md-nav__link">
+      <a href="../../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3085,34 +3391,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3189,34 +3467,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../development/segment-api/" class="md-nav__link">
         
   
@@ -3225,34 +3475,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3502,10 +3724,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#partition-overlay" class="md-nav__link">
+  <a href="#segment-write-cache" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Partition overlay
+        Segment write cache
       
     </span>
   </a>
@@ -3703,150 +3925,200 @@
 
 
 <h1 id="caching-strategy">Caching Strategy</h1>
-<p>HestiaStore uses a few focused caches to deliver read‑after‑write visibility and predictable read latency while keeping memory bounded. This page outlines each layer, how it is populated/evicted, and which configuration knobs control sizing.</p>
+<p>HestiaStore uses a few focused caches to deliver read-after-write visibility
+and predictable read latency while keeping memory bounded. This page outlines
+each layer, how it is populated or evicted, and which configuration knobs
+control sizing.</p>
 <p>For segment internals (delta, Bloom, sparse/scarce structures), use
-<a href="../../segment/">Segment Architecture</a>. This page describes cache roles at the
-SegmentIndex integration level.</p>
+<a href="../../segment/">Segment Architecture</a>. This page describes cache roles at
+the SegmentIndex integration level.</p>
 <h2 id="goals">Goals</h2>
 <ul>
-<li>Read‑after‑write consistency without synchronous disk I/O</li>
+<li>Read-after-write consistency without synchronous disk I/O</li>
 <li>Bound the working set in memory via LRU at the segment layer</li>
-<li>Keep read I/O predictable: avoid random seeks with Bloom filter + sparse index</li>
-<li>Make flush/compact operations deterministic and safe</li>
+<li>Keep read I/O predictable: avoid random seeks with Bloom filter + sparse
+  index</li>
+<li>Make flush and compaction operations deterministic and safe</li>
 </ul>
 <h2 id="layers-overview">Layers Overview</h2>
 <ul>
-<li>Partition overlay: routed in-memory mutable/immutable layers</li>
-<li>Classes: <code>segmentindex/partition/PartitionRuntime</code>, <code>segmentindex/partition/RangePartition</code></li>
-<li>Owner: <code>segmentindex/core/SegmentIndexImpl</code></li>
+<li>Segment write cache: per-segment in-memory mutable layer</li>
+<li>Classes: <code>segment/SegmentCache</code>, <code>segment/SegmentWritePath</code></li>
+<li>Owner: <code>segment/SegmentImpl</code></li>
 <li>
-<p>Purpose: absorb writes and provide immediate visibility before drain publish</p>
+<p>Purpose: absorb writes and provide immediate visibility before flush</p>
 </li>
 <li>
-<p>Segment delta cache: per‑segment overlay of recent writes</p>
+<p>Segment delta cache: per-segment overlay of recent writes</p>
 </li>
-<li>Classes: <code>segment/SegmentDeltaCache</code>, <code>segment/SegmentDeltaCacheWriter</code>, <code>segment/SegmentDeltaCacheController</code></li>
+<li>Classes: <code>segment/SegmentDeltaCache</code>,
+    <code>segment/SegmentDeltaCacheWriter</code>,
+    <code>segment/SegmentDeltaCacheController</code></li>
 <li>
-<p>Purpose: hold sorted updates for a segment between compactions; also backs reads</p>
+<p>Purpose: hold sorted updates for a segment between compactions; also backs
+    reads</p>
 </li>
 <li>
-<p>Segment data LRU: cache of heavyweight per‑segment objects</p>
+<p>Segment data LRU: cache of heavyweight per-segment objects</p>
 </li>
-<li>Classes: <code>segmentindex/SegmentDataCache</code> (LRU), values are <code>segment/SegmentData</code> (lazy container)</li>
+<li>Classes: <code>segmentindex/SegmentDataCache</code> (LRU), values are
+    <code>segment/SegmentData</code> (lazy container)</li>
 <li>
 <p>Contents: delta cache, Bloom filter, sparse index (scarce index)</p>
 </li>
 <li>
-<p>Bloom filter: per‑segment probabilistic set for negative checks</p>
+<p>Bloom filter: per-segment probabilistic set for negative checks</p>
 </li>
 <li>
 <p>Classes: <code>bloomfilter/*</code>; created by <code>segment/SegmentDataSupplier</code></p>
 </li>
 <li>
-<p>Sparse index ("scarce index"): per‑segment in‑memory snapshot of pointers</p>
+<p>Sparse index ("scarce index"): per-segment in-memory snapshot of pointers</p>
 </li>
 <li>
 <p>Classes: <code>scarceindex/ScarceIndex</code>, <code>ScarceIndexSnapshot</code></p>
 </li>
 <li>
-<p>Key→segment map: max‑key to SegmentId mapping</p>
+<p>Key→segment map: max-key to SegmentId mapping</p>
 </li>
-<li>Class: <code>segmentindex/mapping/KeyToSegmentMap</code> (TreeMap, persisted to <code>index.map</code>)</li>
+<li>Class: <code>segmentindex/routemap/SegmentRouteMap</code> (TreeMap, persisted to
+    <code>index.map</code>)</li>
 </ul>
 <h2 id="writetime-caches">Write‑Time Caches</h2>
-<h3 id="partition-overlay">Partition overlay</h3>
+<h3 id="segment-write-cache">Segment write cache</h3>
 <ul>
-<li>On <code>SegmentIndex.put/delete</code>, the write is stored in the routed partition's
-  active mutable layer.</li>
-<li>New writes replace prior values for the same key within the mutable layer;
-  deletes are represented as tombstones.</li>
-<li>Once the active layer crosses threshold, it rotates into immutable runs and
-  background drain publishes runs to stable segment storage.</li>
+<li>On <code>SegmentIndex.put/delete</code>, the write is routed to one segment.</li>
+<li><code>Segment.put(...)</code> stores the latest value in the segment write cache.</li>
+<li>Deletes are represented as tombstones.</li>
+<li>Flush persists frozen write-cache snapshots to delta cache files; compaction
+  later merges them into the main SST.</li>
 </ul>
 <p>Code:
-<code>segmentindex/core/SegmentIndexImpl#put</code>,
-<code>segmentindex/core/SegmentIndexImpl#delete</code>,
-<code>segmentindex/partition/RangePartition#write</code>,
-<code>segmentindex/core/SegmentIndexImpl#drainPartitions</code>.</p>
+<code>segmentindex/core/execution/PointOperationCoordinator</code>,
+<code>segmentindex/core/routing/MappedSegmentLeaseService</code>,
+<code>segment/SegmentWritePath</code>,
+<code>segment/SegmentMaintenanceService</code>.</p>
 <h3 id="segment-delta-cache">Segment delta cache</h3>
 <ul>
-<li>Flush writes become per‑segment delta files via <code>SegmentDeltaCacheWriter</code> (transactional temp file + rename).</li>
-<li>If the segment’s data is currently loaded in memory, the in‑memory delta cache is updated immediately to keep reads fresh.</li>
-<li>Compaction (<code>SegmentCompacter</code>) rewrites the segment, then <code>SegmentDeltaCacheController.clear()</code> evicts in‑memory delta cache and deletes delta files.</li>
-</ul>
-<p>Code: <code>segment/SegmentDeltaCacheWriter</code>, <code>segment/SegmentDeltaCacheController</code>, <code>segment/SegmentCompacter</code>, <code>segment/SegmentFullWriterTx#doCommit</code>.</p>
-<h2 id="readtime-caches">Read‑Time Caches</h2>
-<ul>
-<li>Top‑level overlay: <code>SegmentIndex.get(k)</code> checks routed partition overlay
-  first (active mutable then immutable runs).</li>
-<li>Per‑segment overlay: <code>SegmentDeltaCache</code> is consulted before the Bloom filter + sparse index path. If it returns a tombstone, the key is absent.</li>
-<li>Heavy objects (Bloom filter, scarce index, delta cache) are obtained via a provider backed by LRU:</li>
-<li><code>segmentindex/SegmentDataCache</code> holds <code>segment/SegmentData</code> instances with an LRU limit; eviction calls <code>close()</code> on the container.</li>
-<li>Providers: <code>segment/SegmentDataProvider</code> implementations<ul>
-<li><code>segment/SegmentDataProviderLazyLoaded</code> — lazy local holder</li>
-</ul>
-</li>
+<li>Flush writes become per-segment delta files via <code>SegmentDeltaCacheWriter</code>
+  (transactional temp file + rename).</li>
+<li>If the segment's data is currently loaded in memory, the in-memory delta
+  cache is updated immediately to keep reads fresh.</li>
+<li>Compaction (<code>SegmentCompacter</code>) rewrites the segment, then
+  <code>SegmentDeltaCacheController.clear()</code> evicts in-memory delta cache and
+  deletes delta files.</li>
 </ul>
 <p>Code:
-<code>segmentindex/core/SegmentIndexImpl#get</code>,
+<code>segment/SegmentDeltaCacheWriter</code>,
+<code>segment/SegmentDeltaCacheController</code>,
+<code>segment/SegmentCompacter</code>,
+<code>segment/SegmentFullWriterTx#doCommit</code>.</p>
+<h2 id="readtime-caches">Read‑Time Caches</h2>
+<ul>
+<li>Top-level routing: <code>SegmentIndex.get(k)</code> resolves the route and reads one
+  segment directly.</li>
+<li>Segment write cache: <code>Segment.get(k)</code> checks the active or frozen write cache
+  before the delta cache and on-disk structures.</li>
+<li>Segment delta cache is consulted before the Bloom filter + sparse index
+  path. If it returns a tombstone, the key is absent.</li>
+<li>Heavy objects (Bloom filter, scarce index, delta cache) are obtained via a
+  provider backed by LRU:</li>
+<li><code>segmentindex/SegmentDataCache</code> holds <code>segment/SegmentData</code> instances with
+    an LRU limit; eviction calls <code>close()</code> on the container</li>
+<li>providers: <code>segment/SegmentDataProvider</code> implementations</li>
+</ul>
+<p>Code:
+<code>segmentindex/core/execution/PointOperationCoordinator</code>,
+<code>segmentindex/core/routing/MappedSegmentLeaseService</code>,
 <code>segment/SegmentImpl#get</code>,
 <code>segment/SegmentSearcher</code>,
-<code>segmentindex/partition/PartitionRuntime</code>,
+<code>segment/SegmentCache</code>,
 <code>segmentindex/SegmentDataCache</code>.</p>
 <h2 id="eviction-and-lifecycle">Eviction and Lifecycle</h2>
 <ul>
-<li>Partition overlay: mutable layer rotates by key budget; immutable runs are
-  drained and retired after stable publish.</li>
-<li>SegmentDataCache (LRU of SegmentData): evicts least‑recently‑used segment; eviction closes Bloom filter and clears delta cache via <code>close()</code> hook.</li>
-<li>SegmentDeltaCache: cleared and files removed after compaction via <code>SegmentDeltaCacheController.clear()</code>; rebuilt on demand from delta files.</li>
-<li>KeyToSegmentMap: persisted via <code>optionalyFlush()</code> when updated; survives process restarts by reading <code>index.map</code>.</li>
+<li>SegmentDataCache (LRU of SegmentData): evicts least-recently-used segment;
+  eviction closes Bloom filter and clears delta cache via <code>close()</code> hook.</li>
+<li>SegmentDeltaCache: cleared and files removed after compaction via
+  <code>SegmentDeltaCacheController.clear()</code>; rebuilt on demand from delta files.</li>
+<li>Segment write cache: frozen snapshots are flushed to delta cache files and
+  then retired by segment maintenance.</li>
+<li>SegmentRouteMap: persisted via <code>flushIfDirty()</code> when updated; survives
+  process restarts by reading <code>index.map</code>.</li>
 </ul>
 <h2 id="configuration-knobs">Configuration Knobs</h2>
 <p>Index‑level:
-- <code>IndexConfiguration.getMaxNumberOfSegmentsInCache()</code> — LRU size for <code>SegmentDataCache</code></p>
+- <code>IndexConfiguration.segment().cachedSegmentLimit()</code> — LRU size for
+  <code>SegmentDataCache</code></p>
 <p>Per‑segment (via <code>SegmentConf</code>, derived from index configuration):
-- <code>maxNumberOfKeysInSegmentCache</code> — target size for a single delta cache
-- <code>maxNumberOfKeysInActivePartition</code> — active mutable overlay size before rotation
-- <code>maxNumberOfKeysInPartitionBuffer</code> — buffered keys allowed per partition before backpressure
-- <code>maxNumberOfKeysInIndexBuffer</code> — buffered keys allowed across the whole index overlay
-- <code>maxNumberOfKeysInSegmentChunk</code> — sparse index sampling cadence (affects read scan window)</p>
+- <code>IndexConfiguration.segment().cacheKeyLimit()</code> — target size for a single
+  delta cache
+- <code>IndexConfiguration.writePath().segmentWriteCacheKeyLimit()</code> — segment
+  write-cache threshold
+- <code>IndexConfiguration.writePath().maintenanceWriteCacheKeyLimit()</code> —
+  per-segment maintenance/write ceiling
+- <code>IndexConfiguration.writePath().indexBufferedWriteKeyLimit()</code> — index-wide
+  budget exposed in runtime tuning and metrics
+- <code>IndexConfiguration.segment().chunkKeyLimit()</code> — sparse index sampling cadence (affects read
+  scan window)</p>
 <p>Bloom filter sizing:
-- <code>bloomFilterIndexSizeInBytes</code> and <code>bloomFilterNumberOfHashFunctions</code>
-- <code>bloomFilterProbabilityOfFalsePositive</code></p>
+- <code>bloomFilter().indexSizeBytes()</code> and <code>bloomFilter().hashFunctions()</code>
+- <code>bloomFilter().falsePositiveProbability()</code></p>
 <p>I/O buffering:
-- <code>diskIoBufferSize</code> — affects memory used by readers/writers across files</p>
+- <code>io().diskBufferSizeBytes()</code> — affects memory used by readers and writers
+  across files</p>
 <p>See: <code>segmentindex/IndexConfiguration</code>, <code>segment/SegmentConf</code>.</p>
 <h2 id="warmup-strategies">Warm‑Up Strategies</h2>
 <ul>
-<li>Point warm‑up: issue representative <code>get(key)</code> calls; this loads the target segments’ Bloom filter and sparse index into the LRU.</li>
-<li>Segment warm‑up: iterate a small range to prime chunk readers and caches.</li>
-<li>Global warm‑up: a bounded <code>index.getStream(SegmentWindow.limit(N))</code> over initial segments to seed the LRU without scanning the full dataset.</li>
+<li>Point warm-up: issue representative <code>get(key)</code> calls; this loads the target
+  segments' Bloom filter and sparse index into the LRU.</li>
+<li>Segment warm-up: iterate a small range to prime chunk readers and caches.</li>
+<li>Global warm-up: a bounded <code>index.getStream(SegmentWindow.limit(N))</code> over
+  initial segments to seed the LRU without scanning the full dataset.</li>
 </ul>
 <h2 id="observability">Observability</h2>
 <ul>
-<li>Bloom filter effectiveness and false‑positive rate: <code>bloomfilter/BloomFilterStats</code>, accessible via <code>BloomFilter.getStatistics()</code>.</li>
-<li>SegmentIndex operation counters (coarse): <code>segmentindex/Stats</code> increments on get/put/delete.</li>
+<li>Bloom filter effectiveness and false-positive rate:
+  <code>bloomfilter/BloomFilterStats</code>, accessible via
+  <code>BloomFilter.getStatistics()</code>.</li>
+<li>SegmentIndex operation counters (coarse): <code>segmentindex/Stats</code> increments on
+  get, put, and delete.</li>
 </ul>
 <h2 id="tuning-guidance">Tuning Guidance</h2>
 <ul>
-<li>Throughput‑oriented writes: tune <code>maxNumberOfKeysInActivePartition</code>, <code>maxNumberOfKeysInPartitionBuffer</code>, and <code>maxNumberOfKeysInIndexBuffer</code>; monitor memory and drain latency.</li>
-<li>Read‑heavy workloads touching few segments: increase <code>maxNumberOfSegmentsInCache</code> so the working set of segments (Bloom + scarce + delta) stays resident.</li>
-<li>Space‑sensitive deployments: reduce Bloom filter size (may increase false positives and extra reads) or disable compression filters to trade CPU for I/O.</li>
-<li>Latency‑sensitive point lookups: ensure Bloom filter is sized adequately; keep segments’ working set in the LRU; consider slightly smaller <code>maxNumberOfKeysInSegmentChunk</code> to narrow the local scan window.</li>
+<li>Throughput-oriented writes: tune the segment write-cache and maintenance
+  limits (<code>writePath().segmentWriteCacheKeyLimit()</code>,
+  <code>writePath().maintenanceWriteCacheKeyLimit()</code>,
+  <code>writePath().indexBufferedWriteKeyLimit()</code>);
+  monitor memory and segment maintenance latency.</li>
+<li>Read-heavy workloads touching few segments: increase
+  <code>segment().cachedSegmentLimit()</code> so the working set of segments (Bloom +
+  scarce + delta) stays resident.</li>
+<li>Space-sensitive deployments: reduce Bloom filter size (may increase false
+  positives and extra reads) or disable compression filters to trade CPU for
+  I/O.</li>
+<li>Latency-sensitive point lookups: ensure Bloom filter is sized adequately;
+  keep segments' working set in the LRU; consider slightly smaller
+  <code>segment().chunkKeyLimit()</code> to narrow the local scan window.</li>
 </ul>
 <h2 id="code-pointers">Code Pointers</h2>
 <ul>
-<li>Partition overlay and drain: <code>src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java</code>,
-  <code>src/main/java/org/hestiastore/index/segmentindex/partition/*</code></li>
-<li>Segment caches and providers: <code>src/main/java/org/hestiastore/index/segmentindex/*SegmentData*</code>,
+<li>Routed direct writes:
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/execution/PointOperationCoordinator.java</code>,
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/routing/MappedSegmentLeaseService.java</code></li>
+<li>Routed direct reads:
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/execution/PointOperationCoordinator.java</code>,
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/routing/MappedSegmentLeaseService.java</code></li>
+<li>Segment caches and providers:
+  <code>src/main/java/org/hestiastore/index/segmentindex/*SegmentData*</code>,
   <code>src/main/java/org/hestiastore/index/segment/SegmentData*</code></li>
-<li>LRU cache: <code>src/main/java/org/hestiastore/index/cache/CacheLru.java</code>,
+<li>LRU cache:
+  <code>src/main/java/org/hestiastore/index/cache/CacheLru.java</code>,
   <code>src/main/java/org/hestiastore/index/cache/CacheLruImpl.java</code></li>
-<li>Key→segment map: <code>src/main/java/org/hestiastore/index/segmentindex/mapping/KeyToSegmentMap.java</code></li>
+<li>Key→segment map:
+  <code>src/main/java/org/hestiastore/index/segmentindex/routemap/SegmentRouteMap.java</code></li>
 </ul>
 <h2 id="related-glossary">Related Glossary</h2>
 <ul>
-<li><a href="../../glossary/#uniquecache">UniqueCache</a></li>
 <li><a href="../../glossary/#delta-cache">Delta Cache</a></li>
 <li><a href="../../glossary/#segmentdata-and-provider">SegmentData</a></li>
 <li><a href="../../glossary/#bloom-filter">Bloom Filter</a></li>

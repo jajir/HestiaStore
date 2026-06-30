@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/operations/tuning/">
       
       
-        <link rel="prev" href="../monitoring/">
+        <link rel="prev" href="../memory-estimate/">
       
       
         <link rel="next" href="../backup-restore/">
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1255,6 +1310,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1355,6 +1414,34 @@
     
   
     Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
   
 
     
@@ -1480,10 +1567,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sparse-index-granularity" class="md-nav__link">
+  <a href="#segment-chunk-granularity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sparse index granularity
+        Segment chunk granularity
       
     </span>
   </a>
@@ -1574,6 +1661,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1778,6 +1893,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/chain-of-filters/" class="md-nav__link">
         
   
@@ -1842,34 +1985,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -2107,6 +2222,8 @@
       
         
       
+        
+      
     
     
     
@@ -2206,6 +2323,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2373,7 +2518,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2744,7 +2889,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2771,15 +2920,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2787,43 +2935,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2844,14 +2984,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../architecture/package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2872,14 +3012,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2939,8 +3191,6 @@
       
         
       
-        
-      
     
     
     
@@ -2967,7 +3217,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2989,7 +3239,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -3004,14 +3254,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3040,34 +3346,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3144,34 +3422,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3180,34 +3430,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3468,10 +3690,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sparse-index-granularity" class="md-nav__link">
+  <a href="#segment-chunk-granularity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sparse index granularity
+        Segment chunk granularity
       
     </span>
   </a>
@@ -3618,7 +3840,7 @@ from a correct baseline, measure, then change one group of settings at a time.</
 </ol>
 <h2 id="high-impact-tuning-areas">High-impact tuning areas</h2>
 <h3 id="segment-sizing">Segment sizing</h3>
-<p><code>withMaxNumberOfKeysInSegment()</code> controls when segments split. Larger segments
+<p><code>segment(s -&gt; s.maxKeys(...))</code> controls when segments split. Larger segments
 reduce split frequency but can increase maintenance cost and read work within a
 segment.</p>
 <p>Use larger values when:</p>
@@ -3635,15 +3857,15 @@ segment.</p>
 </ul>
 <h3 id="cache-sizing">Cache sizing</h3>
 <ul>
-<li><code>withMaxNumberOfSegmentsInCache()</code> controls index-level segment residency</li>
-<li><code>withMaxNumberOfKeysInSegmentCache()</code> controls per-segment cached data</li>
+<li><code>segment(s -&gt; s.cachedSegmentLimit(...))</code> controls index-level segment residency</li>
+<li><code>segment(s -&gt; s.cacheKeyLimit(...))</code> controls per-segment cached data</li>
 </ul>
 <p>Increase cache budgets when cache misses or repeated disk reads dominate.
 Reduce them when memory pressure hurts the rest of the application more than the
 saved I/O helps.</p>
-<h3 id="sparse-index-granularity">Sparse index granularity</h3>
-<p><code>withMaxNumberOfKeysInSegmentIndexPage()</code> changes how coarse or fine the
-segment-level sparse index is.</p>
+<h3 id="segment-chunk-granularity">Segment chunk granularity</h3>
+<p><code>segment(s -&gt; s.chunkKeyLimit(...))</code> changes how much data is grouped into one
+segment chunk.</p>
 <ul>
 <li>Smaller pages improve seek precision but increase index overhead.</li>
 <li>Larger pages reduce index overhead but can increase scan work per lookup.</li>
@@ -3658,8 +3880,8 @@ segment-level sparse index is.</p>
 <h3 id="wal-overhead">WAL overhead</h3>
 <p>If WAL is enabled:</p>
 <ul>
-<li>monitor <code>getWalSyncAvgNanos()</code>, <code>getWalPendingSyncBytes()</code>, and
-  <code>getWalRetainedBytes()</code></li>
+<li>monitor <code>wal().syncAverageNanos()</code>, <code>wal().pendingSyncBytes()</code>, and
+  <code>wal().retainedBytes()</code></li>
 <li>compare <code>ASYNC</code>, <code>GROUP_SYNC</code>, and <code>SYNC</code> only against your durability target</li>
 <li>use the canary rollout before enabling WAL broadly</li>
 </ul>
@@ -3668,7 +3890,7 @@ segment-level sparse index is.</p>
 <ul>
 <li>read and write latency percentiles</li>
 <li>registry cache hit and miss counts</li>
-<li>partition buffer growth and throttle counts</li>
+<li>segment write-cache/backlog growth and throttle counts</li>
 <li>WAL sync failures, pending bytes, and checkpoint lag</li>
 <li>compaction frequency and recovery time after restart</li>
 </ul>

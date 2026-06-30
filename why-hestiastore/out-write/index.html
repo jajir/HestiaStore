@@ -27,7 +27,7 @@
     
     
       
-        <title>Write Throughput Results - HestiaStore</title>
+        <title>Write Results - HestiaStore</title>
       
     
     
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -83,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#hestiastore-benchmark-results" class="md-skip">
+        <a href="#benchmark-for-single-thread-write-operation" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Write Throughput Results
+              Write Results
             
           </span>
         </div>
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -669,6 +664,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -768,7 +767,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -786,7 +785,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -812,10 +811,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chart
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#percentile-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Percentile Chart
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#test-conditions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧪 Test Conditions
+        Test Conditions
       
     </span>
   </a>
@@ -823,10 +844,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#benchmark-results" class="md-nav__link">
+  <a href="#data-for-throughtput-chart" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🏁 Benchmark Results
+        Data for Throughtput Chart
       
     </span>
   </a>
@@ -834,173 +855,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#raw-json-files" class="md-nav__link">
+  <a href="#source-data-for-percentile-chart" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📄 Raw JSON Files
+        Source Data for Percentile Chart
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="📄 Raw JSON Files">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#results-write-chroniclemap-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-ChronicleMap-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-chroniclemapjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-ChronicleMap.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-h2-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-H2-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-h2json" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-H2.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-hestiastorebasic-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-HestiaStoreBasic-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-hestiastorebasicjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-HestiaStoreBasic.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-hestiastorecompress-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-HestiaStoreCompress-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-hestiastorecompressjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-HestiaStoreCompress.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-leveldb-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-LevelDB-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-leveldbjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-LevelDB.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-mapdb-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-MapDB-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-mapdbjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-MapDB.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-rocksdb-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-RocksDB-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-rocksdbjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-RocksDB.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1027,7 +888,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1499,6 +1416,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1618,6 +1539,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/tuning/" class="md-nav__link">
         
   
@@ -1654,6 +1603,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1858,6 +1835,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/chain-of-filters/" class="md-nav__link">
         
   
@@ -1922,34 +1927,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -2187,6 +2164,8 @@
       
         
       
+        
+      
     
     
     
@@ -2286,6 +2265,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2453,7 +2460,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2824,7 +2831,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2851,15 +2862,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2867,43 +2877,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2924,14 +2926,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../architecture/package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2952,14 +2954,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -3019,8 +3133,6 @@
       
         
       
-        
-      
     
     
     
@@ -3047,7 +3159,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -3069,7 +3181,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -3084,14 +3196,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3120,34 +3288,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3224,34 +3364,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3260,34 +3372,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3503,10 +3587,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chart
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#percentile-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Percentile Chart
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#test-conditions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧪 Test Conditions
+        Test Conditions
       
     </span>
   </a>
@@ -3514,10 +3620,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#benchmark-results" class="md-nav__link">
+  <a href="#data-for-throughtput-chart" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🏁 Benchmark Results
+        Data for Throughtput Chart
       
     </span>
   </a>
@@ -3525,173 +3631,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#raw-json-files" class="md-nav__link">
+  <a href="#source-data-for-percentile-chart" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📄 Raw JSON Files
+        Source Data for Percentile Chart
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="📄 Raw JSON Files">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#results-write-chroniclemap-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-ChronicleMap-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-chroniclemapjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-ChronicleMap.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-h2-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-H2-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-h2json" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-H2.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-hestiastorebasic-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-HestiaStoreBasic-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-hestiastorebasicjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-HestiaStoreBasic.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-hestiastorecompress-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-HestiaStoreCompress-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-hestiastorecompressjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-HestiaStoreCompress.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-leveldb-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-LevelDB-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-leveldbjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-LevelDB.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-mapdb-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-MapDB-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-mapdbjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-MapDB.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-rocksdb-myjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-RocksDB-my.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#results-write-rocksdbjson" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        results-write-RocksDB.json
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3781,25 +3727,32 @@
   
 
 
-<h1 id="hestiastore-benchmark-results">📊 HestiaStore Benchmark Results</h1>
-<h2 id="test-conditions">🧪 Test Conditions</h2>
+<h1 id="benchmark-for-single-thread-write-operation">Benchmark for 'Single-thread write' operation</h1>
+<h2 id="chart">Chart</h2>
+<p><img alt="Single-thread write benchmark chart" src="../../images/out-write.svg" /></p>
+<h2 id="percentile-chart">Percentile Chart</h2>
+<p>This chart shows the latency percentile curve for the benchmarked engines. The X axis runs from p50 to p99.99, and the Y axis uses a logarithmic latency scale so tail-latency differences are easier to compare.</p>
+<p><img alt="Single-thread write latency percentile chart" src="../../images/out-write-percentiles.svg" /></p>
+<h2 id="test-conditions">Test Conditions</h2>
 <ul>
-<li>Every benchmark in the plain-load suite runs inside the same controlled JVM environment with identical JVM flags and hardware resources. Runs start by wiping the working directory supplied through the <code>dir</code> system property, so each trial writes into a fresh, empty location.</li>
+<li>Every benchmark in the single-thread write suite runs inside the same controlled JVM environment with identical JVM flags and hardware resources. Runs start by wiping the working directory supplied through the <code>dir</code> system property, so each trial writes into a fresh, empty location.</li>
 <li>Execution stays single-threaded from warm-up through measurement. The test focuses purely on how quickly one writer can push key/value pairs into the storage engine without any coordination overhead from additional threads.</li>
 <li>Warm-up phases fill the database as aggressively as possible for several 20-second stretches. This stage is meant to trigger JIT compilation, populate caches, and let LevelDB settle into steady-state behaviour before any numbers are recorded.</li>
-<li>Measurement phases repeat the same single-threaded write loop. Throughput is observed over multiple 20-second intervals to capture stable, sustained insert performance rather than a burst.</li>
+<li>Each run exposes the same single-threaded write loop in two JMH modes: <code>SampleTime</code> to capture per-operation latency distribution and <code>Throughput</code> to capture sustained operations per second.</li>
 <li>Each write operation uses a deterministic pseudo-random long (seed <code>324432L</code>) to generate a unique hash string via <code>HashDataProvider</code>. The payload is the constant text <code>"opice skace po stromech"</code>, so variability comes exclusively from the changing keys.</li>
 <li>After measurements complete, the map is closed and the directory remains available for inspection. The log records how many keys were created, providing a quick sanity check that the run processed the expected volume.</li>
 <li>Test was performed at Mac mini 2024, 16 GB, macOS 15.6.1 (24G90).</li>
 </ul>
-<h2 id="benchmark-results">🏁 Benchmark Results</h2>
+<h2 id="data-for-throughtput-chart">Data for Throughtput Chart</h2>
 <table>
 <thead>
 <tr>
 <th style="text-align: left;">Engine</th>
 <th style="text-align: right;">Score [ops/s]</th>
-<th style="text-align: right;">ScoreError</th>
-<th style="text-align: right;">Confidence Interval [ops/s]</th>
+<th style="text-align: right;">Mean [us/op]</th>
+<th style="text-align: right;">p50 [us/op]</th>
+<th style="text-align: right;">p95 [us/op]</th>
+<th style="text-align: right;">p99 [us/op]</th>
 <th style="text-align: right;">Occupied space</th>
 <th style="text-align: right;">CPU Usage</th>
 </tr>
@@ -3807,555 +3760,171 @@
 <tbody>
 <tr>
 <td style="text-align: left;">ChronicleMap</td>
-<td style="text-align: right;">5 954</td>
-<td style="text-align: right;">1 765</td>
-<td style="text-align: right;">4 189 .. 7 719</td>
+<td style="text-align: right;">3 892</td>
+<td style="text-align: right;">207.376</td>
+<td style="text-align: right;">0.791</td>
+<td style="text-align: right;">529.408</td>
+<td style="text-align: right;">692.224</td>
 <td style="text-align: right;">20.54 GB</td>
-<td style="text-align: right;">7%</td>
+<td style="text-align: right;">14%</td>
 </tr>
 <tr>
 <td style="text-align: left;">H2</td>
-<td style="text-align: right;">13 458</td>
-<td style="text-align: right;">5 144</td>
-<td style="text-align: right;">8 314 .. 18 601</td>
+<td style="text-align: right;">36 074</td>
+<td style="text-align: right;">24.109</td>
+<td style="text-align: right;">13.408</td>
+<td style="text-align: right;">69.12</td>
+<td style="text-align: right;">158.464</td>
 <td style="text-align: right;">8 KB</td>
 <td style="text-align: right;">21%</td>
 </tr>
 <tr>
-<td style="text-align: left;">LevelDB</td>
-<td style="text-align: right;">45 263</td>
-<td style="text-align: right;">10 913</td>
-<td style="text-align: right;">34 350 .. 56 176</td>
-<td style="text-align: right;">1.4 GB</td>
-<td style="text-align: right;">17%</td>
+<td style="text-align: left;">HestiaStoreBasic</td>
+<td style="text-align: right;">162 206</td>
+<td style="text-align: right;">104.728</td>
+<td style="text-align: right;">0.667</td>
+<td style="text-align: right;">1.084</td>
+<td style="text-align: right;">3.208</td>
+<td style="text-align: right;">6.11 GB</td>
+<td style="text-align: right;">8%</td>
 </tr>
 <tr>
-<td style="text-align: left;">MapDB</td>
-<td style="text-align: right;">2 946</td>
-<td style="text-align: right;">326</td>
-<td style="text-align: right;">2 620 .. 3 272</td>
-<td style="text-align: right;">496 MB</td>
+<td style="text-align: left;">HestiaStoreCompress</td>
+<td style="text-align: right;">272 313</td>
+<td style="text-align: right;">3.243</td>
+<td style="text-align: right;">0.542</td>
+<td style="text-align: right;">0.958</td>
+<td style="text-align: right;">1.124</td>
+<td style="text-align: right;">4.35 GB</td>
 <td style="text-align: right;">14%</td>
 </tr>
 <tr>
+<td style="text-align: left;">LevelDB</td>
+<td style="text-align: right;">48 597</td>
+<td style="text-align: right;">25.587</td>
+<td style="text-align: right;">0.875</td>
+<td style="text-align: right;">2.124</td>
+<td style="text-align: right;">1 505.28</td>
+<td style="text-align: right;">1.56 GB</td>
+<td style="text-align: right;">13%</td>
+</tr>
+<tr>
+<td style="text-align: left;">MapDB</td>
+<td style="text-align: right;">11 098</td>
+<td style="text-align: right;">120.851</td>
+<td style="text-align: right;">22.816</td>
+<td style="text-align: right;">33.984</td>
+<td style="text-align: right;">104.448</td>
+<td style="text-align: right;">2.32 GB</td>
+<td style="text-align: right;">12%</td>
+</tr>
+<tr>
 <td style="text-align: left;">RocksDB</td>
-<td style="text-align: right;">305 712</td>
-<td style="text-align: right;">78 929</td>
-<td style="text-align: right;">226 783 .. 384 641</td>
-<td style="text-align: right;">7.74 GB</td>
-<td style="text-align: right;">6%</td>
+<td style="text-align: right;">210 418</td>
+<td style="text-align: right;">18.484</td>
+<td style="text-align: right;">2.08</td>
+<td style="text-align: right;">3.164</td>
+<td style="text-align: right;">5.16</td>
+<td style="text-align: right;">4.91 GB</td>
+<td style="text-align: right;">12%</td>
 </tr>
 </tbody>
 </table>
-<p>meaning of columns:</p>
-<ul>
-<li>Engine: name of the benchmarked engine (as derived from the JSON filename)</li>
-<li>Score [ops/s]: number of operations per second (higher is better)</li>
-<li>ScoreError: error margin of the score (lower is better). It's computed as <code>z * (stdev / sqrt(n)) where</code></li>
-<li><code>z</code> is the z-score for the desired confidence level (1.96 for 95%)</li>
-<li><code>stdev</code> is the standard deviation of the measurements</li>
-<li><code>n</code> is the number of measurements</li>
-<li>Confidence Interval: 95% confidence interval of the score (lower and upper bound). This means that the true mean is likely between this interval of ops/sec. Negative values are possible if the error margin is larger than the score itself.</li>
-<li>Occupied space : amount of disk space occupied by the engine's data structures (lower is better). It is measured after flushing last data to disk.</li>
-<li>CPU Usage: average CPU usage during the benchmark (lower is better). Please note, that it includes all system processes, not only the benchmarked engine.</li>
-</ul>
-<h2 id="raw-json-files">📄 Raw JSON Files</h2>
-<h3 id="results-write-chroniclemap-myjson">results-write-ChronicleMap-my.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">22049472512</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&quot;fileCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">27947104</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">&quot;cpuBefore&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">603274000</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">&quot;cpuAfter&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1097938000</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">&quot;startTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">261108533575583</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">&quot;endTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">261814614016416</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">&quot;cpuUsage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.07005774008077877</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="results-write-chroniclemapjson">results-write-ChronicleMap.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">[</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="nt">&quot;benchmark&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;org.hestiastore.index.benchmark.plainload.TestChronicleMap.write&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="nt">&quot;mode&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thrpt&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="nt">&quot;threads&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="nt">&quot;forks&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="nt">&quot;jvm&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="nt">&quot;jvmArgs&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">            </span><span class="s2">&quot;-Xmx10000m&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">            </span><span class="s2">&quot;--add-opens=java.base/java.lang=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">            </span><span class="s2">&quot;--add-opens=java.base/java.lang.reflect=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">            </span><span class="s2">&quot;--add-opens=java.base/java.io=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">            </span><span class="s2">&quot;--add-opens=java.base/java.nio=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">            </span><span class="s2">&quot;--add-opens=java.base/sun.nio.ch=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">            </span><span class="s2">&quot;--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">            </span><span class="s2">&quot;-Ddir=/Volumes/ponrava/test-index&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">            </span><span class="s2">&quot;-Dengine=ChronicleMap&quot;</span>
-<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">        </span><span class="p">],</span>
-<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">        </span><span class="nt">&quot;jdkVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">        </span><span class="nt">&quot;vmName&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenJDK 64-Bit Server VM&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">        </span><span class="nt">&quot;vmVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">        </span><span class="nt">&quot;warmupIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
-<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">        </span><span class="nt">&quot;warmupTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="w">        </span><span class="nt">&quot;warmupBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">        </span><span class="nt">&quot;measurementIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">        </span><span class="nt">&quot;measurementTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">        </span><span class="nt">&quot;measurementBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">        </span><span class="nt">&quot;primaryMetric&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="w">            </span><span class="nt">&quot;score&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">5954.200373600311</span><span class="p">,</span>
-<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">            </span><span class="nt">&quot;scoreError&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">1764.90521298729</span><span class="p">,</span>
-<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">            </span><span class="nt">&quot;scoreConfidence&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">                </span><span class="mf">4189.295160613021</span><span class="p">,</span>
-<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="w">                </span><span class="mf">7719.105586587601</span>
-<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="w">            </span><span class="p">],</span>
-<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="w">            </span><span class="nt">&quot;scorePercentiles&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="w">                </span><span class="nt">&quot;0.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">3329.640674916557</span><span class="p">,</span>
-<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="w">                </span><span class="nt">&quot;50.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">5243.630014833653</span><span class="p">,</span>
-<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a><span class="w">                </span><span class="nt">&quot;90.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">10595.405308112338</span><span class="p">,</span>
-<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="w">                </span><span class="nt">&quot;95.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">12253.872048619854</span><span class="p">,</span>
-<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="w">                </span><span class="nt">&quot;99.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">12744.707905617659</span><span class="p">,</span>
-<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a><span class="w">                </span><span class="nt">&quot;99.9&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">12744.707905617659</span><span class="p">,</span>
-<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="w">                </span><span class="nt">&quot;99.99&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">12744.707905617659</span><span class="p">,</span>
-<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="w">                </span><span class="nt">&quot;99.999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">12744.707905617659</span><span class="p">,</span>
-<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a><span class="w">                </span><span class="nt">&quot;99.9999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">12744.707905617659</span><span class="p">,</span>
-<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a><span class="w">                </span><span class="nt">&quot;100.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">12744.707905617659</span>
-<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a><span class="w">            </span><span class="p">},</span>
-<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a><span class="w">            </span><span class="nt">&quot;scoreUnit&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ops/s&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a><span class="w">            </span><span class="nt">&quot;rawData&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a><span class="w">                </span><span class="p">[</span>
-<a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a><span class="w">                    </span><span class="mf">11108.58838229165</span><span class="p">,</span>
-<a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a><span class="w">                    </span><span class="mf">12744.707905617659</span><span class="p">,</span>
-<a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a><span class="w">                    </span><span class="mf">10253.283258659461</span><span class="p">,</span>
-<a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a><span class="w">                    </span><span class="mf">7641.776148398347</span><span class="p">,</span>
-<a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a><span class="w">                    </span><span class="mf">7065.625130993228</span><span class="p">,</span>
-<a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a><span class="w">                    </span><span class="mf">6245.862123216896</span><span class="p">,</span>
-<a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a><span class="w">                    </span><span class="mf">5726.337056869982</span><span class="p">,</span>
-<a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a><span class="w">                    </span><span class="mf">5546.963290190697</span><span class="p">,</span>
-<a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a><span class="w">                    </span><span class="mf">5312.460633150494</span><span class="p">,</span>
-<a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a><span class="w">                    </span><span class="mf">5243.630014833653</span><span class="p">,</span>
-<a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a><span class="w">                    </span><span class="mf">5127.273627636177</span><span class="p">,</span>
-<a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a><span class="w">                    </span><span class="mf">4443.333421250085</span><span class="p">,</span>
-<a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a><span class="w">                    </span><span class="mf">4570.51338982323</span><span class="p">,</span>
-<a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a><span class="w">                    </span><span class="mf">4905.02077335985</span><span class="p">,</span>
-<a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a><span class="w">                    </span><span class="mf">5196.530108141268</span><span class="p">,</span>
-<a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a><span class="w">                    </span><span class="mf">3329.640674916557</span><span class="p">,</span>
-<a id="__codelineno-1-76" name="__codelineno-1-76" href="#__codelineno-1-76"></a><span class="w">                    </span><span class="mf">3829.198465291546</span><span class="p">,</span>
-<a id="__codelineno-1-77" name="__codelineno-1-77" href="#__codelineno-1-77"></a><span class="w">                    </span><span class="mf">7600.50765102385</span><span class="p">,</span>
-<a id="__codelineno-1-78" name="__codelineno-1-78" href="#__codelineno-1-78"></a><span class="w">                    </span><span class="mf">6131.287347339458</span><span class="p">,</span>
-<a id="__codelineno-1-79" name="__codelineno-1-79" href="#__codelineno-1-79"></a><span class="w">                    </span><span class="mf">5543.996756565399</span><span class="p">,</span>
-<a id="__codelineno-1-80" name="__codelineno-1-80" href="#__codelineno-1-80"></a><span class="w">                    </span><span class="mf">4995.077322180827</span><span class="p">,</span>
-<a id="__codelineno-1-81" name="__codelineno-1-81" href="#__codelineno-1-81"></a><span class="w">                    </span><span class="mf">4772.012372724426</span><span class="p">,</span>
-<a id="__codelineno-1-82" name="__codelineno-1-82" href="#__codelineno-1-82"></a><span class="w">                    </span><span class="mf">3916.673020709464</span><span class="p">,</span>
-<a id="__codelineno-1-83" name="__codelineno-1-83" href="#__codelineno-1-83"></a><span class="w">                    </span><span class="mf">3514.748215845972</span><span class="p">,</span>
-<a id="__codelineno-1-84" name="__codelineno-1-84" href="#__codelineno-1-84"></a><span class="w">                    </span><span class="mf">4089.96224897762</span>
-<a id="__codelineno-1-85" name="__codelineno-1-85" href="#__codelineno-1-85"></a><span class="w">                </span><span class="p">]</span>
-<a id="__codelineno-1-86" name="__codelineno-1-86" href="#__codelineno-1-86"></a><span class="w">            </span><span class="p">]</span>
-<a id="__codelineno-1-87" name="__codelineno-1-87" href="#__codelineno-1-87"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-1-88" name="__codelineno-1-88" href="#__codelineno-1-88"></a><span class="w">        </span><span class="nt">&quot;secondaryMetrics&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-89" name="__codelineno-1-89" href="#__codelineno-1-89"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-1-90" name="__codelineno-1-90" href="#__codelineno-1-90"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-91" name="__codelineno-1-91" href="#__codelineno-1-91"></a><span class="p">]</span>
-</code></pre></div>
-<h3 id="results-write-h2-myjson">results-write-H2-my.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">8192</span><span class="p">,</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">27133320</span><span class="p">,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1035200000</span><span class="p">,</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2479448000</span><span class="p">,</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">258786636432958</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">259488720650875</span><span class="p">,</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.2057086547657931</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="results-write-h2json">results-write-H2.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">[</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="nt">&quot;benchmark&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;org.hestiastore.index.benchmark.plainload.TestH2.write&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="nt">&quot;mode&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thrpt&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="nt">&quot;threads&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="nt">&quot;forks&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="nt">&quot;jvm&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="nt">&quot;jvmArgs&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">            </span><span class="s2">&quot;-Xmx10000m&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">            </span><span class="s2">&quot;-Ddir=/Volumes/ponrava/test-index&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">            </span><span class="s2">&quot;-Dengine=H2&quot;</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">        </span><span class="p">],</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">        </span><span class="nt">&quot;jdkVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">        </span><span class="nt">&quot;vmName&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenJDK 64-Bit Server VM&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">        </span><span class="nt">&quot;vmVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">        </span><span class="nt">&quot;warmupIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">        </span><span class="nt">&quot;warmupTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">        </span><span class="nt">&quot;warmupBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">        </span><span class="nt">&quot;measurementIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">        </span><span class="nt">&quot;measurementTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">        </span><span class="nt">&quot;measurementBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">        </span><span class="nt">&quot;primaryMetric&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">            </span><span class="nt">&quot;score&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">13457.521378452284</span><span class="p">,</span>
-<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">            </span><span class="nt">&quot;scoreError&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">5143.803121401257</span><span class="p">,</span>
-<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">            </span><span class="nt">&quot;scoreConfidence&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">                </span><span class="mf">8313.718257051027</span><span class="p">,</span>
-<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">                </span><span class="mf">18601.32449985354</span>
-<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="w">            </span><span class="p">],</span>
-<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">            </span><span class="nt">&quot;scorePercentiles&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">                </span><span class="nt">&quot;0.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">4492.791786534924</span><span class="p">,</span>
-<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">                </span><span class="nt">&quot;50.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">13209.02178518997</span><span class="p">,</span>
-<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">                </span><span class="nt">&quot;90.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">21853.77922605105</span><span class="p">,</span>
-<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">                </span><span class="nt">&quot;95.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">29631.650534341064</span><span class="p">,</span>
-<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">                </span><span class="nt">&quot;99.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">32749.29402436372</span><span class="p">,</span>
-<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="w">                </span><span class="nt">&quot;99.9&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">32749.29402436372</span><span class="p">,</span>
-<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="w">                </span><span class="nt">&quot;99.99&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">32749.29402436372</span><span class="p">,</span>
-<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="w">                </span><span class="nt">&quot;99.999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">32749.29402436372</span><span class="p">,</span>
-<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="w">                </span><span class="nt">&quot;99.9999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">32749.29402436372</span><span class="p">,</span>
-<a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="w">                </span><span class="nt">&quot;100.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">32749.29402436372</span>
-<a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a><span class="w">            </span><span class="p">},</span>
-<a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a><span class="w">            </span><span class="nt">&quot;scoreUnit&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ops/s&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a><span class="w">            </span><span class="nt">&quot;rawData&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a><span class="w">                </span><span class="p">[</span>
-<a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a><span class="w">                    </span><span class="mf">12623.654285480005</span><span class="p">,</span>
-<a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a><span class="w">                    </span><span class="mf">11839.343622462286</span><span class="p">,</span>
-<a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a><span class="w">                    </span><span class="mf">14436.728477425342</span><span class="p">,</span>
-<a id="__codelineno-3-48" name="__codelineno-3-48" href="#__codelineno-3-48"></a><span class="w">                    </span><span class="mf">13633.043439408131</span><span class="p">,</span>
-<a id="__codelineno-3-49" name="__codelineno-3-49" href="#__codelineno-3-49"></a><span class="w">                    </span><span class="mf">16157.467112454447</span><span class="p">,</span>
-<a id="__codelineno-3-50" name="__codelineno-3-50" href="#__codelineno-3-50"></a><span class="w">                    </span><span class="mf">6412.401044547184</span><span class="p">,</span>
-<a id="__codelineno-3-51" name="__codelineno-3-51" href="#__codelineno-3-51"></a><span class="w">                    </span><span class="mf">6265.687494095522</span><span class="p">,</span>
-<a id="__codelineno-3-52" name="__codelineno-3-52" href="#__codelineno-3-52"></a><span class="w">                    </span><span class="mf">18612.922946912684</span><span class="p">,</span>
-<a id="__codelineno-3-53" name="__codelineno-3-53" href="#__codelineno-3-53"></a><span class="w">                    </span><span class="mf">16219.969068239285</span><span class="p">,</span>
-<a id="__codelineno-3-54" name="__codelineno-3-54" href="#__codelineno-3-54"></a><span class="w">                    </span><span class="mf">12831.893972457165</span><span class="p">,</span>
-<a id="__codelineno-3-55" name="__codelineno-3-55" href="#__codelineno-3-55"></a><span class="w">                    </span><span class="mf">18859.80952879762</span><span class="p">,</span>
-<a id="__codelineno-3-56" name="__codelineno-3-56" href="#__codelineno-3-56"></a><span class="w">                    </span><span class="mf">4813.230127324451</span><span class="p">,</span>
-<a id="__codelineno-3-57" name="__codelineno-3-57" href="#__codelineno-3-57"></a><span class="w">                    </span><span class="mf">13209.02178518997</span><span class="p">,</span>
-<a id="__codelineno-3-58" name="__codelineno-3-58" href="#__codelineno-3-58"></a><span class="w">                    </span><span class="mf">22357.14905762156</span><span class="p">,</span>
-<a id="__codelineno-3-59" name="__codelineno-3-59" href="#__codelineno-3-59"></a><span class="w">                    </span><span class="mf">18073.648245485118</span><span class="p">,</span>
-<a id="__codelineno-3-60" name="__codelineno-3-60" href="#__codelineno-3-60"></a><span class="w">                    </span><span class="mf">8538.249998991463</span><span class="p">,</span>
-<a id="__codelineno-3-61" name="__codelineno-3-61" href="#__codelineno-3-61"></a><span class="w">                    </span><span class="mf">32749.29402436372</span><span class="p">,</span>
-<a id="__codelineno-3-62" name="__codelineno-3-62" href="#__codelineno-3-62"></a><span class="w">                    </span><span class="mf">18767.680908037615</span><span class="p">,</span>
-<a id="__codelineno-3-63" name="__codelineno-3-63" href="#__codelineno-3-63"></a><span class="w">                    </span><span class="mf">21518.199338337377</span><span class="p">,</span>
-<a id="__codelineno-3-64" name="__codelineno-3-64" href="#__codelineno-3-64"></a><span class="w">                    </span><span class="mf">8642.521511716302</span><span class="p">,</span>
-<a id="__codelineno-3-65" name="__codelineno-3-65" href="#__codelineno-3-65"></a><span class="w">                    </span><span class="mf">17435.121051959966</span><span class="p">,</span>
-<a id="__codelineno-3-66" name="__codelineno-3-66" href="#__codelineno-3-66"></a><span class="w">                    </span><span class="mf">7154.46408403396</span><span class="p">,</span>
-<a id="__codelineno-3-67" name="__codelineno-3-67" href="#__codelineno-3-67"></a><span class="w">                    </span><span class="mf">4670.397715531453</span><span class="p">,</span>
-<a id="__codelineno-3-68" name="__codelineno-3-68" href="#__codelineno-3-68"></a><span class="w">                    </span><span class="mf">4492.791786534924</span><span class="p">,</span>
-<a id="__codelineno-3-69" name="__codelineno-3-69" href="#__codelineno-3-69"></a><span class="w">                    </span><span class="mf">6123.3438338994565</span>
-<a id="__codelineno-3-70" name="__codelineno-3-70" href="#__codelineno-3-70"></a><span class="w">                </span><span class="p">]</span>
-<a id="__codelineno-3-71" name="__codelineno-3-71" href="#__codelineno-3-71"></a><span class="w">            </span><span class="p">]</span>
-<a id="__codelineno-3-72" name="__codelineno-3-72" href="#__codelineno-3-72"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-3-73" name="__codelineno-3-73" href="#__codelineno-3-73"></a><span class="w">        </span><span class="nt">&quot;secondaryMetrics&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-74" name="__codelineno-3-74" href="#__codelineno-3-74"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-3-75" name="__codelineno-3-75" href="#__codelineno-3-75"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-3-76" name="__codelineno-3-76" href="#__codelineno-3-76"></a><span class="p">]</span>
-</code></pre></div>
-<h3 id="results-write-hestiastorebasic-myjson">results-write-HestiaStoreBasic-my.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">3889698398</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">38</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">28606416</span><span class="p">,</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">552320000</span><span class="p">,</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">729480000</span><span class="p">,</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1401225500145958</span><span class="p">,</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1401225903588125</span><span class="p">,</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">43.91211789222816</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="results-write-hestiastorebasicjson">results-write-HestiaStoreBasic.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">[</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="p">]</span>
-</code></pre></div>
-<h3 id="results-write-hestiastorecompress-myjson">results-write-HestiaStoreCompress-my.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">3889698398</span><span class="p">,</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">38</span><span class="p">,</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">28689648</span><span class="p">,</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">529915000</span><span class="p">,</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">697688000</span><span class="p">,</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1401226232499375</span><span class="p">,</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1401226604772458</span><span class="p">,</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">45.067185263029074</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="results-write-hestiastorecompressjson">results-write-HestiaStoreCompress.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">[</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p">]</span>
-</code></pre></div>
-<h3 id="results-write-leveldb-myjson">results-write-LevelDB-my.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1508330468</span><span class="p">,</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">&quot;fileCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">754</span><span class="p">,</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">27954256</span><span class="p">,</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">&quot;cpuBefore&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1001444000</span><span class="p">,</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">&quot;cpuAfter&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2178345000</span><span class="p">,</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">&quot;startTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">260193098308000</span><span class="p">,</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="nt">&quot;endTime&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">260895356813250</span><span class="p">,</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">    </span><span class="nt">&quot;cpuUsage&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1675880023099229</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="results-write-leveldbjson">results-write-LevelDB.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">[</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">        </span><span class="nt">&quot;benchmark&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;org.hestiastore.index.benchmark.plainload.TestLevelDB.write&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">        </span><span class="nt">&quot;mode&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thrpt&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="nt">&quot;threads&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span><span class="nt">&quot;forks&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">        </span><span class="nt">&quot;jvm&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">        </span><span class="nt">&quot;jvmArgs&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">            </span><span class="s2">&quot;-Xmx10000m&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">            </span><span class="s2">&quot;-Ddir=/Volumes/ponrava/test-index&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">            </span><span class="s2">&quot;-Dengine=LevelDB&quot;</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">        </span><span class="p">],</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">        </span><span class="nt">&quot;jdkVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">        </span><span class="nt">&quot;vmName&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenJDK 64-Bit Server VM&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">        </span><span class="nt">&quot;vmVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">        </span><span class="nt">&quot;warmupIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
-<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="w">        </span><span class="nt">&quot;warmupTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="w">        </span><span class="nt">&quot;warmupBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="w">        </span><span class="nt">&quot;measurementIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="w">        </span><span class="nt">&quot;measurementTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="w">        </span><span class="nt">&quot;measurementBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="w">        </span><span class="nt">&quot;primaryMetric&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a><span class="w">            </span><span class="nt">&quot;score&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">45262.57575204393</span><span class="p">,</span>
-<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a><span class="w">            </span><span class="nt">&quot;scoreError&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">10913.06838787145</span><span class="p">,</span>
-<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a><span class="w">            </span><span class="nt">&quot;scoreConfidence&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a><span class="w">                </span><span class="mf">34349.50736417248</span><span class="p">,</span>
-<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a><span class="w">                </span><span class="mf">56175.64413991538</span>
-<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a><span class="w">            </span><span class="p">],</span>
-<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a><span class="w">            </span><span class="nt">&quot;scorePercentiles&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a><span class="w">                </span><span class="nt">&quot;0.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">29965.68796327744</span><span class="p">,</span>
-<a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a><span class="w">                </span><span class="nt">&quot;50.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">44015.87124729542</span><span class="p">,</span>
-<a id="__codelineno-9-33" name="__codelineno-9-33" href="#__codelineno-9-33"></a><span class="w">                </span><span class="nt">&quot;90.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">59895.29706634639</span><span class="p">,</span>
-<a id="__codelineno-9-34" name="__codelineno-9-34" href="#__codelineno-9-34"></a><span class="w">                </span><span class="nt">&quot;95.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">73862.46532443774</span><span class="p">,</span>
-<a id="__codelineno-9-35" name="__codelineno-9-35" href="#__codelineno-9-35"></a><span class="w">                </span><span class="nt">&quot;99.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">79758.10180257274</span><span class="p">,</span>
-<a id="__codelineno-9-36" name="__codelineno-9-36" href="#__codelineno-9-36"></a><span class="w">                </span><span class="nt">&quot;99.9&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">79758.10180257274</span><span class="p">,</span>
-<a id="__codelineno-9-37" name="__codelineno-9-37" href="#__codelineno-9-37"></a><span class="w">                </span><span class="nt">&quot;99.99&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">79758.10180257274</span><span class="p">,</span>
-<a id="__codelineno-9-38" name="__codelineno-9-38" href="#__codelineno-9-38"></a><span class="w">                </span><span class="nt">&quot;99.999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">79758.10180257274</span><span class="p">,</span>
-<a id="__codelineno-9-39" name="__codelineno-9-39" href="#__codelineno-9-39"></a><span class="w">                </span><span class="nt">&quot;99.9999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">79758.10180257274</span><span class="p">,</span>
-<a id="__codelineno-9-40" name="__codelineno-9-40" href="#__codelineno-9-40"></a><span class="w">                </span><span class="nt">&quot;100.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">79758.10180257274</span>
-<a id="__codelineno-9-41" name="__codelineno-9-41" href="#__codelineno-9-41"></a><span class="w">            </span><span class="p">},</span>
-<a id="__codelineno-9-42" name="__codelineno-9-42" href="#__codelineno-9-42"></a><span class="w">            </span><span class="nt">&quot;scoreUnit&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ops/s&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-43" name="__codelineno-9-43" href="#__codelineno-9-43"></a><span class="w">            </span><span class="nt">&quot;rawData&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-9-44" name="__codelineno-9-44" href="#__codelineno-9-44"></a><span class="w">                </span><span class="p">[</span>
-<a id="__codelineno-9-45" name="__codelineno-9-45" href="#__codelineno-9-45"></a><span class="w">                    </span><span class="mf">79758.10180257274</span><span class="p">,</span>
-<a id="__codelineno-9-46" name="__codelineno-9-46" href="#__codelineno-9-46"></a><span class="w">                    </span><span class="mf">39978.85200469439</span><span class="p">,</span>
-<a id="__codelineno-9-47" name="__codelineno-9-47" href="#__codelineno-9-47"></a><span class="w">                    </span><span class="mf">59754.841638050995</span><span class="p">,</span>
-<a id="__codelineno-9-48" name="__codelineno-9-48" href="#__codelineno-9-48"></a><span class="w">                    </span><span class="mf">30051.495747236888</span><span class="p">,</span>
-<a id="__codelineno-9-49" name="__codelineno-9-49" href="#__codelineno-9-49"></a><span class="w">                    </span><span class="mf">59710.167696545956</span><span class="p">,</span>
-<a id="__codelineno-9-50" name="__codelineno-9-50" href="#__codelineno-9-50"></a><span class="w">                    </span><span class="mf">30759.864807986865</span><span class="p">,</span>
-<a id="__codelineno-9-51" name="__codelineno-9-51" href="#__codelineno-9-51"></a><span class="w">                    </span><span class="mf">59261.071048612</span><span class="p">,</span>
-<a id="__codelineno-9-52" name="__codelineno-9-52" href="#__codelineno-9-52"></a><span class="w">                    </span><span class="mf">30156.92824167015</span><span class="p">,</span>
-<a id="__codelineno-9-53" name="__codelineno-9-53" href="#__codelineno-9-53"></a><span class="w">                    </span><span class="mf">45828.62436018362</span><span class="p">,</span>
-<a id="__codelineno-9-54" name="__codelineno-9-54" href="#__codelineno-9-54"></a><span class="w">                    </span><span class="mf">44015.87124729542</span><span class="p">,</span>
-<a id="__codelineno-9-55" name="__codelineno-9-55" href="#__codelineno-9-55"></a><span class="w">                    </span><span class="mf">30051.946454605757</span><span class="p">,</span>
-<a id="__codelineno-9-56" name="__codelineno-9-56" href="#__codelineno-9-56"></a><span class="w">                    </span><span class="mf">42438.257643466684</span><span class="p">,</span>
-<a id="__codelineno-9-57" name="__codelineno-9-57" href="#__codelineno-9-57"></a><span class="w">                    </span><span class="mf">47017.87854596809</span><span class="p">,</span>
-<a id="__codelineno-9-58" name="__codelineno-9-58" href="#__codelineno-9-58"></a><span class="w">                    </span><span class="mf">30308.896587398805</span><span class="p">,</span>
-<a id="__codelineno-9-59" name="__codelineno-9-59" href="#__codelineno-9-59"></a><span class="w">                    </span><span class="mf">59599.16125957037</span><span class="p">,</span>
-<a id="__codelineno-9-60" name="__codelineno-9-60" href="#__codelineno-9-60"></a><span class="w">                    </span><span class="mf">29965.68796327744</span><span class="p">,</span>
-<a id="__codelineno-9-61" name="__codelineno-9-61" href="#__codelineno-9-61"></a><span class="w">                    </span><span class="mf">30159.1527061617</span><span class="p">,</span>
-<a id="__codelineno-9-62" name="__codelineno-9-62" href="#__codelineno-9-62"></a><span class="w">                    </span><span class="mf">59564.58477647708</span><span class="p">,</span>
-<a id="__codelineno-9-63" name="__codelineno-9-63" href="#__codelineno-9-63"></a><span class="w">                    </span><span class="mf">30361.845682382078</span><span class="p">,</span>
-<a id="__codelineno-9-64" name="__codelineno-9-64" href="#__codelineno-9-64"></a><span class="w">                    </span><span class="mf">30347.55964289471</span><span class="p">,</span>
-<a id="__codelineno-9-65" name="__codelineno-9-65" href="#__codelineno-9-65"></a><span class="w">                    </span><span class="mf">59253.07772711731</span><span class="p">,</span>
-<a id="__codelineno-9-66" name="__codelineno-9-66" href="#__codelineno-9-66"></a><span class="w">                    </span><span class="mf">32183.0951788089</span><span class="p">,</span>
-<a id="__codelineno-9-67" name="__codelineno-9-67" href="#__codelineno-9-67"></a><span class="w">                    </span><span class="mf">57862.32461600187</span><span class="p">,</span>
-<a id="__codelineno-9-68" name="__codelineno-9-68" href="#__codelineno-9-68"></a><span class="w">                    </span><span class="mf">60105.98020878948</span><span class="p">,</span>
-<a id="__codelineno-9-69" name="__codelineno-9-69" href="#__codelineno-9-69"></a><span class="w">                    </span><span class="mf">53069.126213328724</span>
-<a id="__codelineno-9-70" name="__codelineno-9-70" href="#__codelineno-9-70"></a><span class="w">                </span><span class="p">]</span>
-<a id="__codelineno-9-71" name="__codelineno-9-71" href="#__codelineno-9-71"></a><span class="w">            </span><span class="p">]</span>
-<a id="__codelineno-9-72" name="__codelineno-9-72" href="#__codelineno-9-72"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-9-73" name="__codelineno-9-73" href="#__codelineno-9-73"></a><span class="w">        </span><span class="nt">&quot;secondaryMetrics&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-9-74" name="__codelineno-9-74" href="#__codelineno-9-74"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-9-75" name="__codelineno-9-75" href="#__codelineno-9-75"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-9-76" name="__codelineno-9-76" href="#__codelineno-9-76"></a><span class="p">]</span>
-</code></pre></div>
-<h3 id="results-write-mapdb-myjson">results-write-MapDB-my.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">520093696</span><span class="p">,</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">27726856</span><span class="p">,</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1110727000</span><span class="p">,</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2088963000</span><span class="p">,</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">259489732026041</span><span class="p">,</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">260192350201750</span><span class="p">,</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.13922725511802747</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="results-write-mapdbjson">results-write-MapDB.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="p">[</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">        </span><span class="nt">&quot;benchmark&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;org.hestiastore.index.benchmark.plainload.TestMapDB.write&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">        </span><span class="nt">&quot;mode&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thrpt&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">        </span><span class="nt">&quot;threads&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">        </span><span class="nt">&quot;forks&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">        </span><span class="nt">&quot;jvm&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">        </span><span class="nt">&quot;jvmArgs&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">            </span><span class="s2">&quot;-Xmx10000m&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">            </span><span class="s2">&quot;-Ddir=/Volumes/ponrava/test-index&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">            </span><span class="s2">&quot;-Dengine=MapDB&quot;</span>
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">        </span><span class="p">],</span>
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">        </span><span class="nt">&quot;jdkVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="w">        </span><span class="nt">&quot;vmName&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenJDK 64-Bit Server VM&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="w">        </span><span class="nt">&quot;vmVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="w">        </span><span class="nt">&quot;warmupIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="w">        </span><span class="nt">&quot;warmupTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="w">        </span><span class="nt">&quot;warmupBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="w">        </span><span class="nt">&quot;measurementIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a><span class="w">        </span><span class="nt">&quot;measurementTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="w">        </span><span class="nt">&quot;measurementBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a><span class="w">        </span><span class="nt">&quot;primaryMetric&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a><span class="w">            </span><span class="nt">&quot;score&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">2945.9818242698652</span><span class="p">,</span>
-<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a><span class="w">            </span><span class="nt">&quot;scoreError&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">325.59501594188</span><span class="p">,</span>
-<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a><span class="w">            </span><span class="nt">&quot;scoreConfidence&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a><span class="w">                </span><span class="mf">2620.3868083279854</span><span class="p">,</span>
-<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a><span class="w">                </span><span class="mf">3271.576840211745</span>
-<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a><span class="w">            </span><span class="p">],</span>
-<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a><span class="w">            </span><span class="nt">&quot;scorePercentiles&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a><span class="w">                </span><span class="nt">&quot;0.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">2272.884921159144</span><span class="p">,</span>
-<a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a><span class="w">                </span><span class="nt">&quot;50.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">2903.932835903283</span><span class="p">,</span>
-<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a><span class="w">                </span><span class="nt">&quot;90.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">3477.3894675973625</span><span class="p">,</span>
-<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a><span class="w">                </span><span class="nt">&quot;95.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">3980.5774803791674</span><span class="p">,</span>
-<a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a><span class="w">                </span><span class="nt">&quot;99.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">4191.114455891415</span><span class="p">,</span>
-<a id="__codelineno-11-36" name="__codelineno-11-36" href="#__codelineno-11-36"></a><span class="w">                </span><span class="nt">&quot;99.9&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">4191.114455891415</span><span class="p">,</span>
-<a id="__codelineno-11-37" name="__codelineno-11-37" href="#__codelineno-11-37"></a><span class="w">                </span><span class="nt">&quot;99.99&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">4191.114455891415</span><span class="p">,</span>
-<a id="__codelineno-11-38" name="__codelineno-11-38" href="#__codelineno-11-38"></a><span class="w">                </span><span class="nt">&quot;99.999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">4191.114455891415</span><span class="p">,</span>
-<a id="__codelineno-11-39" name="__codelineno-11-39" href="#__codelineno-11-39"></a><span class="w">                </span><span class="nt">&quot;99.9999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">4191.114455891415</span><span class="p">,</span>
-<a id="__codelineno-11-40" name="__codelineno-11-40" href="#__codelineno-11-40"></a><span class="w">                </span><span class="nt">&quot;100.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">4191.114455891415</span>
-<a id="__codelineno-11-41" name="__codelineno-11-41" href="#__codelineno-11-41"></a><span class="w">            </span><span class="p">},</span>
-<a id="__codelineno-11-42" name="__codelineno-11-42" href="#__codelineno-11-42"></a><span class="w">            </span><span class="nt">&quot;scoreUnit&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ops/s&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-43" name="__codelineno-11-43" href="#__codelineno-11-43"></a><span class="w">            </span><span class="nt">&quot;rawData&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-11-44" name="__codelineno-11-44" href="#__codelineno-11-44"></a><span class="w">                </span><span class="p">[</span>
-<a id="__codelineno-11-45" name="__codelineno-11-45" href="#__codelineno-11-45"></a><span class="w">                    </span><span class="mf">3355.129200069919</span><span class="p">,</span>
-<a id="__codelineno-11-46" name="__codelineno-11-46" href="#__codelineno-11-46"></a><span class="w">                    </span><span class="mf">4191.114455891415</span><span class="p">,</span>
-<a id="__codelineno-11-47" name="__codelineno-11-47" href="#__codelineno-11-47"></a><span class="w">                    </span><span class="mf">3489.3245375172587</span><span class="p">,</span>
-<a id="__codelineno-11-48" name="__codelineno-11-48" href="#__codelineno-11-48"></a><span class="w">                    </span><span class="mf">2438.7143275091894</span><span class="p">,</span>
-<a id="__codelineno-11-49" name="__codelineno-11-49" href="#__codelineno-11-49"></a><span class="w">                    </span><span class="mf">2579.0322123944043</span><span class="p">,</span>
-<a id="__codelineno-11-50" name="__codelineno-11-50" href="#__codelineno-11-50"></a><span class="w">                    </span><span class="mf">3197.038563619707</span><span class="p">,</span>
-<a id="__codelineno-11-51" name="__codelineno-11-51" href="#__codelineno-11-51"></a><span class="w">                    </span><span class="mf">3107.3043335466377</span><span class="p">,</span>
-<a id="__codelineno-11-52" name="__codelineno-11-52" href="#__codelineno-11-52"></a><span class="w">                    </span><span class="mf">3384.5420569152025</span><span class="p">,</span>
-<a id="__codelineno-11-53" name="__codelineno-11-53" href="#__codelineno-11-53"></a><span class="w">                    </span><span class="mf">3026.214223864194</span><span class="p">,</span>
-<a id="__codelineno-11-54" name="__codelineno-11-54" href="#__codelineno-11-54"></a><span class="w">                    </span><span class="mf">2955.4727465665437</span><span class="p">,</span>
-<a id="__codelineno-11-55" name="__codelineno-11-55" href="#__codelineno-11-55"></a><span class="w">                    </span><span class="mf">2938.449490331077</span><span class="p">,</span>
-<a id="__codelineno-11-56" name="__codelineno-11-56" href="#__codelineno-11-56"></a><span class="w">                    </span><span class="mf">2444.3275358242336</span><span class="p">,</span>
-<a id="__codelineno-11-57" name="__codelineno-11-57" href="#__codelineno-11-57"></a><span class="w">                    </span><span class="mf">2447.5359296109964</span><span class="p">,</span>
-<a id="__codelineno-11-58" name="__codelineno-11-58" href="#__codelineno-11-58"></a><span class="w">                    </span><span class="mf">2572.5750258119742</span><span class="p">,</span>
-<a id="__codelineno-11-59" name="__codelineno-11-59" href="#__codelineno-11-59"></a><span class="w">                    </span><span class="mf">2629.0978967032243</span><span class="p">,</span>
-<a id="__codelineno-11-60" name="__codelineno-11-60" href="#__codelineno-11-60"></a><span class="w">                    </span><span class="mf">2641.6700332863193</span><span class="p">,</span>
-<a id="__codelineno-11-61" name="__codelineno-11-61" href="#__codelineno-11-61"></a><span class="w">                    </span><span class="mf">2903.932835903283</span><span class="p">,</span>
-<a id="__codelineno-11-62" name="__codelineno-11-62" href="#__codelineno-11-62"></a><span class="w">                    </span><span class="mf">2821.317530851881</span><span class="p">,</span>
-<a id="__codelineno-11-63" name="__codelineno-11-63" href="#__codelineno-11-63"></a><span class="w">                    </span><span class="mf">2272.884921159144</span><span class="p">,</span>
-<a id="__codelineno-11-64" name="__codelineno-11-64" href="#__codelineno-11-64"></a><span class="w">                    </span><span class="mf">2668.589365207391</span><span class="p">,</span>
-<a id="__codelineno-11-65" name="__codelineno-11-65" href="#__codelineno-11-65"></a><span class="w">                    </span><span class="mf">3178.0194113129796</span><span class="p">,</span>
-<a id="__codelineno-11-66" name="__codelineno-11-66" href="#__codelineno-11-66"></a><span class="w">                    </span><span class="mf">3265.484517502896</span><span class="p">,</span>
-<a id="__codelineno-11-67" name="__codelineno-11-67" href="#__codelineno-11-67"></a><span class="w">                    </span><span class="mf">3469.4327543174313</span><span class="p">,</span>
-<a id="__codelineno-11-68" name="__codelineno-11-68" href="#__codelineno-11-68"></a><span class="w">                    </span><span class="mf">2897.2634039647874</span><span class="p">,</span>
-<a id="__codelineno-11-69" name="__codelineno-11-69" href="#__codelineno-11-69"></a><span class="w">                    </span><span class="mf">2775.078297064553</span>
-<a id="__codelineno-11-70" name="__codelineno-11-70" href="#__codelineno-11-70"></a><span class="w">                </span><span class="p">]</span>
-<a id="__codelineno-11-71" name="__codelineno-11-71" href="#__codelineno-11-71"></a><span class="w">            </span><span class="p">]</span>
-<a id="__codelineno-11-72" name="__codelineno-11-72" href="#__codelineno-11-72"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-11-73" name="__codelineno-11-73" href="#__codelineno-11-73"></a><span class="w">        </span><span class="nt">&quot;secondaryMetrics&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-11-74" name="__codelineno-11-74" href="#__codelineno-11-74"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-11-75" name="__codelineno-11-75" href="#__codelineno-11-75"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-11-76" name="__codelineno-11-76" href="#__codelineno-11-76"></a><span class="p">]</span>
-</code></pre></div>
-<h3 id="results-write-rocksdb-myjson">results-write-RocksDB-my.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p">{</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">&quot;totalDirectorySize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">8306458361</span><span class="p">,</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="nt">&quot;fileCount&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">143</span><span class="p">,</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="nt">&quot;usedMemoryBytes&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">29881472</span><span class="p">,</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="nt">&quot;cpuBefore&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">524178000</span><span class="p">,</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span><span class="nt">&quot;cpuAfter&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">978766000</span><span class="p">,</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">  </span><span class="nt">&quot;startTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">256399236974125</span><span class="p">,</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="nt">&quot;endTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">257100509331250</span><span class="p">,</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="nt">&quot;cpuUsage&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.0648233165590143</span>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="results-write-rocksdbjson">results-write-RocksDB.json</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">[</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">        </span><span class="nt">&quot;jmhVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.37&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">        </span><span class="nt">&quot;benchmark&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;org.hestiastore.index.benchmark.plainload.TestRocksDB.write&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">        </span><span class="nt">&quot;mode&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;thrpt&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">        </span><span class="nt">&quot;threads&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">        </span><span class="nt">&quot;forks&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">        </span><span class="nt">&quot;jvm&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/opt/homebrew/Cellar/openjdk@21/21.0.7/libexec/openjdk.jdk/Contents/Home/bin/java&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">        </span><span class="nt">&quot;jvmArgs&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">            </span><span class="s2">&quot;-Ddir=/Volumes/ponrava/test-index&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">            </span><span class="s2">&quot;-Dengine=RocksDB&quot;</span>
-<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">        </span><span class="p">],</span>
-<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">        </span><span class="nt">&quot;jdkVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">        </span><span class="nt">&quot;vmName&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenJDK 64-Bit Server VM&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">        </span><span class="nt">&quot;vmVersion&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;21.0.7&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="w">        </span><span class="nt">&quot;warmupIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
-<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="w">        </span><span class="nt">&quot;warmupTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">        </span><span class="nt">&quot;warmupBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="w">        </span><span class="nt">&quot;measurementIterations&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="w">        </span><span class="nt">&quot;measurementTime&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20 s&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="w">        </span><span class="nt">&quot;measurementBatchSize&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="w">        </span><span class="nt">&quot;primaryMetric&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="w">            </span><span class="nt">&quot;score&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">305711.8304543295</span><span class="p">,</span>
-<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="w">            </span><span class="nt">&quot;scoreError&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">78928.99893168075</span><span class="p">,</span>
-<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="w">            </span><span class="nt">&quot;scoreConfidence&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="w">                </span><span class="mf">226782.83152264875</span><span class="p">,</span>
-<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="w">                </span><span class="mf">384640.82938601024</span>
-<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="w">            </span><span class="p">],</span>
-<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="w">            </span><span class="nt">&quot;scorePercentiles&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a><span class="w">                </span><span class="nt">&quot;0.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">64828.117457250206</span><span class="p">,</span>
-<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a><span class="w">                </span><span class="nt">&quot;50.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">303051.53710396215</span><span class="p">,</span>
-<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a><span class="w">                </span><span class="nt">&quot;90.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">440196.02218382317</span><span class="p">,</span>
-<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a><span class="w">                </span><span class="nt">&quot;95.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">451632.3622033773</span><span class="p">,</span>
-<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a><span class="w">                </span><span class="nt">&quot;99.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">452870.0724388766</span><span class="p">,</span>
-<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a><span class="w">                </span><span class="nt">&quot;99.9&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">452870.0724388766</span><span class="p">,</span>
-<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a><span class="w">                </span><span class="nt">&quot;99.99&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">452870.0724388766</span><span class="p">,</span>
-<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a><span class="w">                </span><span class="nt">&quot;99.999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">452870.0724388766</span><span class="p">,</span>
-<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a><span class="w">                </span><span class="nt">&quot;99.9999&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">452870.0724388766</span><span class="p">,</span>
-<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a><span class="w">                </span><span class="nt">&quot;100.0&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">452870.0724388766</span>
-<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a><span class="w">            </span><span class="p">},</span>
-<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a><span class="w">            </span><span class="nt">&quot;scoreUnit&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ops/s&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a><span class="w">            </span><span class="nt">&quot;rawData&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a><span class="w">                </span><span class="p">[</span>
-<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a><span class="w">                    </span><span class="mf">452870.0724388766</span><span class="p">,</span>
-<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a><span class="w">                    </span><span class="mf">403842.93155871733</span><span class="p">,</span>
-<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a><span class="w">                    </span><span class="mf">294725.1949589473</span><span class="p">,</span>
-<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a><span class="w">                    </span><span class="mf">344879.7186297531</span><span class="p">,</span>
-<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a><span class="w">                    </span><span class="mf">252451.31054124268</span><span class="p">,</span>
-<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a><span class="w">                    </span><span class="mf">270367.7563971078</span><span class="p">,</span>
-<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a><span class="w">                    </span><span class="mf">265577.0790884009</span><span class="p">,</span>
-<a id="__codelineno-13-51" name="__codelineno-13-51" href="#__codelineno-13-51"></a><span class="w">                    </span><span class="mf">211979.36739862378</span><span class="p">,</span>
-<a id="__codelineno-13-52" name="__codelineno-13-52" href="#__codelineno-13-52"></a><span class="w">                    </span><span class="mf">70666.26824904919</span><span class="p">,</span>
-<a id="__codelineno-13-53" name="__codelineno-13-53" href="#__codelineno-13-53"></a><span class="w">                    </span><span class="mf">414677.1507219246</span><span class="p">,</span>
-<a id="__codelineno-13-54" name="__codelineno-13-54" href="#__codelineno-13-54"></a><span class="w">                    </span><span class="mf">64828.117457250206</span><span class="p">,</span>
-<a id="__codelineno-13-55" name="__codelineno-13-55" href="#__codelineno-13-55"></a><span class="w">                    </span><span class="mf">405398.2212372984</span><span class="p">,</span>
-<a id="__codelineno-13-56" name="__codelineno-13-56" href="#__codelineno-13-56"></a><span class="w">                    </span><span class="mf">386439.0605128443</span><span class="p">,</span>
-<a id="__codelineno-13-57" name="__codelineno-13-57" href="#__codelineno-13-57"></a><span class="w">                    </span><span class="mf">419727.7994319734</span><span class="p">,</span>
-<a id="__codelineno-13-58" name="__codelineno-13-58" href="#__codelineno-13-58"></a><span class="w">                    </span><span class="mf">434497.12253711926</span><span class="p">,</span>
-<a id="__codelineno-13-59" name="__codelineno-13-59" href="#__codelineno-13-59"></a><span class="w">                    </span><span class="mf">448744.3716538789</span><span class="p">,</span>
-<a id="__codelineno-13-60" name="__codelineno-13-60" href="#__codelineno-13-60"></a><span class="w">                    </span><span class="mf">235897.63938900485</span><span class="p">,</span>
-<a id="__codelineno-13-61" name="__codelineno-13-61" href="#__codelineno-13-61"></a><span class="w">                    </span><span class="mf">297712.0697930812</span><span class="p">,</span>
-<a id="__codelineno-13-62" name="__codelineno-13-62" href="#__codelineno-13-62"></a><span class="w">                    </span><span class="mf">303794.303173526</span><span class="p">,</span>
-<a id="__codelineno-13-63" name="__codelineno-13-63" href="#__codelineno-13-63"></a><span class="w">                    </span><span class="mf">360040.8711513881</span><span class="p">,</span>
-<a id="__codelineno-13-64" name="__codelineno-13-64" href="#__codelineno-13-64"></a><span class="w">                    </span><span class="mf">257499.74121652535</span><span class="p">,</span>
-<a id="__codelineno-13-65" name="__codelineno-13-65" href="#__codelineno-13-65"></a><span class="w">                    </span><span class="mf">303051.53710396215</span><span class="p">,</span>
-<a id="__codelineno-13-66" name="__codelineno-13-66" href="#__codelineno-13-66"></a><span class="w">                    </span><span class="mf">185201.4305266164</span><span class="p">,</span>
-<a id="__codelineno-13-67" name="__codelineno-13-67" href="#__codelineno-13-67"></a><span class="w">                    </span><span class="mf">303600.34376763576</span><span class="p">,</span>
-<a id="__codelineno-13-68" name="__codelineno-13-68" href="#__codelineno-13-68"></a><span class="w">                    </span><span class="mf">254326.28242349048</span>
-<a id="__codelineno-13-69" name="__codelineno-13-69" href="#__codelineno-13-69"></a><span class="w">                </span><span class="p">]</span>
-<a id="__codelineno-13-70" name="__codelineno-13-70" href="#__codelineno-13-70"></a><span class="w">            </span><span class="p">]</span>
-<a id="__codelineno-13-71" name="__codelineno-13-71" href="#__codelineno-13-71"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-13-72" name="__codelineno-13-72" href="#__codelineno-13-72"></a><span class="w">        </span><span class="nt">&quot;secondaryMetrics&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-73" name="__codelineno-13-73" href="#__codelineno-13-73"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-13-74" name="__codelineno-13-74" href="#__codelineno-13-74"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-13-75" name="__codelineno-13-75" href="#__codelineno-13-75"></a><span class="p">]</span>
-</code></pre></div>
+<h2 id="source-data-for-percentile-chart">Source Data for Percentile Chart</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Engine</th>
+<th style="text-align: right;">p50 [us/op]</th>
+<th style="text-align: right;">p75 [us/op]</th>
+<th style="text-align: right;">p90 [us/op]</th>
+<th style="text-align: right;">p95 [us/op]</th>
+<th style="text-align: right;">p99 [us/op]</th>
+<th style="text-align: right;">p99.5 [us/op]</th>
+<th style="text-align: right;">p99.9 [us/op]</th>
+<th style="text-align: right;">p99.99 [us/op]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">ChronicleMap</td>
+<td style="text-align: right;">0.791</td>
+<td style="text-align: right;">280.576</td>
+<td style="text-align: right;">435.712</td>
+<td style="text-align: right;">529.408</td>
+<td style="text-align: right;">692.224</td>
+<td style="text-align: right;">884.736</td>
+<td style="text-align: right;">1 286.144</td>
+<td style="text-align: right;">68 498.437</td>
+</tr>
+<tr>
+<td style="text-align: left;">H2</td>
+<td style="text-align: right;">13.408</td>
+<td style="text-align: right;">24.032</td>
+<td style="text-align: right;">43.392</td>
+<td style="text-align: right;">69.12</td>
+<td style="text-align: right;">158.464</td>
+<td style="text-align: right;">211.2</td>
+<td style="text-align: right;">403.617</td>
+<td style="text-align: right;">1 220.608</td>
+</tr>
+<tr>
+<td style="text-align: left;">HestiaStoreBasic</td>
+<td style="text-align: right;">0.667</td>
+<td style="text-align: right;">0.75</td>
+<td style="text-align: right;">0.875</td>
+<td style="text-align: right;">1.084</td>
+<td style="text-align: right;">3.208</td>
+<td style="text-align: right;">4.624</td>
+<td style="text-align: right;">13.072</td>
+<td style="text-align: right;">133.12</td>
+</tr>
+<tr>
+<td style="text-align: left;">HestiaStoreCompress</td>
+<td style="text-align: right;">0.542</td>
+<td style="text-align: right;">0.625</td>
+<td style="text-align: right;">0.834</td>
+<td style="text-align: right;">0.958</td>
+<td style="text-align: right;">1.124</td>
+<td style="text-align: right;">1.25</td>
+<td style="text-align: right;">3.124</td>
+<td style="text-align: right;">27.283</td>
+</tr>
+<tr>
+<td style="text-align: left;">LevelDB</td>
+<td style="text-align: right;">0.875</td>
+<td style="text-align: right;">1.292</td>
+<td style="text-align: right;">1.75</td>
+<td style="text-align: right;">2.124</td>
+<td style="text-align: right;">1 505.28</td>
+<td style="text-align: right;">1 523.712</td>
+<td style="text-align: right;">1 531.904</td>
+<td style="text-align: right;">2 240.512</td>
+</tr>
+<tr>
+<td style="text-align: left;">MapDB</td>
+<td style="text-align: right;">22.816</td>
+<td style="text-align: right;">26.24</td>
+<td style="text-align: right;">30.24</td>
+<td style="text-align: right;">33.984</td>
+<td style="text-align: right;">104.448</td>
+<td style="text-align: right;">1 763.328</td>
+<td style="text-align: right;">2 961.408</td>
+<td style="text-align: right;">4 993.712</td>
+</tr>
+<tr>
+<td style="text-align: left;">RocksDB</td>
+<td style="text-align: right;">2.08</td>
+<td style="text-align: right;">2.372</td>
+<td style="text-align: right;">2.792</td>
+<td style="text-align: right;">3.164</td>
+<td style="text-align: right;">5.16</td>
+<td style="text-align: right;">8.32</td>
+<td style="text-align: right;">24.992</td>
+<td style="text-align: right;">1 527.808</td>
+</tr>
+</tbody>
+</table>
 
 
 

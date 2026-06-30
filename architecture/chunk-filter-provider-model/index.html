@@ -10,13 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/git-workflow/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/chunk-filter-provider-model/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../filters/">
       
       
-        <link rel="next" href="../release/">
+        <link rel="next" href="../chain-of-filters/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Git and Worktree Workflow - HestiaStore</title>
+        <title>Chunk Filter Provider Model - HestiaStore</title>
       
     
     
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -83,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#git-and-worktree-workflow" class="md-skip">
+        <a href="#chunk-filter-provider-model" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Git and Worktree Workflow
+              Chunk Filter Provider Model
             
           </span>
         </div>
@@ -345,11 +340,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -371,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -389,19 +386,17 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/tuning/" class="md-nav__link">
         
   
@@ -1428,6 +1515,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/wal-canary-runbook/" class="md-nav__link">
         
   
@@ -1460,6 +1575,8 @@
       
   
   
+    
+  
   
   
     
@@ -1497,22 +1614,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1530,13 +1648,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1556,7 +1674,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/datablock/" class="md-nav__link">
+      <a href="../datablock/" class="md-nav__link">
         
   
   
@@ -1584,7 +1702,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/filters/" class="md-nav__link">
+      <a href="../filters/" class="md-nav__link">
         
   
   
@@ -1609,10 +1727,195 @@
                 
   
   
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core invariants
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#main-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-reopening-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime reopening flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#main-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-and-persist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configure and persist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reopen-and-resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reopen and resolve
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metadata-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metadata format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#materialization-and-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Materialization and performance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in providers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/chain-of-filters/" class="md-nav__link">
+      <a href="../chain-of-filters/" class="md-nav__link">
         
   
   
@@ -1640,7 +1943,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/concurrency/" class="md-nav__link">
+      <a href="../concurrency/" class="md-nav__link">
         
   
   
@@ -1668,7 +1971,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/recovery/" class="md-nav__link">
+      <a href="../recovery/" class="md-nav__link">
         
   
   
@@ -1696,35 +1999,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/limits/" class="md-nav__link">
+      <a href="../limits/" class="md-nav__link">
         
   
   
@@ -1752,7 +2027,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/glossary/" class="md-nav__link">
+      <a href="../glossary/" class="md-nav__link">
         
   
   
@@ -1796,10 +2071,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1809,7 +2087,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/monitoring/" class="md-nav__link ">
+            <a href="../monitoring/" class="md-nav__link ">
               
   
   
@@ -1827,7 +2105,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -1853,7 +2131,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/monitoring/monitoring-bridge/" class="md-nav__link">
+      <a href="../monitoring/monitoring-bridge/" class="md-nav__link">
         
   
   
@@ -1881,7 +2159,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/monitoring/monitoring-api/" class="md-nav__link">
+      <a href="../monitoring/monitoring-api/" class="md-nav__link">
         
   
   
@@ -1941,16 +2219,21 @@
       
         
       
+        
+      
     
     
     
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1960,7 +2243,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/segmentindex/" class="md-nav__link ">
+            <a href="../segmentindex/" class="md-nav__link ">
               
   
   
@@ -1978,7 +2261,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2004,7 +2287,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/write-path/" class="md-nav__link">
+      <a href="../segmentindex/write-path/" class="md-nav__link">
         
   
   
@@ -2032,7 +2315,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/read-path/" class="md-nav__link">
+      <a href="../segmentindex/read-path/" class="md-nav__link">
         
   
   
@@ -2060,7 +2343,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+      <a href="../segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/range-partitioned-ingest/" class="md-nav__link">
         
   
   
@@ -2088,7 +2399,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+      <a href="../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
         
   
   
@@ -2116,7 +2427,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/caching/" class="md-nav__link">
+      <a href="../segmentindex/caching/" class="md-nav__link">
         
   
   
@@ -2144,7 +2455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/cache-lru/" class="md-nav__link">
+      <a href="../segmentindex/cache-lru/" class="md-nav__link">
         
   
   
@@ -2172,7 +2483,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/performance/" class="md-nav__link">
+      <a href="../segmentindex/performance/" class="md-nav__link">
         
   
   
@@ -2200,14 +2511,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/metrics-snapshot/" class="md-nav__link">
+      <a href="../segmentindex/metrics-snapshot/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2228,7 +2539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/segment-index-concurrency/" class="md-nav__link">
+      <a href="../segmentindex/segment-index-concurrency/" class="md-nav__link">
         
   
   
@@ -2284,10 +2595,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -2297,7 +2611,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/segment/" class="md-nav__link ">
+            <a href="../segment/" class="md-nav__link ">
               
   
   
@@ -2315,7 +2629,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2341,7 +2655,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/segment/" class="md-nav__link">
+      <a href="../segment/segment/" class="md-nav__link">
         
   
   
@@ -2369,7 +2683,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/on-disk-layout/" class="md-nav__link">
+      <a href="../segment/on-disk-layout/" class="md-nav__link">
         
   
   
@@ -2397,7 +2711,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/arch-index/" class="md-nav__link">
+      <a href="../segment/arch-index/" class="md-nav__link">
         
   
   
@@ -2425,7 +2739,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/segment-concurrency/" class="md-nav__link">
+      <a href="../segment/segment-concurrency/" class="md-nav__link">
         
   
   
@@ -2475,10 +2789,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -2488,7 +2805,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/registry/" class="md-nav__link ">
+            <a href="../registry/" class="md-nav__link ">
               
   
   
@@ -2506,7 +2823,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2532,7 +2849,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/registry/registry/" class="md-nav__link">
+      <a href="../registry/registry/" class="md-nav__link">
         
   
   
@@ -2578,7 +2895,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2605,15 +2926,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2621,211 +2941,14 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Contributing
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code of Conduct
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Changelog
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Development
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_8">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
     Development
   
 
@@ -2833,235 +2956,20 @@
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Git and Worktree Workflow
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Git and Worktree Workflow
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#branch-roles" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Branch roles
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pull-request-targeting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pull request targeting
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#branch-naming" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Branch naming
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#worktree-standard" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Worktree standard
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recommended-helper-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recommended helper commands
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#daily-flows" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Daily flows
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Daily flows">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#start-a-normal-task-from-devel" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start a normal task from devel
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#start-a-hotfix-from-main" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start a hotfix from main
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#start-a-docs-or-chore-task" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start a docs or chore task
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#clean-up-after-merge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Clean up after merge
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rules-that-prevent-merge-noise" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Rules that prevent merge noise
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-docs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related docs
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Release Process
+    Overview
   
 
     
@@ -3082,14 +2990,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../code-quality-charter/" class="md-nav__link">
+      <a href="../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code Quality Charter
+    Code Structure
   
 
     
@@ -3110,14 +3018,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../quality-reporting/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Quality Reporting
+    Configuration Flow
   
 
     
@@ -3138,14 +3046,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation-guidelines/" class="md-nav__link">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Documentation Guide
+    Coding Guidelines
   
 
     
@@ -3166,7 +3074,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/" class="md-nav__link">
+      <a href="../segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -3194,7 +3130,305 @@
   
   
     <li class="md-nav__item">
-      <a href="../segment-api/" class="md-nav__link">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../development/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribute & Community
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contribute & Community
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/quality-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/segment-api/" class="md-nav__link">
         
   
   
@@ -3222,35 +3456,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../compatibility-matrix/" class="md-nav__link">
+      <a href="../../development/compatibility-matrix/" class="md-nav__link">
         
   
   
@@ -3278,7 +3484,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrade-notes-multimodule/" class="md-nav__link">
+      <a href="../../development/upgrade-notes-multimodule/" class="md-nav__link">
         
   
   
@@ -3306,7 +3512,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rollout-quality-gates/" class="md-nav__link">
+      <a href="../../development/rollout-quality-gates/" class="md-nav__link">
         
   
   
@@ -3334,7 +3540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rollout-rollback-runbook/" class="md-nav__link">
+      <a href="../../development/rollout-rollback-runbook/" class="md-nav__link">
         
   
   
@@ -3362,7 +3568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wal-replication-fencing-design/" class="md-nav__link">
+      <a href="../../development/wal-replication-fencing-design/" class="md-nav__link">
         
   
   
@@ -3445,10 +3651,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#branch-roles" class="md-nav__link">
+  <a href="#core-invariants" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Branch roles
+        Core invariants
       
     </span>
   </a>
@@ -3456,10 +3662,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pull-request-targeting" class="md-nav__link">
+  <a href="#main-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pull request targeting
+        Main flow
       
     </span>
   </a>
@@ -3467,10 +3673,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#branch-naming" class="md-nav__link">
+  <a href="#runtime-reopening-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Branch naming
+        Runtime reopening flow
       
     </span>
   </a>
@@ -3478,10 +3684,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#worktree-standard" class="md-nav__link">
+  <a href="#main-types" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Worktree standard
+        Main types
       
     </span>
   </a>
@@ -3489,10 +3695,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommended-helper-commands" class="md-nav__link">
+  <a href="#configure-and-persist" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended helper commands
+        Configure and persist
       
     </span>
   </a>
@@ -3500,71 +3706,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#daily-flows" class="md-nav__link">
+  <a href="#reopen-and-resolve" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Daily flows
+        Reopen and resolve
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Daily flows">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#start-a-normal-task-from-devel" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start a normal task from devel
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#start-a-hotfix-from-main" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start a hotfix from main
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#start-a-docs-or-chore-task" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start a docs or chore task
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#clean-up-after-merge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Clean up after merge
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#rules-that-prevent-merge-noise" class="md-nav__link">
+  <a href="#metadata-format" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rules that prevent merge noise
+        Metadata format
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#materialization-and-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Materialization and performance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#built-in-providers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in providers
       
     </span>
   </a>
@@ -3628,7 +3806,7 @@
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Development
+    Architecture
   </span>
 
         </a>
@@ -3650,108 +3828,153 @@
   
 
 
-<h1 id="git-and-worktree-workflow">Git and Worktree Workflow</h1>
-<p>This page defines the daily git standard for contributors and maintainers. Use
-it to start task worktrees, target pull requests, and clean up branches without
-mixing unrelated changes.</p>
-<h2 id="branch-roles">Branch roles</h2>
-<ol>
-<li><code>main</code> stays release-ready. Use it for release work and urgent hotfixes
-   only.</li>
-<li><code>devel</code> is the default integration base for normal feature, fix, docs, and
-   chore work.</li>
-<li>Topic branches are short-lived and map to exactly one pull request.</li>
-<li>Release work is the main exception. Prepare it in a clean <code>main</code> worktree
-   and follow <a href="../release/">Release Process</a>.</li>
-</ol>
-<h2 id="pull-request-targeting">Pull request targeting</h2>
-<ol>
-<li>Start normal work from <code>devel</code> and open the PR back to <code>devel</code>.</li>
-<li>Start hotfix work from <code>main</code> and open the PR back to <code>main</code>.</li>
-<li>After a hotfix lands on <code>main</code>, sync it back into <code>devel</code> before continuing
-   normal development.</li>
-<li>Do not open the same branch as separate PRs to both <code>devel</code> and <code>main</code>.</li>
-<li>Promote accumulated work to <code>main</code> through the release flow instead of
-   reviewing the same change twice.</li>
-</ol>
-<h2 id="branch-naming">Branch naming</h2>
-<p>Use lowercase, hyphenated branch names that describe one concern. Prefer an
-issue identifier first when one exists.</p>
+<h1 id="chunk-filter-provider-model">Chunk Filter Provider Model</h1>
+<p>This page explains how HestiaStore persists chunk filter configuration without
+persisting runtime objects such as <code>Supplier&lt;ChunkFilter&gt;</code>, secrets, or
+Spring-managed services.</p>
+<p>For filter behavior and ordering see <a href="../filters/">Filters &amp; Integrity</a>. For
+builder usage and code examples see
+<a href="../../configuration/filters/">Filter Configuration</a>.</p>
+<h2 id="core-invariants">Core invariants</h2>
 <ul>
-<li><code>feature/hs-123-segment-cache</code></li>
-<li><code>fix/hs-141-release-tag-cleanup</code></li>
-<li><code>docs/git-workflow</code></li>
-<li><code>chore/dependency-check-tuning</code></li>
-<li><code>hotfix/0.0.13-npe-on-open</code></li>
-<li><code>release/0.0.13</code></li>
-<li><code>codex/segment-metrics-cleanup</code> for Codex-created branches when automation
-  owns the branch</li>
+<li><code>ChunkFilterSpec</code> is the persisted contract. It stores a stable
+  <code>providerId</code> and string parameters.</li>
+<li><code>ChunkFilterProvider</code> is a runtime factory. It converts a
+  <code>ChunkFilterSpec</code> into encoding and decoding suppliers.</li>
+<li><code>ChunkFilterProviderResolver</code> is runtime configuration used during
+  <code>SegmentIndex.create(...)</code> and <code>SegmentIndex.open(...)</code>.</li>
+<li><code>ChunkFilterProviderResolverImpl</code> is the immutable map-backed default
+  implementation.</li>
+<li><code>ChunkFilterRegistration</code> is builder/runtime glue only. It couples a
+  persisted <code>ChunkFilterSpec</code> with a runtime <code>Supplier&lt;? extends ChunkFilter&gt;</code>.</li>
+<li>Metadata never stores suppliers, secrets, Spring beans, or provider class
+  names.</li>
 </ul>
-<h2 id="worktree-standard">Worktree standard</h2>
-<ol>
-<li>Treat the repository root as a control checkout. Keep it clean and use it
-   for coordination, not long-running edits.</li>
-<li>Do active development in dedicated worktrees under a single sibling
-   directory such as <code>../worktrees</code>.</li>
-<li>Use one worktree per active task, one branch per worktree, and one PR per
-   branch.</li>
-<li>Do not switch an existing task worktree to a different branch.</li>
-<li>Do not develop in a detached <code>HEAD</code> worktree.</li>
-<li>Remove merged worktrees and delete merged local branches as soon as the PR
-   is finished.</li>
-</ol>
-<h2 id="recommended-helper-commands">Recommended helper commands</h2>
-<p>The repository includes helper scripts:</p>
+<h2 id="main-flow">Main flow</h2>
+<p><img alt="Chunk filter provider lifecycle" src="../images/chunk-filter-provider-lifecycle.png" /></p>
+<p>Source:
+<a href="../images/chunk-filter-provider-lifecycle.plantuml">chunk-filter-provider-lifecycle.plantuml</a></p>
+<h2 id="runtime-reopening-flow">Runtime reopening flow</h2>
+<p><img alt="Chunk filter provider reopen flow" src="../images/chunk-filter-provider-open.png" /></p>
+<p>Source:
+<a href="../images/chunk-filter-provider-open.plantuml">chunk-filter-provider-open.plantuml</a></p>
+<h2 id="main-types">Main types</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Responsibility</th>
+<th>Persisted</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ChunkFilterSpec</code></td>
+<td>Stable filter descriptor: <code>providerId</code> + parameters</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>ChunkFilterRegistration</code></td>
+<td>Binds <code>ChunkFilterSpec</code> to a runtime supplier</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ChunkFilterProvider</code></td>
+<td>Creates encoding and decoding suppliers for one logical filter family</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ChunkFilterProviderResolver</code></td>
+<td>Resolves specs into runtime suppliers</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ChunkFilterProviderResolverImpl</code></td>
+<td>Immutable lookup of provider id to provider instance</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ChunkFilterSpecCodec</code></td>
+<td>Serializes/deserializes filter specs in <code>manifest.txt</code></td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="configure-and-persist">Configure and persist</h2>
+<p>There are three builder entry points for filter configuration:</p>
 <ul>
-<li><code>scripts/git-worktree-start.sh</code></li>
-<li><code>scripts/git-worktree-clean.sh</code></li>
+<li><code>addEncodingFilter(ChunkFilter)</code> and <code>addDecodingFilter(ChunkFilter)</code></li>
+<li><code>addEncodingFilter(Class&lt;? extends ChunkFilter&gt;)</code> and
+  <code>addDecodingFilter(Class&lt;? extends ChunkFilter&gt;)</code></li>
+<li><code>addEncodingFilter(ChunkFilterSpec)</code> and
+  <code>addDecodingFilter(ChunkFilterSpec)</code></li>
 </ul>
-<p>It also includes a reusable git alias snippet at
-<code>config/git/aliases.gitconfig</code>.</p>
-<p>Install the aliases once:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>include.path<span class="w"> </span>/absolute/path/to/HestiaStore/config/git/aliases.gitconfig
+<p>All three forms end as persisted <code>ChunkFilterSpec</code> entries.</p>
+<p>Built-in and legacy class-based filters derive their <code>ChunkFilterSpec</code>
+automatically through <code>ChunkFilterSpecs</code>. Custom providers supply the
+<code>ChunkFilterSpec</code> explicitly so metadata can be reopened later.</p>
+<p>When <code>IndexConfigurationStore</code> writes metadata, it stores only
+<code>List&lt;ChunkFilterSpec&gt;</code>. Runtime suppliers are discarded at the persistence
+boundary.</p>
+<h2 id="reopen-and-resolve">Reopen and resolve</h2>
+<p>On reopen, <code>IndexConfigurationStore</code> reads encoded filter specs from
+<code>manifest.txt</code>, then the index lifecycle asks <code>ChunkFilterProviderResolver</code> to
+resolve each spec back into an encoding or decoding supplier.</p>
+<p>Built-in providers are available through
+<code>ChunkFilterProviderResolverImpl.defaultResolver()</code>. Custom providers must be
+added to the resolver configured in <code>IndexConfiguration.filters(...)</code> or passed
+into <code>SegmentIndex.create(...)</code>, <code>SegmentIndex.open(...)</code>, or
+<code>SegmentIndex.tryOpen(...)</code>.</p>
+<p>This separation is what allows a provider to depend on runtime services such as
+Spring beans, a key resolver, or a KMS client while still keeping persisted
+metadata stable.</p>
+<h2 id="metadata-format">Metadata format</h2>
+<p><code>ChunkFilterSpecCodec</code> stores one pipeline item as:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>p=&lt;providerId&gt;|&lt;key&gt;=&lt;value&gt;|&lt;key&gt;=&lt;value&gt;
 </code></pre></div>
-<p>The helpers use <code>../worktrees</code> by default. Override that location with
-<code>HESTIASTORE_WORKTREE_ROOT</code> if you want a different parent directory.</p>
-<h2 id="daily-flows">Daily flows</h2>
-<h3 id="start-a-normal-task-from-devel">Start a normal task from <code>devel</code></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>wt-start<span class="w"> </span>feature<span class="w"> </span>hs-123-segment-cache
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>encodingChunkFilters=p=crc32,p=magic-number,p=snappy,p=aes-gcm|keyRef=orders-main
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>decodingChunkFilters=p=magic-number,p=aes-gcm|keyRef=orders-main,p=snappy,p=crc32
 </code></pre></div>
-<p>This fetches the latest refs, creates <code>feature/hs-123-segment-cache</code> from
-<code>origin/devel</code>, and creates a worktree at
-<code>../worktrees/feature-hs-123-segment-cache</code>.</p>
-<h3 id="start-a-hotfix-from-main">Start a hotfix from <code>main</code></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>wt-hotfix<span class="w"> </span><span class="m">0</span>.0.13-npe-on-open
-</code></pre></div>
-<p>This creates <code>hotfix/0.0.13-npe-on-open</code> from <code>origin/main</code>.</p>
-<h3 id="start-a-docs-or-chore-task">Start a docs or chore task</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>wt-start<span class="w"> </span>docs<span class="w"> </span>git-workflow
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git<span class="w"> </span>wt-start<span class="w"> </span>chore<span class="w"> </span>build-cache-tuning
-</code></pre></div>
-<h3 id="clean-up-after-merge">Clean up after merge</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>wt-clean<span class="w"> </span>feature/hs-123-segment-cache
-</code></pre></div>
-<p>The cleanup helper removes the matching worktree, prunes stale worktree
-metadata, and deletes the local branch when it is already merged into <code>main</code>,
-<code>devel</code>, <code>origin/main</code>, or <code>origin/devel</code>.</p>
-<h2 id="rules-that-prevent-merge-noise">Rules that prevent merge noise</h2>
-<ol>
-<li>Never start a new task by committing on whatever branch is currently open.</li>
-<li>Never mix unrelated fixes into an existing task branch because it is already
-   checked out.</li>
-<li>If a second task appears while the first is in review, create a second
-   worktree instead of rebasing both tasks together.</li>
-<li>If a task must change target from <code>devel</code> to <code>main</code>, create a new hotfix
-   branch from <code>main</code> and cherry-pick the minimal commits instead of retargeting
-   a large mixed branch.</li>
-<li>Before opening the PR, verify that <code>git diff --stat origin/&lt;target&gt;...HEAD</code>
-   shows only the intended concern.</li>
-</ol>
+<p>Legacy metadata containing only a class name is still supported and is mapped
+to the built-in <code>java-class</code> provider.</p>
+<p>The <code>aes-gcm</code> provider id in the example above is a custom provider id, not a
+built-in default. A typical implementation materializes
+<code>ChunkFilterAesGcmEncrypt</code> and <code>ChunkFilterAesGcmDecrypt</code> using a runtime key
+resolver and the persisted <code>keyRef</code> parameter.</p>
+<h2 id="materialization-and-performance">Materialization and performance</h2>
+<p>Providers return <code>Supplier&lt;? extends ChunkFilter&gt;</code>, not chunk filter instances.
+This keeps provider resolution out of the hot per-chunk path.</p>
+<p>Supplier materialization happens when HestiaStore creates the chunk I/O runtime
+for a reader or writer, where <code>ChunkStoreReaderImpl</code> and <code>ChunkStoreWriterImpl</code>
+materialize a fresh filter list before building <code>ChunkProcessor</code>.</p>
+<p>That means:</p>
+<ul>
+<li>providers can return stateful filters</li>
+<li>secrets can stay outside persisted metadata</li>
+<li>per-chunk processing still works with concrete filter instances only</li>
+</ul>
+<h2 id="built-in-providers">Built-in providers</h2>
+<p>The default resolver ships with these provider ids:</p>
+<ul>
+<li><code>crc32</code></li>
+<li><code>magic-number</code></li>
+<li><code>snappy</code></li>
+<li><code>xor</code></li>
+<li><code>do-nothing</code></li>
+<li><code>java-class</code></li>
+</ul>
+<p>Each provider id represents one logical encode/decode pair. For example,
+<code>snappy</code> means <code>ChunkFilterSnappyCompress</code> on write and
+<code>ChunkFilterSnappyDecompress</code> on read.</p>
+<p>Provider ids outside that list, such as <code>aes-gcm</code>, must be supplied by the
+application through an extended <code>ChunkFilterProviderResolver</code>.</p>
 <h2 id="related-docs">Related docs</h2>
 <ul>
-<li><a href="../release/">Release Process</a></li>
-<li><a href="../../community/contributing/">Contributing</a></li>
-<li><a href="../guides/">Developer Guides</a></li>
+<li><a href="../filters/">Filters &amp; Integrity</a></li>
+<li><a href="../../configuration/filters/">Filter Configuration</a></li>
+<li><a href="../segmentindex/write-path/">Write Path</a></li>
+<li><a href="../segmentindex/read-path/">Read Path</a></li>
 </ul>
 
 

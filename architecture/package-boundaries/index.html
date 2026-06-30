@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/package-boundaries/">
       
       
-        <link rel="prev" href="../recovery/">
+        <link rel="prev" href="../../development/code/">
       
       
-        <link rel="next" href="../limits/">
+        <link rel="next" href="../../development/configuration-flow/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Package Layout - HestiaStore</title>
+        <title>Code Structure - HestiaStore</title>
       
     
     
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -118,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Package Layout
+              Code Structure
             
           </span>
         </div>
@@ -345,12 +340,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../" class="md-tabs__link">
           
   
@@ -369,17 +362,19 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/tuning/" class="md-nav__link">
         
   
@@ -1428,6 +1515,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/wal-canary-runbook/" class="md-nav__link">
         
   
@@ -1460,8 +1575,6 @@
       
   
   
-    
-  
   
   
     
@@ -1499,19 +1612,18 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1533,13 +1645,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1595,6 +1707,34 @@
     
   
     Filters & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
   
 
     
@@ -1696,136 +1836,6 @@
                 
   
   
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#current-module-layout" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Current module layout
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#target-package-roles" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Target package roles
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#allowed-dependency-direction" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Allowed dependency direction
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#package-dependency-diagram" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Package dependency diagram
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enforcement" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Enforcement
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
   
   
     <li class="md-nav__item">
@@ -1901,13 +1911,10 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -1935,7 +1942,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2049,19 +2056,18 @@
       
         
       
+        
+      
     
     
     
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -2089,7 +2095,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2151,6 +2157,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2318,7 +2352,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2395,13 +2429,10 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -2429,7 +2460,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2589,13 +2620,10 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -2623,7 +2651,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2689,48 +2717,54 @@
       
   
   
+    
   
   
+  
     
     
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2738,27 +2772,177 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Structure
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#current-module-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current module layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#target-package-roles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Target package roles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#allowed-dependency-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Allowed dependency direction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#package-dependency-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Package dependency diagram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enforcement
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
             
               
                 
@@ -2767,14 +2951,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Configuration Flow
   
 
     
@@ -2795,14 +2979,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Coding Guidelines
   
 
     
@@ -2823,14 +3007,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../segmentindex/implementation/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2890,8 +3130,6 @@
       
         
       
-        
-      
     
     
     
@@ -2918,7 +3156,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2940,7 +3178,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -2955,14 +3193,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -2991,34 +3285,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3095,34 +3361,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3131,34 +3369,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3471,10 +3681,10 @@
     
     
       <li class="md-path__item">
-        <a href="../" class="md-path__link">
+        <a href="../../development/code/" class="md-path__link">
           
   <span class="md-ellipsis">
-    Architecture
+    Development
   </span>
 
         </a>
@@ -3589,11 +3799,21 @@ documented as "Module Current State").</p>
 <li>Management/console REST JSON communication must reuse contracts from
   <code>org.hestiastore.monitoring.json.api.*</code> and avoid duplicate DTO definitions.</li>
 </ul>
+<p>SegmentIndex internal rules:</p>
+<ul>
+<li><code>core.routing</code> owns runtime route state and scoped segment leases. It may
+  combine <code>SegmentRouteMap</code>, <code>RouteTopology</code>, and <code>SegmentRegistry</code> for
+  point-operation leases and split drains, but must not depend on session,
+  storage, or split orchestration packages.</li>
+<li><code>core.split</code> may depend on <code>SegmentRegistry</code> for child materialization and
+  retired/prepared segment cleanup. Split code obtains route-drain access
+  through <code>core.routing</code>.</li>
+<li><code>mapping</code> must not depend on split orchestration packages.</li>
+</ul>
 <h2 id="enforcement">Enforcement</h2>
-<p>The test <code>PackageDependencyBoundaryTest</code> enforces that core source files do not
-import monitoring, management, or console packages.</p>
-<p>This test is intentionally source-level and lightweight so it can run without
-additional architecture tooling.</p>
+<p>The <code>PackageDependencyBoundaryTest</code> classes enforce these rules with ArchUnit.
+The SegmentIndex-specific test keeps storage, routing, split, execution, and
+mapping dependencies pointing through the intended package boundaries.</p>
 
 
 

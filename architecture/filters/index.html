@@ -16,7 +16,7 @@
         <link rel="prev" href="../datablock/">
       
       
-        <link rel="next" href="../chain-of-filters/">
+        <link rel="next" href="../chunk-filter-provider-model/">
       
       
         
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/tuning/" class="md-nav__link">
         
   
@@ -1408,6 +1495,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1725,6 +1840,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#aes-gcm-encryption" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AES-GCM Encryption
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#xor-encryption" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1777,6 +1903,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1853,34 +2007,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -2121,6 +2247,8 @@
       
         
       
+        
+      
     
     
     
@@ -2223,6 +2351,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2390,7 +2546,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2767,7 +2923,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2794,15 +2954,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2810,43 +2969,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2867,14 +3018,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2895,14 +3046,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2962,8 +3225,6 @@
       
         
       
-        
-      
     
     
     
@@ -2990,7 +3251,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -3012,7 +3273,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -3027,14 +3288,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3063,34 +3380,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3167,34 +3456,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3203,34 +3464,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3524,6 +3757,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#aes-gcm-encryption" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AES-GCM Encryption
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#xor-encryption" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3641,10 +3885,15 @@
 
 
 <h1 id="filters-integrity">Filters &amp; Integrity</h1>
-<p>HestiaStore persists segment data in chunked files. Each chunk carries a header and a payload processed by an ordered filter pipeline. Filters provide integrity (magic number, CRC32), optional compression, and optional reversible transformations.</p>
+<p>HestiaStore persists segment data in chunked files. Each chunk carries a header
+and a payload processed by an ordered filter pipeline. Filters provide
+integrity (magic number, CRC32), optional compression, optional authenticated
+encryption, and optional reversible transformations.</p>
 <p>This page focuses on filter behavior and ordering. For byte-level block/chunk
 structure see <a href="../datablock/">Data Block Format</a>. For builder setup and
-examples, see <a href="../../configuration/filters/">Filter Configuration</a>.</p>
+examples, see <a href="../../configuration/filters/">Filter Configuration</a>. For
+provider/spec persistence and runtime resolution, see
+<a href="../chunk-filter-provider-model/">Chunk Filter Provider Model</a>.</p>
 <h2 id="chunk-flags-used-by-filters">Chunk Flags Used by Filters</h2>
 <p>Chunk headers include <code>magic</code>, <code>version</code>, <code>payloadLength</code>, <code>crc32</code>, and <code>flags</code>.
 This page documents only the <code>flags</code> bits used by filter pipeline steps.
@@ -3655,6 +3904,7 @@ Header field layout is documented in <a href="../datablock/">Data Block Format</
 <li>1 — CRC32 present (bit reserved; validation uses the header value)</li>
 <li>3 — Snappy compression</li>
 <li>4 — XOR encryption (reversible obfuscation)</li>
+<li>5 — AES-GCM encryption</li>
 </ul>
 <h2 id="encoding-pipeline-write-path">Encoding Pipeline (Write Path)</h2>
 <p>Write path constructs a <code>ChunkData</code> and passes it through a <code>ChunkProcessor</code> configured with encoding filters. The writer then combines the resulting header and (possibly transformed) payload and writes padded bytes to the underlying cell store.</p>
@@ -3663,11 +3913,15 @@ Header field layout is documented in <a href="../datablock/">Data Block Format</
 <li>Pipeline wrapper: <code>chunkstore/ChunkProcessor</code> with encoding filters</li>
 <li>Typical defaults: CRC32 → MagicNumber</li>
 <li>With compression/encryption enabled, recommended order:</li>
-<li>CRC32 writing → Magic number writing → Snappy compression → XOR encrypt</li>
+<li>CRC32 writing → Magic number writing → Snappy compression → AES-GCM encrypt</li>
 </ul>
 <p>Why this order:
 - CRC32 computed on the plaintext payload gives a strong data‑integrity check after decoding (you must decompress/decrypt before CRC validation on read).
-- Magic‑number header flag is a quick consistency guard before attempting other transforms.</p>
+- Magic‑number header flag is a quick consistency guard before attempting other transforms.
+- Compression should run before encryption because encrypted payloads are not
+  meaningfully compressible.
+- XOR, when used, occupies the same final transform slot as AES-GCM but should
+  be treated as obfuscation only.</p>
 <h2 id="decoding-pipeline-read-path">Decoding Pipeline (Read Path)</h2>
 <p>Read path pulls a raw chunk, parses the header, then applies the decoding filters in order. The final <code>ChunkData</code> is used to rebuild a consistent <code>Chunk</code> instance with the validated header and payload.</p>
 <ul>
@@ -3675,11 +3929,13 @@ Header field layout is documented in <a href="../datablock/">Data Block Format</
 <li>Pipeline wrapper: <code>chunkstore/ChunkProcessor</code> with decoding filters</li>
 <li>Typical defaults: MagicNumber validation → CRC32 validation</li>
 <li>With compression/encryption enabled, recommended order:</li>
-<li>MagicNumber validation → XOR decrypt → Snappy decompress → CRC32 validation</li>
+<li>MagicNumber validation → AES-GCM decrypt → Snappy decompress → CRC32 validation</li>
 </ul>
 <p>Notes:
 - Validation filters check the corresponding header flag (when provided) and throw an exception if the precondition fails (e.g., “not marked as compressed”).
-- CRC validation recomputes CRC32 on the current payload and compares to the header value.</p>
+- CRC validation recomputes CRC32 on the current payload and compares to the header value.
+- XOR, when configured instead of AES-GCM, should also run before Snappy
+  decompression and CRC validation.</p>
 <h2 id="available-filters">Available Filters</h2>
 <h3 id="magic-number">Magic Number</h3>
 <ol>
@@ -3709,6 +3965,16 @@ Header field layout is documented in <a href="../datablock/">Data Block Format</
 <li>Used classes: <code>ChunkFilterSnappyCompress</code>, <code>ChunkFilterSnappyDecompress</code>.</li>
 <li>External resources: <a href="https://github.com/xerial/snappy-java">snappy-java</a>.</li>
 </ol>
+<h3 id="aes-gcm-encryption">AES-GCM Encryption</h3>
+<ol>
+<li>What it does: encrypts payload on write, authenticates selected header
+   fields as additional authenticated data, and decrypts on read (flag bit
+   <code>5</code>).</li>
+<li>Why it is valuable: provides authenticated confidentiality for chunk payload
+   bytes when wired through a provider-backed filter registry.</li>
+<li>Used classes: <code>ChunkFilterAesGcmEncrypt</code>, <code>ChunkFilterAesGcmDecrypt</code>.</li>
+<li>External resources: <a href="https://en.wikipedia.org/wiki/Galois/Counter_Mode">AES-GCM</a>.</li>
+</ol>
 <h3 id="xor-encryption">XOR Encryption</h3>
 <ol>
 <li>What it does: applies a reversible XOR transformation on write and restores
@@ -3728,10 +3994,13 @@ Header field layout is documented in <a href="../datablock/">Data Block Format</
 </ol>
 <h2 id="configuration">Configuration</h2>
 <p>Filter setup, defaults, constraints, and code examples are documented in
-<a href="../../configuration/filters/">Filter Configuration</a>.</p>
+<a href="../../configuration/filters/">Filter Configuration</a>. Provider/spec lifecycle is
+documented in <a href="../chunk-filter-provider-model/">Chunk Filter Provider Model</a>.</p>
 <h2 id="error-handling-and-safety">Error Handling and Safety</h2>
 <ul>
 <li>Validation failures (wrong magic, CRC mismatch, missing flags) throw exceptions and abort the read; no partial state is committed.</li>
+<li>AES-GCM authentication failures abort the read before plaintext is exposed to
+  later filters.</li>
 <li>Chunk data is written through transactional temp-file + rename (<code>DataBlockWriterTx</code>); broader crash/recovery semantics are documented in <a href="../recovery/">Consistency &amp; Recovery</a>.</li>
 </ul>
 

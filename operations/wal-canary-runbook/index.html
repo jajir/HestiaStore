@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/operations/wal-canary-runbook/">
       
       
-        <link rel="prev" href="../backup-restore/">
+        <link rel="prev" href="../export-import/">
       
       
         <link rel="next" href="../../architecture/">
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1255,6 +1310,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1375,6 +1434,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../tuning/" class="md-nav__link">
         
   
@@ -1411,6 +1498,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1585,10 +1700,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rollback-procedure-to-walempty" class="md-nav__link">
+  <a href="#rollback-procedure-to-indexwalconfigurationempty" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rollback Procedure (to Wal.EMPTY)
+        Rollback Procedure (to IndexWalConfiguration.EMPTY)
       
     </span>
   </a>
@@ -1789,6 +1904,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/chain-of-filters/" class="md-nav__link">
         
   
@@ -1853,34 +1996,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -2118,6 +2233,8 @@
       
         
       
+        
+      
     
     
     
@@ -2217,6 +2334,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2384,7 +2529,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2755,7 +2900,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2782,15 +2931,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2798,43 +2946,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2855,14 +2995,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../architecture/package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2883,14 +3023,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2950,8 +3202,6 @@
       
         
       
-        
-      
     
     
     
@@ -2978,7 +3228,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -3000,7 +3250,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -3015,14 +3265,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3051,34 +3357,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3155,34 +3433,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3191,34 +3441,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3528,10 +3750,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rollback-procedure-to-walempty" class="md-nav__link">
+  <a href="#rollback-procedure-to-indexwalconfigurationempty" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rollback Procedure (to Wal.EMPTY)
+        Rollback Procedure (to IndexWalConfiguration.EMPTY)
       
     </span>
   </a>
@@ -3632,26 +3854,35 @@
 <p>This runbook defines a safe rollout process for enabling WAL on production indexes.</p>
 <p>Scope:</p>
 <ul>
-<li>WAL is opt-in per index (<code>withWal(...)</code>).</li>
-<li>Default remains disabled (<code>Wal.EMPTY</code>).</li>
+<li>WAL is opt-in per index through the grouped <code>wal(...)</code> builder section.</li>
+<li>Default remains disabled (<code>IndexWalConfiguration.EMPTY</code>).</li>
 <li>One WAL lives inside each index directory (<code>&lt;index&gt;/wal</code>).</li>
 </ul>
 <h2 id="goals">Goals</h2>
 <ul>
 <li>Enable WAL on a small subset of indexes first.</li>
 <li>Detect durability/performance regressions early.</li>
-<li>Roll back quickly to <code>Wal.EMPTY</code> when risk signals appear.</li>
+<li>Roll back quickly to <code>IndexWalConfiguration.EMPTY</code> when risk signals appear.</li>
 </ul>
 <h2 id="preconditions">Preconditions</h2>
 <ol>
 <li>Current backup/restore flow is verified for the target index set.</li>
 <li><code>wal-tools</code> distribution is available for verification:</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mvn<span class="w"> </span>-pl<span class="w"> </span>wal-tools<span class="w"> </span>-am<span class="w"> </span>-DskipTests<span class="w"> </span>package
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>unzip<span class="w"> </span>wal-tools/target/wal-tools-&lt;version&gt;.zip<span class="w"> </span>-d<span class="w"> </span>/tmp
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sha256sum<span class="w"> </span>-c<span class="w"> </span>wal-tools-&lt;version&gt;.zip.sha256
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>unzip<span class="w"> </span>wal-tools-&lt;version&gt;.zip<span class="w"> </span>-d<span class="w"> </span>/opt/hestia/wal-tools
+</code></pre></div>
+<p>Concrete example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">VERSION</span><span class="o">=</span><span class="m">1</span>.2.3
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nv">RELEASE_DIR</span><span class="o">=</span>/srv/releases/hestiastore
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nv">WAL_TOOLS_DIR</span><span class="o">=</span>/opt/hestia/wal-tools
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$RELEASE_DIR</span><span class="s2">&quot;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>sha256sum<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;wal-tools-</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">.zip.sha256&quot;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>unzip<span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;wal-tools-</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$WAL_TOOLS_DIR</span><span class="s2">&quot;</span>
 </code></pre></div>
 <ol>
-<li>Monitoring is collecting <code>SegmentIndex.metricsSnapshot()</code> WAL fields.</li>
+<li>Monitoring is collecting <code>SegmentIndex.runtimeMonitoring().snapshot().wal()</code> fields.</li>
 <li>Target indexes for canary are chosen (low business criticality first).</li>
 </ol>
 <h2 id="canary-plan">Canary Plan</h2>
@@ -3660,38 +3891,46 @@
 <p>Collect baseline:</p>
 <ul>
 <li>write latency</li>
-<li><code>getWalPendingSyncBytes()</code> (should be 0 when disabled)</li>
-<li><code>getWalSyncAvgNanos()</code> (should be 0 when disabled)</li>
+<li><code>wal().pendingSyncBytes()</code> (should be 0 when disabled)</li>
+<li><code>wal().syncAverageNanos()</code> (should be 0 when disabled)</li>
 <li>index throughput</li>
 </ul>
 <h3 id="phase-1-enable-wal-on-canary-indexes-only">Phase 1 - Enable WAL on canary indexes only</h3>
 <p>Use explicit WAL config:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">Wal</span><span class="w"> </span><span class="n">wal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Wal</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="p">.</span><span class="na">withDurabilityMode</span><span class="p">(</span><span class="n">WalDurabilityMode</span><span class="p">.</span><span class="na">GROUP_SYNC</span><span class="p">)</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withSegmentSizeBytes</span><span class="p">(</span><span class="mi">64L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="p">)</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withGroupSyncDelayMillis</span><span class="p">(</span><span class="mi">5L</span><span class="p">)</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withGroupSyncMaxBatchBytes</span><span class="p">(</span><span class="mi">1L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="p">)</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withMaxBytesBeforeForcedCheckpoint</span><span class="p">(</span><span class="mi">512L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="p">)</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withCorruptionPolicy</span><span class="p">(</span><span class="n">WalCorruptionPolicy</span><span class="p">.</span><span class="na">TRUNCATE_INVALID_TAIL</span><span class="p">)</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="p">.</span><span class="na">withKeyClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;orders-canary&quot;</span><span class="p">)</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="p">.</span><span class="na">withWal</span><span class="p">(</span><span class="n">wal</span><span class="p">)</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="p">.</span><span class="na">identity</span><span class="p">(</span><span class="n">identity</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">identity</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;orders-canary&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="p">.</span><span class="na">keyClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="p">.</span><span class="na">valueClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">))</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p">.</span><span class="na">wal</span><span class="p">(</span><span class="n">wal</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">wal</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="p">.</span><span class="na">durability</span><span class="p">(</span><span class="n">WalDurabilityMode</span><span class="p">.</span><span class="na">GROUP_SYNC</span><span class="p">)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="p">.</span><span class="na">segmentSizeBytes</span><span class="p">(</span><span class="mi">64L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="p">)</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="p">.</span><span class="na">groupSyncDelayMillis</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="p">.</span><span class="na">groupSyncMaxBatchBytes</span><span class="p">(</span><span class="mi">1024</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">        </span><span class="p">.</span><span class="na">maxBytesBeforeForcedCheckpoint</span><span class="p">(</span><span class="mi">512L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1024L</span><span class="p">)</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">        </span><span class="p">.</span><span class="na">corruptionPolicy</span><span class="p">(</span><span class="n">WalCorruptionPolicy</span><span class="p">.</span><span class="na">TRUNCATE_INVALID_TAIL</span><span class="p">))</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
 <p>Open/create the canary index with this config.</p>
 <h3 id="phase-2-verify-wal-health-during-rollout">Phase 2 - Verify WAL health during rollout</h3>
 <p>Run WAL verification during rollout windows:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>/tmp/wal-tools-&lt;version&gt;/bin/wal_verify<span class="w"> </span>/path/to/index/wal
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>/tmp/wal-tools-&lt;version&gt;/bin/wal_verify<span class="w"> </span>/path/to/index/wal<span class="w"> </span>--json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/opt/hestia/wal-tools/bin/wal_verify<span class="w"> </span>/path/to/index/wal
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>/opt/hestia/wal-tools/bin/wal_verify<span class="w"> </span>/path/to/index/wal<span class="w"> </span>--json
+</code></pre></div>
+<p>Concrete example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">WAL_VERIFY</span><span class="o">=</span>/opt/hestia/wal-tools/bin/wal_verify
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nv">CANARY_WAL</span><span class="o">=</span>/srv/hestia/indexes/orders-canary/wal
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="s2">&quot;</span><span class="nv">$WAL_VERIFY</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CANARY_WAL</span><span class="s2">&quot;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="s2">&quot;</span><span class="nv">$WAL_VERIFY</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$CANARY_WAL</span><span class="s2">&quot;</span><span class="w"> </span>--json
 </code></pre></div>
 <p>If verification fails (<code>exit code 2</code>), stop rollout and execute rollback.</p>
 <p>Use dump for diagnostics:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/tmp/wal-tools-&lt;version&gt;/bin/wal_dump<span class="w"> </span>/path/to/index/wal<span class="w"> </span>--json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>/opt/hestia/wal-tools/bin/wal_dump<span class="w"> </span>/path/to/index/wal<span class="w"> </span>--json
+</code></pre></div>
+<p>Concrete example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>/opt/hestia/wal-tools/bin/wal_dump<span class="w"> </span>/srv/hestia/indexes/orders-canary/wal<span class="w"> </span>--json
 </code></pre></div>
 <h3 id="phase-3-expand-rollout">Phase 3 - Expand rollout</h3>
 <p>Expand only if canary passes acceptance criteria for at least 24h.</p>
@@ -3714,64 +3953,65 @@
 </thead>
 <tbody>
 <tr>
-<td><code>getWalSyncFailureCount()</code></td>
+<td><code>wal().syncFailureCount()</code></td>
 <td>any increase</td>
 <td>immediate rollback</td>
 </tr>
 <tr>
-<td><code>getWalCorruptionCount()</code></td>
+<td><code>wal().corruptionCount()</code></td>
 <td>any increase</td>
 <td>immediate rollback</td>
 </tr>
 <tr>
-<td><code>getWalTruncationCount()</code></td>
+<td><code>wal().truncationCount()</code></td>
 <td>any increase outside planned restart</td>
 <td>immediate rollback</td>
 </tr>
 <tr>
-<td><code>getWalRetainedBytes()</code></td>
+<td><code>wal().retainedBytes()</code></td>
 <td>&gt; 80% of <code>maxBytesBeforeForcedCheckpoint</code> for 10m</td>
 <td>&gt; 100% for 10m</td>
 </tr>
 <tr>
-<td><code>getWalCheckpointLagLsn()</code></td>
+<td><code>wal().checkpointLagLsn()</code></td>
 <td>continuously increasing for 10m</td>
 <td>increasing for 30m with no stabilization</td>
 </tr>
 <tr>
-<td><code>getWalPendingSyncBytes()</code></td>
+<td><code>wal().pendingSyncBytes()</code></td>
 <td>sustained growth for 10m</td>
 <td>sustained growth for 30m</td>
 </tr>
 <tr>
-<td><code>getWalSyncAvgNanos()</code></td>
+<td><code>wal().syncAverageNanos()</code></td>
 <td>&gt; 2x baseline for 15m</td>
 <td>&gt; 4x baseline for 15m</td>
 </tr>
 </tbody>
 </table>
 <p>Critical signals (<code>sync failure</code>, <code>corruption</code>, <code>unexpected truncation</code>) are fail-fast.</p>
-<h2 id="rollback-procedure-to-walempty">Rollback Procedure (to <code>Wal.EMPTY</code>)</h2>
+<h2 id="rollback-procedure-to-indexwalconfigurationempty">Rollback Procedure (to <code>IndexWalConfiguration.EMPTY</code>)</h2>
 <ol>
 <li>Stop traffic to affected canary indexes (or switch to read-only).</li>
 <li>Take a filesystem backup/snapshot of affected index directories.</li>
 <li>Reopen indexes with WAL disabled override:</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">rollbackConf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withKeyClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;orders-canary&quot;</span><span class="p">)</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withWal</span><span class="p">(</span><span class="n">Wal</span><span class="p">.</span><span class="na">EMPTY</span><span class="p">)</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="na">open</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">rollbackConf</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="n">index</span><span class="p">.</span><span class="na">flushAndWait</span><span class="p">();</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">rollbackConf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="p">.</span><span class="na">identity</span><span class="p">(</span><span class="n">identity</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">identity</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;orders-canary&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="p">.</span><span class="na">keyClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">        </span><span class="p">.</span><span class="na">valueClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">))</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p">.</span><span class="na">wal</span><span class="p">(</span><span class="n">wal</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">wal</span><span class="p">.</span><span class="na">disabled</span><span class="p">())</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="na">open</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">rollbackConf</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">    </span><span class="n">index</span><span class="p">.</span><span class="na">maintenance</span><span class="p">().</span><span class="na">flushAndWait</span><span class="p">();</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="p">}</span>
 </code></pre></div>
 <ol>
 <li>Run integrity checks:</li>
-<li><code>index.checkAndRepairConsistency()</code></li>
+<li><code>index.maintenance().checkAndRepairConsistency()</code></li>
 <li>point-read spot checks on business keys</li>
 <li>Keep <code>wal/</code> files for incident forensics until postmortem is complete.</li>
 <li>Resume traffic only after checks pass.</li>
@@ -3779,10 +4019,10 @@
 <h2 id="canary-acceptance-criteria">Canary Acceptance Criteria</h2>
 <p>Promote to next stage only when all are true:</p>
 <ol>
-<li>No increase in <code>getWalSyncFailureCount()</code>.</li>
-<li>No increase in <code>getWalCorruptionCount()</code>.</li>
-<li>No unexpected <code>getWalTruncationCount()</code> increments.</li>
-<li><code>getWalRetainedBytes()</code> remains below forced-checkpoint threshold with headroom.</li>
+<li>No increase in <code>wal().syncFailureCount()</code>.</li>
+<li>No increase in <code>wal().corruptionCount()</code>.</li>
+<li>No unexpected <code>wal().truncationCount()</code> increments.</li>
+<li><code>wal().retainedBytes()</code> remains below forced-checkpoint threshold with headroom.</li>
 <li>Write latency SLO remains within agreed variance from baseline.</li>
 </ol>
 <h2 id="incident-data-to-capture">Incident Data to Capture</h2>

@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/segmentindex/range-partitioned-ingest/">
       
       
-        <link rel="prev" href="../read-path/">
+        <link rel="prev" href="../wal-runtime/">
       
       
         <link rel="next" href="../range-partitioned-ingest-implementation/">
@@ -27,7 +27,7 @@
     
     
       
-        <title>Range-Partitioned Ingest - HestiaStore</title>
+        <title>Range-Partitioned Ingest Compatibility Note - HestiaStore</title>
       
     
     
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -83,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#range-partitioned-ingest-architecture" class="md-skip">
+        <a href="#range-partitioned-ingest-compatibility-note" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Range-Partitioned Ingest
+              Range-Partitioned Ingest Compatibility Note
             
           </span>
         </div>
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../community/" class="md-tabs__link">
+        <a href="../../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../operations/tuning/" class="md-nav__link">
         
   
@@ -1408,6 +1495,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1615,6 +1730,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../chain-of-filters/" class="md-nav__link">
         
   
@@ -1679,34 +1822,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -1949,6 +2064,8 @@
       
         
       
+        
+      
     
     
     
@@ -2066,6 +2183,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -2140,10 +2285,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-stays" class="md-nav__link">
+  <a href="#current-runtime-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Stays
+        Current Runtime Model
       
     </span>
   </a>
@@ -2151,10 +2296,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-changes" class="md-nav__link">
+  <a href="#read-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Changes
+        Read Contract
       
     </span>
   </a>
@@ -2162,21 +2307,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#read-after-write-contract" class="md-nav__link">
+  <a href="#write-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Read-After-Write Contract
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#drain-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Drain Model
+        Write Contract
       
     </span>
   </a>
@@ -2206,10 +2340,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#maintenance-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance Boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#recovery-model" class="md-nav__link">
     <span class="md-ellipsis">
       
         Recovery Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Docs
       
     </span>
   </a>
@@ -2351,7 +2507,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2728,7 +2884,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2755,15 +2915,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2771,43 +2930,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../../community/contributing/" class="md-nav__link">
+      <a href="../../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2828,14 +2979,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2856,14 +3007,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../community/changelog/" class="md-nav__link">
+      <a href="../../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2923,8 +3186,6 @@
       
         
       
-        
-      
     
     
     
@@ -2951,7 +3212,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2973,7 +3234,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -2988,14 +3249,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/git-workflow/" class="md-nav__link">
+      <a href="../../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3024,34 +3341,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3128,34 +3417,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../development/segment-api/" class="md-nav__link">
         
   
@@ -3164,34 +3425,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3418,10 +3651,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-stays" class="md-nav__link">
+  <a href="#current-runtime-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Stays
+        Current Runtime Model
       
     </span>
   </a>
@@ -3429,10 +3662,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-changes" class="md-nav__link">
+  <a href="#read-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Changes
+        Read Contract
       
     </span>
   </a>
@@ -3440,21 +3673,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#read-after-write-contract" class="md-nav__link">
+  <a href="#write-contract" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Read-After-Write Contract
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#drain-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Drain Model
+        Write Contract
       
     </span>
   </a>
@@ -3484,10 +3706,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#maintenance-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance Boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#recovery-model" class="md-nav__link">
     <span class="md-ellipsis">
       
         Recovery Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Docs
       
     </span>
   </a>
@@ -3580,112 +3824,79 @@
   
 
 
-<h1 id="range-partitioned-ingest-architecture">Range-Partitioned Ingest Architecture</h1>
-<p>This page describes the target write-path architecture for <code>SegmentIndex</code>.
-Its purpose is to preserve immediate read-after-write semantics while moving
-long-running drain and split work out of the hot user write path.</p>
-<p>This is an architecture page, not an implementation guide. It focuses on
-contracts, invariants, and flow boundaries.</p>
+<h1 id="range-partitioned-ingest-compatibility-note">Range-Partitioned Ingest Compatibility Note</h1>
+<p>This file keeps its historical topic name, but the ingest-overlay runtime it
+described has been removed. <code>SegmentIndex</code> now routes writes directly into
+stable segments and relies on segment-local write caches for read-after-write
+semantics.</p>
+<p>Use this page as a compatibility note explaining what replaced the removed
+historical ingest runtime.</p>
 <h2 id="goals">Goals</h2>
 <ul>
 <li><code>put()</code> becomes visible to <code>get()</code> immediately after the call returns.</li>
-<li>Hot user writes must not wait for long-running split or compaction work.</li>
-<li>Buffered ingest must stay bounded at both local-range and whole-index level.</li>
-<li>Overload should be explicit and controlled, not expressed as retry storms.</li>
 <li>Stable segment files remain the durable storage boundary.</li>
+<li>Split work stays route-first and atomic at the map-publish step.</li>
+<li>Overload is expressed through bounded retry and explicit <code>BUSY</code>, not through
+  an extra overlay runtime.</li>
 </ul>
-<h2 id="what-stays">What Stays</h2>
+<h2 id="current-runtime-model">Current Runtime Model</h2>
 <ul>
-<li>Stable segment files remain the durable read and publish boundary.</li>
-<li><code>KeyToSegmentMap</code> remains the persisted routing source of truth in the first
-  version.</li>
+<li>User writes target the routed stable segment directly.</li>
+<li><code>SegmentRouteMap</code> remains the persisted routing source of truth.</li>
 <li>WAL remains the crash-recovery mechanism for acknowledged writes that are not
-  yet published into stable segment storage.</li>
+  yet flushed to stable segment files.</li>
+<li>Read-after-write comes from the segment write cache, not from an index-level
+  overlay.</li>
 </ul>
-<h2 id="what-changes">What Changes</h2>
-<ul>
-<li>User writes stop targeting live segments directly.</li>
-<li>New writes first enter a bounded in-memory overlay that is organized by key
-  range.</li>
-<li>Each routed range owns a short ingest pipeline:</li>
-<li>an active mutable layer,</li>
-<li>a bounded queue of immutable runs waiting for drain,</li>
-<li>references to stable segment sources for that range.</li>
-<li>Reads consult the overlay first and stable storage second.</li>
-</ul>
-<h2 id="read-after-write-contract">Read-After-Write Contract</h2>
-<p><code>get(key)</code> must resolve the routed range for <code>key</code> and read sources in this
-order:</p>
-<ol>
-<li>active mutable data for the range</li>
-<li>immutable runs for the range, newest first</li>
-<li>stable segment sources for the range</li>
-</ol>
-<p>This ordering guarantees that a successful <code>put()</code> is observable before any
-background drain completes.</p>
-<p>Diagram PNG:
-<img alt="Range-partitioned ingest overview" src="../images/range-partitioned-ingest-overview.png" /></p>
-<p>PlantUML source:
-<a href="../images/range-partitioned-ingest-overview.plantuml"><code>docs/architecture/segmentindex/images/range-partitioned-ingest-overview.plantuml</code></a></p>
-<h2 id="drain-model">Drain Model</h2>
-<p>When the active mutable layer reaches its local admission limit, it is sealed
-and becomes an immutable run. Background drain then moves immutable data into
-stable segment storage.</p>
-<p>Key rules:</p>
-<ul>
-<li>user writes continue into a fresh active mutable layer,</li>
-<li>immutable runs remain readable until drain and publish complete,</li>
-<li>flush durability is reached only after buffered overlay data is drained and
-  WAL checkpointed.</li>
-</ul>
-<p>Diagram PNG:
-<img alt="Range-partitioned ingest write sequence" src="../images/range-partitioned-ingest-sequence.png" /></p>
-<p>PlantUML source:
-<a href="../images/range-partitioned-ingest-sequence.plantuml"><code>docs/architecture/segmentindex/images/range-partitioned-ingest-sequence.plantuml</code></a></p>
+<h2 id="read-contract">Read Contract</h2>
+<p><code>get(key)</code> resolves the current route and then reads the mapped segment. The
+segment checks its write cache and delta cache before consulting stable
+on-disk structures.</p>
+<h2 id="write-contract">Write Contract</h2>
+<p><code>put()</code> / <code>delete()</code> append to WAL first when enabled, then resolve the write
+route and call <code>Segment.put(...)</code> on the mapped segment. The write is visible
+immediately through the segment write cache and becomes durable after segment
+flush plus WAL checkpoint.</p>
 <h2 id="split-model">Split Model</h2>
-<p>Split no longer means freezing a live segment and making user writers wait.
-Instead:</p>
+<p>Split has two phases:</p>
 <ol>
-<li>new writes are routed to child ranges first,</li>
-<li>the previous parent range becomes draining-only,</li>
-<li>old stable data is rewritten in the background,</li>
-<li><code>KeyToSegmentMap</code> is updated only at publish time,</li>
-<li>the old parent route is removed after publish succeeds.</li>
+<li>background materialization builds child stable segments from the parent
+   stable snapshot</li>
+<li>a short publish step atomically remaps <code>SegmentRouteMap</code></li>
 </ol>
-<p>During the transition, reads must be able to combine:</p>
-<ul>
-<li>overlays from the new child ranges,</li>
-<li>stable sources still owned by the draining parent range.</li>
-</ul>
-<p>Diagram PNG:
-<img alt="Range-partitioned split drain flow" src="../images/range-partitioned-split-drain.png" /></p>
-<p>PlantUML source:
-<a href="../images/range-partitioned-split-drain.plantuml"><code>docs/architecture/segmentindex/images/range-partitioned-split-drain.plantuml</code></a></p>
+<p>During split build, writes to the affected route may be retried internally as
+<code>BUSY</code>. There is no overlay reassignment step anymore.</p>
 <h2 id="backpressure-model">Backpressure Model</h2>
-<p>Bounded buffering is mandatory.</p>
-<p>Two backpressure scopes exist:</p>
+<p>Bounded retry remains mandatory:</p>
 <ul>
-<li>local range backpressure when one routed range has too much buffered data,</li>
-<li>global backpressure when total buffered overlay data exceeds the index-level
-  budget.</li>
+<li>split-affected routes can return internal <code>BUSY</code> until the retry policy
+  succeeds or times out</li>
+<li>WAL retention pressure can force checkpoint progress before accepting more
+  writes</li>
+<li>segment-local maintenance still bounds how much mutable state one segment can
+  hold before maintenance catches up</li>
 </ul>
-<p>This replaces the previous near-deadlock failure mode with explicit bounded
-admission.</p>
+<h2 id="maintenance-boundaries">Maintenance Boundaries</h2>
+<p><code>flush()</code> schedules stable flush work but does not wait for the whole topology
+to settle.</p>
+<p><code>flushAndWait()</code> and <code>compactAndWait()</code> are the explicit durability
+boundaries:</p>
+<ul>
+<li>scheduled split work is allowed to finish and publish if it changes the
+  routed topology</li>
+<li>stable segments for the final mapped topology are flushed</li>
+<li>persisted routing metadata is flushed</li>
+<li>WAL is checkpointed after the stable view is durable</li>
+</ul>
 <h2 id="recovery-model">Recovery Model</h2>
-<p>Any overlay state that is not yet published into stable segment storage is
-transient.</p>
-<p>Crash recovery therefore follows this rule:</p>
+<p>Crash recovery rebuilds routing from persisted metadata, replays WAL through
+the current direct write path, and removes orphaned split artifacts that were
+never published into the route map.</p>
+<h2 id="related-docs">Related Docs</h2>
 <ul>
-<li>rebuild routed ranges from persisted stable metadata,</li>
-<li>discard unpublished in-memory overlay state,</li>
-<li>replay WAL to restore acknowledged writes into the overlay,</li>
-<li>publish again during subsequent drain or flush.</li>
-</ul>
-<p>The recovery boundary is therefore still:</p>
-<ul>
-<li>stable segment storage,</li>
-<li>persisted <code>KeyToSegmentMap</code>,</li>
-<li>WAL.</li>
+<li><a href="../range-partitioned-ingest-implementation/">Range-Partitioned Ingest Implementation Notes</a></li>
+<li><a href="../write-path/">Write Path</a></li>
+<li><a href="../read-path/">Read Path</a></li>
 </ul>
 
 
@@ -3693,6 +3904,9 @@ transient.</p>
 
 
 
+
+  
+  
 
 
 

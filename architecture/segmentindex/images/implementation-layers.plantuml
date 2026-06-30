@@ -1,0 +1,77 @@
+@startuml implementation-layers
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+top to bottom direction
+
+component "Public API\n\nSegmentIndex\nIndexConfiguration" as API
+
+component "Session and lifecycle\ncore.session\n\nSegmentIndexImpl\nSegmentIndexOperationGate\nSegmentIndexSessionResources" as SESSION
+
+component "Lifecycle and lock state\ncore.session\n\nSegmentIndexStateMachine\nIndexCloseCoordinator\nIndexDirectoryLock" as SESSION_STATE
+
+component "Operation access\n\nIndexOperationCoordinator\nSegmentIndexMaintenanceSessionAdapter" as FACADES
+
+component "Runtime opening\ncore.session\n\nSegmentIndexBootstrapOperation\nSegmentIndexSessionAssembler" as RUNTIME
+
+component "Topology runtime\ncore.routing + core.split + core.execution\n\nSegmentTopology\nSplitService\nSegmentStreamingService" as TOPOLOGY_RUNTIME
+
+component "Core storage\ncore.storage\n\nStorageService\nStorageService.create(...)\nCoreStorageRuntime\nIndexWalCoordinatorDelegate" as CORE_STORAGE
+
+component "Split runtime\ncore.split\n\nSplitService\nSplitExecutionCoordinator\nSplitPolicyCoordinator\nRouteSplitCoordinator\nRouteSplitPublishCoordinator" as SPLIT_RUNTIME
+
+component "WAL runtime\nwal\n\nWalRuntime.open(...)\nWalRuntime" as WAL_RUNTIME
+
+component "Point operation orchestration\ncore.execution\n\nIndexOperationCoordinator" as OPERATIONS
+
+component "Route and segment lease access\ncore.routing\n\nSegmentLeaseService\nSegmentLease\nSegmentSplitLease" as ACCESS
+
+component "Stable segment operations\ncore.execution\n\nStableSegmentOperationGateway\nSegmentStreamingService\nSegmentsIterator" as STABLE_ACCESS
+
+component "Route state\n\nKeyToSegmentMap\nSegmentTopology" as ROUTE
+
+component "Registry and segment handle\norg.hestiastore.index.segmentregistry\n\nSegmentRegistry\nBlockingSegment\n(segment handler/handle)" as REGISTRY
+
+component "Segment engine\norg.hestiastore.index.segment\n\nSegment\nSegmentImpl\nSegmentCore\nSegmentSearcher\nSegmentCompacter" as SEGMENT
+
+database "Segment files\n\nmain data\ndelta cache\nsparse index\nBloom filter" as FILES
+
+API --> RUNTIME : create/open helpers
+API --> SESSION : live index calls
+SESSION --> SESSION_STATE : lifecycle and lock ownership
+SESSION --> FACADES : maintenance API entry point
+SESSION --> OPERATIONS : point put/get/delete
+SESSION --> TOPOLOGY_RUNTIME : iterators and split scans
+RUNTIME --> CORE_STORAGE : assemble storage service
+RUNTIME --> TOPOLOGY_RUNTIME : create topology services
+TOPOLOGY_RUNTIME --> SPLIT_RUNTIME : own split runtime
+RUNTIME --> WAL_RUNTIME : open WAL runtime
+OPERATIONS --> ACCESS : route key and load segment
+OPERATIONS --> CORE_STORAGE : WAL append and applied LSN
+CORE_STORAGE --> WAL_RUNTIME : active WAL coordination
+TOPOLOGY_RUNTIME --> STABLE_ACCESS : iterator access
+STABLE_ACCESS --> ACCESS : route segment iterators
+SPLIT_RUNTIME --> ACCESS : drain split candidates
+SPLIT_RUNTIME --> ROUTE : publish route changes
+ACCESS --> REGISTRY : loaded segment handle
+STABLE_ACCESS --> REGISTRY : stable segment handle
+REGISTRY --> SEGMENT : retry-aware segment calls
+SEGMENT --> FILES : persisted structures
+
+ACCESS --> ROUTE : route snapshot and lease
+TOPOLOGY_RUNTIME --> ROUTE : split and topology coordination
+CORE_STORAGE --> ROUTE : persisted route map
+
+note right of ACCESS
+This is where routed SegmentIndex
+operations and split drains combine
+SegmentRouteMap, RouteTopology,
+and SegmentRegistry.
+end note
+
+note right of REGISTRY
+The current code calls the handler
+layer BlockingSegment.
+end note
+
+@enduml

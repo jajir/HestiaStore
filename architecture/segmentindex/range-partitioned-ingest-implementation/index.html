@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../community/" class="md-tabs__link">
+        <a href="../../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../operations/tuning/" class="md-nav__link">
         
   
@@ -1408,6 +1495,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1615,6 +1730,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../chain-of-filters/" class="md-nav__link">
         
   
@@ -1679,34 +1822,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -1949,6 +2064,8 @@
       
         
       
+        
+      
     
     
     
@@ -2069,6 +2186,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../range-partitioned-ingest/" class="md-nav__link">
         
   
@@ -2168,10 +2313,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#transitional-split-behavior" class="md-nav__link">
+  <a href="#split-behavior" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Transitional Split Behavior
+        Split Behavior
       
     </span>
   </a>
@@ -2183,17 +2328,6 @@
     <span class="md-ellipsis">
       
         Read and Write Semantics
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#drain-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Drain Contract
       
     </span>
   </a>
@@ -2329,7 +2463,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2706,7 +2840,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2733,15 +2871,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2749,43 +2886,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../../community/contributing/" class="md-nav__link">
+      <a href="../../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2806,14 +2935,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2834,14 +2963,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../community/changelog/" class="md-nav__link">
+      <a href="../../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2901,8 +3142,6 @@
       
         
       
-        
-      
     
     
     
@@ -2929,7 +3168,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2951,7 +3190,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -2966,14 +3205,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/git-workflow/" class="md-nav__link">
+      <a href="../../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3002,34 +3297,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3106,34 +3373,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../development/segment-api/" class="md-nav__link">
         
   
@@ -3142,34 +3381,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3396,10 +3607,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#transitional-split-behavior" class="md-nav__link">
+  <a href="#split-behavior" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Transitional Split Behavior
+        Split Behavior
       
     </span>
   </a>
@@ -3411,17 +3622,6 @@
     <span class="md-ellipsis">
       
         Read and Write Semantics
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#drain-contract" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Drain Contract
       
     </span>
   </a>
@@ -3537,141 +3737,73 @@
 
 
 <h1 id="range-partitioned-ingest-implementation-notes">Range-Partitioned Ingest Implementation Notes</h1>
-<p>This page records the implementation contract for the partitioned ingest
-runtime introduced above stable segment storage.</p>
+<p>This file keeps its historical name, but the ingest-overlay runtime it
+described has been removed. The current implementation contract is:</p>
 <h2 id="current-implementation-scope">Current Implementation Scope</h2>
 <ul>
-<li>user writes enter an in-memory partition overlay first</li>
-<li>stable segments remain the durable publish target</li>
-<li><code>KeyToSegmentMap</code> remains the persisted routing source of truth</li>
-<li>WAL replay restores unpublished writes back into the partition overlay on
-  open</li>
+<li><code>put()</code> / <code>delete()</code> append to WAL first when WAL is enabled</li>
+<li>writes are routed directly to stable segments through
+  <code>PointOperationCoordinator</code> and <code>MappedSegmentLeaseService</code></li>
+<li><code>get()</code> reads through <code>PointOperationCoordinator</code> and
+  <code>MappedSegmentLeaseService</code></li>
+<li><code>SegmentRouteMap</code> remains the persisted routing source of truth</li>
+<li><code>RouteTopology</code> owns runtime route availability and split drain state</li>
+<li><code>MappedSegmentLeaseService</code> is the boundary that combines route-map lookup,
+  topology leases/drains, and registry segment loading</li>
+<li>WAL replay restores writes by reusing the same direct write path on open</li>
 </ul>
-<p>The current implementation changes the user write path first. It still uses
-the existing stable-segment split execution primitives, but the runtime no
-longer depends on the historical segment-split wrapper layer.</p>
-<h2 id="transitional-split-behavior">Transitional Split Behavior</h2>
+<h2 id="split-behavior">Split Behavior</h2>
 <ul>
-<li>split is no longer triggered directly from <code>put()</code></li>
-<li>the current transition slice evaluates partition-aware stable split
-  scheduling from a coalesced background policy scan over current routed
-  partitions</li>
-<li>when the background split policy decides a routed partition should split,
-  child stable segments are materialized from the parent stable snapshot before
-  the final route remap is published</li>
-<li>if buffered overlay data still exists for the parent route at split-apply
-  time, it is reassigned to the produced child routes as part of the same
-  partition-aware split apply step instead of being left on the retired parent
-  segment id</li>
-<li>background overlay drain only requests another policy scan; it does not run
-  split work inline on the hot write path</li>
-<li>point <code>get()</code> now runs under the same short split-apply read gate as <code>put()</code>,
-  so remap plus overlay reassignment cannot expose a stale point lookup during
-  the split apply window</li>
-<li>explicit maintenance split no longer holds that gate for the whole stable
-  child build; the gate only wraps the final split-apply remap window</li>
-<li>while a split is building child stable segments, drain back into the parent
-  route is temporarily suspended so newly buffered data stays in overlay and is
-  reassigned to child routes if the split applies</li>
-<li>there is no longer a runtime-only pending split fallback chain after route
-  apply; by the time the new route becomes visible, the child stable data
-  already exist on disk</li>
+<li>split is no longer an overlay reassignment workflow</li>
+<li><code>SplitPolicyScheduler</code> schedules route-first split work in the
+  background</li>
+<li><code>SplitPolicyScheduler</code> inspects candidate size through
+  <code>MappedSegmentLeaseService.tryAcquireMappedSegment(...)</code></li>
+<li><code>SplitTaskCoordinator</code> acquires <code>RouteSplitLease</code> by segment id
+  before preparing a split</li>
+<li><code>RouteSplitPlanner</code> materializes child stable segments from the parent
+  stable snapshot before route publish</li>
+<li><code>RouteSplitLease</code> drains the parent route through <code>RouteTopology</code> before
+  child materialization, so no new writes can enter the old parent while the
+  split snapshot is being materialized</li>
+<li>writes to the affected route may be retried internally as <code>BUSY</code> while the
+  route is draining or while the topology catches up to a newer route-map
+  snapshot</li>
 </ul>
 <h2 id="read-and-write-semantics">Read and Write Semantics</h2>
 <ul>
-<li><code>put()</code> and <code>delete()</code> append to WAL, then update the routed partition
-  overlay</li>
-<li><code>get()</code> reads overlay first and stable segment storage second</li>
-<li>a successful <code>put()</code> is therefore visible to <code>get()</code> before any drain
-  completes</li>
-<li><code>FULL_ISOLATION</code> index streaming now opens against a split-safe route
-  snapshot and retries if the segment map changes underneath the open; it no
-  longer falls back to the historical split-idle barrier on the read path</li>
-<li>point operations no longer wait explicitly for background split completion
-  before retrying a <code>BUSY</code> path</li>
-<li><code>flushAndWait()</code> seals active partition data, drains immutable runs into
-  stable segment storage, waits for any partition-aware stable splits already
-  scheduled by background drain, drains again if split apply reassigned overlay
-  data to child routes, waits again for any second-wave split scheduled by that
-  follow-up drain, flushes stable segments, and if the final idle split-policy
-  scan still publishes child routes, reestablishes the flush boundary on the
-  final mapped segments before checkpointing WAL; explicit maintenance
-  boundaries also bypass split retry cooldown so transient split aborts do not
-  escape into a later autonomous retry window</li>
-<li><code>compactAndWait()</code> likewise waits for any split already scheduled by
-  background drain before compacting stable segments, so compaction does not
-  overlap with split materialization of the same routed range; the same second
-  drain plus wait cycle is repeated before compaction begins, and if the final
-  idle split-policy scan still publishes child routes, <code>compactAndWait()</code>
-  reestablishes the compact/flush boundary on the final mapped segments before
-  returning</li>
-</ul>
-<h2 id="drain-contract">Drain Contract</h2>
-<ul>
-<li>active mutable partition data rotates into immutable runs</li>
-<li>immutable runs remain readable until they are successfully drained and
-  flushed into stable storage</li>
-<li>drain work is scheduled on index maintenance executors</li>
-<li>partition-aware stable split build work is scheduled on a dedicated
-  split-maintenance executor so the heavy child materialization phase no
-  longer runs on the explicit maintenance caller thread</li>
-<li>a periodic autonomous background split policy loop runs while the index is
-  open; it keeps reevaluating routed stable ranges even when no new writes,
-  reopen, or runtime-threshold patch occurs</li>
-<li>the autonomous loop is driven by a dedicated split-policy scheduler owned by
-  the index executor registry, so <code>close()</code> shuts down both split execution and
-  future policy ticks together with the rest of index maintenance infrastructure</li>
-<li>that autonomous loop only performs a full routed scan when overlay, drain,
-  and split backlog are idle; hot write periods feed the loop with post-drain
-  per-partition hints, so split candidate evaluation stays in background
-  instead of inline scheduling on the drain worker</li>
-<li>split scheduling keeps a per-segment cooldown and retry-growth hysteresis
-  window; if a borderline split candidate fails or aborts, the background loop
-  does not immediately thrash on the same stable range again unless either
-  enough time passes or the routed segment grows materially</li>
-<li>that cooldown is adaptive rather than fixed: longer split attempts stretch
-  the next retry window, while short split attempts decay it back toward the
-  baseline</li>
-<li>additional immediate background split policy scans are still triggered on
-  open, after consistency repair, and after runtime split-threshold changes</li>
-<li>explicit <code>flushAndWait()</code> / <code>compactAndWait()</code> still keep split candidate
-  evaluation on the background policy path, but before returning they also
-  wait for one final idle split-policy scan triggered after explicit
-  maintenance so routed segment backlog does not leak past the boundary</li>
-<li>while explicit stable flush/compaction is running, new autonomous split
-  candidates are temporarily ignored; a fresh idle scan is requested right
-  after explicit maintenance completes so split materialization does not race
-  against that maintenance on the same routed range</li>
-<li>if the overlay exceeds local or global limits, writes receive bounded
-  backpressure instead of waiting on background split completion</li>
-<li>during the brief split-apply window itself, write admission is still gated
-  so route remap and overlay reassignment stay atomic, but explicit
-  <code>flushAndWait()</code> / <code>compactAndWait()</code> no longer need a whole-operation global
-  write gate</li>
+<li><code>put()</code> and <code>delete()</code> append to WAL, then write directly to the routed
+  segment</li>
+<li><code>get()</code> resolves the current route and reads directly from the routed
+  segment</li>
+<li>read-after-write is guaranteed by the segment write cache</li>
+<li><code>FULL_ISOLATION</code> iteration opens against a route snapshot and retries if the
+  route map changes while the iterator is being opened</li>
+<li><code>flushAndWait()</code> and <code>compactAndWait()</code> wait for scheduled split work,
+  establish the final mapped-segment boundary, flush routing metadata, and then
+  checkpoint WAL</li>
 </ul>
 <h2 id="recovery-contract">Recovery Contract</h2>
 <ul>
-<li>unpublished partition overlay state is transient</li>
+<li>there is no unpublished ingest-overlay state anymore</li>
 <li>startup reconstructs routing from persisted index metadata</li>
-<li>WAL replay restores acknowledged writes that were not yet published</li>
+<li>WAL replay restores acknowledged writes through the direct routed write path</li>
 <li>startup and explicit consistency checks delete orphaned segment directories
-  that are not referenced from the persisted routing metadata, which covers
-  abandoned split children after interrupted maintenance</li>
-<li>durability after <code>flushAndWait()</code> is defined by successful stable-segment
+  that are not referenced from the persisted routing metadata</li>
+<li>durability after <code>flushAndWait()</code> is defined by successful mapped-segment
   flush plus WAL checkpoint</li>
 </ul>
 <h2 id="configuration-migration">Configuration Migration</h2>
-<p>New partition-oriented settings:</p>
+<p>Legacy partition-named persisted properties and metrics still exist for
+compatibility, while Java configuration uses grouped section names:</p>
 <ul>
-<li><code>maxNumberOfKeysInActivePartition</code></li>
-<li><code>maxNumberOfImmutableRunsPerPartition</code></li>
-<li><code>maxNumberOfKeysInPartitionBuffer</code></li>
-<li><code>maxNumberOfKeysInIndexBuffer</code></li>
-<li><code>maxNumberOfKeysInPartitionBeforeSplit</code></li>
+<li><code>segmentWriteCacheKeyLimit</code> -&gt; <code>writePath().segmentWriteCacheKeyLimit()</code></li>
+<li><code>segmentWriteCacheKeyLimitDuringMaintenance</code> -&gt; <code>writePath().maintenanceWriteCacheKeyLimit()</code></li>
+<li><code>indexBufferedWriteKeyLimit</code> -&gt; <code>writePath().indexBufferedWriteKeyLimit()</code></li>
+<li><code>segmentSplitKeyThreshold</code> -&gt; <code>writePath().segmentSplitKeyThreshold()</code></li>
 </ul>
-<p>Legacy manifests are migrated during load to these canonical names, and newly
-written manifests persist only the canonical partition-oriented keys plus the
-canonical <code>backgroundMaintenanceAutoEnabled</code> flag.</p>
+<p>They now act as compatibility names for routed write and split limits rather
+than for a dedicated ingest-overlay runtime.</p>
 
 
 

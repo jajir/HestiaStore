@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1255,6 +1310,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1423,6 +1482,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-ownership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime ownership
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tooling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1445,10 +1515,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#metrics-exposed-by-metricssnapshot" class="md-nav__link">
+  <a href="#metrics-exposed-by-runtimemonitoringsnapshotwal" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Metrics exposed by metricsSnapshot()
+        Metrics exposed by runtimeMonitoring().snapshot().wal()
       
     </span>
   </a>
@@ -1479,6 +1549,34 @@
     
   
     Monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
   
 
     
@@ -1535,6 +1633,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1739,6 +1865,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/chain-of-filters/" class="md-nav__link">
         
   
@@ -1803,34 +1957,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -2068,6 +2194,8 @@
       
         
       
+        
+      
     
     
     
@@ -2167,6 +2295,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2334,7 +2490,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2705,7 +2861,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2732,15 +2892,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2748,43 +2907,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2805,14 +2956,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../architecture/package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2833,14 +2984,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2900,8 +3163,6 @@
       
         
       
-        
-      
     
     
     
@@ -2928,7 +3189,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2950,7 +3211,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -2965,14 +3226,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3001,34 +3318,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3105,34 +3394,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3141,34 +3402,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3428,6 +3661,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-ownership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime ownership
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tooling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3450,10 +3694,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#metrics-exposed-by-metricssnapshot" class="md-nav__link">
+  <a href="#metrics-exposed-by-runtimemonitoringsnapshotwal" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Metrics exposed by metricsSnapshot()
+        Metrics exposed by runtimeMonitoring().snapshot().wal()
       
     </span>
   </a>
@@ -3536,19 +3780,18 @@ boundaries alone.</p>
 longer-term replication design work, see
 <a href="../../development/wal-replication-fencing-design/">WAL Replication and Fencing Design</a>.</p>
 <h2 id="enable-wal">Enable WAL</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Wal</span><span class="w"> </span><span class="n">wal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Wal</span><span class="p">.</span><span class="na">builder</span><span class="p">()</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="p">.</span><span class="na">withDurabilityMode</span><span class="p">(</span><span class="n">WalDurabilityMode</span><span class="p">.</span><span class="na">GROUP_SYNC</span><span class="p">)</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="p">.</span><span class="na">withKeyClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;orders&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">.</span><span class="na">withWal</span><span class="p">(</span><span class="n">wal</span><span class="p">)</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">.</span><span class="na">identity</span><span class="p">(</span><span class="n">identity</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">identity</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;orders&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="p">.</span><span class="na">keyClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="p">.</span><span class="na">valueClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">))</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="p">.</span><span class="na">wal</span><span class="p">(</span><span class="n">wal</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">wal</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="p">.</span><span class="na">durability</span><span class="p">(</span><span class="n">WalDurabilityMode</span><span class="p">.</span><span class="na">GROUP_SYNC</span><span class="p">))</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
 </code></pre></div>
-<p>WAL is disabled by default through <code>Wal.EMPTY</code>.</p>
+<p>WAL is disabled by default through <code>IndexWalConfiguration.EMPTY</code>. Use
+<code>wal(wal -&gt; wal.disabled())</code> to explicitly disable it in an override.</p>
 <h2 id="choose-a-durability-mode">Choose a durability mode</h2>
 <ul>
 <li><code>ASYNC</code>: lowest write latency, weakest durability guarantee</li>
@@ -3572,21 +3815,53 @@ that choice.</p>
 <li><code>wal/*.wal</code></li>
 </ul>
 <p>WAL segment files are named as <code>&lt;20-digit-base-lsn&gt;.wal</code>.</p>
+<h2 id="runtime-ownership">Runtime ownership</h2>
+<p>Internally, WAL is now split into smaller collaborators while keeping the
+public <code>WalRuntime</code> contract stable:</p>
+<ul>
+<li><code>WalMetadataCatalog</code> handles <code>format.meta</code>, <code>checkpoint.meta</code>, temp-file
+  promotion, and segment discovery.</li>
+<li><code>WalRecoveryManager</code> handles replay, invalid-tail handling, and checkpoint
+  clamp behavior on open.</li>
+<li><code>WalSegmentCatalog</code> handles active-segment rotation, retained-byte tracking,
+  and checkpoint cleanup.</li>
+<li><code>WalWriter</code> and <code>WalSyncPolicy</code> handle append-path durability behavior for
+  <code>ASYNC</code>, <code>SYNC</code>, and <code>GROUP_SYNC</code>.</li>
+</ul>
+<p>Architecture details live in
+<a href="../../architecture/segmentindex/wal-runtime/">WAL Runtime</a>.</p>
 <h2 id="tooling">Tooling</h2>
 <p><code>WalTool</code> supports:</p>
 <ul>
 <li><code>verify</code> for integrity checks</li>
 <li><code>dump</code> for record-level diagnostics</li>
 </ul>
-<p>Run it from compiled classes:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>java<span class="w"> </span>-cp<span class="w"> </span>engine/target/classes<span class="w"> </span>org.hestiastore.index.segmentindex.wal.WalTool<span class="w"> </span>verify<span class="w"> </span>/path/to/index/wal
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>java<span class="w"> </span>-cp<span class="w"> </span>engine/target/classes<span class="w"> </span>org.hestiastore.index.segmentindex.wal.WalTool<span class="w"> </span>dump<span class="w"> </span>/path/to/index/wal
+<p>Use the standalone <code>wal-tools-&lt;version&gt;.zip</code> distribution on the operator host
+or diagnostic workstation. The distribution contains:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>wal-tools-&lt;version&gt;.zip
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>wal-tools-&lt;version&gt;.zip.sha256
 </code></pre></div>
-<p>Or use the packaged CLI:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mvn<span class="w"> </span>-pl<span class="w"> </span>wal-tools<span class="w"> </span>-am<span class="w"> </span>package
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>unzip<span class="w"> </span>wal-tools/target/wal-tools-&lt;version&gt;.zip<span class="w"> </span>-d<span class="w"> </span>/tmp
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>/tmp/wal-tools-&lt;version&gt;/bin/wal_verify<span class="w"> </span>/path/to/index/wal
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>/tmp/wal-tools-&lt;version&gt;/bin/wal_dump<span class="w"> </span>/path/to/index/wal
+<p>Example installation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sha256sum<span class="w"> </span>-c<span class="w"> </span>wal-tools-&lt;version&gt;.zip.sha256
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>unzip<span class="w"> </span>wal-tools-&lt;version&gt;.zip<span class="w"> </span>-d<span class="w"> </span>/opt/hestiastore/wal-tools
+</code></pre></div>
+<p>Concrete example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">VERSION</span><span class="o">=</span><span class="m">1</span>.2.3
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nv">RELEASE_DIR</span><span class="o">=</span>/srv/releases/hestiastore
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nv">INSTALL_DIR</span><span class="o">=</span>/opt/hestiastore/wal-tools
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$RELEASE_DIR</span><span class="s2">&quot;</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>sha256sum<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;wal-tools-</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">.zip.sha256&quot;</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>unzip<span class="w"> </span>-o<span class="w"> </span><span class="s2">&quot;wal-tools-</span><span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$INSTALL_DIR</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>Example usage:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>/opt/hestiastore/wal-tools/bin/wal_verify<span class="w"> </span>/path/to/index/wal
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>/opt/hestiastore/wal-tools/bin/wal_dump<span class="w"> </span>/path/to/index/wal
+</code></pre></div>
+<p>Concrete examples:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>/opt/hestiastore/wal-tools/bin/wal_verify<span class="w"> </span>/srv/hestia/indexes/orders/wal
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>/opt/hestiastore/wal-tools/bin/wal_verify<span class="w"> </span>/srv/hestia/indexes/orders/wal<span class="w"> </span>--json
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>/opt/hestiastore/wal-tools/bin/wal_dump<span class="w"> </span>/srv/hestia/indexes/orders/wal<span class="w"> </span>--json
 </code></pre></div>
 <p>JSON output is available through <code>--json</code> for both commands.</p>
 <p>Exit codes:</p>
@@ -3598,13 +3873,13 @@ that choice.</p>
 <h2 id="operating-signals">Operating signals</h2>
 <p>Monitor these first:</p>
 <ul>
-<li><code>getWalSyncFailureCount()</code></li>
-<li><code>getWalCorruptionCount()</code></li>
-<li><code>getWalTruncationCount()</code></li>
-<li><code>getWalRetainedBytes()</code></li>
-<li><code>getWalCheckpointLagLsn()</code></li>
-<li><code>getWalPendingSyncBytes()</code></li>
-<li><code>getWalSyncAvgNanos()</code></li>
+<li><code>wal().syncFailureCount()</code></li>
+<li><code>wal().corruptionCount()</code></li>
+<li><code>wal().truncationCount()</code></li>
+<li><code>wal().retainedBytes()</code></li>
+<li><code>wal().checkpointLagLsn()</code></li>
+<li><code>wal().pendingSyncBytes()</code></li>
+<li><code>wal().syncAverageNanos()</code></li>
 </ul>
 <p>When retained WAL exceeds <code>maxBytesBeforeForcedCheckpoint</code>, the write path
 applies forced checkpoint behavior and backpressure until retained WAL drops.</p>
@@ -3622,19 +3897,19 @@ applies forced checkpoint behavior and backpressure until retained WAL drops.</p
 <li><code>event=wal_sync_failure</code></li>
 <li><code>event=wal_sync_failure_transition</code></li>
 </ul>
-<h2 id="metrics-exposed-by-metricssnapshot">Metrics exposed by <code>metricsSnapshot()</code></h2>
+<h2 id="metrics-exposed-by-runtimemonitoringsnapshotwal">Metrics exposed by <code>runtimeMonitoring().snapshot().wal()</code></h2>
 <ul>
-<li>throughput: <code>getWalAppendCount()</code>, <code>getWalAppendBytes()</code></li>
-<li>durability: <code>getWalSyncCount()</code>, <code>getWalSyncFailureCount()</code>, <code>getWalDurableLsn()</code></li>
-<li>corruption and recovery: <code>getWalCorruptionCount()</code>, <code>getWalTruncationCount()</code></li>
+<li>throughput: <code>wal().appendCount()</code>, <code>wal().appendBytes()</code></li>
+<li>durability: <code>wal().syncCount()</code>, <code>wal().syncFailureCount()</code>, <code>wal().durableLsn()</code></li>
+<li>corruption and recovery: <code>wal().corruptionCount()</code>, <code>wal().truncationCount()</code></li>
 <li>retention and checkpointing:
-  <code>getWalRetainedBytes()</code>, <code>getWalSegmentCount()</code>, <code>getWalCheckpointLsn()</code>,
-  <code>getWalCheckpointLagLsn()</code></li>
-<li>pending work: <code>getWalPendingSyncBytes()</code>, <code>getWalAppliedLsn()</code></li>
+  <code>wal().retainedBytes()</code>, <code>wal().segmentCount()</code>, <code>wal().checkpointLsn()</code>,
+  <code>wal().checkpointLagLsn()</code></li>
+<li>pending work: <code>wal().pendingSyncBytes()</code>, <code>wal().appliedLsn()</code></li>
 <li>sync latency and batch sizing:
-  <code>getWalSyncTotalNanos()</code>, <code>getWalSyncMaxNanos()</code>, <code>getWalSyncAvgNanos()</code>,
-  <code>getWalSyncBatchBytesTotal()</code>, <code>getWalSyncBatchBytesMax()</code>,
-  <code>getWalSyncAvgBatchBytes()</code></li>
+  <code>wal().syncTotalNanos()</code>, <code>wal().syncMaxNanos()</code>, <code>wal().syncAverageNanos()</code>,
+  <code>wal().syncBatchBytesTotal()</code>, <code>wal().syncBatchBytesMax()</code>,
+  <code>wal().syncAverageBatchBytes()</code></li>
 </ul>
 
 

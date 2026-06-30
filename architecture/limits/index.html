@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/limits/">
       
       
-        <link rel="prev" href="../package-boundaries/">
+        <link rel="prev" href="../recovery/">
       
       
         <link rel="next" href="../glossary/">
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/tuning/" class="md-nav__link">
         
   
@@ -1408,6 +1495,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1615,6 +1730,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chain-of-filters/" class="md-nav__link">
         
   
@@ -1679,34 +1822,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -2104,6 +2219,8 @@
       
         
       
+        
+      
     
     
     
@@ -2206,6 +2323,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2373,7 +2518,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2750,7 +2895,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2777,15 +2926,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2793,43 +2941,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2850,14 +2990,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2878,14 +3018,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2945,8 +3197,6 @@
       
         
       
-        
-      
     
     
     
@@ -2973,7 +3223,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2995,7 +3245,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -3010,14 +3260,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3046,34 +3352,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3150,34 +3428,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3186,34 +3436,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3610,7 +3832,7 @@
 <p>This page lists the most important constraints and design trade‑offs so you can plan deployments and avoid surprises. Each item links to the code or related docs for verification.</p>
 <h2 id="durability-and-recovery">Durability and Recovery</h2>
 <ul>
-<li>WAL is optional and disabled by default (<code>Wal.EMPTY</code>). With WAL disabled, durability boundaries are explicit <code>flushAndWait()</code> and <code>close()</code>. With WAL enabled, writes are appended before apply and startup can replay WAL with safe-tail truncation. See Recovery and Operations/WAL docs.</li>
+<li>WAL is optional and disabled by default (<code>IndexWalConfiguration.EMPTY</code>). With WAL disabled, durability boundaries are explicit <code>flushAndWait()</code> and <code>close()</code>. With WAL enabled, writes are appended before apply and startup can replay WAL with safe-tail truncation. See Recovery and Operations/WAL docs.</li>
 <li>Per‑file atomicity only: Writers use temp files + atomic rename; groups of files (e.g., SST + scarce index + bloom) commit in a safe order but not as a single atomic unit. Readers remain consistent because old files stay in place until each rename. See SegmentFullWriterTx, BloomFilterWriterTx.</li>
 <li>Filesystem requirement: Crash safety relies on same‑directory atomic <code>rename</code>. Use local filesystems; be cautious with network filesystems that may not guarantee strict atomicity.</li>
 <li>Stale lock files: A crash can leave <code>.lock</code> behind, preventing open until removed. See <code>directory/FsFileLock.java</code> and IndexState*. Remove the file only when certain no process still uses the directory.</li>
@@ -3624,14 +3846,17 @@
 <h2 id="size-and-addressing-limits">Size and Addressing Limits</h2>
 <ul>
 <li>Per‑segment SST size bounded by 32‑bit positions: Sparse index stores an <code>Integer</code> position and readers cast to <code>int</code> (<code>ChunkEntryFile#openIteratorAtPosition((int)position)</code>). Keep a single <code>vNN-index.sst</code> file below ~2 GiB. Use multiple segments to scale. Code: <code>chunkentryfile/ChunkEntryFile.java</code>, <code>scarceindex/*</code>.</li>
-<li>Data‑block and cell sizing constraints: <code>diskIoBufferSize</code> must be divisible by 1024; chunk cell size is fixed at 16 bytes. Payloads pad to whole cells (space overhead). Code: <code>Vldtn#requireIoBufferSize</code>, <code>chunkstore/CellPosition.java</code>.</li>
+<li>Data-block and cell sizing constraints: <code>io().diskBufferSizeBytes()</code> must be
+  divisible by 1024; chunk cell size is fixed at 16 bytes. Payloads pad to
+  whole cells (space overhead). Code: <code>Vldtn#requireIoBufferSize</code>,
+  <code>chunkstore/CellPosition.java</code>.</li>
 </ul>
 <h2 id="configuration-immutability">Configuration Immutability</h2>
 <p>Once an index is created, several properties cannot be changed when reopening with a config:</p>
 <ul>
 <li>Type descriptors (key/value serialization)</li>
-<li>Sparse index cadence (<code>maxNumberOfKeysInSegmentChunk</code>)</li>
-<li>Segment sizing limits (e.g., <code>maxNumberOfKeysInSegment</code>)</li>
+<li>Sparse index cadence (<code>segment().chunkKeyLimit()</code>)</li>
+<li>Segment sizing limits (e.g., <code>segment().maxKeys()</code>)</li>
 <li>Bloom filter sizing and hash functions</li>
 <li>Encoding/decoding filter lists (order and membership)</li>
 </ul>
@@ -3644,7 +3869,12 @@
 </ul>
 <h2 id="security-posture">Security Posture</h2>
 <ul>
-<li>XOR filter is not encryption: <code>ChunkFilterXorEncrypt</code> provides reversible obfuscation only; do not use as security. For encryption at rest, place HestiaStore on an encrypted volume or add a real crypto layer above. See <code>chunkstore/ChunkFilterXor*</code>.</li>
+<li>XOR filter is not encryption: <code>ChunkFilterXorEncrypt</code> provides reversible
+  obfuscation only; do not use it as a security control. For authenticated
+  chunk encryption, wire <code>ChunkFilterAesGcmEncrypt</code> and
+  <code>ChunkFilterAesGcmDecrypt</code> through a provider-backed
+  <code>ChunkFilterProviderResolver</code>, or use an encrypted volume. See
+  <code>chunkstore/ChunkFilterXor*</code> and <code>chunkstore/ChunkFilterAesGcm*</code>.</li>
 <li>No authentication/authorization: HestiaStore is an embedded library and relies on your process/container isolation.</li>
 </ul>
 <h2 id="workloads-that-fit-well">Workloads That Fit Well</h2>
@@ -3654,7 +3884,7 @@
 </ul>
 <h2 id="antipatterns">Anti‑patterns</h2>
 <ul>
-<li>Expecting WAL recovery semantics without enabling WAL via <code>withWal(...)</code>.</li>
+<li>Expecting WAL recovery semantics without enabling WAL via <code>wal(...)</code>.</li>
 <li>Expecting <code>ASYNC</code> WAL mode to preserve every acknowledged write after OS/power loss.</li>
 <li>Very large single segments (&gt;2 GiB <code>vNN-index.sst</code>); split into more segments.</li>
 <li>Heavy mixed concurrent reads/writes with strict low‑latency tail in synchronized mode (coarse locking).</li>
@@ -3663,7 +3893,8 @@
 <ul>
 <li>Plan periodic <code>flushAndWait()</code> and <code>compact()</code> windows; after crashes run consistency check and optionally compact.</li>
 <li>Size Bloom filters for your negative‑lookup rate; monitor <code>BloomFilterStats</code>.</li>
-<li>Tune <code>maxNumberOfKeysInSegmentChunk</code> to balance read scan length vs. sparse index size.</li>
+<li>Tune <code>segment().chunkKeyLimit()</code> to balance read scan length vs. sparse
+  index size.</li>
 <li>Use multiple segments to stay under per‑segment limits and to improve compaction parallelism (future).</li>
 </ul>
 <h2 id="related-docs">Related Docs</h2>

@@ -16,7 +16,7 @@
         <link rel="prev" href="../wal/">
       
       
-        <link rel="next" href="../tuning/">
+        <link rel="next" href="../memory-estimate/">
       
       
         
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1255,6 +1310,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1429,10 +1488,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#partition-overlay-signals" class="md-nav__link">
+  <a href="#split-and-maintenance-signals" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Partition Overlay Signals
+        Split And Maintenance Signals
       
     </span>
   </a>
@@ -1499,6 +1558,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../tuning/" class="md-nav__link">
         
   
@@ -1535,6 +1622,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1739,6 +1854,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/chain-of-filters/" class="md-nav__link">
         
   
@@ -1803,34 +1946,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -2068,6 +2183,8 @@
       
         
       
+        
+      
     
     
     
@@ -2167,6 +2284,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2334,7 +2479,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2705,7 +2850,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2732,15 +2881,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2748,43 +2896,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2805,14 +2945,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../architecture/package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2833,14 +2973,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2900,8 +3152,6 @@
       
         
       
-        
-      
     
     
     
@@ -2928,7 +3178,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2950,7 +3200,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -2965,14 +3215,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3001,34 +3307,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3105,34 +3383,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3141,34 +3391,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3406,10 +3628,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#partition-overlay-signals" class="md-nav__link">
+  <a href="#split-and-maintenance-signals" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Partition Overlay Signals
+        Split And Maintenance Signals
       
     </span>
   </a>
@@ -3534,63 +3756,64 @@ special focus on WAL-enabled deployments.</p>
 <p>For rollout and rollback procedures, see
 <a href="../wal-canary-runbook/">WAL Canary Runbook</a>.</p>
 <h2 id="metrics-source">Metrics Source</h2>
-<p>Use <code>SegmentIndex.metricsSnapshot()</code> as the canonical in-process source.
+<p>Use <code>SegmentIndex.runtimeMonitoring().snapshot()</code> as the canonical in-process source.
 Export these values into your monitoring stack (Micrometer/Prometheus, etc.)
 at a fixed scrape interval.</p>
+<p>For in-process integrations, use the grouped runtime monitoring model:</p>
+<ul>
+<li><code>snapshot.operations()</code></li>
+<li><code>snapshot.segments()</code></li>
+<li><code>snapshot.writePath()</code></li>
+<li><code>snapshot.maintenance()</code></li>
+<li><code>snapshot.split()</code></li>
+<li><code>snapshot.wal()</code></li>
+</ul>
 <h2 id="core-index-signals">Core Index Signals</h2>
 <ul>
 <li>Throughput:</li>
-<li><code>getOperationCount</code>, <code>putOperationCount</code>, <code>deleteOperationCount</code></li>
+<li><code>operations().readOperationCount()</code>, <code>operations().putOperationCount()</code>,
+    <code>operations().deleteOperationCount()</code></li>
 <li>Cache behavior:</li>
-<li><code>registryCacheHitCount</code>, <code>registryCacheMissCount</code>, <code>registryCacheEvictionCount</code></li>
+<li><code>registryCache().hitCount()</code>, <code>registryCache().missCount()</code>,
+    <code>registryCache().evictionCount()</code></li>
+<li>Segment write path:</li>
+<li><code>writePath().totalBufferedWriteKeys()</code></li>
+<li><code>segments().totalDeltaCacheFiles()</code></li>
 <li>Latency:</li>
-<li><code>readLatencyP50/P95/P99Micros</code></li>
-<li><code>writeLatencyP50/P95/P99Micros</code></li>
+<li><code>latency().readP50Micros()</code>, <code>latency().readP95Micros()</code>,
+    <code>latency().readP99Micros()</code></li>
+<li><code>latency().writeP50Micros()</code>, <code>latency().writeP95Micros()</code>,
+    <code>latency().writeP99Micros()</code></li>
 <li>State:</li>
-<li><code>state</code> (<code>OPENING</code>, <code>READY</code>, <code>CLOSING</code>, <code>ERROR</code>, <code>CLOSED</code>)</li>
+<li><code>snapshot().state()</code> (<code>OPENING</code>, <code>READY</code>, <code>CLOSING</code>, <code>ERROR</code>, <code>CLOSED</code>)</li>
 </ul>
-<h2 id="partition-overlay-signals">Partition Overlay Signals</h2>
-<p>For the range-partitioned ingest runtime, treat these as the primary
-backpressure and drain indicators:</p>
+<h2 id="split-and-maintenance-signals">Split And Maintenance Signals</h2>
+<p>In the current direct-to-segment runtime, these are the primary topology and
+maintenance indicators:</p>
 <ul>
-<li>Buffered overlay pressure:</li>
-<li><code>getPartitionBufferedKeyCount()</code></li>
-<li><code>getImmutableRunCount()</code></li>
-<li><code>getDrainingPartitionCount()</code></li>
-<li>Capacity and routing shape:</li>
-<li><code>getPartitionCount()</code></li>
-<li><code>getActivePartitionCount()</code></li>
-<li><code>getMaxNumberOfKeysInActivePartition()</code></li>
-<li><code>getMaxNumberOfKeysInPartitionBuffer()</code></li>
-<li><code>getMaxNumberOfKeysInIndexBuffer()</code></li>
-<li><code>getMaxNumberOfImmutableRunsPerPartition()</code></li>
-<li>Throttling:</li>
-<li><code>getLocalThrottleCount()</code></li>
-<li><code>getGlobalThrottleCount()</code></li>
-<li>Drain activity:</li>
-<li><code>getDrainScheduleCount()</code></li>
-<li><code>getDrainInFlightCount()</code></li>
-<li><code>getDrainLatencyP95Micros()</code></li>
-</ul>
-<p>Compatibility note:</p>
-<ul>
-<li><code>splitScheduleCount</code>, <code>splitInFlightCount</code>, <code>maintenanceQueueSize</code>, and
-  related legacy queue fields are still emitted for older clients.</li>
-<li>New dashboards and alerts should prefer the explicit partition fields above.</li>
+<li><code>split().scheduleCount()</code></li>
+<li><code>split().inFlightCount()</code></li>
+<li><code>split().blockedCount()</code></li>
+<li><code>split().taskStartDelayP95Micros()</code></li>
+<li><code>split().taskRunLatencyP95Micros()</code></li>
+<li><code>maintenance().flushAcceptedToReadyP95Micros()</code></li>
+<li><code>maintenance().compactAcceptedToReadyP95Micros()</code></li>
+<li><code>maintenance().stableSegmentExecutor().queueSize()</code></li>
+<li><code>maintenance().stableSegmentExecutor().activeThreadCount()</code></li>
 </ul>
 <h2 id="wal-signals">WAL Signals</h2>
-<p>Use these fields whenever <code>isWalEnabled()</code> is <code>true</code>:</p>
+<p>Use these fields whenever <code>wal().enabled()</code> is <code>true</code>:</p>
 <ul>
 <li>Append throughput:</li>
-<li><code>getWalAppendCount()</code></li>
-<li><code>getWalAppendBytes()</code></li>
+<li><code>wal().appendCount()</code></li>
+<li><code>wal().appendBytes()</code></li>
 <li>Sync health:</li>
-<li><code>getWalSyncCount()</code></li>
-<li><code>getWalSyncFailureCount()</code></li>
-<li><code>getWalSyncAvgNanos()</code></li>
-<li><code>getWalSyncMaxNanos()</code></li>
-<li><code>getWalSyncAvgBatchBytes()</code></li>
-<li><code>getWalSyncBatchBytesMax()</code></li>
+<li><code>wal().syncCount()</code></li>
+<li><code>wal().syncFailureCount()</code></li>
+<li><code>wal().syncAverageNanos()</code></li>
+<li><code>wal().syncMaxNanos()</code></li>
+<li><code>wal().syncAverageBatchBytes()</code></li>
+<li><code>wal().syncBatchBytesMax()</code></li>
 <li>Recovery/corruption:</li>
 <li><code>getWalCorruptionCount()</code></li>
 <li><code>getWalTruncationCount()</code></li>
@@ -3625,17 +3848,13 @@ backpressure and drain indicators:</p>
 <li><code>wal pending sync growth</code>:</li>
 <li>condition: <code>getWalPendingSyncBytes()</code> grows without recovery for 10+ minutes</li>
 <li>severity: warning</li>
-<li><code>partition overlay backlog growth</code>:</li>
-<li>condition: <code>getPartitionBufferedKeyCount()</code> and <code>getImmutableRunCount()</code>
-    grow continuously without returning to baseline</li>
+<li><code>split queue delay spike</code>:</li>
+<li>condition: <code>getSplitTaskStartDelayP95Micros()</code> remains elevated above
+    workload baseline for 10+ minutes</li>
 <li>severity: warning</li>
-<li><code>partition drain latency spike</code>:</li>
-<li>condition: <code>getDrainLatencyP95Micros()</code> remains elevated above workload
-    baseline for 10+ minutes</li>
-<li>severity: warning</li>
-<li><code>partition throttling</code>:</li>
-<li>condition: <code>getLocalThrottleCount()</code> or <code>getGlobalThrottleCount()</code>
-    increases steadily</li>
+<li><code>stable maintenance backlog</code>:</li>
+<li>condition: <code>getStableSegmentMaintenanceQueueSize()</code> stays elevated and
+    <code>getTotalBufferedWriteKeys()</code> keeps growing</li>
 <li>severity: warning</li>
 <li><code>index stuck closing</code>:</li>
 <li>condition: <code>state == CLOSING</code> for longer than the expected shutdown window</li>
@@ -3668,8 +3887,8 @@ backpressure and drain indicators:</p>
 <li><code>WalPendingSyncBytes</code>.</li>
 <li>Counters for <code>WalSyncFailureCount</code>, <code>WalCorruptionCount</code>,
    <code>WalTruncationCount</code>.</li>
-<li><code>PartitionBufferedKeyCount</code>, <code>ImmutableRunCount</code>,
-   <code>DrainingPartitionCount</code>, <code>DrainInFlightCount</code>.</li>
+<li><code>TotalBufferedWriteKeys</code>, <code>TotalDeltaCacheFiles</code>,
+   <code>SplitInFlightCount</code>, <code>StableSegmentMaintenanceQueueSize</code>.</li>
 <li>Index state timeline (<code>OPENING</code> / <code>READY</code> / <code>CLOSING</code> / <code>ERROR</code> / <code>CLOSED</code>).</li>
 </ol>
 

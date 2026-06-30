@@ -16,7 +16,7 @@
         <link rel="prev" href="../concurrency/">
       
       
-        <link rel="next" href="../package-boundaries/">
+        <link rel="next" href="../limits/">
       
       
         
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/tuning/" class="md-nav__link">
         
   
@@ -1408,6 +1495,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1595,6 +1710,34 @@
     
   
     Filters & Integrity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
   
 
     
@@ -1856,34 +1999,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../limits/" class="md-nav__link">
         
   
@@ -2104,6 +2219,8 @@
       
         
       
+        
+      
     
     
     
@@ -2206,6 +2323,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2373,7 +2518,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2750,7 +2895,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2777,15 +2926,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2793,43 +2941,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2850,14 +2990,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2878,14 +3018,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2945,8 +3197,6 @@
       
         
       
-        
-      
     
     
     
@@ -2973,7 +3223,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2995,7 +3245,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -3010,14 +3260,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3046,34 +3352,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3150,34 +3428,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3186,34 +3436,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3607,25 +3829,45 @@
 
 
 <h1 id="consistency-recovery">Consistency &amp; Recovery</h1>
-<p>This page explains HestiaStore’s crash safety model and commit semantics. WAL is optional and disabled by default (<code>Wal.EMPTY</code>). Without WAL, durability is driven by explicit flushes and by temp-file + atomic-rename commit paths. With WAL enabled, writes are appended before apply and startup replays WAL records above checkpoint (with invalid-tail truncation or fail-fast based on policy).</p>
+<p>This page explains HestiaStore's crash-safety model and commit semantics. WAL
+is optional and disabled by default (<code>IndexWalConfiguration.EMPTY</code>). Without WAL, durability is
+driven by explicit maintenance completion plus temp-file + atomic-rename commit
+paths. With WAL enabled, writes are appended before apply and startup replays
+WAL records above checkpoint, with invalid-tail truncation or fail-fast based
+on policy.</p>
 <h2 id="scope-and-guarantees">Scope and Guarantees</h2>
 <ul>
-<li>WAL-disabled mode: no automatic WAL replay. Durability boundary is <code>flushAndWait()</code> (or close).</li>
-<li>WAL-enabled mode: startup can repair invalid WAL tail and replay durable records above checkpoint.</li>
-<li>No multi-key ACID transactions: operations are per-key, and there is no cross-key atomic batch commit.</li>
-<li>Durability boundary: calling <code>flushAndWait()</code> (or closing the index) persists all writes that happened before the call. During <code>close()</code>, the index enters <code>CLOSING</code> while pending maintenance and WAL/map flush work are finalized. <code>flush()</code> only schedules maintenance; wait for completion if you need a durability guarantee.</li>
-<li>Atomic file replacement: data files are written to <code>*.tmp</code> and made visible via <code>rename</code> only after the writer is closed and the transaction is committed. A crash cannot produce partially written visible files.</li>
+<li>WAL-disabled mode: no automatic WAL replay. Durability boundary is
+  <code>flushAndWait()</code> or <code>close()</code>.</li>
+<li>WAL-enabled mode: startup can repair an invalid WAL tail and replay durable
+  records above checkpoint.</li>
+<li>No multi-key ACID transactions: operations are per-key; there is no
+  cross-key atomic batch commit.</li>
+<li>Durability boundary: <code>flushAndWait()</code> or <code>close()</code> persists all writes that
+  happened before the call. <code>flush()</code> only schedules maintenance.</li>
+<li>Atomic file replacement: data files are written to <code>*.tmp</code> and made visible
+  by <code>rename</code> only after the writer is closed and committed.</li>
 </ul>
 <h2 id="where-writes-become-durable">Where Writes Become Durable</h2>
 <ul>
-<li>Index‑level buffer → disk: <code>SegmentIndex.flush()</code> schedules draining of the in‑memory unique buffer into segment delta cache files. <code>flushAndWait()</code> (and close) wait for completion.</li>
-<li>Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.</li>
-<li>Key→segment map (<code>index.map</code>): persisted via a transactional sorted data writer during flush or when updated.</li>
+<li>Segment-local write cache -&gt; disk:
+  <code>SegmentIndex.maintenance().flush()</code> schedules per-segment maintenance.
+  <code>maintenance().flushAndWait()</code>
+  and <code>close()</code> wait until the final mapped stable segments are flushed.</li>
+<li>Segment compaction:
+  when a segment compacts, the new main SST, sparse index, and Bloom filter
+  are built via transactional writers and atomically replace the old view.</li>
+<li>Key-to-segment map (<code>index.map</code>):
+  persisted through a transactional sorted-data writer whenever routing must be
+  flushed.</li>
+<li>WAL checkpoint:
+  after the stable segment state and route map are durable, WAL checkpoint
+  advances so replay no longer needs older records.</li>
 </ul>
 <p>Relevant code:
-<code>segmentindex/core/SegmentIndexImpl#flush()</code>,
-<code>segmentindex/partition/PartitionRuntime</code>,
-<code>segmentindex/mapping/KeyToSegmentMap#optionalyFlush()</code>.</p>
+<code>segmentindex/core/execution/MappedSegmentMaintenanceService.java</code>,
+<code>segmentindex/core/execution/PointOperationCoordinator.java</code>,
+<code>segmentindex/routemap/SegmentRouteMap.java</code>.</p>
 <h2 id="transactional-write-primitives">Transactional Write Primitives</h2>
 <p>All main data files follow the same pattern: write to a temporary file, then atomically rename on <code>commit()</code>.</p>
 <ul>
@@ -3663,7 +3905,7 @@
 <li>
 <p>Key→segment map (<code>index.map</code>)</p>
 </li>
-<li>Writer: <code>SortedDataFileWriterTx.execute(…)</code> inside <code>KeyToSegmentMap.optionalyFlush()</code></li>
+<li>Writer: <code>SortedDataFileWriterTx.execute(…)</code> inside <code>SegmentRouteMap.flushIfDirty()</code></li>
 <li>Ensures the map is replaced atomically.</li>
 </ul>
 <h2 id="what-is-not-transactional">What Is Not Transactional</h2>
@@ -3679,9 +3921,9 @@
 </ul>
 <h2 id="consistency-check-and-repair">Consistency Check and Repair</h2>
 <ul>
-<li>Run <code>SegmentIndex.checkAndRepairConsistency()</code> after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.</li>
+<li>Run <code>SegmentIndex.maintenance().checkAndRepairConsistency()</code> after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.</li>
 </ul>
-<p>Key classes: <code>segmentindex/IndexConsistencyChecker</code>, <code>segment/SegmentConsistencyChecker</code>.</p>
+<p>Key classes: <code>segmentindex/RouteMapConsistencyChecker</code>, <code>segment/SegmentConsistencyChecker</code>.</p>
 <h2 id="developer-notes-opencommit-and-tmp">Developer Notes: <code>open()</code>/<code>commit()</code> and <code>*.tmp</code></h2>
 <ul>
 <li><code>open()</code> returns a writer bound to a temporary file (typically with a <code>.tmp</code> suffix). You must close the writer before calling <code>commit()</code>.</li>
@@ -3697,10 +3939,12 @@
 <ul>
 <li>If WAL is disabled, call <code>flushAndWait()</code> on periodic boundaries and always before shutdown to persist in‑memory writes.</li>
 <li>If another thread observes the index during shutdown, expect <code>getState()</code> /
-  <code>metricsSnapshot().getState()</code> to report <code>CLOSING</code> until the final <code>CLOSED</code>
+  <code>runtimeMonitoring().snapshot().state()</code> to report <code>CLOSING</code> until the final <code>CLOSED</code>
   transition.</li>
 <li>If WAL is enabled, configure durability mode (<code>ASYNC</code>, <code>GROUP_SYNC</code>, <code>SYNC</code>) based on loss tolerance and latency targets.</li>
-<li>After a crash, reopen the index; WAL-enabled indexes recover from WAL first, then <code>checkAndRepairConsistency()</code> can be run as an additional integrity check.</li>
+<li>After a crash, reopen the index; WAL-enabled indexes rebuild routing, replay
+  WAL through the direct write path, and then <code>checkAndRepairConsistency()</code> can
+  be run as an additional integrity check.</li>
 </ul>
 <h2 id="related-glossary">Related Glossary</h2>
 <ul>

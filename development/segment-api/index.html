@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/segment-api/">
       
       
-        <link rel="prev" href="../guides/">
+        <link rel="prev" href="../documentation-guidelines/">
       
       
-        <link rel="next" href="../profiler-stacktrace/">
+        <link rel="next" href="../compatibility-matrix/">
       
       
         
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -371,13 +366,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../community/" class="md-tabs__link">
+        <a href="../code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/tuning/" class="md-nav__link">
         
   
@@ -1408,6 +1495,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1612,6 +1727,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/chain-of-filters/" class="md-nav__link">
         
   
@@ -1676,34 +1819,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -1941,6 +2056,8 @@
       
         
       
+        
+      
     
     
     
@@ -2040,6 +2157,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2207,7 +2352,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2578,7 +2723,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2605,15 +2754,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2621,43 +2769,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../community/contributing/" class="md-nav__link">
+      <a href="../code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2678,14 +2818,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../architecture/package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2706,14 +2846,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../community/changelog/" class="md-nav__link">
+      <a href="../configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2775,8 +3027,6 @@
       
         
       
-        
-      
     
     
     
@@ -2804,7 +3054,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2826,7 +3076,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -2841,14 +3091,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -2877,34 +3183,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -2961,34 +3239,6 @@
     
   
     Documentation Guide
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
   
 
     
@@ -3069,10 +3319,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scope-and-assumptions" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scope and assumptions
+        Scope
       
     </span>
   </a>
@@ -3080,77 +3330,99 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#legacy-removed-lock-based-adapter" class="md-nav__link">
+  <a href="#current-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Legacy (removed lock-based adapter)
+        Current Model
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Legacy (removed lock-based adapter)">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flush" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flush
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compact
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Split
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backpressure-and-overload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backpressure And Overload
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parallel-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parallel Calls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reads-and-iterators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reads And Iterators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#corner-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Corner Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Corner Cases">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#lock-model-historical" class="md-nav__link">
+  <a href="#parallel-calls_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lock model (historical)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#a-flush" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A) Flush
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#b-compact" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        B) Compact
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#c-split-segmentindex" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        C) Split (SegmentIndex)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#backpressure-overload" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Backpressure / overload
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parallel-calls-flush-vs-compact-vs-split" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Parallel calls (flush vs compact vs split)
+        Parallel calls
       
     </span>
   </a>
@@ -3169,134 +3441,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#corner-cases-to-call-out" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Corner cases to call out
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#legacy-lock-summary-removed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Legacy lock summary (removed)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lock-free-model-current" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Lock-free model (current)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Lock-free model (current)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#goals" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Goals
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#coordination-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Coordination model
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#a-flush_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A) Flush
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#b-compact_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        B) Compact
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#c-split" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        C) Split
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#backpressure-overload_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Backpressure / overload
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parallel-calls" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Parallel calls
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#reads-get-and-iterators_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reads, get(), and iterators
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#corner-cases" class="md-nav__link">
+  <a href="#corner-cases_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Corner cases
@@ -3326,34 +3471,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -3561,10 +3678,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scope-and-assumptions" class="md-nav__link">
+  <a href="#scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scope and assumptions
+        Scope
       
     </span>
   </a>
@@ -3572,77 +3689,99 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#legacy-removed-lock-based-adapter" class="md-nav__link">
+  <a href="#current-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Legacy (removed lock-based adapter)
+        Current Model
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Legacy (removed lock-based adapter)">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flush" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flush
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compact
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Split
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backpressure-and-overload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backpressure And Overload
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parallel-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parallel Calls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reads-and-iterators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reads And Iterators
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#corner-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Corner Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Corner Cases">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#lock-model-historical" class="md-nav__link">
+  <a href="#parallel-calls_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lock model (historical)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#a-flush" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A) Flush
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#b-compact" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        B) Compact
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#c-split-segmentindex" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        C) Split (SegmentIndex)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#backpressure-overload" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Backpressure / overload
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parallel-calls-flush-vs-compact-vs-split" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Parallel calls (flush vs compact vs split)
+        Parallel calls
       
     </span>
   </a>
@@ -3661,134 +3800,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#corner-cases-to-call-out" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Corner cases to call out
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#legacy-lock-summary-removed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Legacy lock summary (removed)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lock-free-model-current" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Lock-free model (current)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Lock-free model (current)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#goals" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Goals
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#coordination-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Coordination model
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#a-flush_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A) Flush
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#b-compact_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        B) Compact
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#c-split" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        C) Split
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#backpressure-overload_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Backpressure / overload
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#parallel-calls" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Parallel calls
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#reads-get-and-iterators_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reads, get(), and iterators
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#corner-cases" class="md-nav__link">
+  <a href="#corner-cases_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Corner cases
@@ -3860,7 +3872,7 @@
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Development
+    Contribute & Community
   </span>
 
         </a>
@@ -3883,218 +3895,127 @@
 
 
 <h1 id="segment-api-flush-compact-and-split">Segment API: Flush, Compact, and Split</h1>
-<h2 id="scope-and-assumptions">Scope and assumptions</h2>
-<p>This document describes how to use the Segment API for maintenance operations.
-The public Segment interface exposes <code>flush()</code> and <code>compact()</code>. Split is
-orchestrated by the segment-index layer
-(<code>BackgroundSplitCoordinator</code> + <code>PartitionStableSplitCoordinator</code>) using a
-route-first stable child materialization flow and a short exclusive apply
-window. Split behavior is documented here because it affects locking and
-iterator semantics.</p>
-<p><code>Segment</code> is thread-safe by contract. The legacy lock-based adapter was removed;
-historical notes remain below for reference. For the lock-free <code>SegmentImpl</code>
-behavior and state machine rules, rely on
-<code>docs/architecture/segment/segment-concurrency.md</code>.</p>
-<p>This document keeps legacy notes for context and describes the lock-free model
-used today.</p>
-<h2 id="legacy-removed-lock-based-adapter">Legacy (removed lock-based adapter)</h2>
-<h3 id="lock-model-historical">Lock model (historical)</h3>
-<p>This section describes the removed adapter for context only.</p>
-<p>Per-segment <code>ReentrantReadWriteLock</code> (via <code>SegmentImplSynchronizationAdapter</code>):</p>
+<h2 id="scope">Scope</h2>
+<p>This document explains how the public <code>Segment</code> API behaves during maintenance
+and how segment-level rules interact with index-level route splitting.</p>
+<p>The public <code>Segment</code> interface exposes <code>flush()</code> and <code>compact()</code>. Split is
+owned by the segment-index layer through
+<code>SplitPolicyScheduler</code>, <code>SplitTaskCoordinator</code>, and
+<code>RouteSplitPlanner</code>. Route drain and parent segment acquisition are owned
+by <code>MappedSegmentLeaseService</code>.</p>
+<p>For the current state machine and iterator rules, use
+<a href="../../architecture/segment/segment-concurrency/">Segment Concurrency</a>.</p>
+<h2 id="current-model">Current Model</h2>
 <ul>
-<li>Read lock: <code>get()</code>, <code>openIterator(FAIL_FAST)</code> per <code>hasNext()</code>/<code>next()</code> call.</li>
-<li>Write lock: <code>put()</code>, <code>flush()</code>, <code>compact()</code>, <code>invalidateIterators()</code>, <code>close()</code>.</li>
-<li><code>openIterator(FULL_ISOLATION)</code> holds the write lock for its entire lifetime.</li>
+<li><code>Segment.put(...)</code> writes into the segment write cache.</li>
+<li><code>Segment.get(...)</code> reads write cache first, then delta cache, then stable
+  files.</li>
+<li><code>flush()</code> freezes the current write-cache snapshot and persists it into delta
+  cache files.</li>
+<li><code>compact()</code> rewrites the stable segment view from main SST + delta cache and
+  clears obsolete delta files.</li>
+<li><code>SegmentIndex</code> routes writes directly to a stable segment; there is no
+  index-level ingest overlay anymore.</li>
 </ul>
-<p>Optimistic iterator invalidation is driven by <code>VersionController</code> and used by
-<code>openIterator(FAIL_FAST)</code>.</p>
-<h3 id="a-flush">A) Flush</h3>
-<p>What it does today (SegmentImpl):</p>
+<h2 id="flush">Flush</h2>
+<p>Current behavior:</p>
 <ul>
-<li>Snapshot write cache via <code>SegmentCache.freezeWriteCache()</code>.</li>
-<li>Write entries to a delta cache file (<code>SegmentDeltaCacheWriter</code>).</li>
-<li>Merge frozen write cache into delta cache and clear the frozen snapshot.</li>
-<li>Bump version (via <code>openDeltaCacheWriter()</code>), invalidating fail-fast iterators.</li>
-<li>No-op when the write cache is empty.</li>
+<li>under <code>FREEZE</code>, the segment swaps out the current write cache</li>
+<li>in <code>MAINTENANCE_RUNNING</code>, the frozen snapshot is written to delta cache
+  files</li>
+<li>under <code>FREEZE</code>, metadata is published and iterators are invalidated</li>
+<li>new writes continue in a fresh write cache while the frozen snapshot is being
+  persisted</li>
 </ul>
-<p>When a new write arrives while <code>flush()</code> is running:</p>
+<p>Practical consequences:</p>
 <ul>
-<li>The new write blocks on the write lock.</li>
+<li><code>flush()</code> is a no-op when the write cache is empty</li>
+<li>concurrent <code>flush()</code> requests return <code>BUSY</code></li>
+<li>fail-fast iterators can terminate early after the publish step</li>
 </ul>
-<h3 id="b-compact">B) Compact</h3>
-<p>What it does today (SegmentCompacter):</p>
+<h2 id="compact">Compact</h2>
+<p>Current behavior:</p>
 <ul>
-<li>Resets searchers and bumps the version (invalidates fail-fast iterators).</li>
-<li>Rewrites the full segment using a merged view (index + delta + write cache).</li>
-<li><code>SegmentFullWriterTx</code> clears delta cache and write cache on commit.</li>
+<li>compaction captures the current stable view plus in-memory deltas</li>
+<li>background I/O builds a new SST, sparse index, and Bloom filter</li>
+<li>publish swaps the new stable files atomically</li>
+<li>obsolete delta files are removed after a successful publish</li>
 </ul>
-<p>When a new write arrives while <code>compact()</code> is running:</p>
+<p>Practical consequences:</p>
 <ul>
-<li>The new write blocks on the write lock.</li>
+<li>concurrent <code>compact()</code> requests return <code>BUSY</code></li>
+<li>fail-fast iterators can terminate early after publish</li>
+<li><code>get()</code> remains thread-safe; it either sees the old view or the new view</li>
 </ul>
-<h3 id="c-split-segmentindex">C) Split (SegmentIndex)</h3>
-<p>Historical behavior (removed live-segment split pipeline):</p>
+<h2 id="split">Split</h2>
+<p>Current index-level split behavior:</p>
 <ul>
-<li>Triggered when <code>getNumberOfKeysInCache()</code> exceeds
-  <code>maxNumberOfKeysInSegmentCache</code> (or the coordinator threshold).</li>
-<li>May run <code>segment.compact()</code> first when the policy says the segment is small
-  or likely full of tombstones, then re-evaluates the plan.</li>
-<li>Acquires the segment write lock for the entire split when the segment is a
-  <code>SegmentImplSynchronizationAdapter</code>.</li>
-<li>Calls <code>segment.invalidateIterators()</code> to terminate fail-fast iterators.</li>
-<li>Opens <code>openIterator(FULL_ISOLATION)</code> and streams a merged view
-  (index + delta cache + write cache). Tombstones are filtered out by the
-  iterator (<code>MergeDeltaCacheWithIndexIterator</code>).</li>
-<li>Writes the first half into a new lower segment. Remaining entries go into a
-  new upper segment. If there are no remaining entries, the result is a
-  compaction: the lower segment replaces the current segment.</li>
-<li>Replaces on-disk files and updates <code>KeyToSegmentMap</code>, then closes the old
-  segment instance.</li>
+<li><code>SplitPolicyScheduler</code> decides when a routed segment should be split</li>
+<li><code>SplitTaskCoordinator</code> acquires a <code>RouteSplitLease</code> for the parent
+  route before materialization</li>
+<li><code>RouteSplitPlanner</code> computes the split boundary from a parent segment
+  snapshot</li>
+<li>child stable segments are materialized before route-map publish</li>
+<li><code>RouteSplitLease</code> drains the parent route before child materialization,
+  and publish updates <code>SegmentRouteMap</code></li>
+<li>writes to the affected route may see transient internal <code>BUSY</code> and are
+  retried with segment-access retry settings</li>
 </ul>
-<p>When a new write arrives while split is running:</p>
+<p>Important boundary:</p>
 <ul>
-<li>The new write blocks on the write lock for the full split duration.</li>
+<li><code>Segment</code> itself does not own route-map changes</li>
+<li><code>Segment</code> only provides the stable snapshot and local read-after-write
+  guarantee used by the split coordinator</li>
 </ul>
-<p>When <code>get()</code> or iterators run during split:</p>
+<h2 id="backpressure-and-overload">Backpressure And Overload</h2>
+<p>There is no index-level ingest overlay to absorb writes anymore. Backpressure
+comes from:</p>
 <ul>
-<li><code>get()</code> and fail-fast iterators block on the write lock while split holds it.</li>
-<li>Fail-fast iterators are explicitly invalidated at split start.</li>
-<li>FULL_ISOLATION iterators hold the write lock, so split waits until they
-  close.</li>
+<li>segment-local write cache and delta-cache maintenance limits</li>
+<li>transient <code>BUSY</code> while a segment is in <code>FREEZE</code> or maintenance</li>
+<li>transient <code>BUSY</code> while a route is scheduled for split</li>
+<li>WAL retention pressure when WAL is enabled</li>
 </ul>
-<h3 id="backpressure-overload">Backpressure / overload</h3>
-<p>The segment itself does not enforce a hard size cap. <code>UniqueCache</code> is
-unbounded, so if writes outpace maintenance, memory can grow.</p>
-<p>Current index-level handling (SegmentIndexImpl):</p>
-<ul>
-<li>When the active partition reaches <code>maxNumberOfKeysInActivePartition</code>, the
-  write overlay rotates to an immutable run and background drain starts.</li>
-<li>When one partition exceeds <code>maxNumberOfKeysInPartitionBuffer</code>, or the whole
-  index exceeds <code>maxNumberOfKeysInIndexBuffer</code>, the index applies bounded
-  backpressure instead of letting buffered data grow without limit.</li>
-<li>When a routed partition grows past
-  <code>maxNumberOfKeysInPartitionBeforeSplit</code>, the split policy loop schedules a
-  partition split.</li>
-</ul>
-<p>If write load still exceeds flush/compact throughput, pick one:</p>
-<ul>
-<li>Apply backpressure at the index level (for example, wrap SegmentIndex with a
-  bounded executor/queue).</li>
-<li>Lower thresholds to flush/split earlier.</li>
-<li>Add explicit throttling around <code>SegmentIndex.put()</code> callers if upstream
-  producers still exceed drain/compaction throughput.</li>
-</ul>
-<h3 id="parallel-calls-flush-vs-compact-vs-split">Parallel calls (flush vs compact vs split)</h3>
+<p>The Java configuration API uses grouped <code>writePath(...)</code> and <code>segment(...)</code>
+sections. Historical partition-named properties may still appear in persisted
+metadata and compatibility metrics, but they now map to routed segment
+write-cache, maintenance backlog, and split thresholds rather than a separate
+partition runtime.</p>
+<h2 id="parallel-calls">Parallel Calls</h2>
 <p>Same segment:</p>
 <ul>
-<li><code>flush()</code>, <code>compact()</code>, and split are exclusive. The write lock serializes
-  them, so parallel calls run one after another.</li>
-<li>Split uses <code>FULL_ISOLATION</code> iterators and was wrapped in the write lock by
-  the removed segment-index split wrapper when the segment was a
-  <code>SegmentImplSynchronizationAdapter</code>.</li>
+<li><code>flush()</code>, <code>compact()</code>, and <code>FULL_ISOLATION</code> iteration are exclusive</li>
+<li>writes can continue during <code>MAINTENANCE_RUNNING</code> when the segment state
+  allows it</li>
 </ul>
 <p>Different segments:</p>
 <ul>
-<li>Maintenance can run in parallel (each segment has its own lock).</li>
-<li>Split takes a registry lock only during file rename; it does not block
-  other segments otherwise.</li>
+<li>maintenance can run in parallel</li>
+<li>split work on one route does not stop unrelated routes</li>
 </ul>
-<h3 id="reads-get-and-iterators">Reads, get(), and iterators</h3>
+<h2 id="reads-and-iterators">Reads And Iterators</h2>
 <ul>
-<li>Multiple <code>get()</code> calls can run concurrently.</li>
-<li><code>openIterator(FAIL_FAST)</code> can run concurrently with <code>get()</code> and other
-  fail-fast iterators, but any mutation (<code>put</code>, <code>flush</code>, <code>compact</code>, <code>split</code>)
-  invalidates it via the version counter.</li>
-<li><code>openIterator(FULL_ISOLATION)</code> holds the write lock until closed, blocking
-  writes, flush, compact, and split on that segment.</li>
+<li>multiple <code>get()</code> calls can run concurrently</li>
+<li><code>FAIL_FAST</code> iteration is optimistic and can stop early after a publish</li>
+<li><code>FULL_ISOLATION</code> iteration holds exclusive access for its lifetime and blocks
+  writes, flush, compact, and split materialization on that segment</li>
 </ul>
-<h3 id="corner-cases-to-call-out">Corner cases to call out</h3>
+<h2 id="corner-cases">Corner Cases</h2>
 <ul>
-<li>Fail-fast iterators must be expected to end early after any mutation.</li>
-<li>FULL_ISOLATION iterators must always be closed; otherwise writers can stall.</li>
-<li><code>flush()</code> is a no-op with an empty write cache.</li>
-<li><code>compact()</code> clears both delta cache and write cache; callers should not
-  expect pending writes to remain after compaction.</li>
-<li>Split can degrade to compaction when no entries remain for the upper segment.</li>
-<li>Split throws if the plan is not feasible (estimated keys too low).</li>
-<li>Split can be skipped when <code>hasLiveEntries()</code> finds no live entries (empty or
-  tombstone-only segment).</li>
-<li>Split closes and replaces the current segment instance; stale references to
-  the old segment must not be reused.</li>
-<li>Calls on a closed segment return <code>SegmentResultStatus.CLOSED</code>; callers can
-  check <code>getState()</code> or handle the status directly.</li>
-<li>Version overflow throws in <code>VersionController</code>; long-running services should
-  monitor for it.</li>
-</ul>
-<h3 id="legacy-lock-summary-removed">Legacy lock summary (removed)</h3>
-<ul>
-<li>Removed: per-segment read/write lock for API calls.</li>
-<li>One optimistic version counter for fail-fast iterator invalidation
-  (<code>VersionController</code>).</li>
-<li>Segment registry exposes <code>executeWithRegistryLock()</code> for split file
-  replacement, but the current <code>SegmentRegistry</code> does not implement a real
-  registry lock.</li>
-</ul>
-<h2 id="lock-free-model-current">Lock-free model (current)</h2>
-<h3 id="goals">Goals</h3>
-<ul>
-<li>Keep <code>FREEZE</code> exclusive phases short and deterministic (swap + version bump).</li>
-<li>Run IO-heavy work (sorting, building files) outside <code>FREEZE</code>.</li>
-<li>Allow writes and most reads to continue during <code>MAINTENANCE_RUNNING</code>.</li>
-<li>Bound memory growth under sustained write load.</li>
-</ul>
-<h3 id="coordination-model">Coordination model</h3>
-<ul>
-<li>Short <code>FREEZE</code> phase for cache rotation, version capture, and file/reference
-  swap.</li>
-<li>Background maintenance uses frozen snapshots; no long-held
-  <code>FULL_ISOLATION</code> holds for heavy work.</li>
-<li>A per-segment maintenance state serializes flush/compact/split without
-  blocking normal writes.</li>
-</ul>
-<h3 id="a-flush_1">A) Flush</h3>
-<ul>
-<li>Under <code>FREEZE</code>: swap (freeze) the write cache and capture a version.</li>
-<li>Release to <code>MAINTENANCE_RUNNING</code>: sort and write the frozen snapshot to the
-  delta cache file.</li>
-<li>Under <code>FREEZE</code>: merge metadata and drop the frozen snapshot handle.</li>
-<li>Writes continue into the new write cache throughout the flush.</li>
-</ul>
-<h3 id="b-compact_1">B) Compact</h3>
-<ul>
-<li>Under <code>FREEZE</code>: freeze the merged in-memory view (delta + write cache),
-  capture a version, and redirect writes to a fresh cache.</li>
-<li>Release to <code>MAINTENANCE_RUNNING</code>: rebuild new on-disk files from the snapshot
-  plus current index.</li>
-<li>Optionally replay post-freeze writes before swap (or keep them in the active
-  write cache) to avoid data loss.</li>
-<li>Under <code>FREEZE</code>: validate version and swap files; clear obsolete delta files
-  and reset searchers.</li>
-</ul>
-<h3 id="c-split">C) Split</h3>
-<ul>
-<li>Use the freeze + redirect + replay pattern (see
-  <code>docs/development/segment-splitting-lock-minimization.md</code>).</li>
-<li>Under <code>FREEZE</code>: freeze the write cache, record a split version, and
-  redirect writes to a fresh cache.</li>
-<li>Release to <code>MAINTENANCE_RUNNING</code>: run the split pipeline against the frozen
-  snapshot.</li>
-<li>Replay post-freeze writes into the new lower/upper segments.</li>
-<li>Under <code>FREEZE</code>: verify version and swap references; on conflict, retry.</li>
-</ul>
-<h3 id="backpressure-overload_1">Backpressure / overload</h3>
-<ul>
-<li>Bound the number/size of frozen snapshots per segment.</li>
-<li>If backlog exceeds limits, apply throttling or spill to disk.</li>
+<li>always close <code>FULL_ISOLATION</code> iterators; otherwise writers and split
+  materialization can stall</li>
+<li>calls on a closed segment return <code>SegmentResultStatus.CLOSED</code></li>
+<li>version overflow still fails fast in <code>VersionController</code></li>
+<li>stale references to a retired parent segment must not be reused after split</li>
 <li>Run maintenance on a background executor and prioritize older snapshots.</li>
 </ul>
-<h3 id="parallel-calls">Parallel calls</h3>
+<h3 id="parallel-calls_1">Parallel calls</h3>
 <ul>
 <li>One maintenance task per segment at a time; other requests coalesce or wait.</li>
 <li>Flush requests during split should attach to replay or run after split.</li>
 <li>Maintenance can still run in parallel across different segments.</li>
 </ul>
-<h3 id="reads-get-and-iterators_1">Reads, get(), and iterators</h3>
+<h3 id="reads-get-and-iterators">Reads, get(), and iterators</h3>
 <ul>
 <li><code>get()</code> should read from current caches and files without blocking on long
   maintenance tasks.</li>
@@ -4102,7 +4023,7 @@ unbounded, so if writes outpace maintenance, memory can grow.</p>
 <li>Prefer snapshot-based iterators for long scans instead of holding write
   holds for <code>FULL_ISOLATION</code>.</li>
 </ul>
-<h3 id="corner-cases">Corner cases</h3>
+<h3 id="corner-cases_1">Corner cases</h3>
 <ul>
 <li>Version mismatch at swap time should trigger retry or fallback.</li>
 <li>Large post-freeze write backlog should trigger backpressure or replay caps.</li>

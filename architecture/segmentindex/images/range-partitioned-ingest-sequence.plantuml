@@ -2,25 +2,27 @@
 skinparam shadowing false
 
 actor User
+participant "WAL (optional)" as W
 participant "WriteRouteMap" as WR
-participant "RangePartition" as P
-participant "Active Mutable Layer" as M
-participant "Immutable Queue" as Q
-participant "Background Flush" as F
+participant "Stable Segment" as S
+participant "Segment Write Cache" as C
+participant "Background Maintenance" as F
 
-User -> WR : put(key, value)
-WR -> P : resolve partition
-P -> M : insert
+User -> W : append logical op
+User -> WR : resolve route
+WR -> S : locate segment
+S -> C : put(key, value)
+S --> User : OK
 
-alt active has room
-  P --> User : OK
-else rotate possible
-  P -> Q : move old active to immutable
-  P -> M : create new active
-  P --> User : OK
-  F -> Q : flush oldest immutable
-else immutable queue full
-  P --> User : throttle / short stall / OVERLOADED
+... later ...
+
+F -> S : flush / compact
+S -> C : freeze snapshot
+F --> S : publish durable files
+
+alt split scheduled for route
+  WR -> WR : short exclusive publish
+  WR --> User : stale route retries internally
 end
 
 @enduml

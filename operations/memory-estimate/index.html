@@ -10,13 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/community/changelog/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/operations/memory-estimate/">
       
       
-        <link rel="prev" href="../code-of-conduct/">
+        <link rel="prev" href="../monitoring/">
       
       
-        <link rel="next" href="../../development/">
+        <link rel="next" href="../tuning/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Changelog - HestiaStore</title>
+        <title>Startup Memory Estimate - HestiaStore</title>
       
     
     
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -83,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#changelog" class="md-skip">
+        <a href="#startup-memory-estimate" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Changelog
+              Startup Memory Estimate
             
           </span>
         </div>
@@ -323,11 +318,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../operations/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -367,19 +364,17 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1234,6 +1289,8 @@
       
   
   
+    
+  
   
   
     
@@ -1253,26 +1310,31 @@
       
         
       
+        
+      
+        
+      
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../operations/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1290,13 +1352,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1316,7 +1378,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/wal/" class="md-nav__link">
+      <a href="../wal/" class="md-nav__link">
         
   
   
@@ -1344,7 +1406,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/monitoring/" class="md-nav__link">
+      <a href="../monitoring/" class="md-nav__link">
         
   
   
@@ -1369,10 +1431,129 @@
                 
   
   
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-the-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read the report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-report-uses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the report uses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#incomplete-estimates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incomplete estimates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../../operations/tuning/" class="md-nav__link">
+      <a href="../tuning/" class="md-nav__link">
         
   
   
@@ -1400,7 +1581,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/backup-restore/" class="md-nav__link">
+      <a href="../backup-restore/" class="md-nav__link">
         
   
   
@@ -1428,7 +1609,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/wal-canary-runbook/" class="md-nav__link">
+      <a href="../export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wal-canary-runbook/" class="md-nav__link">
         
   
   
@@ -1612,6 +1821,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/chain-of-filters/" class="md-nav__link">
         
   
@@ -1676,34 +1913,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -1941,6 +2150,8 @@
       
         
       
+        
+      
     
     
     
@@ -2040,6 +2251,34 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
   
 
     
@@ -2207,7 +2446,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2572,51 +2811,51 @@
       
   
   
-    
-  
   
   
     
     
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
         
           
         
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2624,43 +2863,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../contributing/" class="md-nav__link">
+      <a href="../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2681,14 +2912,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../code-of-conduct/" class="md-nav__link">
+      <a href="../../architecture/package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2706,44 +2937,17 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Changelog
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
   
 
     
@@ -2752,132 +2956,118 @@
   
 
       </a>
-      
-        
+    </li>
+  
 
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+              
+            
+              
+                
   
   
   
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
   
+    Coding Guidelines
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#006-unreleased" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0.0.6 (Unreleased)
-      
-    </span>
-  </a>
+
+    
+  </span>
   
-    <nav class="md-nav" aria-label="0.0.6 (Unreleased)">
-      <ul class="md-nav__list">
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/implementation/" class="md-nav__link">
         
-          <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Changed
-      
-    </span>
-  </a>
   
-</li>
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/guides/" class="md-nav__link">
         
-          <li class="md-nav__item">
-  <a href="#breaking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Breaking
-      
-    </span>
-  </a>
   
-</li>
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
         
-      </ul>
-    </nav>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#005" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0.0.5
-      
-    </span>
-  </a>
   
-    <nav class="md-nav" aria-label="0.0.5">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
+  <span class="md-ellipsis">
+    
   
-</li>
-        
-      </ul>
-    </nav>
+    JVM Profiling
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#004" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0.0.4
-      
-    </span>
-  </a>
+
+    
+  </span>
   
-    <nav class="md-nav" aria-label="0.0.4">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
   
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Changed
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
+
+      </a>
     </li>
   
 
@@ -2901,8 +3091,6 @@
       
         
           
-        
-      
         
       
         
@@ -2957,7 +3145,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -2979,7 +3167,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -2994,14 +3182,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3030,34 +3274,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3134,34 +3350,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../development/segment-api/" class="md-nav__link">
         
   
@@ -3170,34 +3358,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3413,108 +3573,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#006-unreleased" class="md-nav__link">
+  <a href="#how-to-read-the-report" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.0.6 (Unreleased)
+        How to read the report
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.0.6 (Unreleased)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Changed
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#breaking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Breaking
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#005" class="md-nav__link">
+  <a href="#what-the-report-uses" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.0.5
+        What the report uses
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.0.5">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#004" class="md-nav__link">
+  <a href="#incomplete-estimates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.0.4
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.0.4">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
+        Incomplete estimates
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Changed
+        Related docs
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3564,7 +3662,7 @@
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Contribute & Community
+    Operations
   </span>
 
         </a>
@@ -3586,49 +3684,53 @@
   
 
 
-<h1 id="changelog">Changelog</h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>.</p>
-<h2 id="006-unreleased">0.0.6 (Unreleased)</h2>
-<h3 id="changed">Changed</h3>
+<h1 id="startup-memory-estimate">Startup Memory Estimate</h1>
+<p>HestiaStore logs a rough startup memory estimate after the effective
+<code>SegmentIndex</code> configuration is resolved. The report estimates active heap
+pressure from configuration values; it is not a JVM heap cap and it is not a
+measurement of allocated objects.</p>
+<p>The estimate is meant to explain why the configured index may need memory. Use
+it as a sizing hint, then verify real usage with JVM and application monitoring.</p>
+<h2 id="how-to-read-the-report">How to read the report</h2>
+<p>The report puts the final estimate first:</p>
 <ul>
-<li>Key encoding now uses a single-pass API (<code>TypeEncoder#encode(T, byte[])</code>) across read and write paths, including Bloom filter lookup, WAL encoding, and type writers.</li>
-<li>Added <code>EncodedBytes</code> as the shared return type for encoded payload (<code>bytes</code> + effective <code>length</code>).</li>
+<li><code>Estimated active heap</code>: steady-state memory plus the temporary margin.</li>
+<li><code>steady state</code>: memory expected after startup caches are loaded.</li>
+<li><code>temporary margin</code>: extra headroom for short-lived objects and snapshots.</li>
 </ul>
-<h3 id="breaking">Breaking</h3>
+<p>The <code>Largest steady-state areas</code> section shows the biggest calculated areas in
+descending order. The <code>Estimated memory by area</code> section keeps the detailed
+inputs for each area.</p>
+<p>Configuration values that are useful context but do not change the estimate are
+listed under <code>Reported but not included</code>. Conditional areas use <code>if loaded</code> in
+their labels because those structures are loaded lazily; the estimate shows
+their active-heap cost when loaded.</p>
+<h2 id="what-the-report-uses">What the report uses</h2>
+<p>The estimator combines resolved configuration, descriptor size estimates, and a
+small set of fixed assumptions:</p>
 <ul>
-<li><code>TypeEncoder</code> no longer exposes <code>bytesLength(T)</code> and <code>toBytes(T, byte[])</code>.</li>
-<li>External/custom <code>TypeEncoder</code> implementations must migrate to:</li>
-<li><code>EncodedBytes encode(T value, byte[] reusableBuffer)</code></li>
-<li>Migration intent:</li>
-<li>Use the provided reusable buffer when it is large enough.</li>
-<li>Allocate a larger buffer when needed.</li>
-<li>Return effective encoded length in <code>EncodedBytes.length</code>.</li>
+<li><code>entry overhead</code>: applied per cached key/value entry.</li>
+<li><code>page overhead</code>: applied per chunk-store cache page.</li>
+<li><code>tree map entry</code>: applied per route-map tree entry.</li>
+<li><code>segment id</code>: applied when estimating route-map entries.</li>
+<li><code>scarce index position</code>: applied per scarce-index entry.</li>
+<li><code>fixed per loaded/cached segment</code>: applied once for each loaded or cached
+  segment.</li>
+<li><code>temporary margin</code>: extra space above steady state, calculated as the
+  larger of a percentage of steady state or one loaded segment cache.</li>
 </ul>
-<h2 id="005">0.0.5</h2>
-<h3 id="added">Added</h3>
+<p>These assumptions are deliberately visible because they are not exact JVM
+object-layout measurements. They are stable estimator constants used to make
+the report understandable and repeatable.</p>
+<h2 id="incomplete-estimates">Incomplete estimates</h2>
+<p>If a key or value <code>TypeDescriptor</code> cannot provide
+<code>getEstimatedAverageSizeInBytes()</code>, HestiaStore still starts normally. The
+report marks dependent line items as unavailable and still shows independent
+items such as Bloom filters and fixed segment infrastructure.</p>
+<h2 id="related-docs">Related docs</h2>
 <ul>
-<li>Data blocks were introduced and the on-disk storage format was significantly improved.</li>
-<li>All disk writes now use a temporary file followed by an atomic rename; all streams are correctly closed.</li>
-<li>Data storage is configurable via the application configuration.</li>
-<li>Data in chunks and data blocks are validated using a magic number and CRC32.</li>
-<li>Added support for Snappy compression.</li>
-</ul>
-<h2 id="004">0.0.4</h2>
-<h3 id="added_1">Added</h3>
-<ul>
-<li>Add recovery support to rebuild indexes after failures. (<a href="https://github.com/jajir/HestiaStore/issues/22">#22</a>)</li>
-<li>Introduce pages for segment-based indexing. (<a href="https://github.com/jajir/HestiaStore/issues/31">#31</a>)</li>
-<li>Create <code>Directory</code> implementation using <code>java.nio</code>. (<a href="https://github.com/jajir/HestiaStore/issues/50">#50</a>)</li>
-<li>Add a performance comparison framework for benchmark testing. (<a href="https://github.com/jajir/HestiaStore/issues/60">#60</a>)</li>
-<li>Add integration tests for deletion and graceful degradation. (<a href="https://github.com/jajir/HestiaStore/issues/76">#76</a>, <a href="https://github.com/jajir/HestiaStore/issues/63">#63</a>)</li>
-<li>Add a test class for long-running index operations. (<a href="https://github.com/jajir/HestiaStore/issues/49">#49</a>)</li>
-</ul>
-<h3 id="changed_1">Changed</h3>
-<ul>
-<li>Improve design of the <code>sorteddatafile</code> package for better modularity. (<a href="https://github.com/jajir/HestiaStore/issues/59">#59</a>)</li>
-<li>Enhance index configuration validation and parameter consistency. (<a href="https://github.com/jajir/HestiaStore/commit">#81</a>)</li>
-<li>Introduce limits on the number of delta files to prevent unbounded growth. (<a href="https://github.com/jajir/HestiaStore/issues/75">#75</a>)</li>
+<li><a href="../tuning/">Performance Tuning</a></li>
+<li><a href="../../configuration/data-types/">Data Types</a></li>
 </ul>
 
 
@@ -3636,6 +3738,9 @@
 
 
 
+
+  
+  
 
 
 

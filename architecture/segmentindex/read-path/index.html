@@ -16,7 +16,7 @@
         <link rel="prev" href="../write-path/">
       
       
-        <link rel="next" href="../range-partitioned-ingest/">
+        <link rel="next" href="../wal-runtime/">
       
       
         
@@ -59,11 +59,6 @@
 
     
     
-  
-  <link rel="shortcut icon" href="../../../favicon.ico">
-  <link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
-  <link rel="apple-touch-icon-precomposed" href="../../../apple-touch-icon-precomposed.png">
-
   </head>
   
   
@@ -373,13 +368,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../community/" class="md-tabs__link">
+        <a href="../../../development/code/" class="md-tabs__link">
           
   
   
     
   
-  Contribute & Community
+  Development
 
         </a>
       </li>
@@ -401,7 +396,7 @@
   
     
   
-  Development
+  Contribute & Community
 
         </a>
       </li>
@@ -664,6 +659,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -753,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Write Throughput Results
+    Write Results
   
 
     
@@ -781,7 +780,63 @@
   <span class="md-ellipsis">
     
   
-    Random Read Results
+    Read Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Write Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multithread Read Results
   
 
     
@@ -1253,6 +1308,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1372,6 +1431,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../operations/memory-estimate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Startup Memory Estimate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../operations/tuning/" class="md-nav__link">
         
   
@@ -1408,6 +1495,34 @@
     
   
     Backup & Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/export-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Export & Import
   
 
     
@@ -1615,6 +1730,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../chunk-filter-provider-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chunk Filter Provider Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../chain-of-filters/" class="md-nav__link">
         
   
@@ -1679,34 +1822,6 @@
     
   
     Consistency & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../package-boundaries/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Package Layout
   
 
     
@@ -1949,6 +2064,8 @@
       
         
       
+        
+      
     
     
     
@@ -2112,30 +2229,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#entry-point-and-firstlevel-cache" class="md-nav__link">
+  <a href="#entry-point-and-routing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Entry Point and First‑Level Cache
+        Entry Point and Routing
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Entry Point and First‑Level Cache">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behavior
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2231,6 +2331,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wal-runtime/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2390,7 +2518,7 @@
   <span class="md-ellipsis">
     
   
-    Metrics Snapshot
+    Metrics RouteMapSnapshot
   
 
     
@@ -2767,7 +2895,11 @@
     
       
         
-          
+      
+        
+      
+        
+      
         
       
         
@@ -2794,15 +2926,14 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <div class="md-nav__link md-nav__container">
-            <a href="../../../community/" class="md-nav__link ">
-              
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Contribute & Community
+    Development
   
 
     
@@ -2810,43 +2941,35 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Contribute & Community
+    Development
   
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
               
-            
-              
                 
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../../community/contributing/" class="md-nav__link">
+      <a href="../../../development/code/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Contributing
+    Overview
   
 
     
@@ -2867,14 +2990,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../community/code-of-conduct/" class="md-nav__link">
+      <a href="../../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Code of Conduct
+    Code Structure
   
 
     
@@ -2895,14 +3018,126 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../community/changelog/" class="md-nav__link">
+      <a href="../../../development/configuration-flow/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Changelog
+    Configuration Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coding Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segment Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/guides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guides
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Profiling
   
 
     
@@ -2962,8 +3197,6 @@
       
         
       
-        
-      
     
     
     
@@ -2990,7 +3223,7 @@
   <span class="md-ellipsis">
     
   
-    Development
+    Contribute & Community
   
 
     
@@ -3012,7 +3245,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
+    Contribute & Community
   
 
           </label>
@@ -3027,14 +3260,70 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/git-workflow/" class="md-nav__link">
+      <a href="../../../CONTRIBUTING/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Git and Worktree Workflow
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -3063,34 +3352,6 @@
     
   
     Release Process
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/code-quality-charter/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Code Quality Charter
   
 
     
@@ -3167,34 +3428,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/guides/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Developer Guides
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../development/segment-api/" class="md-nav__link">
         
   
@@ -3203,34 +3436,6 @@
     
   
     Segment API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JVM Profiling
   
 
     
@@ -3457,30 +3662,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#entry-point-and-firstlevel-cache" class="md-nav__link">
+  <a href="#entry-point-and-routing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Entry Point and First‑Level Cache
+        Entry Point and Routing
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Entry Point and First‑Level Cache">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Behavior
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3659,74 +3847,113 @@
 
 
 <h1 id="read-path">Read Path</h1>
-<p>This page explains how reads resolve values with low latency and predictable I/O. It walks through point lookups, range iteration, and the interplay of caches, Bloom filter, and the sparse index, mapped to concrete classes in the codebase.</p>
+<p>This page explains how reads resolve values with low latency and predictable
+I/O. It walks through point lookups, range iteration, and the interplay of
+segment-local caches, Bloom filter, and the sparse index, mapped to concrete
+classes in the codebase.</p>
 <p>Segment-internal details are centralized in
 <a href="../../segment/">Segment Architecture</a>. This page focuses on the
 SegmentIndex-level orchestration path.</p>
 <h2 id="highlevel-flow-point-lookup">High‑Level Flow (Point Lookup)</h2>
 <ol>
 <li>API call: <code>SegmentIndex.get(key)</code></li>
-<li>Check the partition overlay for the routed key range (active mutable + immutable runs)</li>
-<li>Locate the target segment using the key→segment map</li>
-<li>Inside the segment: consult delta cache → Bloom filter → sparse index → local scan</li>
+<li>Resolve the target segment using <code>MappedSegmentLeaseService</code></li>
+<li>Read directly from the routed segment</li>
+<li>Inside the segment: consult write cache → delta cache → Bloom filter →
+   sparse index → local scan</li>
 </ol>
-<p>Lookups are read‑after‑write consistent thanks to the in‑memory buffers.</p>
-<h2 id="entry-point-and-firstlevel-cache">Entry Point and First‑Level Cache</h2>
+<p>Lookups are read-after-write consistent because each <code>Segment</code> checks its own
+in-memory write cache before falling back to stable on-disk state.</p>
+<h2 id="entry-point-and-routing">Entry Point and Routing</h2>
 <ul>
-<li><code>segmentindex/core/SegmentIndexImpl#get(K)</code> does:</li>
-<li>Resolve the routed partition and check overlay layers first</li>
-<li>If miss, resolve <code>SegmentId</code> via the route map for stable-segment lookup</li>
-<li>Delegate to <code>Segment.get(key)</code></li>
+<li><code>segmentindex/core/session/SegmentIndexSession#get(K)</code> runs the point lookup
+  under index state and close-safety checks.</li>
+<li><code>PointOperationCoordinator#get(K)</code> uses <code>MappedSegmentLeaseService</code> to resolve the
+  current route, acquire a <code>RouteTopology</code> route lease, and load the segment
+  from <code>SegmentRegistry</code>.</li>
+<li>The loaded segment handles the local <code>get(K)</code> lookup.</li>
 </ul>
-<p>Key classes: <code>segmentindex/core/SegmentIndexImpl.java</code>, <code>segmentindex/partition/PartitionRuntime.java</code>, <code>segmentindex/mapping/KeyToSegmentMap.java</code>.</p>
-<h3 id="behavior">Behavior</h3>
-<ul>
-<li>Cache hit and non‑tombstone → return value</li>
-<li>Cache hit and tombstone → treat as absent</li>
-<li>Otherwise fall back to the segment path below</li>
-</ul>
+<p>Key classes:
+<code>segmentindex/core/session/SegmentIndexSession.java</code>,
+<code>segmentindex/core/execution/PointOperationCoordinator.java</code>,
+<code>segmentindex/core/routing/MappedSegmentLeaseService.java</code>,
+<code>segmentindex/routemap/SegmentRouteMap.java</code>.</p>
 <h2 id="persegment-read-path">Per‑Segment Read Path</h2>
-<p><code>segment/SegmentImpl#get(key)</code> uses <code>SegmentSearcher</code> with lazily loaded segment data:</p>
+<p><code>segment/SegmentImpl#get(key)</code> uses <code>SegmentSearcher</code> with lazily loaded
+segment data:</p>
 <ol>
-<li>Delta cache probe: in‑memory map of the segment’s pending updates (merged from delta files). If hit and value not a tombstone → return; tombstone → absent.</li>
-<li>Bloom filter: <code>bloomFilter.isNotStored(key)</code> guards the on‑disk path. If “not stored” → absent.</li>
-<li>Sparse index ("scarce index"): returns a chunk start position for keys ≥ query.</li>
-<li>Local scan: within at most N keys (<code>maxNumberOfKeysInIndexPage</code>) starting at that chunk, compare keys in ascending order and stop as soon as the target is found or passed.</li>
-<li>If the sparse index pointed us into the file but no exact key was found, mark a false positive on the Bloom filter for metrics and return absent.</li>
+<li>Write cache probe: the segment's latest in-memory writes are checked first.</li>
+<li>Delta cache probe: in-memory map of pending updates merged from delta files.
+   If hit and value not a tombstone → return; tombstone → absent.</li>
+<li>Bloom filter: <code>bloomFilter.isNotStored(key)</code> guards the on-disk path. If
+   “not stored” → absent.</li>
+<li>Sparse index ("scarce index"): returns a chunk start position for keys ≥
+   query.</li>
+<li>Local scan: within at most N keys (<code>segment().chunkKeyLimit()</code>) starting
+   at that chunk, compare keys in ascending order and stop as soon as the
+   target is found or passed.</li>
+<li>If the sparse index pointed into the file but no exact key was found, mark
+   a false positive on the Bloom filter for metrics and return absent.</li>
 </ol>
-<p>Key classes: <code>segment/SegmentSearcher.java</code>, <code>segment/SegmentIndexSearcher.java</code>, <code>scarceindex/ScarceSegmentIndex.java</code>, <code>bloomfilter/BloomFilter.java</code>.</p>
+<p>Key classes:
+<code>segment/SegmentSearcher.java</code>,
+<code>segment/SegmentIndexSearcher.java</code>,
+<code>scarceindex/ScarceSegmentIndex.java</code>,
+<code>bloomfilter/BloomFilter.java</code>.</p>
 <h2 id="range-scans-and-full-iteration">Range Scans and Full Iteration</h2>
 <ul>
-<li><code>SegmentIndex.getStream()</code> and <code>SegmentIndex.openSegmentIterator(...)</code> produce iterators over all data:</li>
-<li><code>segmentindex/SegmentsIterator</code> chains <code>Segment.openIterator()</code> across all segments in order.</li>
-<li><code>segment/SegmentImpl.openIterator()</code> merges the on‑disk main SST with the segment’s delta cache via <code>MergeDeltaCacheWithIndexIterator</code>, skipping tombstones.</li>
-<li>The per‑segment iterator is wrapped with <code>EntryIteratorWithLock</code> using an <code>OptimisticLock</code>. If a write changes the segment version mid‑scan, the iterator stops gracefully (no partial records).</li>
-<li>At the top level, <code>EntryIteratorRefreshedFromCache</code> overlays the index‑level unique buffer so that the iterator sees the latest writes even before they’re flushed to disk.</li>
+<li><code>SegmentIndex.getStream()</code> and <code>SegmentIndex.openSegmentIterator(...)</code>
+  produce iterators over routed segments in order.</li>
+<li><code>SegmentIteratorService.openWindowIterator(...)</code> opens iterators through
+  <code>MappedSegmentLeaseService</code>, which owns route snapshots, topology leases, and
+  registry-backed segment handles.</li>
+<li>Iterator route leases protect segment-handle acquisition and iterator open;
+  they are released after the segment iterator is obtained so an open scan does
+  not block later route remapping.</li>
+<li><code>segment/SegmentImpl.openIterator()</code> merges the on-disk main SST with the
+  segment's delta cache via <code>MergeDeltaCacheWithIndexIterator</code>, skipping
+  tombstones.</li>
+<li>The per-segment iterator is wrapped with <code>EntryIteratorWithLock</code> using an
+  <code>OptimisticLock</code>. If a write changes the segment version mid-scan, the
+  iterator stops gracefully.</li>
+<li>For <code>FULL_ISOLATION</code>, the index retries iterator open if the route map
+  changes while the iterator is being opened.</li>
 </ul>
-<p>Key classes: <code>segmentindex/SegmentsIterator.java</code>, <code>segment/MergeDeltaCacheWithIndexIterator.java</code>, <code>segmentindex/EntryIteratorRefreshedFromCache.java</code>, <code>EntryIteratorWithLock.java</code>, <code>OptimisticLock.java</code>.</p>
+<p>Key classes:
+<code>segmentindex/core/execution/SegmentIteratorService.java</code>,
+<code>segmentindex/core/execution/StableSegmentsIterator.java</code>,
+<code>segment/MergeDeltaCacheWithIndexIterator.java</code>,
+<code>EntryIteratorWithLock.java</code>,
+<code>OptimisticLock.java</code>.</p>
 <h2 id="readafterwrite-semantics">Read‑After‑Write Semantics</h2>
-<p>Two overlay layers provide immediate visibility of recent writes:</p>
+<p>Read-after-write is segment-local:</p>
 <ul>
-<li>Active partition mutable layer is checked first by <code>SegmentIndex.get</code>.</li>
-<li>Immutable partition runs (newest first) are checked before stable segment storage.</li>
+<li><code>SegmentIndex</code> routes the request to one stable segment.</li>
+<li><code>Segment.get(key)</code> checks the segment write cache before reading stable data.</li>
+<li>Tombstones are treated as “not found”.</li>
 </ul>
-<p>Deletes are represented as tombstones by the value type descriptor. The read path treats a tombstone as “not found”.</p>
 <h2 id="complexity-and-io-characteristics">Complexity and I/O Characteristics</h2>
 <ul>
-<li>Index‑level cache probe: O(1) hash map</li>
-<li>Segment delta cache probe: O(1) hash map</li>
+<li>Route lookup: in-memory map lookup over routed segments</li>
+<li>Segment write/delta cache probe: O(1) hash map</li>
 <li>Bloom filter probe: O(k) where k is number of hash functions; no I/O</li>
-<li>Sparse index probe: in‑memory list search over a small sample set (fast, cache‑friendly)</li>
-<li>Local scan: sequential read within one chunk window of up to <code>maxNumberOfKeysInIndexPage</code> entries</li>
+<li>Sparse index probe: in-memory list search over a small sample set</li>
+<li>Local scan: sequential read within one chunk window of up to
+  <code>segment().chunkKeyLimit()</code> entries</li>
 <li>Iterators: sequential over chunks; minimal seeks due to chunked layout</li>
 </ul>
-<p>These choices keep random access bounded and predictable, with sequential I/O for scans.</p>
+<p>These choices keep random access bounded and predictable, with sequential I/O
+for scans.</p>
 <h2 id="configuration-knobs-affecting-reads">Configuration Knobs Affecting Reads</h2>
 <ul>
-<li><code>maxNumberOfKeysInSegmentChunk</code> — upper bound of keys per chunk; also the window size for a local scan from the sparse index pointer</li>
-<li>Bloom filter parameters — <code>numberOfHashFunctions</code>, <code>indexSizeInBytes</code>, <code>falsePositiveProbability</code></li>
-<li><code>diskIoBufferSize</code> — affects chunk and data block I/O buffering</li>
-<li>Encoding/decoding filters — enable CRC32, magic number and optional Snappy compression on read/write paths</li>
+<li><code>segment().chunkKeyLimit()</code> — upper bound of keys per chunk; also the
+  window size for a local scan from the sparse-index pointer</li>
+<li>Bloom filter parameters — <code>bloomFilter().hashFunctions()</code>,
+  <code>bloomFilter().indexSizeBytes()</code>,
+  <code>bloomFilter().falsePositiveProbability()</code></li>
+<li><code>io().diskBufferSizeBytes()</code> — affects chunk and data block I/O buffering</li>
+<li>Encoding/decoding filters — enable CRC32, magic number and optional Snappy
+  compression on read/write paths</li>
 </ul>
 <p>See: <code>segmentindex/IndexConfiguration</code> and <code>segment/SegmentConf</code>.</p>
 <h2 id="integrity-on-the-read-path">Integrity on the Read Path</h2>
@@ -3737,14 +3964,25 @@ SegmentIndex-level orchestration path.</p>
 <li>Decompress (if Snappy was enabled)</li>
 </ul>
 <p>Errors surface as exceptions; partial reads do not corrupt state.</p>
-<p>Key classes: <code>chunkstore/ChunkStoreReaderImpl</code>, <code>chunkstore/ChunkFilterMagicNumberValidation</code>, <code>chunkstore/ChunkFilterCrc32Validation</code>, <code>chunkstore/ChunkFilterSnappyDecompress</code>.</p>
+<p>Key classes:
+<code>chunkstore/ChunkStoreReaderImpl</code>,
+<code>chunkstore/ChunkFilterMagicNumberValidation</code>,
+<code>chunkstore/ChunkFilterCrc32Validation</code>,
+<code>chunkstore/ChunkFilterSnappyDecompress</code>.</p>
 <h2 id="where-to-look-in-the-code">Where to Look in the Code</h2>
 <ul>
-<li>Point lookup orchestration: <code>src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java</code></li>
-<li>Segment search path: <code>src/main/java/org/hestiastore/index/segment/SegmentSearcher.java</code></li>
+<li>Point lookup orchestration:
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/session/SegmentIndexSession.java</code></li>
+<li>Routed reads and iterator leases:
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/routing/MappedSegmentLeaseService.java</code>,
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/execution/SegmentIteratorService.java</code></li>
+<li>Segment search path:
+  <code>src/main/java/org/hestiastore/index/segment/SegmentSearcher.java</code></li>
 <li>Sparse index: <code>src/main/java/org/hestiastore/index/scarceindex/*</code></li>
-<li>Iteration and merging: <code>src/main/java/org/hestiastore/index/segment/MergeDeltaCacheWithIndexIterator.java</code></li>
-<li>Iterator safety: <code>src/main/java/org/hestiastore/index/EntryIteratorWithLock.java</code></li>
+<li>Iteration and merging:
+  <code>src/main/java/org/hestiastore/index/segment/MergeDeltaCacheWithIndexIterator.java</code></li>
+<li>Iterator safety:
+  <code>src/main/java/org/hestiastore/index/EntryIteratorWithLock.java</code></li>
 </ul>
 <h2 id="related-glossary">Related Glossary</h2>
 <ul>
@@ -3752,7 +3990,6 @@ SegmentIndex-level orchestration path.</p>
 <li><a href="../../glossary/#delta-cache">Delta Cache</a></li>
 <li><a href="../../glossary/#bloom-filter">Bloom Filter</a></li>
 <li><a href="../../glossary/#sparse-index-scarce-index">Sparse Index</a></li>
-<li><a href="../../glossary/#uniquecache">UniqueCache</a></li>
 <li><a href="../../glossary/#entryiterator">EntryIterator</a></li>
 <li><a href="../../glossary/#segmentwindow">SegmentWindow</a></li>
 </ul>

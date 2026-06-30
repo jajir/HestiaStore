@@ -1,0 +1,56 @@
+@startuml configuration-flow
+' Diagram scope rule for future regeneration:
+' Keep this image focused on packages that process user data requests from
+' SegmentIndex to Segment: put, get, delete, and iterator/getStream paths.
+' Do not add broad cross-cutting packages such as core.session startup,
+' runtimemonitoring/monitoring, logging adapters, executorregistry,
+' configuration, or tuning unless the image is specifically about those
+' packages. They relate to many packages and obscure the request path.
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+top to bottom direction
+
+title SegmentIndex Request Processing Package Relationships
+
+component "Public API\nsegmentindex\n\nSegmentIndex\nput / get / delete / getStream" as Api
+
+component "Session boundary\ncore.session\n\nSegmentIndexSession\nSessionOperationGate" as Session
+
+package "Point operations" {
+  component "Operation coordinator\ncore.execution\n\nPointOperationCoordinator" as Operations
+  component "Storage / WAL boundary\ncore.storage\n\nStorageCoordinator\nWalCoordinator" as Storage
+}
+
+package "Iterator operations" {
+  component "Iterator access\ncore.execution\n\nSegmentIteratorService\nStableSegmentsIterator" as Streaming
+}
+
+package "Routing and segment access" {
+  component "Mapped lease service\ncore.routing\n\nMappedSegmentLeaseService\nMappedSegmentLease" as LeaseService
+  component "Route map and leases\nroutemap + core.routing\n\nSegmentRouteMap\nRouteMapSnapshot\nRouteTopology" as RouteState
+  component "Segment registry\nsegmentregistry\n\nSegmentRegistry\nBlockingSegment\nDefaultBlockingSegment" as SegmentRegistry
+}
+
+component "Segment engine\nsegment\n\nSegment\nSegmentImpl" as Segment
+
+Api --> Session : public user calls
+Session --> Operations : put / get / delete
+Session --> Streaming : iterator / getStream
+
+Operations --> Storage : append WAL and record LSN\nfor writes
+Operations --> LeaseService : acquire mapped segment\nfor key
+Streaming --> LeaseService : resolve window ids\nand acquire segment leases
+LeaseService --> RouteState : route-map snapshot\nand route lease
+LeaseService --> SegmentRegistry : load or try-load\nblocking segment
+
+SegmentRegistry --> Segment : get / put / openIterator
+
+legend bottom
+Scope: packages on the user request path to Segment only.
+Cross-cutting packages such as bootstrap, monitoring, logging, executors,
+configuration, and tuning are intentionally excluded from this image.
+endlegend
+@enduml
