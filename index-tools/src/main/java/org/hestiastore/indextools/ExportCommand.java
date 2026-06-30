@@ -33,6 +33,10 @@ final class ExportCommand {
 
     private static final long DEFAULT_MAX_PART_SIZE_BYTES = 512L * 1024L
             * 1024L;
+    private static final String OPTION_FORMAT = "format";
+    private static final String OPTION_COMPRESSION = "compression";
+    private static final String OPTION_MAX_PART_SIZE = "max-part-size";
+    private static final String OPTION_LIMIT = "limit";
 
     int run(final String[] args, final PrintStream out, final PrintStream err) {
         final Options options = new Options();
@@ -42,13 +46,13 @@ final class ExportCommand {
         options.addOption(Option.builder().longOpt("output").hasArg()
                 .desc("Output directory for the export bundle.").required()
                 .get());
-        options.addOption(Option.builder().longOpt("format").hasArg()
+        options.addOption(Option.builder().longOpt(OPTION_FORMAT).hasArg()
                 .desc("Export format: bundle or jsonl. Default: bundle.")
                 .get());
-        options.addOption(Option.builder().longOpt("compression").hasArg()
+        options.addOption(Option.builder().longOpt(OPTION_COMPRESSION).hasArg()
                 .desc("Compression mode: gzip or none. Default: gzip.")
                 .get());
-        options.addOption(Option.builder().longOpt("max-part-size").hasArg()
+        options.addOption(Option.builder().longOpt(OPTION_MAX_PART_SIZE).hasArg()
                 .desc("Approximate uncompressed bundle part size. Default: 512MiB.")
                 .get());
         options.addOption(Option.builder().longOpt("from-key").hasArg()
@@ -57,7 +61,7 @@ final class ExportCommand {
         options.addOption(Option.builder().longOpt("to-key").hasArg()
                 .desc("Inclusive upper key bound for a partial export.")
                 .get());
-        options.addOption(Option.builder().longOpt("limit").hasArg()
+        options.addOption(Option.builder().longOpt(OPTION_LIMIT).hasArg()
                 .desc("Maximum number of exported records after range filtering.")
                 .get());
         options.addOption(Option.builder().longOpt("overwrite")
@@ -76,23 +80,23 @@ final class ExportCommand {
                     .toAbsolutePath().normalize();
             final Path outputDirectory = Path.of(commandLine.getOptionValue("output"))
                     .toAbsolutePath().normalize();
-            final ExportFormat format = commandLine.hasOption("format")
-                    ? ExportFormat.parse(commandLine.getOptionValue("format"))
+            final ExportFormat format = commandLine.hasOption(OPTION_FORMAT)
+                    ? ExportFormat.parse(commandLine.getOptionValue(OPTION_FORMAT))
                     : ExportFormat.BUNDLE;
             final CompressionMode compression = commandLine
-                    .hasOption("compression")
+                    .hasOption(OPTION_COMPRESSION)
                             ? CompressionMode.parse(commandLine
-                                    .getOptionValue("compression"))
+                                    .getOptionValue(OPTION_COMPRESSION))
                             : CompressionMode.GZIP;
             final long maxPartSizeBytes = commandLine
-                    .hasOption("max-part-size")
+                    .hasOption(OPTION_MAX_PART_SIZE)
                             ? SizeValueParser.parseBytes(commandLine
-                                    .getOptionValue("max-part-size"))
+                                    .getOptionValue(OPTION_MAX_PART_SIZE))
                             : DEFAULT_MAX_PART_SIZE_BYTES;
             final String fromKey = commandLine.getOptionValue("from-key");
             final String toKey = commandLine.getOptionValue("to-key");
-            final Long limit = commandLine.hasOption("limit")
-                    ? Long.valueOf(commandLine.getOptionValue("limit"))
+            final Long limit = commandLine.hasOption(OPTION_LIMIT)
+                    ? Long.valueOf(commandLine.getOptionValue(OPTION_LIMIT))
                     : null;
             final boolean overwrite = commandLine.hasOption("overwrite");
             execute(sourceIndex, outputDirectory, format, compression,
@@ -109,11 +113,12 @@ final class ExportCommand {
         }
     }
 
+    @SuppressWarnings("java:S107")
     private void execute(final Path sourceIndex, final Path outputDirectory,
             final ExportFormat format, final CompressionMode compression,
             final long maxPartSizeBytes, final String fromKey,
             final String toKey, final Long limit, final boolean overwrite,
-            final PrintStream out) throws Exception {
+            final PrintStream out) throws IOException {
         if (!Files.isDirectory(sourceIndex)) {
             throw new IOException(
                     "Source index directory does not exist: " + sourceIndex);
@@ -234,14 +239,14 @@ final class ExportCommand {
                     for (final java.util.Iterator<Entry<Object, Object>> iterator = selection
                             .apply(stream).iterator(); iterator.hasNext();) {
                         final Entry<Object, Object> entry = iterator.next();
-                        final JsonLineRecord record = new JsonLineRecord();
-                        record.setKey(DescriptorSupport.toEnvelope(
+                        final JsonLineRecord jsonLineRecord = new JsonLineRecord();
+                        jsonLineRecord.setKey(DescriptorSupport.toEnvelope(
                                 descriptors.key(), entry.getKey(), textCodecs));
-                        record.setValue(DescriptorSupport.toEnvelope(
+                        jsonLineRecord.setValue(DescriptorSupport.toEnvelope(
                                 descriptors.value(), entry.getValue(),
                                 textCodecs));
                         writer.write(ManifestSupport.lineMapper()
-                                .writeValueAsString(record));
+                                .writeValueAsString(jsonLineRecord));
                         writer.newLine();
                         recordCount++;
                     }

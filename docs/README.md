@@ -7,7 +7,6 @@ range scans, and operational simplicity inside a single application process.
 [![Build (main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml?query=branch%3Amain)
 ![test results](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-main.svg)
 ![line coverage](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-main.svg)
-![OWASP dependency check](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-owasp-main.svg)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10654/badge)](https://www.bestpractices.dev/projects/10654)
 ![Maven Central Version](https://img.shields.io/maven-central/v/org.hestiastore/engine)

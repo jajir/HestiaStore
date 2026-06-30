@@ -57,7 +57,7 @@ class IntegrationSegmentIndexSimpleTest {
     void testBasic() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
 
-        testData.stream().forEach(index1::put);
+        testData.forEach(index1::put);
 
         index1.maintenance().compactAndWait();
 
@@ -80,7 +80,7 @@ class IntegrationSegmentIndexSimpleTest {
         keyToSegmentMap.close();
 
         final SegmentIndex<Integer, String> index2 = openSegmentIndex();
-        testData.stream().forEach(entry -> {
+        testData.forEach(entry -> {
             final String value = index2.get(entry.getKey());
             assertEquals(entry.getValue(), value);
         });
@@ -105,7 +105,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         SegmentIndex<Integer, String> index1 = makeIndex(true);
 
-        testData.stream().forEach(index1::put);
+        testData.forEach(index1::put);
 
         // reopen index to make sure all log data at flushed at the disk
         index1.close();
@@ -115,7 +115,7 @@ class IntegrationSegmentIndexSimpleTest {
     @Test
     void test_merging_values_from_cache_and_segment() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
-        testData.stream().forEach(index1::put);
+        testData.forEach(index1::put);
         index1.maintenance().flushAndWait();
 
         try (final Stream<Entry<Integer, String>> stream = index1
@@ -135,7 +135,7 @@ class IntegrationSegmentIndexSimpleTest {
     @Test
     void test_repeated_read() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
-        testData.stream().forEach(index1::put);
+        testData.forEach(index1::put);
         index1.maintenance().flushAndWait();
 
         final List<Entry<Integer, String>> list1 = index1
@@ -155,7 +155,7 @@ class IntegrationSegmentIndexSimpleTest {
     @Test
     void test_read_from_reopend_index_multiple_records() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
-        testData.stream().forEach(index1::put);
+        testData.forEach(index1::put);
         index1.close();
 
         final SegmentIndex<Integer, String> index2 = openSegmentIndex();
@@ -185,7 +185,7 @@ class IntegrationSegmentIndexSimpleTest {
     @Test
     void test_reopen_after_flush_and_split_materialization() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
-        testData.stream().forEach(index1::put);
+        testData.forEach(index1::put);
         index1.maintenance().flushAndWait();
         index1.close();
 
@@ -200,7 +200,7 @@ class IntegrationSegmentIndexSimpleTest {
     @Test
     void test_reopen_cleans_orphan_segment_directory() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
-        testData.stream().forEach(index1::put);
+        testData.forEach(index1::put);
         index1.maintenance().flushAndWait();
         index1.close();
 
@@ -221,7 +221,7 @@ class IntegrationSegmentIndexSimpleTest {
     @Test
     void test_consistency_check_cleans_orphan_segment_directory() {
         final SegmentIndex<Integer, String> index = makeSegmentIndex();
-        testData.stream().forEach(index::put);
+        testData.forEach(index::put);
         index.maintenance().flushAndWait();
 
         final SegmentId orphanSegmentId = SegmentId.of(998);
@@ -253,13 +253,13 @@ class IntegrationSegmentIndexSimpleTest {
                 .mapToObj(i -> Entry.of(i, values.get(i + 1))).toList();
 
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
-        data.stream().forEach(index1::put);
+        data.forEach(index1::put);
         index1.maintenance().flush();
         verifyDataIndex(index1, data);
         index1.close();
 
         final SegmentIndex<Integer, String> index2 = openSegmentIndex();
-        updatedData.stream().forEach(index2::put);
+        updatedData.forEach(index2::put);
         index2.maintenance().flushAndWait();
         verifyDataIndex(index2, updatedData);
         index2.close();
@@ -289,7 +289,7 @@ class IntegrationSegmentIndexSimpleTest {
     @Test
     void test_read_from_unclosed_index() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
-        testData.stream().forEach(index1::put);
+        testData.forEach(index1::put);
 
         assertThrows(IndexException.class, () -> makeSegmentIndex());
     }

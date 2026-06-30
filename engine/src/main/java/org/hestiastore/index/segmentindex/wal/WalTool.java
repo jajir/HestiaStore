@@ -143,18 +143,19 @@ public final class WalTool {
         final List<Path> files = segmentDiscovery.files();
         for (final Path file : files) {
             final WalFileScan scan = scanFile(file, 0L, false);
-            for (final WalToolRecord record : scan.records()) {
+            for (final WalToolRecord walRecord : scan.records()) {
                 if (outputMode == OutputMode.JSON) {
-                    out.println(jsonRecord(scan.fileName(), record.offset(),
-                            record.lsn(), record.operation(), record.keyLen(),
-                            record.valueLen(), record.bodyLen()));
+                    out.println(jsonRecord(scan.fileName(), walRecord.offset(),
+                            walRecord.lsn(), walRecord.operation(),
+                            walRecord.keyLen(), walRecord.valueLen(),
+                            walRecord.bodyLen()));
                 } else {
                     out.println("record file=" + scan.fileName() + " offset="
-                            + record.offset() + " lsn=" + record.lsn()
-                            + " op=" + record.operation() + " keyLen="
-                            + record.keyLen() + " valueLen="
-                            + record.valueLen() + " bodyLen="
-                            + record.bodyLen());
+                            + walRecord.offset() + " lsn=" + walRecord.lsn()
+                            + " op=" + walRecord.operation() + " keyLen="
+                            + walRecord.keyLen() + " valueLen="
+                            + walRecord.valueLen() + " bodyLen="
+                            + walRecord.bodyLen());
                 }
             }
             if (scan.hasInvalidTail()) {

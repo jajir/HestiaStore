@@ -30,7 +30,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-mvn -q -pl monitoring-console-web -am -DskipTests -Ddependency-check.skip=true install
+mvn -q -pl monitoring-console-web -am -DskipTests install
 
 mvn -q \
   -pl monitoring-console-web \

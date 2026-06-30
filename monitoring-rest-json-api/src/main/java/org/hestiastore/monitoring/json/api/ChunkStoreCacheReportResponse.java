@@ -5,6 +5,7 @@ import java.beans.ConstructorProperties;
 /**
  * Chunk-store cache metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class ChunkStoreCacheReportResponse {
 
     private final int pageLimit;

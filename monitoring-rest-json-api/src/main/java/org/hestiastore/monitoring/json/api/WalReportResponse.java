@@ -5,6 +5,7 @@ import java.beans.ConstructorProperties;
 /**
  * WAL metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class WalReportResponse {
 
     private final boolean enabled;

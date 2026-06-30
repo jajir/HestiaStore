@@ -1,5 +1,6 @@
 package org.hestiastore.indextools;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
 
@@ -34,42 +35,8 @@ final class InspectExportCommand {
             final ExportBundleManifest manifest = verify
                     ? VerifyExportCommand.verify(inputDirectory)
                     : VerifyExportCommand.inspect(inputDirectory);
-            if (json) {
-                CommandJsonSupport.printJson(out,
-                        ManifestReportSupport.summary(inputDirectory, manifest,
-                                verify ? "full" : "metadata-only"));
-            } else {
-                out.printf("Export directory: %s%n", inputDirectory);
-                out.printf("Format: %s%n",
-                        manifest.getFormat().name().toLowerCase());
-                out.printf("Compression: %s%n",
-                        manifest.getCompression().name().toLowerCase());
-                out.printf("Created at: %s%n", manifest.getCreatedAt());
-                out.printf("Source index: %s%n",
-                        manifest.getSourceConfiguration().getIndexName());
-                out.printf("Source path: %s%n", manifest.getSourceIndexPath());
-                out.printf("Record count: %d%n", manifest.getRecordCount());
-                out.printf("Config file: %s%n", manifest.getConfigFileName());
-                if (manifest.getFromKeyText() != null
-                        || manifest.getToKeyText() != null
-                        || manifest.getLimit() != null) {
-                    out.printf("Selection: from=%s to=%s limit=%s%n",
-                            manifest.getFromKeyText(), manifest.getToKeyText(),
-                            manifest.getLimit());
-                }
-                if (manifest.getFormat() == ExportFormat.BUNDLE) {
-                    out.printf("Parts: %d%n", manifest.getParts().size());
-                    for (final ExportPartManifest part : manifest.getParts()) {
-                        out.printf("  %s records=%d size=%d bytes%n",
-                                part.getFileName(), part.getRecordCount(),
-                                part.getFileSizeBytes());
-                    }
-                } else {
-                    out.printf("Data file: %s%n", manifest.getDataFileName());
-                }
-                out.printf("Verification: %s%n",
-                        verify ? "full" : "metadata-only");
-            }
+            printReport(out, inputDirectory, manifest, json,
+                    verify ? "full" : "metadata-only");
             return 0;
         } catch (final Exception e) {
             err.println("Export inspection failed: " + e.getMessage());
@@ -80,6 +47,50 @@ final class InspectExportCommand {
             }
             return 1;
         }
+    }
+
+    private void printReport(final PrintStream out, final Path inputDirectory,
+            final ExportBundleManifest manifest, final boolean json,
+            final String verificationMode) throws IOException {
+        if (json) {
+            CommandJsonSupport.printJson(out, ManifestReportSupport
+                    .summary(inputDirectory, manifest, verificationMode));
+        } else {
+            printTextReport(out, inputDirectory, manifest, verificationMode);
+        }
+    }
+
+    private void printTextReport(final PrintStream out,
+            final Path inputDirectory, final ExportBundleManifest manifest,
+            final String verificationMode) {
+        out.printf("Export directory: %s%n", inputDirectory);
+        out.printf("Format: %s%n", manifest.getFormat().name().toLowerCase());
+        out.printf("Compression: %s%n",
+                manifest.getCompression().name().toLowerCase());
+        out.printf("Created at: %s%n", manifest.getCreatedAt());
+        out.printf("Source index: %s%n",
+                manifest.getSourceConfiguration().getIndexName());
+        out.printf("Source path: %s%n", manifest.getSourceIndexPath());
+        out.printf("Record count: %d%n", manifest.getRecordCount());
+        out.printf("Config file: %s%n", manifest.getConfigFileName());
+        if (manifest.getFromKeyText() != null
+                || manifest.getToKeyText() != null
+                || manifest.getLimit() != null) {
+            out.printf("Selection: from=%s to=%s limit=%s%n",
+                    manifest.getFromKeyText(), manifest.getToKeyText(),
+                    manifest.getLimit());
+        }
+        if (manifest.getFormat() == ExportFormat.BUNDLE) {
+            out.printf("Parts: %d%n", manifest.getParts().size());
+            for (final ExportPartManifest part : manifest.getParts()) {
+                out.printf("  %s records=%d size=%d bytes%n",
+                        part.getFileName(), part.getRecordCount(),
+                        part.getFileSizeBytes());
+            }
+        } else {
+            out.printf("Data file: %s%n", manifest.getDataFileName());
+        }
+        out.printf("Verification: %s%n", verificationMode);
     }
 
     private void printHelp(final Options options, final PrintStream out) {

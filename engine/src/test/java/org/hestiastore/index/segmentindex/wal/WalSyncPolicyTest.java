@@ -26,16 +26,16 @@ class WalSyncPolicyTest {
         final IndexWalConfiguration wal = IndexWalConfiguration.builder()
                 .durability(WalDurabilityMode.SYNC)
                 .build();
-        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        final WalStorageMem memStorage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
-                storage);
+                memStorage);
         final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(
-                effective(wal), storage, metadataCatalog);
+                effective(wal), memStorage, metadataCatalog);
         final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
         final Object monitor = new Object();
         final AtomicBoolean closed = new AtomicBoolean(false);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(effective(wal),
-                storage, metrics, monitor, segmentCatalog, closed);
+                memStorage, metrics, monitor, segmentCatalog, closed);
 
         synchronized (monitor) {
             final WalSegmentDescriptor segment = segmentCatalog

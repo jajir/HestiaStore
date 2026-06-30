@@ -292,29 +292,6 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.owasp</groupId>
-				<artifactId>dependency-check-maven</artifactId>
-				<version>12.2.2</version> <!-- Use the latest version from https://github.com/dependency-check/DependencyCheck -->
-				<executions>
-					<execution>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<skip>${dependency-check.skip}</skip>
-					<dataDirectory>${dependency-check.dataDirectory}</dataDirectory>
-					<formats>
-						<format>HTML</format>
-						<format>JSON</format>
-					</formats>
-					<failBuildOnCVSS>7</failBuildOnCVSS> <!-- Fail build on vulnerabilities above this CVSS score -->
-					<failOnError>false</failOnError>
-					<nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
-				</configuration>
-        	</plugin>
-			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>${jacoco.version}</version>

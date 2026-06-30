@@ -221,7 +221,7 @@ final class PreparedSegmentMaterializer<K, V> {
         try {
             directory = directoryFacade.openSubDirectory(directoryName);
         } catch (final RuntimeException ex) {
-            failures.record(ex);
+            failures.add(ex);
             ensureEntryDeleted(directoryFacade, directoryName, failures);
             return;
         }
@@ -229,7 +229,7 @@ final class PreparedSegmentMaterializer<K, V> {
         try {
             directoryFacade.rmdir(directoryName);
         } catch (final RuntimeException ex) {
-            failures.record(ex);
+            failures.add(ex);
         }
         ensureEntryDeleted(directoryFacade, directoryName, failures);
     }
@@ -243,7 +243,7 @@ final class PreparedSegmentMaterializer<K, V> {
                 deleteDirectoryEntry(directory, entry, failures);
             }
         } catch (final RuntimeException ex) {
-            failures.record(ex);
+            failures.add(ex);
         }
     }
 
@@ -255,7 +255,7 @@ final class PreparedSegmentMaterializer<K, V> {
                 return;
             }
         } catch (final RuntimeException ex) {
-            failures.record(ex);
+            failures.add(ex);
         }
         if (!exists(directory, entryName)) {
             return;
@@ -278,14 +278,14 @@ final class PreparedSegmentMaterializer<K, V> {
         try {
             subDirectory = directory.openSubDirectory(directoryName);
         } catch (final RuntimeException ex) {
-            failures.record(ex);
+            failures.add(ex);
             return;
         }
         clearDirectory(subDirectory, failures);
         try {
             directory.rmdir(directoryName);
         } catch (final RuntimeException ex) {
-            failures.record(ex);
+            failures.add(ex);
         }
         ensureEntryDeleted(directory, directoryName, failures);
     }
@@ -296,7 +296,7 @@ final class PreparedSegmentMaterializer<K, V> {
         if (!exists(directory, entryName)) {
             return;
         }
-        failures.record(new IndexException(String.format(
+        failures.add(new IndexException(String.format(
                 "Prepared segment entry '%s' was not fully deleted.",
                 entryName)));
     }

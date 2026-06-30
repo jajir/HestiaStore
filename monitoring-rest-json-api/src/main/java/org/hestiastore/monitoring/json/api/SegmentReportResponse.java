@@ -7,6 +7,7 @@ import java.util.Objects;
 /**
  * Segment metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class SegmentReportResponse {
 
     private final int cacheKeyLimitPerSegment;

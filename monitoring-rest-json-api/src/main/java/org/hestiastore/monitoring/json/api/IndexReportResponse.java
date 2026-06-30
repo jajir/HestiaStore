@@ -6,6 +6,7 @@ import java.util.Objects;
 /**
  * Per-index grouped metrics section inside node report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class IndexReportResponse {
 
     private final String indexName;

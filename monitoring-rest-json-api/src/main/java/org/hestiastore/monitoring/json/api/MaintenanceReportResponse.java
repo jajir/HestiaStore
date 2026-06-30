@@ -6,6 +6,7 @@ import java.util.Objects;
 /**
  * Maintenance metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class MaintenanceReportResponse {
 
     private final long compactRequestCount;

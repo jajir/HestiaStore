@@ -14,6 +14,7 @@ public final class IndexTool {
      *
      * @param args command-line arguments
      */
+    @SuppressWarnings("java:S106")
     public static void main(final String[] args) {
         final int exitCode = run(args, System.out, System.err);
         if (exitCode != 0) {

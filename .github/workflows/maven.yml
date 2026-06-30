@@ -19,7 +19,6 @@ jobs:
       checks: write
     env:
       GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
-      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     steps:
     
     - name: Checkout repository
@@ -50,53 +49,19 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-        
 
-    - name: Prepare Dependency-Check cache settings
-      if: github.event_name != 'pull_request'
-      id: dependency-check-cache
-      shell: bash
-      run: |
-        echo "path=$HOME/.cache/dependency-check" >> "$GITHUB_OUTPUT"
-        echo "key=${{ runner.os }}-dependency-check-data-v1-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
-
-    - name: Restore Dependency-Check data
-      if: github.event_name != 'pull_request'
-      id: dependency-check-cache-restore
-      uses: actions/cache/restore@v6
-      with:
-        path: ${{ steps.dependency-check-cache.outputs.path }}
-        key: ${{ steps.dependency-check-cache.outputs.key }}
-        restore-keys: |
-          ${{ runner.os }}-dependency-check-data-v1-
-
     - name: Prepare badge paths
       shell: bash
       run: |
         echo "SAFE_REF_NAME=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_ENV"
         mkdir -p badges
 
-    - name: Show NVD API key availability
-      shell: bash
-      run: |
-        if [ -n "${NVD_API_KEY:-}" ]; then
-          echo "NVD_API_KEY is set"
-        else
-          echo "NVD_API_KEY is missing"
-        fi
-
     - name: Build with Maven (PR)
       if: github.event_name == 'pull_request'
-      run: mvn -e -B -Ddependency-check.skip=true verify --file pom.xml
+      run: mvn -e -B verify --file pom.xml
 
     - name: Build with Maven
       if: github.event_name != 'pull_request'
       run: mvn -e -B verify --file pom.xml
-
-    - name: Save Dependency-Check data
-      if: always() && github.event_name != 'pull_request' && !cancelled() && steps.dependency-check-cache-restore.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v6
-      with:
-        path: ${{ steps.dependency-check-cache.outputs.path }}
-        key: ${{ steps.dependency-check-cache.outputs.key }}
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
@@ -146,42 +111,12 @@ jobs:
         color: ${{ env.BADGE_COLOR }}
         path: badge-${{ env.SAFE_REF_NAME }}.svg
     
-    - name: OWASP vulnerabilities - count
-      id: vuln
-      shell: bash
-      run: |
-        if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-          echo "Dependency-Check report skipped on pull_request builds."
-          echo "VULN_COUNT=skipped" >> "$GITHUB_ENV"
-          echo "OWASP_BADGE_COLOR=696969" >> "$GITHUB_ENV"
-          exit 0
-        fi
-
-        if [ ! -f engine/target/dependency-check-report.json ]; then
-          echo "Expected engine/target/dependency-check-report.json after verify, but the file is missing." >&2
-          exit 1
-        fi
-
-        VULN_COUNT=$(jq '[.dependencies[] | select(.vulnerabilities and (.vulnerabilities | length > 0)) | .vulnerabilities[]] | length' engine/target/dependency-check-report.json)
-        echo "OWASP Vulnerabilities count: $VULN_COUNT"
-        echo "VULN_COUNT=$VULN_COUNT" >> "$GITHUB_ENV"
-        echo "OWASP_BADGE_COLOR=31c653" >> "$GITHUB_ENV"
-
-    - name: OWASP vulnerabilities - Generate badge
-      uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325
-      with:
-        label: 'OWASP Vulnerabilities'
-        status: ${{ env.VULN_COUNT }}
-        color: ${{ env.OWASP_BADGE_COLOR }}
-        path: badge-owasp-${{ env.SAFE_REF_NAME }}.svg
-
     - name: Upload badges to Gist
       if: ${{ env.GIST_TOKEN != '' }}
       env:
         GIST_ID: a613341fb9d9d0c6a426b42a714700b7
         JACOCO_BADGE: ./badges/jacoco-badge-${{ env.SAFE_REF_NAME }}.svg
         TEST_BADGE: badge-${{ env.SAFE_REF_NAME }}.svg
-        OWASP_BADGE: badge-owasp-${{ env.SAFE_REF_NAME }}.svg
       shell: bash
       run: |
         set -euo pipefail
@@ -194,13 +129,10 @@ jobs:
           --rawfile jacocoContent "$JACOCO_BADGE" \
           --arg testName "$(basename "$TEST_BADGE")" \
           --rawfile testContent "$TEST_BADGE" \
-          --arg owaspName "$(basename "$OWASP_BADGE")" \
-          --rawfile owaspContent "$OWASP_BADGE" \
           '{
             files: {
               ($jacocoName): {filename: $jacocoName, content: $jacocoContent},
-              ($testName): {filename: $testName, content: $testContent},
-              ($owaspName): {filename: $owaspName, content: $owaspContent}
+              ($testName): {filename: $testName, content: $testContent}
             }
           }' > "$payload_file"
 

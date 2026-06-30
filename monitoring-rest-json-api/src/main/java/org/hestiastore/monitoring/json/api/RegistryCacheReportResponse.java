@@ -5,6 +5,7 @@ import java.beans.ConstructorProperties;
 /**
  * Registry cache metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class RegistryCacheReportResponse {
 
     private final long hitCount;

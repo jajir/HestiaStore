@@ -1,12 +1,6 @@
 # HestiaStore Security
 
-Security and quality are important considerations in the HestiaStore project. While HestiaStore is a library (not a network-exposed service), several tools are in place to monitor and improve code and dependency safety.
-
-## Dependency Scanning
-
-HestiaStore uses the [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) Maven plugin to scan project dependencies for known vulnerabilities. The scan is enabled in CI during the Maven `verify` phase. Local builds skip the scan by default; run `mvn verify -Ddependency-check.skip=false` to execute it locally. This helps detect issues in third-party libraries such as outdated or vulnerable versions of common libraries.
-
-The OWASP dependency report is also included in the Maven Site documentation.
+Security and quality are important considerations in the HestiaStore project. While HestiaStore is a library (not a network-exposed service), several tools are in place to monitor and improve code quality and dependency safety.
 
 ## Data Storage Security
 
@@ -111,7 +105,7 @@ Planned or considered improvements include:
 
 ## Summary
 
-- ✅ Vulnerability scanning via OWASP Dependency Check
+- ✅ Dependency review and CodeQL checks in GitHub Actions
 - ✅ Static analysis via PMD and SpotBugs
 - ✅ Unit tests with coverage reporting via JaCoCo
 - ⚠️ Payload encryption is opt-in and requires application-managed key wiring

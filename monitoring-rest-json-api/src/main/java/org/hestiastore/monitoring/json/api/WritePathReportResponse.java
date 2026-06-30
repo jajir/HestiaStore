@@ -5,6 +5,7 @@ import java.beans.ConstructorProperties;
 /**
  * Write-path metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class WritePathReportResponse {
 
     private final int segmentWriteCacheKeyLimit;

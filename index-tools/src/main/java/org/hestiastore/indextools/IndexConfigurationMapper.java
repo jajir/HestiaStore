@@ -82,7 +82,7 @@ final class IndexConfigurationMapper {
         return manifest;
     }
 
-    static IndexConfiguration<?, ?> fromManifest(
+    static IndexConfiguration<Object, Object> fromManifest(
             final IndexConfigurationManifest manifest)
             throws ClassNotFoundException {
         final Class<Object> keyClass = loadClass(manifest.getKeyClassName());

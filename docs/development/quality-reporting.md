@@ -24,8 +24,8 @@ locally and in GitHub Actions with the same command line.
 Run the same report-only analysis locally from the repository root:
 
 ```sh
-mvn -B -ntp -DskipTests -Ddependency-check.skip=true test-compile
-mvn -B -ntp -DskipTests -Ddependency-check.skip=true \
+mvn -B -ntp -DskipTests test-compile
+mvn -B -ntp -DskipTests \
   pmd:pmd \
   pmd:cpd \
   spotbugs:spotbugs

@@ -16,7 +16,7 @@ correctness, compatibility, and operational safety.
 - Test execution and published test summaries
 - JaCoCo line coverage reporting
 - Static analysis and quality gates through SonarCloud
-- Dependency vulnerability scanning through OWASP Dependency Check
+- Dependency review and CodeQL checks in GitHub Actions
 - GitHub dependency review and CodeQL workflows
 
 ## What gets validated

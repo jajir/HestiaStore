@@ -5,6 +5,7 @@ import java.beans.ConstructorProperties;
 /**
  * Executor metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class ExecutorReportResponse {
 
     private final int activeThreadCount;

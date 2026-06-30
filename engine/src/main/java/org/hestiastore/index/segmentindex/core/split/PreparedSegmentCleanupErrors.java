@@ -7,7 +7,7 @@ final class PreparedSegmentCleanupErrors {
 
     private RuntimeException failure;
 
-    void record(final RuntimeException nextFailure) {
+    void add(final RuntimeException nextFailure) {
         if (failure == null) {
             failure = nextFailure;
             return;

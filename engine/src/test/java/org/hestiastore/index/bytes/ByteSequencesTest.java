@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -130,11 +130,9 @@ class ByteSequencesTest {
     void test_concat_validates_null_inputs() {
         assertThrows(IllegalArgumentException.class,
                 () -> ByteSequences.concat(null));
-        final List<ByteSequence> withNull = new ArrayList<>();
-        withNull.add(ByteSequence.EMPTY);
-        withNull.add(null);
         assertThrows(IllegalArgumentException.class,
-                () -> ByteSequences.concat(withNull));
+                () -> ByteSequences
+                        .concat(Arrays.asList(ByteSequence.EMPTY, null)));
     }
 
     @Test

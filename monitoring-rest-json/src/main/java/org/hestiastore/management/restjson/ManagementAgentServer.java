@@ -96,6 +96,7 @@ public final class ManagementAgentServer
     private static final String UNKNOWN_INDEX_PREFIX = "Unknown index: ";
     private static final String AUDIT_REJECTED = "REJECTED";
     private static final String AUDIT_FAILED = "FAILED";
+    private static final String ACTOR_ANONYMOUS = "anonymous";
     private static final String REQUEST_THREAD_NAME_PREFIX =
             "hestia-management-http-";
     private static final int MAX_AUDIT_RECORDS = 10_000;
@@ -1327,7 +1328,7 @@ public final class ManagementAgentServer
             final String requestId)
             throws IOException {
         if (securityPolicy.tokenRoles().isEmpty()) {
-            return new AuthorizationPrincipal(AgentRole.ADMIN, "anonymous");
+            return new AuthorizationPrincipal(AgentRole.ADMIN, ACTOR_ANONYMOUS);
         }
         final String token = readToken(exchange);
         if (token == null) {
@@ -1346,6 +1347,7 @@ public final class ManagementAgentServer
         return new AuthorizationPrincipal(actualRole, token);
     }
 
+    @SuppressWarnings("java:S107")
     private boolean rejectAuthorization(final HttpExchange exchange,
             final boolean mutating, final String endpoint,
             final String requestBody, final int statusCode, final String code,
@@ -1423,11 +1425,11 @@ public final class ManagementAgentServer
 
     private String replayActor(final HttpExchange exchange,
             final AuthorizationPrincipal principal) {
-        if (!"anonymous".equals(principal.actor())) {
+        if (!ACTOR_ANONYMOUS.equals(principal.actor())) {
             return principal.actor();
         }
         if (exchange.getRemoteAddress() == null) {
-            return "anonymous";
+            return ACTOR_ANONYMOUS;
         }
         return "anonymous@" + exchange.getRemoteAddress().getHostString();
     }

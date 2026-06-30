@@ -5,6 +5,7 @@ import java.beans.ConstructorProperties;
 /**
  * Bloom filter metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class BloomFilterReportResponse {
 
     private final int hashFunctions;

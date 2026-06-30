@@ -5,6 +5,7 @@ import java.beans.ConstructorProperties;
 /**
  * Latency metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class LatencyReportResponse {
 
     private final long readP50Micros;

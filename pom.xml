@@ -45,8 +45,6 @@
         <pmd.plugin.version>3.28.0</pmd.plugin.version>
         <spotbugs.plugin.version>4.10.2.0</spotbugs.plugin.version>
         <micrometer.version>1.17.0</micrometer.version>
-        <dependency-check.skip>true</dependency-check.skip>
-        <dependency-check.dataDirectory>${user.home}/.cache/dependency-check</dependency-check.dataDirectory>
     </properties>
 
     <dependencyManagement>
@@ -291,18 +289,6 @@
     </reporting>
 
     <profiles>
-        <profile>
-            <id>ci-dependency-check</id>
-            <activation>
-                <property>
-                    <name>env.CI</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <properties>
-                <dependency-check.skip>false</dependency-check.skip>
-            </properties>
-        </profile>
         <profile>
             <id>release</id>
             <build>

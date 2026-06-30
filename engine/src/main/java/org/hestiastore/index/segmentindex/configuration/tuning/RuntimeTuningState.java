@@ -181,10 +181,10 @@ public final class RuntimeTuningState {
 
     private EnumMap<RuntimeTuningKey, RuntimeTuningValue> effectiveFromOverrides(
             final Map<RuntimeTuningKey, RuntimeTuningValue> overrideValues) {
-        final EnumMap<RuntimeTuningKey, RuntimeTuningValue> effective =
+        final EnumMap<RuntimeTuningKey, RuntimeTuningValue> effectiveValues =
                 new EnumMap<>(RuntimeTuningKey.class);
-        effective.putAll(baseline);
-        effective.putAll(overrideValues);
-        return effective;
+        effectiveValues.putAll(baseline);
+        effectiveValues.putAll(overrideValues);
+        return effectiveValues;
     }
 }

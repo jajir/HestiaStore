@@ -1,5 +1,6 @@
 package org.hestiastore.indextools;
 
+@SuppressWarnings("java:S6206")
 final class ImportVerificationSummary {
 
     private final long recordCount;

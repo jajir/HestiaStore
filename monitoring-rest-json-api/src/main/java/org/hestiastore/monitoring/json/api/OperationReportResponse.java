@@ -5,6 +5,7 @@ import java.beans.ConstructorProperties;
 /**
  * Operation metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class OperationReportResponse {
 
     private final long readOperationCount;

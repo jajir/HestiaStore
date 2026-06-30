@@ -6,6 +6,7 @@ import java.util.Objects;
 /**
  * Split metrics section inside an index report payload.
  */
+@SuppressWarnings("java:S6206")
 public final class SplitReportResponse {
 
     private final long scheduleCount;

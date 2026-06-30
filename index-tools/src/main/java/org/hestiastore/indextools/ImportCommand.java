@@ -25,6 +25,7 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
 final class ImportCommand {
 
     private static final long FLUSH_INTERVAL = 10_000L;
+    private static final String OPTION_TARGET_CONFIG = "target-config";
 
     int run(final String[] args, final PrintStream out, final PrintStream err) {
         final Options options = new Options();
@@ -32,7 +33,7 @@ final class ImportCommand {
                 .desc("Export directory to import from.").required().get());
         options.addOption(Option.builder().longOpt("target-index").hasArg()
                 .desc("Target index directory to create.").required().get());
-        options.addOption(Option.builder().longOpt("target-config").hasArg()
+        options.addOption(Option.builder().longOpt(OPTION_TARGET_CONFIG).hasArg()
                 .desc("Optional JSON configuration manifest overriding the exported source-config.json.")
                 .get());
         options.addOption(Option.builder().longOpt("index-name").hasArg()
@@ -55,8 +56,8 @@ final class ImportCommand {
             final Path targetIndex = Path
                     .of(commandLine.getOptionValue("target-index"))
                     .toAbsolutePath().normalize();
-            final Path targetConfigPath = commandLine.hasOption("target-config")
-                    ? Path.of(commandLine.getOptionValue("target-config"))
+            final Path targetConfigPath = commandLine.hasOption(OPTION_TARGET_CONFIG)
+                    ? Path.of(commandLine.getOptionValue(OPTION_TARGET_CONFIG))
                             .toAbsolutePath().normalize()
                     : null;
             final String indexName = commandLine.getOptionValue("index-name");
@@ -79,7 +80,7 @@ final class ImportCommand {
     private void execute(final Path inputDirectory, final Path targetIndex,
             final Path targetConfigPath, final String indexName,
             final boolean verifyAfterImport,
-            final PrintStream out) throws Exception {
+            final PrintStream out) throws IOException, ClassNotFoundException {
         final ExportBundleManifest manifest = VerifyExportCommand
                 .verify(inputDirectory);
         PathSupport.ensureEmptyDirectory(targetIndex);
@@ -186,12 +187,13 @@ final class ImportCommand {
                         line = reader.readLine();
                         continue;
                     }
-                    final JsonLineRecord record = ManifestSupport.lineMapper()
+                    final JsonLineRecord jsonLineRecord = ManifestSupport.lineMapper()
                             .readValue(line, JsonLineRecord.class);
                     final Object key = DescriptorSupport.fromEnvelope(
-                            descriptors.key(), record.getKey(), textCodecs);
+                            descriptors.key(), jsonLineRecord.getKey(), textCodecs);
                     final Object value = DescriptorSupport.fromEnvelope(
-                            descriptors.value(), record.getValue(), textCodecs);
+                            descriptors.value(), jsonLineRecord.getValue(),
+                            textCodecs);
                     index.put(key, value);
                     updateFingerprint(fingerprint, descriptors, key, value);
                     imported++;
@@ -214,7 +216,7 @@ final class ImportCommand {
             final IndexConfiguration<?, ?> configuration,
             final DescriptorSupport.DescriptorPair descriptors,
             final long expectedRecordCount, final LogicalFingerprint source)
-            throws Exception {
+            throws IOException {
         final LogicalFingerprint targetFingerprint = new LogicalFingerprint();
         try (SegmentIndex<Object, Object> index = openIndex(targetIndex,
                 configuration)) {

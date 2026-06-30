@@ -86,7 +86,8 @@ class SegmentRegistryBuilderTest {
         final MemDirectory directory = new MemDirectory();
         directory.mkdir("segment-00005");
         final Directory asyncDirectory = directory;
-        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final IndexConfiguration<Integer, String> configuration =
+                newConfiguration();
         final ExecutorService stableSegmentMaintenanceExecutor = Executors
                 .newSingleThreadExecutor();
         final ExecutorService registryMaintenanceExecutor = Executors
@@ -97,7 +98,7 @@ class SegmentRegistryBuilderTest {
                     .withDirectoryFacade(asyncDirectory)
                     .withKeyTypeDescriptor(new TypeDescriptorInteger())
                     .withValueTypeDescriptor(new TypeDescriptorShortString())
-                    .withConfiguration(effective(conf))
+                    .withConfiguration(effective(configuration))
                     .withSegmentMaintenanceExecutor(
                             stableSegmentMaintenanceExecutor)
                     .withRegistryMaintenanceExecutor(

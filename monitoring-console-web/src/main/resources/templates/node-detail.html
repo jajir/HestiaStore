@@ -82,6 +82,18 @@
             color: var(--muted);
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         .btn {
             border-radius: 10px;
             font: inherit;
@@ -559,10 +571,18 @@
                                 <td th:text="${row.originalDisplay()}">128</td>
                                 <td th:text="${row.currentDisplay()}">256</td>
                                 <td>
+                                    <label class="sr-only" th:if="${row.editable}"
+                                        th:for="${'runtime-config-value-' + row.key}"
+                                        th:text="${'New value for ' + row.key}">New value</label>
                                     <input th:if="${row.editable}" class="cfg-input" type="number" step="1"
                                         th:name="${'value.' + row.key}" th:value="${row.inputValue()}"
+                                        th:id="${'runtime-config-value-' + row.key}"
                                         th:attr="data-current=${row.inputValue()}">
+                                    <label class="sr-only" th:unless="${row.editable}"
+                                        th:for="${'runtime-config-readonly-' + row.key}"
+                                        th:text="${'Current value for ' + row.key}">Current value</label>
                                     <input th:unless="${row.editable}" class="cfg-input" type="text" disabled
+                                        th:id="${'runtime-config-readonly-' + row.key}"
                                         th:value="${row.currentDisplay()}">
                                 </td>
                                 <td>

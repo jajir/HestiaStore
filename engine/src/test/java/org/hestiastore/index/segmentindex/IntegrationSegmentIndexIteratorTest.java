@@ -60,7 +60,7 @@ class IntegrationSegmentIndexIteratorTest {
                 .identity(identity -> identity.name("test_index"))//
                 .build();
         final SegmentIndex<Integer, String> index = SegmentIndex.create(directory, conf);
-        data.stream().forEach(index::put);
+        data.forEach(index::put);
         index.maintenance().compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
@@ -74,7 +74,7 @@ class IntegrationSegmentIndexIteratorTest {
                 .identity(identity -> identity.name("test_index"))//
                 .build();
         final SegmentIndex<Integer, NullValue> index = SegmentIndex.create(directory, conf);
-        data2.stream().forEach(index::put);
+        data2.forEach(index::put);
         index.maintenance().compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
@@ -99,7 +99,7 @@ class IntegrationSegmentIndexIteratorTest {
     void testBasic() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
 
-        data.stream().forEach(index1::put);
+        data.forEach(index1::put);
         index1.maintenance().compactAndWait();
         logger.debug("verify that after that point no segment "
                 + "is loaded into memory.");

@@ -111,6 +111,7 @@ final class DescriptorSupport {
         }
     }
 
+    @SuppressWarnings("java:S6206")
     static final class DescriptorBinding {
 
         private final Class<?> javaClass;
