@@ -4,14 +4,14 @@
       "channels": {
         "main": {
           "latestPointerPath": "history/segment-index-nightly/latest-main.json",
-          "sha": "e72f4974ea597aa48d2725b131d13e39bcfa6872",
-          "timestampUtc": "2026-06-29T04:32:37.918218+00:00"
+          "sha": "67bbf8e34d2b602923270722df932c97760ccab3",
+          "timestampUtc": "2026-07-01T04:39:04.584862+00:00"
         }
       },
       "latestChannel": "main",
       "latestPointerPath": "history/segment-index-nightly/latest-main.json",
-      "sha": "e72f4974ea597aa48d2725b131d13e39bcfa6872",
-      "timestampUtc": "2026-06-29T04:32:37.918218+00:00"
+      "sha": "67bbf8e34d2b602923270722df932c97760ccab3",
+      "timestampUtc": "2026-07-01T04:39:04.584862+00:00"
     },
     "segment-index-pr-smoke": {
       "channels": {
