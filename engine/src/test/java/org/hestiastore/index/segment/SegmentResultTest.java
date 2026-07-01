@@ -32,12 +32,19 @@ class SegmentResultTest {
     @Test
     void nonOk_results_haveNullValue_and_areNotOk() {
         final OperationResult<String> busy = OperationResult.busy();
+        final OperationResult<String> writeCacheFull = OperationResult
+                .writeCacheFull();
         final OperationResult<String> closed = OperationResult.closed();
         final OperationResult<String> error = OperationResult.error();
 
         assertEquals(OperationStatus.BUSY, busy.getStatus());
         assertNull(busy.getValue());
         assertFalse(busy.isOk());
+
+        assertEquals(OperationStatus.WRITE_CACHE_FULL,
+                writeCacheFull.getStatus());
+        assertNull(writeCacheFull.getValue());
+        assertFalse(writeCacheFull.isOk());
 
         assertEquals(OperationStatus.CLOSED, closed.getStatus());
         assertNull(closed.getValue());
@@ -46,5 +53,15 @@ class SegmentResultTest {
         assertEquals(OperationStatus.ERROR, error.getStatus());
         assertNull(error.getValue());
         assertFalse(error.isOk());
+    }
+
+    @Test
+    void fromStatus_preserves_writeCacheFull_status() {
+        final OperationResult<String> result = OperationResult
+                .fromStatus(OperationStatus.WRITE_CACHE_FULL);
+
+        assertEquals(OperationStatus.WRITE_CACHE_FULL, result.getStatus());
+        assertNull(result.getValue());
+        assertFalse(result.isOk());
     }
 }

@@ -1,12 +1,8 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.IndexException;
-import org.hestiastore.index.OperationStatus;
-import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -19,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -139,16 +137,39 @@ class SegmentImplConcurrencyContractTest {
     }
 
     @Test
-    void put_fails_when_write_cache_full_and_no_maintenance_policy() {
+    void put_returns_writeCacheFull_when_write_cache_full_and_no_maintenance_policy() {
         final Segment<Integer, String> segment = newSegment(1);
         try {
             assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
-            final IndexException exception = assertThrows(IndexException.class,
-                    () -> segment.put(2, "b"));
-            assertTrue(exception.getMessage().contains("Write cache is full"));
+            assertEquals(OperationStatus.WRITE_CACHE_FULL,
+                    segment.put(2, "b").getStatus());
         } finally {
             closeAndAssertClosed(segment);
+        }
+    }
+
+    @Test
+    void put_returns_busy_when_write_cache_full_during_manual_maintenance() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final Segment<Integer, String> segment = newSegment(2, executor);
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+            assertEquals(OperationStatus.OK,
+                    segment.put(2, "b").getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING,
+                    segment.getState());
+
+            assertEquals(OperationStatus.OK,
+                    segment.put(3, "c").getStatus());
+            assertEquals(OperationStatus.OK,
+                    segment.put(4, "d").getStatus());
+            assertEquals(OperationStatus.BUSY,
+                    segment.put(5, "e").getStatus());
+        } finally {
+            closeAfterMaintenanceIfNeeded(segment, executor);
         }
     }
 

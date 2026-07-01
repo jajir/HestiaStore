@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.directory.Directory;
@@ -153,8 +152,9 @@ public interface Segment<K, V> {
      *
      * @param key   key to write (non-null)
      * @param value value to write (non-null)
-     * @throws IndexException when the write cache is full and no configured
-     *                        automatic maintenance path can make progress
+     * @return write result, including {@link OperationStatus#WRITE_CACHE_FULL}
+     *         when capacity is exhausted and no automatic maintenance path can
+     *         make progress
      */
     OperationResult<Void> put(K key, V value);
 

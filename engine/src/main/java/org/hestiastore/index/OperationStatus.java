@@ -6,6 +6,7 @@ package org.hestiastore.index;
 public enum OperationStatus {
     OK,
     BUSY,
+    WRITE_CACHE_FULL,
     CLOSED,
     ERROR
 }

@@ -176,6 +176,11 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     private IndexException operationFailure(final String operation,
             final OperationStatus status) {
+        if (status == OperationStatus.WRITE_CACHE_FULL) {
+            return new IndexException(String.format(
+                    "Write cache is full for segment '%s' and automatic maintenance is disabled.",
+                    segmentId));
+        }
         return new IndexException(String.format(
                 "Segment '%s' failed to %s: %s", segmentId, operation, status));
     }
