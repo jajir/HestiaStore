@@ -1,0 +1,482 @@
+{
+  "benchmarks": [
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-t",
+        "4",
+        "-p",
+        "readPathMode=persisted",
+        "-p",
+        "snappy=true",
+        "-p",
+        "keyCount=12000",
+        "-p",
+        "maxKeysInChunk=256",
+        "-p",
+        "valueLength=64"
+      ],
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "label": "segment-index-get-persisted",
+      "log": "logs/segment-index-get-persisted.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "chunkStoreCachePageLimit": "0",
+              "keyCount": "12000",
+              "maxKeysInChunk": "256",
+              "readPathMode": "persisted",
+              "snappy": "true",
+              "valueLength": "64"
+            },
+            "primaryMetric": {
+              "score": 125875.76525867071,
+              "scoreError": 47181.00746979116,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 4,
+            "vmVersion": "21.0.11+10-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "chunkStoreCachePageLimit": "128",
+              "keyCount": "12000",
+              "maxKeysInChunk": "256",
+              "readPathMode": "persisted",
+              "snappy": "true",
+              "valueLength": "64"
+            },
+            "primaryMetric": {
+              "score": 1983826.802662056,
+              "scoreError": 1910885.1577767318,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 4,
+            "vmVersion": "21.0.11+10-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "chunkStoreCachePageLimit": "0",
+              "keyCount": "12000",
+              "maxKeysInChunk": "256",
+              "readPathMode": "persisted",
+              "snappy": "true",
+              "valueLength": "64"
+            },
+            "primaryMetric": {
+              "score": 2373777.7299903296,
+              "scoreError": 6463041.223306669,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 4,
+            "vmVersion": "21.0.11+10-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "chunkStoreCachePageLimit": "128",
+              "keyCount": "12000",
+              "maxKeysInChunk": "256",
+              "readPathMode": "persisted",
+              "snappy": "true",
+              "valueLength": "64"
+            },
+            "primaryMetric": {
+              "score": 2053146.7991482997,
+              "scoreError": 2546828.3485274813,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 4,
+            "vmVersion": "21.0.11+10-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/segment-index-get-persisted.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-t",
+        "4",
+        "-p",
+        "readPathMode=live",
+        "-p",
+        "snappy=true",
+        "-p",
+        "keyCount=12000",
+        "-p",
+        "maxKeysInChunk=256",
+        "-p",
+        "valueLength=64"
+      ],
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "label": "segment-index-get-live",
+      "log": "logs/segment-index-get-live.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "chunkStoreCachePageLimit": "0",
+              "keyCount": "12000",
+              "maxKeysInChunk": "256",
+              "readPathMode": "live",
+              "snappy": "true",
+              "valueLength": "64"
+            },
+            "primaryMetric": {
+              "score": 2440513.112684119,
+              "scoreError": 4525432.57913858,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 4,
+            "vmVersion": "21.0.11+10-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "chunkStoreCachePageLimit": "128",
+              "keyCount": "12000",
+              "maxKeysInChunk": "256",
+              "readPathMode": "live",
+              "snappy": "true",
+              "valueLength": "64"
+            },
+            "primaryMetric": {
+              "score": 2399001.5492360513,
+              "scoreError": 1925061.2868433055,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 4,
+            "vmVersion": "21.0.11+10-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "chunkStoreCachePageLimit": "0",
+              "keyCount": "12000",
+              "maxKeysInChunk": "256",
+              "readPathMode": "live",
+              "snappy": "true",
+              "valueLength": "64"
+            },
+            "primaryMetric": {
+              "score": 2143523.6098667346,
+              "scoreError": 3307360.8936628774,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 4,
+            "vmVersion": "21.0.11+10-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "chunkStoreCachePageLimit": "128",
+              "keyCount": "12000",
+              "maxKeysInChunk": "256",
+              "readPathMode": "live",
+              "snappy": "true",
+              "valueLength": "64"
+            },
+            "primaryMetric": {
+              "score": 2292029.2604596927,
+              "scoreError": 2982950.1637722887,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 4,
+            "vmVersion": "21.0.11+10-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/segment-index-get-live.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-t",
+        "4",
+        "-p",
+        "workingSetMode=hot",
+        "-p",
+        "snappy=true",
+        "-p",
+        "keyCount=32768",
+        "-p",
+        "maxKeysInSegment=1024",
+        "-p",
+        "maxSegmentsInCache=3",
+        "-p",
+        "valueLength=64"
+      ],
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+      "label": "segment-index-get-multisegment-hot",
+      "log": "logs/segment-index-get-multisegment-hot.log",
+      "normalized": {
+        "results": []
+      },
+      "rawResult": "raw/segment-index-get-multisegment-hot.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "snappy=true",
+        "-p",
+        "walMode=sync",
+        "-p",
+        "seededKeyCount=25000",
+        "-p",
+        "valueLength=64",
+        "-p",
+        "flushBatchSize=256"
+      ],
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+      "label": "segment-index-persisted-mutation",
+      "log": "logs/segment-index-persisted-mutation.log",
+      "normalized": {
+        "results": []
+      },
+      "rawResult": "raw/segment-index-persisted-mutation.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s"
+      ],
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
+      "label": "segment-index-hot-route-put",
+      "log": "logs/segment-index-hot-route-put.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putHotRoute",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {},
+            "primaryMetric": {
+              "score": 2099567.5479562096,
+              "scoreError": 1007834.7736455094,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 20,
+            "vmVersion": "21.0.11+10-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {},
+            "primaryMetric": {
+              "score": 1084570.6737032041,
+              "scoreError": 363402.2512130165,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {},
+            "threads": 20,
+            "vmVersion": "21.0.11+10-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/segment-index-hot-route-put.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "hotKeySpace=256",
+        "-p",
+        "workloadMode=drainOnly"
+      ],
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+      "label": "segment-index-mixed-drain",
+      "log": "logs/segment-index-mixed-drain.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "hotKeySpace": "256",
+              "workloadMode": "drainOnly"
+            },
+            "primaryMetric": {
+              "score": 424692.8149353536,
+              "scoreError": 1091179.9171310188,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {
+              "getWorkload": {
+                "score": 269104.4845212682,
+                "scoreError": 1822522.2133064307,
+                "scoreUnit": "ops/s"
+              },
+              "putWorkload": {
+                "score": 155588.3304140853,
+                "scoreError": 741048.2933869879,
+                "scoreUnit": "ops/s"
+              }
+            },
+            "threads": 20,
+            "vmVersion": "21.0.11+10-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/segment-index-mixed-drain.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "hotKeySpace=256",
+        "-p",
+        "workloadMode=splitHeavy"
+      ],
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+      "label": "segment-index-mixed-split-heavy",
+      "log": "logs/segment-index-mixed-split-heavy.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed",
+            "jdkVersion": "21.0.11",
+            "mode": "thrpt",
+            "params": {
+              "hotKeySpace": "256",
+              "workloadMode": "splitHeavy"
+            },
+            "primaryMetric": {
+              "score": 542799.8562393248,
+              "scoreError": 3446858.5829086634,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {
+              "getWorkload": {
+                "score": 529806.6136841989,
+                "scoreError": 3420216.0181309627,
+                "scoreUnit": "ops/s"
+              },
+              "putWorkload": {
+                "score": 12993.242555125747,
+                "scoreError": 28982.361251019196,
+                "scoreUnit": "ops/s"
+              }
+            },
+            "threads": 20,
+            "vmVersion": "21.0.11+10-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/segment-index-mixed-split-heavy.json"
+    }
+  ],
+  "description": "Short canonical SegmentIndex benchmark set for per-change comparison.",
+  "git": {
+    "branch": "HEAD",
+    "dirty": false,
+    "mergeBaseFriendlyRef": "release-1.0.0-3-g67bbf8e3",
+    "sha": "67bbf8e34d2b602923270722df932c97760ccab3"
+  },
+  "host": {
+    "hostname": "runnervmmklqx",
+    "machine": "x86_64",
+    "os": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  },
+  "jar": "/home/runner/work/_temp/benchmark-candidate/benchmarks/target/benchmarks-1.0.1-SNAPSHOT.jar",
+  "profile": "segment-index-pr-smoke",
+  "repoRoot": "/home/runner/work/_temp/benchmark-candidate",
+  "timestampUtc": "2026-07-01T04:42:44.067273+00:00"
+}
