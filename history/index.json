@@ -999,8 +999,8 @@
         "303": {
           "channel": "pr-303",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-303/latest.json",
-          "sha": "804a5b52368bbdaf4b0223816e76af66fbce7449",
-          "timestampUtc": "2026-07-01T14:30:44.990428+00:00"
+          "sha": "92eed1bf7825eaa533ce6d7312b5b62c4eb600b6",
+          "timestampUtc": "2026-07-01T15:16:16.867134+00:00"
         }
       },
       "sha": "67bbf8e34d2b602923270722df932c97760ccab3",
