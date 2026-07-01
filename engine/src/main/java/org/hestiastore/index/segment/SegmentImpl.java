@@ -4,6 +4,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
@@ -200,20 +201,23 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             return resultForState(gate.getState());
         }
         final OperationResult<Void> result;
-        final boolean shouldScheduleMaintenance;
+        final boolean writeAccepted;
         try {
             if (!core.tryPutWithoutWaiting(key, value)) {
                 result = OperationResult.busy();
-                shouldScheduleMaintenance = false;
+                writeAccepted = false;
             } else {
                 result = OperationResult.ok();
-                shouldScheduleMaintenance = true;
+                writeAccepted = true;
             }
         } finally {
             gate.exitWrite();
         }
-        if (shouldScheduleMaintenance) {
-            scheduleMaintenanceIfNeeded();
+        scheduleMaintenanceIfNeeded();
+        if (!writeAccepted && !maintenancePolicy.canScheduleMaintenance()) {
+            throw new IndexException(
+                    "Write cache is full for segment '" + core.getId()
+                            + "' and automatic maintenance is disabled.");
         }
         return result;
     }

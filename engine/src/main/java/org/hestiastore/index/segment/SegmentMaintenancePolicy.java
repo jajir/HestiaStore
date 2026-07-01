@@ -17,6 +17,15 @@ public interface SegmentMaintenancePolicy<K, V> {
     SegmentMaintenanceDecision evaluateAfterWrite(Segment<K, V> segment);
 
     /**
+     * Returns whether this policy can ever request automatic maintenance.
+     *
+     * @return true when automatic maintenance may be scheduled
+     */
+    default boolean canScheduleMaintenance() {
+        return true;
+    }
+
+    /**
      * Returns a policy that never schedules maintenance.
      *
      * @param <K> key type
@@ -24,6 +33,17 @@ public interface SegmentMaintenancePolicy<K, V> {
      * @return policy that always returns {@link SegmentMaintenanceDecision#none()}
      */
     static <K, V> SegmentMaintenancePolicy<K, V> none() {
-        return segment -> SegmentMaintenanceDecision.none();
+        return new SegmentMaintenancePolicy<>() {
+            @Override
+            public SegmentMaintenanceDecision evaluateAfterWrite(
+                    final Segment<K, V> segment) {
+                return SegmentMaintenanceDecision.none();
+            }
+
+            @Override
+            public boolean canScheduleMaintenance() {
+                return false;
+            }
+        };
     }
 }
