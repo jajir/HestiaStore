@@ -199,23 +199,20 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         if (!gate.tryEnterWrite()) {
             return resultForState(gate.getState());
         }
-        final OperationResult<Void> result;
-        final boolean shouldScheduleMaintenance;
+        final boolean writeAccepted;
         try {
-            if (!core.tryPutWithoutWaiting(key, value)) {
-                result = OperationResult.busy();
-                shouldScheduleMaintenance = false;
-            } else {
-                result = OperationResult.ok();
-                shouldScheduleMaintenance = true;
-            }
+            writeAccepted = core.tryPutWithoutWaiting(key, value);
         } finally {
             gate.exitWrite();
         }
-        if (shouldScheduleMaintenance) {
-            scheduleMaintenanceIfNeeded();
+        scheduleMaintenanceIfNeeded();
+        if (writeAccepted) {
+            return OperationResult.ok();
         }
-        return result;
+        if (gate.getState() == SegmentState.READY) {
+            return OperationResult.writeCacheFull();
+        }
+        return OperationResult.busy();
     }
 
     /**

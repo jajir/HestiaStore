@@ -152,6 +152,9 @@ public interface Segment<K, V> {
      *
      * @param key   key to write (non-null)
      * @param value value to write (non-null)
+     * @return write result, including {@link OperationStatus#WRITE_CACHE_FULL}
+     *         when capacity is exhausted and no automatic maintenance path can
+     *         make progress
      */
     OperationResult<Void> put(K key, V value);
 

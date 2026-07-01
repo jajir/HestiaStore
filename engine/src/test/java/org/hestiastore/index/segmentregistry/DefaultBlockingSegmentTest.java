@@ -74,6 +74,23 @@ class DefaultBlockingSegmentTest {
     }
 
     @Test
+    void putThrowsImmediatelyWhenWriteCacheFullStatusReturned() {
+        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
+        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
+        when(segmentHandle.getSegment()).thenReturn(segment);
+        when(segment.put(1, "one")).thenReturn(OperationResult.writeCacheFull());
+
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> handle.put(1, "one"));
+
+        assertEquals(
+                "Write cache is full for segment 'segment-00007' and automatic maintenance is disabled.",
+                exception.getMessage());
+        verify(segmentRegistry).loadSegment(SEGMENT_ID);
+        verify(segment).put(1, "one");
+    }
+
+    @Test
     void compactThrowsOnErrorStatus() {
         final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);

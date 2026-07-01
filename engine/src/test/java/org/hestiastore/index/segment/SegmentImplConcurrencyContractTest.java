@@ -1,7 +1,5 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.OperationStatus;
-import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -14,8 +12,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -136,15 +137,63 @@ class SegmentImplConcurrencyContractTest {
     }
 
     @Test
-    void put_returns_busy_when_write_cache_full() {
+    void put_returns_writeCacheFull_when_write_cache_full_and_no_maintenance_policy() {
         final Segment<Integer, String> segment = newSegment(1);
         try {
             assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
-            assertEquals(OperationStatus.BUSY,
+            assertEquals(OperationStatus.WRITE_CACHE_FULL,
                     segment.put(2, "b").getStatus());
         } finally {
             closeAndAssertClosed(segment);
+        }
+    }
+
+    @Test
+    void put_returns_busy_when_write_cache_full_during_manual_maintenance() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final Segment<Integer, String> segment = newSegment(2, executor);
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+            assertEquals(OperationStatus.OK,
+                    segment.put(2, "b").getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING,
+                    segment.getState());
+
+            assertEquals(OperationStatus.OK,
+                    segment.put(3, "c").getStatus());
+            assertEquals(OperationStatus.OK,
+                    segment.put(4, "d").getStatus());
+            assertEquals(OperationStatus.BUSY,
+                    segment.put(5, "e").getStatus());
+        } finally {
+            closeAfterMaintenanceIfNeeded(segment, executor);
+        }
+    }
+
+    @Test
+    void put_returns_busy_when_write_cache_full_and_policy_requests_flush() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final AtomicBoolean flushEnabled = new AtomicBoolean();
+        final Segment<Integer, String> segment = newSegment(1, executor,
+                ignored -> flushEnabled.get()
+                        ? SegmentMaintenanceDecision.flushOnly()
+                        : SegmentMaintenanceDecision.none());
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+
+            flushEnabled.set(true);
+
+            assertEquals(OperationStatus.BUSY,
+                    segment.put(2, "b").getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING,
+                    segment.getState());
+            assertTrue(executor.hasTask());
+        } finally {
+            closeAfterMaintenanceIfNeeded(segment, executor);
         }
     }
 
@@ -244,6 +293,13 @@ class SegmentImplConcurrencyContractTest {
 
     private Segment<Integer, String> newSegment(final int writeCacheSize,
             final Executor maintenanceExecutor) {
+        return newSegment(writeCacheSize, maintenanceExecutor,
+                SegmentMaintenancePolicy.none());
+    }
+
+    private Segment<Integer, String> newSegment(final int writeCacheSize,
+            final Executor maintenanceExecutor,
+            final SegmentMaintenancePolicy<Integer, String> maintenancePolicy) {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder(
                         new MemDirectory())
@@ -254,7 +310,7 @@ class SegmentImplConcurrencyContractTest {
                 .withMaxNumberOfKeysInSegmentCache(8)
                 .withMaxNumberOfKeysInSegmentChunk(2)
                 .withBloomFilterIndexSizeInBytes(0)
-                .withMaintenancePolicy(SegmentMaintenancePolicy.none())
+                .withMaintenancePolicy(maintenancePolicy)
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()));
         if (maintenanceExecutor != null) {
