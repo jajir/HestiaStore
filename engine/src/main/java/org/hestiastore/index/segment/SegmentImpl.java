@@ -209,8 +209,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         if (writeAccepted) {
             return OperationResult.ok();
         }
-        if (gate.getState() == SegmentState.READY
-                && !maintenancePolicy.canScheduleMaintenance()) {
+        if (gate.getState() == SegmentState.READY) {
             return OperationResult.writeCacheFull();
         }
         return OperationResult.busy();
