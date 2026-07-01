@@ -1,0 +1,12 @@
+{
+  "branch": "HEAD",
+  "channel": "main",
+  "comparisonJsonPath": "history/diskio-nightly/2026/07/2026-07-01T04-47-02.062611+00-00_67bbf8e34d2b_28493654866/comparison-vs-previous.json",
+  "comparisonMarkdownPath": "history/diskio-nightly/2026/07/2026-07-01T04-47-02.062611+00-00_67bbf8e34d2b_28493654866/comparison-vs-previous.md",
+  "prNumber": null,
+  "profile": "diskio-nightly",
+  "runPath": "history/diskio-nightly/2026/07/2026-07-01T04-47-02.062611+00-00_67bbf8e34d2b_28493654866",
+  "sha": "67bbf8e34d2b602923270722df932c97760ccab3",
+  "summaryPath": "history/diskio-nightly/2026/07/2026-07-01T04-47-02.062611+00-00_67bbf8e34d2b_28493654866/summary.json",
+  "timestampUtc": "2026-07-01T04:47:02.062611+00:00"
+}
