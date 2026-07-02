@@ -1005,8 +1005,8 @@
         "304": {
           "channel": "pr-304",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-304/latest.json",
-          "sha": "ffda3aaec23c2b7cf53c98b773e52e13993200a5",
-          "timestampUtc": "2026-07-02T09:04:53.787887+00:00"
+          "sha": "77f4c7065464d93ee38407def3ecac6975412b98",
+          "timestampUtc": "2026-07-02T09:18:57.735522+00:00"
         }
       },
       "sha": "4d7ed0e894ecbc0e65a88805b11ec84b6b680e9c",
