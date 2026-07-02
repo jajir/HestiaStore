@@ -146,7 +146,7 @@ class SegmentIndexBootstrapOperationTest {
             assertInstanceOf(SegmentIndexMdcLoggingAdapter.class, index);
             assertTrue(index.startupMemoryEstimate().isComplete());
             assertTrue(index.startupMemoryEstimate().text().contains(
-                    "Estimated active heap:"));
+                    "├─ Total index memory - "));
         } finally {
             index.close();
         }
@@ -183,7 +183,7 @@ class SegmentIndexBootstrapOperationTest {
                             .maintenance().registryLifecycleThreads());
             assertTrue(index.startupMemoryEstimate().isComplete());
             assertTrue(index.startupMemoryEstimate().text().contains(
-                    "Estimated active heap:"));
+                    "├─ Total index memory - "));
         } finally {
             index.close();
         }
