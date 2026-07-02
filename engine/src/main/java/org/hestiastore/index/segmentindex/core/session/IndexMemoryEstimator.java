@@ -1,9 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 
@@ -13,25 +10,19 @@ import org.hestiastore.index.segmentindex.MemoryEstimateReport;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 
 /**
- * Builds a rough heap-pressure estimate from resolved startup configuration.
+ * Builds a rough memory-pressure estimate from resolved startup configuration.
  */
 final class IndexMemoryEstimator {
 
     static final int ENTRY_OVERHEAD_BYTES = 96;
     static final int PAGE_OVERHEAD_BYTES = 64;
-    static final int TREE_MAP_ENTRY_OVERHEAD_BYTES = 56;
-    static final int SEGMENT_ID_ESTIMATE_BYTES = 16;
+    static final int SEGMENT_ID_ESTIMATE_BYTES = 4;
     static final int SCARCE_INDEX_POSITION_BYTES = 4;
     static final int FIXED_SEGMENT_RUNTIME_OVERHEAD_BYTES = 16 * 1024;
     static final int TEMPORARY_MEMORY_MARGIN_PERCENT = 25;
 
     private static final String LINE_SEPARATOR = System.lineSeparator();
-    private static final String UNAVAILABLE = "unavailable";
     private static final String UNKNOWN = "unknown";
-    private static final String NOTICE =
-            "Rough estimate only; not a JVM cap or measured allocation.";
-    private static final String RUNTIME_NOTE =
-            "Real usage depends on JVM layout, GC, workload, and temporary snapshots.";
 
     private IndexMemoryEstimator() {
     }
@@ -39,12 +30,12 @@ final class IndexMemoryEstimator {
     /**
      * Estimates startup memory pressure for an index configuration.
      *
-     * @param <K> key type
-     * @param <V> value type
-     * @param configuration resolved effective configuration
-     * @param keyTypeDescriptor resolved key descriptor
+     * @param <K>                 key type
+     * @param <V>                 value type
+     * @param configuration       resolved effective configuration
+     * @param keyTypeDescriptor   resolved key descriptor
      * @param valueTypeDescriptor resolved value descriptor
-     * @param routeCount current number of route-map entries
+     * @param routeCount          current number of route-map entries
      * @return memory estimate report
      */
     static <K, V> MemoryEstimateReport estimate(
@@ -52,8 +43,7 @@ final class IndexMemoryEstimator {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int routeCount) {
-        final EffectiveIndexConfiguration<K, V> resolved =
-                Vldtn.requireNonNull(configuration, "configuration");
+        final EffectiveIndexConfiguration<K, V> resolved = Vldtn.requireNonNull(configuration, "configuration");
         final TypeDescriptor<K> keyDescriptor = Vldtn.requireNonNull(
                 keyTypeDescriptor, "keyTypeDescriptor");
         final TypeDescriptor<V> valueDescriptor = Vldtn.requireNonNull(
@@ -61,126 +51,151 @@ final class IndexMemoryEstimator {
         final int resolvedRouteCount = Vldtn
                 .requireGreaterThanOrEqualToZero(routeCount, "routeCount");
 
-        final OptionalInt keyEstimate =
-                keyDescriptor.getEstimatedAverageSizeInBytes();
-        final OptionalInt valueEstimate =
-                valueDescriptor.getEstimatedAverageSizeInBytes();
+        final OptionalInt keyEstimate = keyDescriptor.getEstimatedAverageSizeInBytes();
+        final OptionalInt valueEstimate = valueDescriptor.getEstimatedAverageSizeInBytes();
+        final long maxScarceIndexKeys = maxScarceIndexKeys(resolved);
         final OptionalLong entryEstimate = entryEstimate(keyEstimate,
                 valueEstimate);
-        final OptionalLong scarceEntryEstimate =
-                scarceEntryEstimate(keyEstimate);
-        final OptionalLong oneLoadedSegmentCache =
-                estimateOneLoadedSegmentCache(resolved, entryEstimate);
-        final OptionalLong loadedSegmentCaches =
-                estimateLoadedSegmentCaches(resolved, entryEstimate);
-        final OptionalLong chunkStoreCache =
-                estimateChunkStoreCache(resolved, entryEstimate);
-        final OptionalLong routeMap =
-                estimateRouteMap(resolvedRouteCount, keyEstimate);
+        final OptionalLong scarceEntryEstimate = scarceEntryEstimate(keyEstimate);
+        final OptionalLong routeEntryEstimate = routeMapEntryEstimate(keyEstimate);
+        final OptionalLong oneDeltaCache = estimateOneDeltaCache(resolved, entryEstimate);
+        final OptionalLong deltaCaches = estimateDeltaCaches(resolved, entryEstimate);
+        final OptionalLong chunkStoreCache = estimateChunkStoreCache(resolved, entryEstimate);
+        final OptionalLong routeMap = estimateRouteMap(resolvedRouteCount,
+                routeEntryEstimate);
+        final OptionalLong oneBloomFilter = OptionalLong.of(resolved.bloomFilter().indexSizeBytes());
         final OptionalLong bloomFilters = OptionalLong
                 .of(estimateBloomFilters(resolved));
-        final OptionalLong scarceIndexes =
-                estimateScarceIndexes(resolved, keyEstimate);
+        final OptionalLong oneScarceIndex = estimateOneScarceIndex(resolved, keyEstimate);
+        final OptionalLong scarceIndexes = estimateScarceIndexes(resolved, keyEstimate);
+        final OptionalLong oneSegmentInfrastructure = OptionalLong.of(FIXED_SEGMENT_RUNTIME_OVERHEAD_BYTES);
         final OptionalLong segmentInfrastructure = OptionalLong
                 .of(estimateSegmentInfrastructure(resolved));
+        final OptionalLong oneCachedSegment = sumEstimates(
+                oneDeltaCache, oneBloomFilter, oneScarceIndex,
+                oneSegmentInfrastructure);
+        final OptionalLong loadedSegments = sumEstimates(deltaCaches,
+                bloomFilters, scarceIndexes, segmentInfrastructure);
+        final OptionalLong allSegments = sumEstimates(loadedSegments,
+                routeMap);
 
         long steadyStateBytes = 0L;
-        steadyStateBytes = addIfPresent(steadyStateBytes,
-                loadedSegmentCaches);
+        steadyStateBytes = addIfPresent(steadyStateBytes, allSegments);
         steadyStateBytes = addIfPresent(steadyStateBytes, chunkStoreCache);
-        steadyStateBytes = addIfPresent(steadyStateBytes, routeMap);
-        steadyStateBytes = addIfPresent(steadyStateBytes, bloomFilters);
-        steadyStateBytes = addIfPresent(steadyStateBytes, scarceIndexes);
-        steadyStateBytes = addIfPresent(steadyStateBytes,
-                segmentInfrastructure);
 
         final boolean complete = entryEstimate.isPresent()
-                && loadedSegmentCaches.isPresent()
+                && allSegments.isPresent()
                 && chunkStoreCache.isPresent()
                 && routeMap.isPresent()
                 && scarceIndexes.isPresent();
-        final OptionalLong steadyState =
-                complete ? OptionalLong.of(steadyStateBytes)
-                        : OptionalLong.empty();
+        final OptionalLong steadyState = complete ? OptionalLong.of(steadyStateBytes)
+                : OptionalLong.empty();
         final OptionalLong temporaryMemoryMargin = estimateTemporaryMemoryMargin(
-                steadyState, oneLoadedSegmentCache);
+                steadyState, oneDeltaCache);
         final OptionalLong total = total(steadyState, temporaryMemoryMargin);
-        final List<Map.Entry<String, OptionalLong>> steadyAreas = List.of(
-                Map.entry("loaded segment cache", loadedSegmentCaches),
-                Map.entry("chunk-store cache", chunkStoreCache),
-                Map.entry("route map", routeMap),
-                Map.entry("Bloom filters if loaded", bloomFilters),
-                Map.entry("scarce indexes if loaded", scarceIndexes),
-                Map.entry("loaded segment infrastructure",
-                        segmentInfrastructure));
 
         final StringBuilder out = new StringBuilder();
         appendTitle(out);
-        appendSummary(out, steadyState, temporaryMemoryMargin, total);
-        appendNotes(out);
-        appendLargestAreas(out, steadyAreas);
-        appendAssumptions(out, keyDescriptor, valueDescriptor, keyEstimate,
-                valueEstimate, entryEstimate);
-        appendConfiguration(out, resolved, resolvedRouteCount);
-        appendReportedButNotIncluded(out, resolved);
-        out.append("Estimated memory by area:").append(LINE_SEPARATOR);
-        appendLine(out, "loaded segment cache", loadedSegmentCaches,
+        appendParentEstimateTreeLine(out, "", "├─ ", "Total index memory",
+                total,
+                "needs segment, page-cache, and maintenance estimates");
+        appendParentEstimateTreeLine(out, "│  ", "├─ ", "All segments",
+                allSegments, "needs complete segment and routing estimates",
+                formatCount(resolved.segment().cachedSegmentLimit())
+                        + " segment cache slots");
+        appendParentEstimateTreeLine(out, "│  │  ", "├─ ",
+                "One cached segment", oneCachedSegment,
                 "needs key and value descriptor estimates",
-                String.format(Locale.ROOT,
-                        "inputs: %d segments, %d read keys, %d maintenance keys, entry %s",
-                        resolved.segment().cachedSegmentLimit(),
-                        resolved.segment().cacheKeyLimit(),
-                        resolved.writePath()
-                                .segmentWriteCacheKeyLimitDuringMaintenance(),
-                        estimateText(entryEstimate)));
-
-        appendLine(out, "chunk-store cache", chunkStoreCache,
+                "multiplied by "
+                        + formatCount(resolved.segment().cachedSegmentLimit())
+                        + " segment cache slots");
+        appendEstimateTreeLine(out, "│  │  │  ", "├─ ", "Delta cache",
+                oneDeltaCache,
                 "needs key and value descriptor estimates",
-                String.format(Locale.ROOT,
-                        "inputs: %d pages, %d chunk keys, page overhead %s, entry %s",
-                        resolved.chunkStoreCache().pageLimit(),
-                        resolved.segment().chunkKeyLimit(),
-                        formatBytes(PAGE_OVERHEAD_BYTES),
-                        estimateText(entryEstimate)));
-
-        appendLine(out, "route map", routeMap,
-                "needs key descriptor estimate",
-                String.format(Locale.ROOT,
-                        "inputs: %d routes, key %s, segment id %s, tree entry %s",
-                        resolvedRouteCount, estimateText(keyEstimate),
-                        formatBytes(SEGMENT_ID_ESTIMATE_BYTES),
-                        formatBytes(TREE_MAP_ENTRY_OVERHEAD_BYTES)));
-
-        appendLine(out, "Bloom filters if loaded", bloomFilters, "",
-                String.format(Locale.ROOT, "inputs: %d segments, filter %s",
-                        resolved.segment().cachedSegmentLimit(),
-                        formatBytes(resolved.bloomFilter()
-                                .indexSizeBytes())));
-
-        appendLine(out, "scarce indexes if loaded", scarceIndexes,
-                "needs key descriptor estimate",
-                String.format(Locale.ROOT,
-                        "inputs: %d segments, %d scarce entries each, scarce entry %s",
-                        resolved.segment().cachedSegmentLimit(),
-                        ceilDiv(resolved.segment().maxKeys(),
-                                resolved.segment().chunkKeyLimit()),
-                        estimateText(scarceEntryEstimate)));
-
-        appendLine(out, "loaded segment infrastructure",
-                segmentInfrastructure, "",
-                String.format(Locale.ROOT, "inputs: %d segments, overhead %s",
-                        resolved.segment().cachedSegmentLimit(),
-                        formatBytes(FIXED_SEGMENT_RUNTIME_OVERHEAD_BYTES)));
-
-        appendLine(out, "temporary memory margin",
+                "configured max number of keys in cache: "
+                        + formatCount(resolved.segment().cacheKeyLimit()),
+                "key/value entry: " + estimateText(entryEstimate));
+        appendEstimateTreeLine(out, "│  │  │  ", "├─ ",
+                "Bloom filter", oneBloomFilter, "",
+                "configured bloom filter size: " + formatBytes(
+                        resolved.bloomFilter().indexSizeBytes()));
+        appendParentEstimateTreeLine(out, "│  │  │  ", "├─ ",
+                "Scarce index", oneScarceIndex,
+                "needs key descriptor estimate");
+        appendTreeLine(out, "│  │  │  │  ", "├─ ",
+                "Max number of keys in scarce index",
+                formatCount(maxScarceIndexKeys),
+                "max number of keys in segment: "
+                        + formatCount(resolved.segment().maxKeys()),
+                "number of keys per page: "
+                        + formatCount(resolved.segment().chunkKeyLimit()));
+        appendTreeLine(out, "│  │  │  │  ", "└─ ",
+                "Key/position entry", estimateText(scarceEntryEstimate));
+        appendEstimateTreeLine(out, "│  │  │  ", "└─ ", "Segment runtime",
+                oneSegmentInfrastructure, "",
+                "overhead: "
+                        + formatBytes(FIXED_SEGMENT_RUNTIME_OVERHEAD_BYTES));
+        appendParentEstimateTreeLine(out, "│  │  ", "└─ ", "Segment routing map",
+                routeMap, "needs key descriptor estimate");
+        appendTreeLine(out, "│  │     ", "├─ ",
+                "Number of segment routes", formatCount(resolvedRouteCount));
+        appendTreeLine(out, "│  │     ", "└─ ",
+                "Key/segment-id entry", estimateText(routeEntryEstimate),
+                "key: " + estimateText(keyEstimate),
+                "segment id: " + formatBytes(SEGMENT_ID_ESTIMATE_BYTES));
+        appendEstimateTreeLine(out, "│  ", "├─ ",
+                "Chunk-store page cache", chunkStoreCache,
+                "needs key and value descriptor estimates",
+                formatCount(resolved.chunkStoreCache().pageLimit())
+                        + " pages",
+                "chunk keys per page: "
+                        + formatCount(resolved.segment().chunkKeyLimit()),
+                "page overhead: " + formatBytes(PAGE_OVERHEAD_BYTES),
+                "key/value entry: " + estimateText(entryEstimate));
+        appendEstimateTreeLine(out, "│  ", "└─ ", "Maintenance overhead",
                 temporaryMemoryMargin,
-                "needs complete steady-state estimate and entry estimate",
-                String.format(Locale.ROOT,
-                        "inputs: max(%d%% of steady state = %s, one segment cache = %s)",
-                        TEMPORARY_MEMORY_MARGIN_PERCENT,
-                        memoryText(steadyState),
-                        memoryText(oneLoadedSegmentCache)));
-
+                "needs memory before maintenance and key/value entry estimates",
+                "maintenance threads: "
+                        + formatCount(resolved.maintenance().indexThreads()),
+                "max(" + TEMPORARY_MEMORY_MARGIN_PERCENT
+                        + "% of memory before maintenance = "
+                        + memoryText(steadyState) + ",",
+                "one delta cache = "
+                        + memoryText(oneDeltaCache) + ")");
+        appendTreeLine(out, "", "├─ ", "Key/value entry",
+                estimateText(entryEstimate),
+                "key: " + descriptorName(keyDescriptor) + ", "
+                        + aboutText(keyEstimate),
+                "value: " + descriptorName(valueDescriptor) + ", "
+                        + aboutText(valueEstimate),
+                "overhead: " + formatBytes(ENTRY_OVERHEAD_BYTES));
+        appendTreeLine(out, "", "├─ ", "Key/position entry",
+                estimateText(scarceEntryEstimate),
+                "key: " + descriptorName(keyDescriptor) + ", "
+                        + aboutText(keyEstimate),
+                "integer position: TypeDescriptorInteger, "
+                        + "about " + formatBytes(SCARCE_INDEX_POSITION_BYTES),
+                "overhead: " + formatBytes(ENTRY_OVERHEAD_BYTES));
+        appendTreeLine(out, "", "├─ ", "Formula constants",
+                "shown for transparency, not added separately",
+                "fixed per loaded/cached segment: about "
+                        + formatBytes(FIXED_SEGMENT_RUNTIME_OVERHEAD_BYTES),
+                "chunk-store page overhead: "
+                        + formatBytes(PAGE_OVERHEAD_BYTES),
+                "route-map segment id: "
+                        + formatBytes(SEGMENT_ID_ESTIMATE_BYTES),
+                "maintenance overhead: max("
+                        + TEMPORARY_MEMORY_MARGIN_PERCENT
+                        + "% of memory before maintenance,",
+                "one delta cache)");
+        appendTreeLine(out, "", "├─ ", "Other requirements",
+                "reported but not included",
+                "index write-buffer keys: " + formatCount(
+                        resolved.writePath().indexBufferedWriteKeyLimit()));
+        appendTreeLine(out, "", "└─ ", "Notes", "rough estimate only",
+                "not a JVM cap or measured allocation",
+                "usage depends on JVM layout, GC, workload, and snapshots",
+                "details: docs/operations/memory-estimate.md");
         out.append("End memory estimate").append(LINE_SEPARATOR);
         return new MemoryEstimateReport(out.toString().lines().toList(),
                 total.isPresent(), total);
@@ -188,110 +203,6 @@ final class IndexMemoryEstimator {
 
     private static void appendTitle(final StringBuilder out) {
         out.append("Estimated memory use at startup").append(LINE_SEPARATOR);
-    }
-
-    private static void appendSummary(final StringBuilder out,
-            final OptionalLong steadyState,
-            final OptionalLong temporaryMemoryMargin,
-            final OptionalLong total) {
-        out.append("Estimated active heap: ")
-                .append(memoryText(total)).append(LINE_SEPARATOR);
-        appendIndented(out, "steady state: " + memoryText(steadyState)
-                + " (memory expected after startup caches are loaded)");
-        appendIndented(out, "temporary margin: "
-                + memoryText(temporaryMemoryMargin)
-                + " (extra headroom for short-lived objects and snapshots)");
-    }
-
-    private static void appendNotes(final StringBuilder out) {
-        out.append("Notes:").append(LINE_SEPARATOR);
-        appendIndented(out, NOTICE);
-        appendIndented(out, RUNTIME_NOTE);
-        appendIndented(out, "details: docs/operations/memory-estimate.md");
-    }
-
-    private static void appendLargestAreas(final StringBuilder out,
-            final List<Map.Entry<String, OptionalLong>> steadyAreas) {
-        out.append("Largest steady-state areas:").append(LINE_SEPARATOR);
-        final List<Map.Entry<String, OptionalLong>> availableAreas = steadyAreas
-                .stream()
-                .filter(area -> area.getValue().isPresent()
-                        && area.getValue().getAsLong() > 0L)
-                .sorted(Comparator
-                        .comparingLong((Map.Entry<String, OptionalLong> area) ->
-                                area.getValue().getAsLong())
-                        .reversed())
-                .limit(3L)
-                .toList();
-        if (availableAreas.isEmpty()) {
-            appendIndented(out, UNAVAILABLE);
-            return;
-        }
-        availableAreas.forEach(area -> appendIndented(out,
-                area.getKey() + ": " + memoryText(area.getValue())));
-    }
-
-    private static <K, V> void appendAssumptions(final StringBuilder out,
-            final TypeDescriptor<K> keyDescriptor,
-            final TypeDescriptor<V> valueDescriptor,
-            final OptionalInt keyEstimate, final OptionalInt valueEstimate,
-            final OptionalLong entryEstimate) {
-        out.append("Per-entry size assumptions:").append(LINE_SEPARATOR);
-        appendIndented(out, "key: " + descriptorName(keyDescriptor) + ", "
-                + aboutText(keyEstimate));
-        appendIndented(out, "value: " + descriptorName(valueDescriptor) + ", "
-                + aboutText(valueEstimate));
-        appendIndented(out, "entry: " + aboutText(entryEstimate)
-                + " (key + value + overhead)");
-        out.append("Estimator assumptions:").append(LINE_SEPARATOR);
-        appendIndented(out, "fixed per loaded/cached segment: about "
-                + formatBytes(FIXED_SEGMENT_RUNTIME_OVERHEAD_BYTES));
-        appendIndented(out, "temporary margin: max("
-                + TEMPORARY_MEMORY_MARGIN_PERCENT
-                + "% of steady state, one segment cache)");
-    }
-
-    private static void appendConfiguration(final StringBuilder out,
-            final EffectiveIndexConfiguration<?, ?> resolved,
-            final int routeCount) {
-        out.append("Configuration used for this estimate:")
-                .append(LINE_SEPARATOR);
-        appendIndented(out, "cached segments="
-                + resolved.segment().cachedSegmentLimit()
-                + ", segment cache keys="
-                + resolved.segment().cacheKeyLimit()
-                + ", maintenance keys="
-                + resolved.writePath()
-                        .segmentWriteCacheKeyLimitDuringMaintenance());
-        appendIndented(out, "max keys per segment="
-                + resolved.segment().maxKeys());
-        appendIndented(out, "chunk key limit="
-                + resolved.segment().chunkKeyLimit()
-                + ", chunk-store pages="
-                + resolved.chunkStoreCache().pageLimit()
-                + ", Bloom filter="
-                + formatBytes(resolved.bloomFilter().indexSizeBytes()));
-        appendIndented(out, "route map entries=" + routeCount);
-    }
-
-    private static void appendReportedButNotIncluded(final StringBuilder out,
-            final EffectiveIndexConfiguration<?, ?> resolved) {
-        out.append("Reported but not included:").append(LINE_SEPARATOR);
-        appendIndented(out, "index write-buffer keys: "
-                + resolved.writePath().indexBufferedWriteKeyLimit());
-    }
-
-    private static void appendLine(final StringBuilder out,
-            final String label, final OptionalLong estimateBytes,
-            final String unavailableReason, final String... details) {
-        out.append("  ").append(label).append(": ")
-                .append(memoryText(estimateBytes)).append(LINE_SEPARATOR);
-        if (estimateBytes.isEmpty() && !unavailableReason.isBlank()) {
-            appendDetail(out, "reason: " + unavailableReason);
-        }
-        for (final String detail : details) {
-            appendDetail(out, detail);
-        }
     }
 
     private static OptionalLong entryEstimate(final OptionalInt keyEstimate,
@@ -313,31 +224,34 @@ final class IndexMemoryEstimator {
                 ENTRY_OVERHEAD_BYTES));
     }
 
-    private static OptionalLong estimateLoadedSegmentCaches(
+    private static OptionalLong routeMapEntryEstimate(
+            final OptionalInt keyEstimate) {
+        if (keyEstimate.isEmpty()) {
+            return OptionalLong.empty();
+        }
+        return OptionalLong.of(add(keyEstimate.getAsInt(),
+                SEGMENT_ID_ESTIMATE_BYTES));
+    }
+
+    private static OptionalLong estimateDeltaCaches(
             final EffectiveIndexConfiguration<?, ?> resolved,
             final OptionalLong entryEstimate) {
         if (entryEstimate.isEmpty()) {
             return OptionalLong.empty();
         }
-        final long perSegmentKeys = add(resolved.segment().cacheKeyLimit(),
-                resolved.writePath()
-                        .segmentWriteCacheKeyLimitDuringMaintenance());
         return OptionalLong.of(multiply(
                 multiply(resolved.segment().cachedSegmentLimit(),
-                        perSegmentKeys),
+                        resolved.segment().cacheKeyLimit()),
                 entryEstimate.getAsLong()));
     }
 
-    private static OptionalLong estimateOneLoadedSegmentCache(
+    private static OptionalLong estimateOneDeltaCache(
             final EffectiveIndexConfiguration<?, ?> resolved,
             final OptionalLong entryEstimate) {
         if (entryEstimate.isEmpty()) {
             return OptionalLong.empty();
         }
-        final long perSegmentKeys = add(resolved.segment().cacheKeyLimit(),
-                resolved.writePath()
-                        .segmentWriteCacheKeyLimitDuringMaintenance());
-        return OptionalLong.of(multiply(perSegmentKeys,
+        return OptionalLong.of(multiply(resolved.segment().cacheKeyLimit(),
                 entryEstimate.getAsLong()));
     }
 
@@ -355,15 +269,12 @@ final class IndexMemoryEstimator {
     }
 
     private static OptionalLong estimateRouteMap(final int routeCount,
-            final OptionalInt keyEstimate) {
-        if (keyEstimate.isEmpty()) {
+            final OptionalLong routeEntryEstimate) {
+        if (routeEntryEstimate.isEmpty()) {
             return OptionalLong.empty();
         }
-        final long perEntryBytes = add(
-                add(keyEstimate.getAsInt(), SEGMENT_ID_ESTIMATE_BYTES),
-                TREE_MAP_ENTRY_OVERHEAD_BYTES);
-        return OptionalLong.of(multiply(multiply(routeCount, 2L),
-                perEntryBytes));
+        return OptionalLong.of(multiply(routeCount,
+                routeEntryEstimate.getAsLong()));
     }
 
     private static long estimateBloomFilters(
@@ -372,21 +283,36 @@ final class IndexMemoryEstimator {
                 resolved.bloomFilter().indexSizeBytes());
     }
 
-    private static OptionalLong estimateScarceIndexes(
+    private static OptionalLong estimateOneScarceIndex(
             final EffectiveIndexConfiguration<?, ?> resolved,
             final OptionalInt keyEstimate) {
         if (keyEstimate.isEmpty()) {
             return OptionalLong.empty();
         }
-        final long scarceKeysPerSegment = ceilDiv(resolved.segment().maxKeys(),
-                resolved.segment().chunkKeyLimit());
+        final long scarceKeysPerSegment = maxScarceIndexKeys(resolved);
         final long scarceEntryBytes = add(
                 add(keyEstimate.getAsInt(), SCARCE_INDEX_POSITION_BYTES),
                 ENTRY_OVERHEAD_BYTES);
-        return OptionalLong.of(multiply(
-                multiply(resolved.segment().cachedSegmentLimit(),
-                        scarceKeysPerSegment),
+        return OptionalLong.of(multiply(scarceKeysPerSegment,
                 scarceEntryBytes));
+    }
+
+    private static OptionalLong estimateScarceIndexes(
+            final EffectiveIndexConfiguration<?, ?> resolved,
+            final OptionalInt keyEstimate) {
+        final OptionalLong oneScarceIndex = estimateOneScarceIndex(resolved, keyEstimate);
+        if (oneScarceIndex.isEmpty()) {
+            return OptionalLong.empty();
+        }
+        return OptionalLong.of(multiply(
+                resolved.segment().cachedSegmentLimit(),
+                oneScarceIndex.getAsLong()));
+    }
+
+    private static long maxScarceIndexKeys(
+            final EffectiveIndexConfiguration<?, ?> resolved) {
+        return ceilDiv(resolved.segment().maxKeys(),
+                resolved.segment().chunkKeyLimit());
     }
 
     private static long estimateSegmentInfrastructure(
@@ -414,6 +340,17 @@ final class IndexMemoryEstimator {
         }
         return OptionalLong.of(add(steadyState.getAsLong(),
                 transientHeadroom.getAsLong()));
+    }
+
+    private static OptionalLong sumEstimates(final OptionalLong... estimates) {
+        long sum = 0L;
+        for (final OptionalLong estimate : estimates) {
+            if (estimate.isEmpty()) {
+                return OptionalLong.empty();
+            }
+            sum = add(sum, estimate.getAsLong());
+        }
+        return OptionalLong.of(sum);
     }
 
     private static long addIfPresent(final long total,
@@ -449,12 +386,12 @@ final class IndexMemoryEstimator {
 
     private static String estimateText(final OptionalLong estimate) {
         return estimate.isPresent() ? formatBytes(estimate.getAsLong())
-                : UNAVAILABLE;
+                : UNKNOWN;
     }
 
     private static String memoryText(final OptionalLong estimate) {
         return estimate.isPresent() ? formatBytes(estimate.getAsLong())
-                : UNAVAILABLE;
+                : UNKNOWN;
     }
 
     private static String aboutText(final OptionalInt estimate) {
@@ -469,14 +406,63 @@ final class IndexMemoryEstimator {
                 : UNKNOWN;
     }
 
-    private static void appendIndented(final StringBuilder out,
-            final String line) {
-        out.append("  ").append(line).append(LINE_SEPARATOR);
+    private static void appendEstimateTreeLine(final StringBuilder out,
+            final String prefix, final String connector, final String label,
+            final OptionalLong estimateBytes, final String unknownReason,
+            final String... details) {
+        appendEstimateTreeLine(out, prefix, connector, label, estimateBytes,
+                unknownReason, false, details);
     }
 
-    private static void appendDetail(final StringBuilder out,
-            final String line) {
-        out.append("    ").append(line).append(LINE_SEPARATOR);
+    private static void appendParentEstimateTreeLine(final StringBuilder out,
+            final String prefix, final String connector, final String label,
+            final OptionalLong estimateBytes, final String unknownReason,
+            final String... details) {
+        appendEstimateTreeLine(out, prefix, connector, label, estimateBytes,
+                unknownReason, true, details);
+    }
+
+    private static void appendEstimateTreeLine(final StringBuilder out,
+            final String prefix, final String connector, final String label,
+            final OptionalLong estimateBytes, final String unknownReason,
+            final boolean childBranch, final String... details) {
+        final String[] resolvedDetails;
+        if (estimateBytes.isEmpty() && !unknownReason.isBlank()) {
+            resolvedDetails = new String[details.length + 1];
+            resolvedDetails[0] = "reason: " + unknownReason;
+            System.arraycopy(details, 0, resolvedDetails, 1,
+                    details.length);
+        } else {
+            resolvedDetails = details;
+        }
+        appendTreeLine(out, prefix, connector, label,
+                memoryText(estimateBytes), childBranch, resolvedDetails);
+    }
+
+    private static void appendTreeLine(final StringBuilder out,
+            final String prefix, final String connector, final String label,
+            final String value, final String... details) {
+        appendTreeLine(out, prefix, connector, label, value, false, details);
+    }
+
+    private static void appendTreeLine(final StringBuilder out,
+            final String prefix, final String connector, final String label,
+            final String value, final boolean childBranch,
+            final String... details) {
+        final String lead = prefix + connector + label + " - ";
+        out.append(lead).append(value).append(LINE_SEPARATOR);
+        final String childMarker = childBranch ? "│" : "";
+        final String detailPrefix = prefix + continuation(connector)
+                + childMarker
+                + " ".repeat(label.length() + " - ".length()
+                        - childMarker.length());
+        for (final String detail : details) {
+            out.append(detailPrefix).append(detail).append(LINE_SEPARATOR);
+        }
+    }
+
+    private static String continuation(final String connector) {
+        return connector.startsWith("├") ? "│  " : "   ";
     }
 
     private static String descriptorName(final TypeDescriptor<?> descriptor) {
@@ -491,7 +477,7 @@ final class IndexMemoryEstimator {
         if (bytes < 1024L) {
             return bytes + " B";
         }
-        final String[] units = {"KiB", "MiB", "GiB", "TiB", "PiB", "EiB"};
+        final String[] units = { "KiB", "MiB", "GiB", "TiB", "PiB", "EiB" };
         double value = bytes;
         int unitIndex = -1;
         while (value >= 1024D && unitIndex < units.length - 1) {
@@ -500,6 +486,10 @@ final class IndexMemoryEstimator {
         }
         return String.format(Locale.ROOT, "%.2f %s", value,
                 units[unitIndex]);
+    }
+
+    private static String formatCount(final long count) {
+        return String.format(Locale.ROOT, "%,d", count);
     }
 
 }
