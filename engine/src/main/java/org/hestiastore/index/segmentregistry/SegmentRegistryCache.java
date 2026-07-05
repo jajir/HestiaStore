@@ -189,12 +189,7 @@ final class SegmentRegistryCache<K, V> {
 
     boolean updateLimit(final int newLimit) {
         limit.set(Vldtn.requireGreaterThanZero(newLimit, "newLimit"));
-        while (size.get() > limit.get()) {
-            if (!removeLastRecentUsedSegment(null)) {
-                return false;
-            }
-        }
-        return true;
+        return evictSynchronouslyAboveLimit(null);
     }
 
     List<Segment<K, V>> readyValuesSnapshot() {
@@ -230,22 +225,37 @@ final class SegmentRegistryCache<K, V> {
         if (size.get() <= limit.get()) {
             return;
         }
-        removeLastRecentUsedSegment(exceptKey);
+        evictSynchronouslyAboveLimit(exceptKey);
     }
 
     boolean removeLastRecentUsedSegment(final SegmentId exceptKey) {
-        final EvictionCandidate<K, V> candidate;
-        evictionLock.lock();
-        try {
-            candidate = selectLeastRecentlyUsedCandidate(exceptKey);
-            if (candidate == null) {
+        final EvictionCandidate<K, V> candidate = selectEvictionCandidate(
+                exceptKey);
+        if (candidate == null) {
+            return false;
+        }
+        return startUnloadAsync(candidate);
+    }
+
+    private boolean evictSynchronouslyAboveLimit(final SegmentId exceptKey) {
+        while (size.get() > limit.get()) {
+            final EvictionCandidate<K, V> candidate = selectEvictionCandidate(
+                    exceptKey);
+            if (candidate == null || !unloadAndFinalize(candidate, true)) {
                 return false;
             }
+        }
+        return true;
+    }
+
+    private EvictionCandidate<K, V> selectEvictionCandidate(
+            final SegmentId exceptKey) {
+        evictionLock.lock();
+        try {
+            return selectLeastRecentlyUsedCandidate(exceptKey);
         } finally {
             evictionLock.unlock();
         }
-        startUnloadAsync(candidate);
-        return true;
     }
 
     private EvictionCandidate<K, V> selectLeastRecentlyUsedCandidate(
@@ -295,18 +305,23 @@ final class SegmentRegistryCache<K, V> {
         }
     }
 
-    private void startUnloadAsync(final EvictionCandidate<K, V> candidate) {
+    private boolean startUnloadAsync(final EvictionCandidate<K, V> candidate) {
         try {
-            unloadExecutor.execute(() -> {
-                if (!unloadValue(candidate.value)) {
-                    candidate.entry.cancelUnload();
-                    return;
-                }
-                finalizeRemoval(candidate.key, candidate.entry, true);
-            });
+            unloadExecutor.execute(() -> unloadAndFinalize(candidate, true));
+            return true;
         } catch (final RejectedExecutionException ex) {
             candidate.entry.cancelUnload();
+            return false;
         }
+    }
+
+    private boolean unloadAndFinalize(final EvictionCandidate<K, V> candidate,
+            final boolean eviction) {
+        if (!unloadValue(candidate.value)) {
+            candidate.entry.cancelUnload();
+            return false;
+        }
+        return finalizeRemoval(candidate.key, candidate.entry, eviction);
     }
 
     private boolean finalizeRemoval(final SegmentId key,

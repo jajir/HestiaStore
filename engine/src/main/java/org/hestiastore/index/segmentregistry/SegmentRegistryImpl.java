@@ -94,9 +94,8 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     public BlockingSegment<K, V> loadSegment(final SegmentId segmentId) {
         final SegmentId validatedSegmentId = Vldtn.requireNonNull(segmentId,
                 SEGMENT_ID_PARAMETER);
-        final Segment<K, V> loaded = blockingFacade.loadSegment(
-                validatedSegmentId);
-        return toBlockingSegment(validatedSegmentId, loaded);
+        blockingFacade.loadSegment(validatedSegmentId);
+        return toBlockingSegment(validatedSegmentId);
     }
 
     @Override
@@ -105,7 +104,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         final SegmentId validatedSegmentId = Vldtn.requireNonNull(segmentId,
                 SEGMENT_ID_PARAMETER);
         return blockingFacade.tryGetSegment(validatedSegmentId)
-                .map(segment -> toBlockingSegment(validatedSegmentId, segment));
+                .map(ignored -> toBlockingSegment(validatedSegmentId));
     }
 
     @Override
@@ -117,13 +116,13 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
             return Optional.empty();
         }
         return cache.getIfReady(validatedSegmentId)
-                .map(segment -> toBlockingSegment(validatedSegmentId, segment));
+                .map(ignored -> toBlockingSegment(validatedSegmentId));
     }
 
     @Override
     public BlockingSegment<K, V> createSegment() {
         final Segment<K, V> created = blockingFacade.createSegment();
-        return toBlockingSegment(created.getId(), created);
+        return toBlockingSegment(created.getId());
     }
 
     @Override
@@ -316,8 +315,8 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     }
 
     private List<BlockingSegment<K, V>> loadedBlockingSegmentsSnapshot() {
-        return loadedSegmentsSnapshot().stream().map(this::toBlockingSegment)
-                .toList();
+        return loadedSegmentsSnapshot().stream()
+                .map(segment -> toBlockingSegment(segment.getId())).toList();
     }
 
     /** {@inheritDoc} */
@@ -332,17 +331,11 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         return runtime;
     }
 
-    private BlockingSegment<K, V> toBlockingSegment(
-            final Segment<K, V> segment) {
-        return toBlockingSegment(segment.getId(), segment);
-    }
-
-    private BlockingSegment<K, V> toBlockingSegment(final SegmentId segmentId,
-            final Segment<K, V> segment) {
+    private BlockingSegment<K, V> toBlockingSegment(final SegmentId segmentId) {
         return blockingSegments.computeIfAbsent(segmentId,
                 id -> new DefaultBlockingSegment<>(id,
                         () -> blockingFacade.loadSegment(id),
-                        blockingRetryPolicy, segment));
+                        blockingRetryPolicy));
     }
 
     private static OperationStatus resultForState(

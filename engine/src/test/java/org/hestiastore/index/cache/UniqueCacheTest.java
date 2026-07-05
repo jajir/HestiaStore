@@ -180,12 +180,11 @@ class UniqueCacheTest {
     }
 
     @Test
-    void test_threadSafe_cache_handles_concurrent_updates() throws Exception {
+    void test_cache_handles_concurrent_updates_by_default() throws Exception {
         final UniqueCache<Integer, String> threadSafe = UniqueCache
                 .<Integer, String>builder()
                 .withKeyComparator(Integer::compareTo)
                 .withInitialCapacity(16)
-                .withThreadSafe(true)
                 .buildEmpty();
         final int threads = 6;
         final int perThread = 200;

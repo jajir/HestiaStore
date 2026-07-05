@@ -1,7 +1,6 @@
 package org.hestiastore.index.cache;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -140,41 +139,6 @@ class UniqueCacheBuilderTest {
     }
 
     @Test
-    void test_build_with_threadSafe_true_returns_thread_safe_cache() {
-        final List<Entry<Integer, String>> data = List.of(
-                Entry.of(1, "a"), Entry.of(2, "b"));
-        final EntryIteratorWithCurrent<Integer, String> iterator = new EntryIteratorList<>(
-                data);
-        when(sdf.openIterator()).thenReturn(iterator);
-
-        final UniqueCache<Integer, String> cache = UniqueCache
-                .<Integer, String>builder()
-                .withKeyComparator(Integer::compareTo)
-                .withDataFile(sdf)
-                .withThreadSafe(true)
-                .build();
-
-        assertTrue(cache.isThreadSafe());
-    }
-
-    @Test
-    void test_build_with_threadSafe_false_returns_plain_cache() {
-        final List<Entry<Integer, String>> data = List.of(Entry.of(1, "a"));
-        final EntryIteratorWithCurrent<Integer, String> iterator = new EntryIteratorList<>(
-                data);
-        when(sdf.openIterator()).thenReturn(iterator);
-
-        final UniqueCache<Integer, String> cache = UniqueCache
-                .<Integer, String>builder()
-                .withKeyComparator(Integer::compareTo)
-                .withDataFile(sdf)
-                .withThreadSafe(false)
-                .build();
-
-        assertFalse(cache.isThreadSafe());
-    }
-
-    @Test
     void test_buildEmpty_without_dataFile_returns_empty_cache() {
         final UniqueCache<Integer, String> cache = UniqueCache
                 .<Integer, String>builder()
@@ -185,25 +149,4 @@ class UniqueCacheBuilderTest {
         assertEquals(0, cache.size());
     }
 
-    @Test
-    void test_buildEmpty_threadSafe_false_returns_plain_cache() {
-        final UniqueCache<Integer, String> cache = UniqueCache
-                .<Integer, String>builder()
-                .withKeyComparator(Integer::compareTo)
-                .withThreadSafe(false)
-                .buildEmpty();
-
-        assertFalse(cache.isThreadSafe());
-    }
-
-    @Test
-    void test_buildEmpty_threadSafe_true_returns_thread_safe_cache() {
-        final UniqueCache<Integer, String> cache = UniqueCache
-                .<Integer, String>builder()
-                .withKeyComparator(Integer::compareTo)
-                .withThreadSafe(true)
-                .buildEmpty();
-
-        assertTrue(cache.isThreadSafe());
-    }
 }

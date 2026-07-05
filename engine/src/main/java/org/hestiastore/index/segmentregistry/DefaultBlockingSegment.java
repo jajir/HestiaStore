@@ -29,23 +29,14 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
     private final Supplier<Segment<K, V>> segmentLoader;
     private final BusyRetryPolicy retryPolicy;
     private final Runtime runtime;
-    private volatile Segment<K, V> segment;
 
     DefaultBlockingSegment(final SegmentId segmentId,
             final Supplier<Segment<K, V>> segmentLoader,
             final BusyRetryPolicy retryPolicy) {
-        this(segmentId, segmentLoader, retryPolicy, null);
-    }
-
-    DefaultBlockingSegment(final SegmentId segmentId,
-            final Supplier<Segment<K, V>> segmentLoader,
-            final BusyRetryPolicy retryPolicy,
-            final Segment<K, V> initialSegment) {
         this.segmentId = Vldtn.requireNonNull(segmentId, "segmentId");
         this.segmentLoader = Vldtn.requireNonNull(segmentLoader,
                 "segmentLoader");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
-        this.segment = initialSegment;
         this.runtime = new RuntimeView();
     }
 
@@ -56,7 +47,7 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     @Override
     public Segment<K, V> getSegment() {
-        return loadSegment();
+        return segmentLoader.get();
     }
 
     @Override
@@ -66,7 +57,7 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     @Override
     public OperationResult<V> tryGet(final K key) {
-        return loadSegment().get(key);
+        return segmentLoader.get().get(key);
     }
 
     @Override
@@ -76,7 +67,7 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     @Override
     public OperationResult<Void> tryPut(final K key, final V value) {
-        return loadSegment().put(key, value);
+        return segmentLoader.get().put(key, value);
     }
 
     @Override
@@ -93,7 +84,7 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
     public OperationResult<EntryIterator<K, V>> tryOpenIterator(
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(isolation, "isolation");
-        return loadSegment().openIterator(isolation);
+        return segmentLoader.get().openIterator(isolation);
     }
 
     @Override
@@ -111,7 +102,7 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     @Override
     public OperationResult<Void> tryFlush() {
-        return loadSegment().flush();
+        return segmentLoader.get().flush();
     }
 
     @Override
@@ -121,47 +112,28 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     @Override
     public OperationResult<Void> tryCompact() {
-        return loadSegment().compact();
+        return segmentLoader.get().compact();
     }
 
     @Override
     public K checkAndRepairConsistency() {
-        return loadSegment().checkAndRepairConsistency();
+        return segmentLoader.get().checkAndRepairConsistency();
     }
 
     @Override
     public void invalidateIterators() {
-        loadSegment().invalidateIterators();
-    }
-
-    private Segment<K, V> loadSegment() {
-        final Segment<K, V> loaded = segmentLoader.get();
-        segment = loaded;
-        return loaded;
+        segmentLoader.get().invalidateIterators();
     }
 
     private <T> T runBlocking(final String operation,
             final Function<Segment<K, V>, OperationResult<T>> action) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            /**
-             * Problems:
-             * 
-             * - executton could be here waiting for stopping BUSY, but it have about 5 ms
-             * to move it to CLOSED state. Status CLOSED mean closing segment and unloading
-             * of segment from memory.
-             * 
-             */
-            final Segment<K, V> currentSegment = loadSegment();
-            final OperationResult<T> result = action.apply(currentSegment);
+            final OperationResult<T> result = action.apply(segmentLoader.get());
             if (result.getStatus() == OperationStatus.OK) {
                 return result.getValue();
             }
             if (isRetryable(result.getStatus())) {
-                if (result.getStatus() == OperationStatus.CLOSED
-                        && segment == currentSegment) {
-                    segment = null;
-                }
                 retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
                 continue;
             }
@@ -189,47 +161,47 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
         @Override
         public SegmentState getState() {
-            return loadSegment().getState();
+            return segmentLoader.get().getState();
         }
 
         @Override
         public SegmentStats getStats() {
-            return loadSegment().getStats();
+            return segmentLoader.get().getStats();
         }
 
         @Override
         public SegmentRuntimeSnapshot getRuntimeSnapshot() {
-            return loadSegment().getRuntimeSnapshot();
+            return segmentLoader.get().getRuntimeSnapshot();
         }
 
         @Override
         public long getNumberOfKeys() {
-            return loadSegment().getNumberOfKeys();
+            return segmentLoader.get().getNumberOfKeys();
         }
 
         @Override
         public int getNumberOfKeysInWriteCache() {
-            return loadSegment().getNumberOfKeysInWriteCache();
+            return segmentLoader.get().getNumberOfKeysInWriteCache();
         }
 
         @Override
         public long getNumberOfKeysInCache() {
-            return loadSegment().getNumberOfKeysInCache();
+            return segmentLoader.get().getNumberOfKeysInCache();
         }
 
         @Override
         public long getNumberOfKeysInSegmentCache() {
-            return loadSegment().getNumberOfKeysInSegmentCache();
+            return segmentLoader.get().getNumberOfKeysInSegmentCache();
         }
 
         @Override
         public int getNumberOfDeltaCacheFiles() {
-            return loadSegment().getNumberOfDeltaCacheFiles();
+            return segmentLoader.get().getNumberOfDeltaCacheFiles();
         }
 
         @Override
         public void updateRuntimeLimits(final SegmentRuntimeLimits limits) {
-            loadSegment().applyRuntimeLimits(
+            segmentLoader.get().applyRuntimeLimits(
                     Vldtn.requireNonNull(limits, "limits"));
         }
     }
