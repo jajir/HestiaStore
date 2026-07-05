@@ -1011,8 +1011,8 @@
         "305": {
           "channel": "pr-305",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-305/latest.json",
-          "sha": "6f0c5c907972c4d7df21da207703a87c21339cd8",
-          "timestampUtc": "2026-07-05T19:14:39.569594+00:00"
+          "sha": "319dfe86244df661bd7b4931e0bfb2a847c7877c",
+          "timestampUtc": "2026-07-05T19:30:45.712732+00:00"
         }
       },
       "sha": "027ee122b625a6c006b7d04ba7284fb8a4e6d9e8",
