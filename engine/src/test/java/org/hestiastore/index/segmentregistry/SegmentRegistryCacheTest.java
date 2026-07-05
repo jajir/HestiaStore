@@ -15,6 +15,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -283,10 +284,10 @@ class SegmentRegistryCacheTest {
 
     @Test
     void evictsLeastRecentlyUsedWhenLimitExceeded() {
-        final List<Integer> evicted = new CopyOnWriteArrayList<>();
+        final List<Integer> closedIds = new CopyOnWriteArrayList<>();
         final SegmentRegistryCache<Integer, String> cache = newCache(
                 2, key -> segment(key.getId()),
-                value -> evicted.add(value.getId().getId()));
+                value -> closedIds.add(value.getId().getId()));
 
         cache.get(id(1));
         cache.get(id(2));
@@ -294,8 +295,8 @@ class SegmentRegistryCacheTest {
         cache.get(id(3));
 
         assertTrue(cache.getSize() <= 2);
-        assertEquals(1, evicted.size());
-        assertEquals(2, evicted.get(0));
+        assertEquals(1, closedIds.size());
+        assertEquals(2, closedIds.get(0));
     }
 
     @Test
@@ -321,10 +322,10 @@ class SegmentRegistryCacheTest {
 
     @Test
     void removeLastRecentUsedSegmentSkipsExceptKey() {
-        final List<Integer> evicted = new CopyOnWriteArrayList<>();
+        final List<Integer> closedIds = new CopyOnWriteArrayList<>();
         final SegmentRegistryCache<Integer, String> cache = newCache(
                 10, key -> segment(key.getId()),
-                value -> evicted.add(value.getId().getId()));
+                value -> closedIds.add(value.getId().getId()));
 
         cache.get(id(1));
         cache.get(id(2));
@@ -334,21 +335,21 @@ class SegmentRegistryCacheTest {
 
         assertTrue(cache.removeLastRecentUsedSegment(id(1)));
 
-        assertEquals(1, evicted.size());
-        assertEquals(2, evicted.get(0));
+        assertEquals(1, closedIds.size());
+        assertEquals(2, closedIds.get(0));
         assertEquals(id(1), cache.get(id(1)).getId());
     }
 
     @Test
     void removeLastRecentUsedSegmentSkipsBusyCandidateWithoutStall()
             throws Exception {
-        final List<Integer> evicted = new CopyOnWriteArrayList<>();
+        final List<Integer> closedIds = new CopyOnWriteArrayList<>();
         final AtomicBoolean segmentTwoUnloadAllowed = new AtomicBoolean(true);
         final ExecutorService unloadExecutor = Executors.newSingleThreadExecutor();
         try {
             final SegmentRegistryCache<Integer, String> cache = newCache(
                     10, key -> segment(key.getId()),
-                    value -> evicted.add(value.getId().getId()), unloadExecutor,
+                    value -> closedIds.add(value.getId().getId()), unloadExecutor,
                     value -> value.getId().getId() != 2
                             || segmentTwoUnloadAllowed.get());
 
@@ -360,10 +361,10 @@ class SegmentRegistryCacheTest {
             segmentTwoUnloadAllowed.set(false);
 
             assertTrue(cache.removeLastRecentUsedSegment(id(1)));
-            waitUntil(() -> evicted.size() == 1, 1000);
+            waitUntil(() -> closedIds.size() == 1, 1000);
 
-            assertEquals(1, evicted.size());
-            assertEquals(3, evicted.get(0));
+            assertEquals(1, closedIds.size());
+            assertEquals(3, closedIds.get(0));
             assertEquals(id(2), cache.get(id(2)).getId());
         } finally {
             unloadExecutor.shutdownNow();
@@ -371,7 +372,7 @@ class SegmentRegistryCacheTest {
     }
 
     @Test
-    void evictionCloseRunsAsyncAndRemovalHappensAfterCloseSuccess()
+    void loadWaitsForSynchronousEvictionWhenLimitExceeded()
             throws Exception {
         final CountDownLatch closeStarted = new CountDownLatch(1);
         final CountDownLatch allowClose = new CountDownLatch(1);
@@ -387,16 +388,54 @@ class SegmentRegistryCacheTest {
 
             final Future<Segment<Integer, String>> loadSecond = executor
                     .submit(() -> cache.get(id(2)));
-            assertEquals(id(2),
-                    loadSecond.get(300, TimeUnit.MILLISECONDS).getId());
             assertTrue(closeStarted.await(1, TimeUnit.SECONDS));
             assertEquals(2, cache.getSize());
+            assertFalse(loadSecond.isDone());
 
             allowClose.countDown();
-            waitUntil(() -> cache.getSize() == 1, 1000);
+            assertEquals(id(2),
+                    loadSecond.get(1, TimeUnit.SECONDS).getId());
+            assertEquals(1, cache.getSize());
         } finally {
             unloadExecutor.shutdownNow();
         }
+    }
+
+    @Test
+    void getEvictsSynchronouslyToConfiguredLimit() {
+        final List<Integer> closedIds = new CopyOnWriteArrayList<>();
+        final List<Runnable> queuedUnloads = new CopyOnWriteArrayList<>();
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                1, key -> segment(key.getId()),
+                value -> closedIds.add(value.getId().getId()),
+                queuedUnloads::add);
+
+        cache.get(id(1));
+        cache.get(id(2));
+        cache.get(id(3));
+
+        assertTrue(queuedUnloads.isEmpty());
+        assertEquals(List.of(1, 2), closedIds);
+        assertEquals(1, cache.getSize());
+    }
+
+    @Test
+    void removeLastRecentUsedSegmentReturnsFalseWhenAsyncUnloadIsRejected() {
+        final List<Integer> closedIds = new CopyOnWriteArrayList<>();
+        final Executor rejectingExecutor = task -> {
+            throw new RejectedExecutionException("rejected");
+        };
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                10, key -> segment(key.getId()),
+                value -> closedIds.add(value.getId().getId()),
+                rejectingExecutor);
+
+        cache.get(id(1));
+        cache.get(id(2));
+
+        assertFalse(cache.removeLastRecentUsedSegment(null));
+        assertTrue(closedIds.isEmpty());
+        assertEquals(2, cache.getSize());
     }
 
     @Test

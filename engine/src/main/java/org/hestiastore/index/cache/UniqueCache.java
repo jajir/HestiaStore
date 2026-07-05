@@ -2,12 +2,10 @@ package org.hestiastore.index.cache;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import org.hestiastore.index.Entry;
@@ -25,12 +23,10 @@ public class UniqueCache<K, V> {
     private final Map<K, V> map;
 
     private final Comparator<K> keyComparator;
-    private final AtomicInteger size = new AtomicInteger();
-    private final boolean threadSafe;
 
     /**
      * Create builder for unique cache.
-     * 
+     *
      * @param <M> key type
      * @param <N> value type
      * @return builder
@@ -41,22 +37,17 @@ public class UniqueCache<K, V> {
 
     /**
      * Create unique cache with given key comparator.
-     * 
-     * @param keyComparator required comparator for keys
+     *
+     * @param keyComparator   required comparator for keys
+     * @param initialCapacity retained capacity hint; must not be negative
      */
     protected UniqueCache(final Comparator<K> keyComparator,
-            int initialCapacity) {
-        this(keyComparator, initialCapacity, false);
-    }
-
-    protected UniqueCache(final Comparator<K> keyComparator,
-            final int initialCapacity, final boolean threadSafe) {
+            final int initialCapacity) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
-        this.map = threadSafe
-                ? new ConcurrentHashMap<>(initialCapacity)
-                : new HashMap<>(initialCapacity, 0.75F);
-        this.threadSafe = threadSafe;
+        Vldtn.requireGreaterThanOrEqualToZero(initialCapacity,
+                "initialCapacity");
+        this.map = new ConcurrentHashMap<>(initialCapacity, 0.75f, 1);
     }
 
     Comparator<K> getKeyComparator() {
@@ -81,11 +72,7 @@ public class UniqueCache<K, V> {
         final K key = Vldtn.requireNonNull(entry.getKey(), "entry.key");
         final V value = Vldtn.requireNonNull(entry.getValue(), "entry.value");
         final V previous = map.put(key, value);
-        if (previous == null) {
-            size.incrementAndGet();
-            return true;
-        }
-        return false;
+        return previous == null;
     }
 
     /**
@@ -104,7 +91,6 @@ public class UniqueCache<K, V> {
      */
     public void clear() {
         map.clear();
-        size.set(0);
     }
 
     /**
@@ -113,7 +99,7 @@ public class UniqueCache<K, V> {
      * @return number of key value entries in cache
      */
     public int size() {
-        return size.get();
+        return map.size();
     }
 
     /**
@@ -122,7 +108,7 @@ public class UniqueCache<K, V> {
      * @return true when cache is empty
      */
     public boolean isEmpty() {
-        return size.get() == 0;
+        return map.isEmpty();
     }
 
     /**
@@ -168,7 +154,8 @@ public class UniqueCache<K, V> {
     }
 
     /**
-     * Iterates over a snapshot of the cache entries as key/value pairs.
+     * Iterates over cache entries as key/value pairs. Concurrent updates may or
+     * may not be visible during traversal.
      *
      * @param consumer consumer for each key/value pair
      */
@@ -190,15 +177,10 @@ public class UniqueCache<K, V> {
     public List<Entry<K, V>> snapshotAndClear() {
         final List<Entry<K, V>> snapshot = snapshotEntries();
         map.clear();
-        size.set(0);
         return snapshot;
     }
 
     private List<Entry<K, V>> snapshotEntries() {
-        return snapshotEntriesLocked();
-    }
-
-    private List<Entry<K, V>> snapshotEntriesLocked() {
         if (map.isEmpty()) {
             return List.of();
         }
@@ -207,9 +189,5 @@ public class UniqueCache<K, V> {
             out.add(new Entry<>(entry.getKey(), entry.getValue()));
         }
         return out;
-    }
-
-    boolean isThreadSafe() {
-        return threadSafe;
     }
 }

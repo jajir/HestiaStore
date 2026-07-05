@@ -20,11 +20,9 @@ public class UniqueCacheBuilder<K, V> {
     private SortedDataFile<K, V> sdf;
 
     /**
-     * Optional initial capacity hint for the underlying map. If not provided or
-     * set to a non-positive value, the default UniqueCache constructor is used.
+     * Optional initial capacity for the backing map.
      */
     private int initialCapacity = 0;
-    private boolean threadSafe = false;
 
     protected UniqueCacheBuilder() {
 
@@ -58,21 +56,10 @@ public class UniqueCacheBuilder<K, V> {
         return this;
     }
 
-    /**
-     * Configure whether the built cache should be thread-safe.
-     *
-     * @param threadSafe true to build a thread-safe cache
-     * @return this builder
-     */
-    public UniqueCacheBuilder<K, V> withThreadSafe(final boolean threadSafe) {
-        this.threadSafe = threadSafe;
-        return this;
-    }
-
     public UniqueCache<K, V> build() {
         Vldtn.requireNonNull(sdf, "sdf");
         UniqueCache<K, V> out = new UniqueCache<>(keyComparator,
-                initialCapacity, threadSafe);
+                initialCapacity);
         try (EntryIterator<K, V> iterator = sdf.openIterator()) {
             if (!iterator.hasNext()) {
                 throw new IllegalArgumentException(
@@ -87,7 +74,7 @@ public class UniqueCacheBuilder<K, V> {
     }
 
     public UniqueCache<K, V> buildEmpty() {
-        return new UniqueCache<>(keyComparator, initialCapacity, threadSafe);
+        return new UniqueCache<>(keyComparator, initialCapacity);
     }
 
 }
