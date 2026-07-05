@@ -30,8 +30,8 @@
       "channels": {
         "devel": {
           "latestPointerPath": "history/segment-index-pr-smoke/latest-devel.json",
-          "sha": "027ee122b625a6c006b7d04ba7284fb8a4e6d9e8",
-          "timestampUtc": "2026-07-02T09:56:26.832957+00:00"
+          "sha": "e0267401c382ba6c3c6bdc8b5961a42a9a7cef02",
+          "timestampUtc": "2026-07-05T19:36:45.766498+00:00"
         },
         "main": {
           "latestPointerPath": "history/segment-index-pr-smoke/latest-main.json",
@@ -1015,8 +1015,8 @@
           "timestampUtc": "2026-07-05T19:30:45.712732+00:00"
         }
       },
-      "sha": "027ee122b625a6c006b7d04ba7284fb8a4e6d9e8",
-      "timestampUtc": "2026-07-02T09:56:26.832957+00:00"
+      "sha": "e0267401c382ba6c3c6bdc8b5961a42a9a7cef02",
+      "timestampUtc": "2026-07-05T19:36:45.766498+00:00"
     },
     "storage-core-pr-smoke": {
       "pullRequests": {
