@@ -1013,6 +1013,12 @@
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-305/latest.json",
           "sha": "319dfe86244df661bd7b4931e0bfb2a847c7877c",
           "timestampUtc": "2026-07-05T19:30:45.712732+00:00"
+        },
+        "306": {
+          "channel": "pr-306",
+          "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-306/latest.json",
+          "sha": "1c3faa27924d17d9c79d570ba54348d57ee2e408",
+          "timestampUtc": "2026-07-06T08:44:50.448819+00:00"
         }
       },
       "sha": "e0267401c382ba6c3c6bdc8b5961a42a9a7cef02",
