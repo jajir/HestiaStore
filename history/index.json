@@ -1017,8 +1017,8 @@
         "306": {
           "channel": "pr-306",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-306/latest.json",
-          "sha": "1c3faa27924d17d9c79d570ba54348d57ee2e408",
-          "timestampUtc": "2026-07-06T08:44:50.448819+00:00"
+          "sha": "fa45fc1c67efcb9c1f87c10ef1b08ec07564bb9a",
+          "timestampUtc": "2026-07-06T09:05:38.446119+00:00"
         }
       },
       "sha": "e0267401c382ba6c3c6bdc8b5961a42a9a7cef02",
