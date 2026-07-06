@@ -16,6 +16,8 @@ import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segment.SegmentStats;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Registry-backed implementation of retry-aware blocking segment operations.
@@ -25,18 +27,24 @@ import org.hestiastore.index.segment.SegmentStats;
  */
 final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
+    private static final Logger logger = LoggerFactory
+            .getLogger(DefaultBlockingSegment.class);
+
     private final SegmentId segmentId;
     private final Supplier<Segment<K, V>> segmentLoader;
     private final BusyRetryPolicy retryPolicy;
+    private final boolean automaticMaintenanceEnabled;
     private final Runtime runtime;
 
     DefaultBlockingSegment(final SegmentId segmentId,
             final Supplier<Segment<K, V>> segmentLoader,
-            final BusyRetryPolicy retryPolicy) {
+            final BusyRetryPolicy retryPolicy,
+            final boolean automaticMaintenanceEnabled) {
         this.segmentId = Vldtn.requireNonNull(segmentId, "segmentId");
         this.segmentLoader = Vldtn.requireNonNull(segmentLoader,
                 "segmentLoader");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+        this.automaticMaintenanceEnabled = automaticMaintenanceEnabled;
         this.runtime = new RuntimeView();
     }
 
@@ -129,11 +137,14 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
             final Function<Segment<K, V>, OperationResult<T>> action) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final OperationResult<T> result = action.apply(segmentLoader.get());
+            final Segment<K, V> segment = segmentLoader.get();
+            final OperationResult<T> result = action.apply(segment);
             if (result.getStatus() == OperationStatus.OK) {
                 return result.getValue();
             }
             if (isRetryable(result.getStatus())) {
+                logRetryableWriteCacheFull(operation, result.getStatus(),
+                        segment);
                 retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
                 continue;
             }
@@ -141,9 +152,23 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
         }
     }
 
-    private static boolean isRetryable(final OperationStatus status) {
+    private boolean isRetryable(final OperationStatus status) {
         return status == OperationStatus.BUSY
-                || status == OperationStatus.CLOSED;
+                || status == OperationStatus.CLOSED
+                || (status == OperationStatus.WRITE_CACHE_FULL
+                        && automaticMaintenanceEnabled);
+    }
+
+    private void logRetryableWriteCacheFull(final String operation,
+            final OperationStatus status, final Segment<K, V> segment) {
+        if (status != OperationStatus.WRITE_CACHE_FULL
+                || !logger.isDebugEnabled()) {
+            return;
+        }
+        logger.debug(
+                "Write cache full treated as busy: segment='{}' operation='{}' automaticMaintenanceEnabled='{}' state='{}' writeCacheKeys='{}'",
+                segmentId, operation, automaticMaintenanceEnabled,
+                segment.getState(), segment.getNumberOfKeysInWriteCache());
     }
 
     private IndexException operationFailure(final String operation,

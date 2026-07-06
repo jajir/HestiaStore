@@ -170,6 +170,8 @@ public final class SegmentRegistryBuilder<K, V> {
                 .busyBackoffMillis();
         final int busyTimeoutMillis = resolvedConf.maintenance()
                 .busyTimeoutMillis();
+        final boolean automaticMaintenanceEnabled = resolvedConf.maintenance()
+                .backgroundAutoEnabled();
         final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
                 resolvedDirectory, resolvedKeyDescriptor,
                 resolvedValueDescriptor, resolvedConf,
@@ -203,7 +205,8 @@ public final class SegmentRegistryBuilder<K, V> {
                 resolvedRegistryMaintenanceExecutor);
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
                 cache, resolvedRegistryCloseRetryPolicy, gate, resolvedFactory,
-                resolvedFactory, resolvedBlockingRetryPolicy);
+                resolvedFactory, resolvedBlockingRetryPolicy,
+                automaticMaintenanceEnabled);
     }
 
 }

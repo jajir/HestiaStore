@@ -2,6 +2,8 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -108,22 +111,72 @@ class SegmentIndexSessionRetryTest {
         }
     }
 
+    @Test
+    void putPastWriteCacheLimitSucceedsWhenAutomaticMaintenanceEnabled() {
+        closeCurrentIndex();
+        index = newIndex("write-cache-full-auto-enabled", true);
+
+        for (int key = 0; key < 8; key++) {
+            index.put(key, "value-" + key);
+        }
+        index.maintenance().flushAndWait();
+
+        for (int key = 0; key < 8; key++) {
+            assertEquals("value-" + key, index.get(key));
+        }
+    }
+
+    @Test
+    void putPastWriteCacheLimitFailsWhenAutomaticMaintenanceDisabled() {
+        closeCurrentIndex();
+        index = newIndex("write-cache-full-auto-disabled", false);
+
+        index.put(1, "one");
+
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> index.put(2, "two"));
+
+        assertTrue(exception.getMessage().contains(
+                "Write cache is full for segment"));
+        assertTrue(exception.getMessage().contains(
+                "automatic maintenance is disabled"));
+    }
+
     private SegmentIndex<Integer, String> newIndex() {
-        final IndexConfiguration<Integer, String> conf = buildConf();
+        return newIndex("segment-index-retry-test", true);
+    }
+
+    private SegmentIndex<Integer, String> newIndex(final String indexName,
+            final boolean automaticMaintenanceEnabled) {
+        return newIndex(indexName, automaticMaintenanceEnabled, 5_000);
+    }
+
+    private SegmentIndex<Integer, String> newIndex(final String indexName,
+            final boolean automaticMaintenanceEnabled,
+            final int busyTimeoutMillis) {
+        final IndexConfiguration<Integer, String> conf = buildConf(indexName,
+                automaticMaintenanceEnabled, busyTimeoutMillis);
         return SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(), tdi, tds, effective(conf));
     }
 
-    private IndexConfiguration<Integer, String> buildConf() {
+    private IndexConfiguration<Integer, String> buildConf(final String indexName,
+            final boolean automaticMaintenanceEnabled,
+            final int busyTimeoutMillis) {
         return IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class)).identity(identity -> identity.valueClass(String.class))
                 .identity(identity -> identity.keyTypeDescriptor(tdi)).identity(identity -> identity.valueTypeDescriptor(tds))
-                .identity(identity -> identity.name("segment-index-retry-test"))
+                .identity(identity -> identity.name(indexName))
                 .logging(logging -> logging.contextEnabled(false))
                 .segment(segmentConfig -> segmentConfig.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(1))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(2))
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(2))
+                .maintenance(maintenance -> maintenance.busyBackoffMillis(1))
+                .maintenance(maintenance -> maintenance.busyTimeoutMillis(
+                        busyTimeoutMillis))
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(
+                        automaticMaintenanceEnabled))
                 .segment(segmentConfig -> segmentConfig.chunkKeyLimit(2))
                 .segment(segmentConfig -> segmentConfig.maxKeys(100))
                 .segment(segmentConfig -> segmentConfig.cachedSegmentLimit(3))
@@ -134,6 +187,12 @@ class SegmentIndexSessionRetryTest {
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
                 .build();
+    }
+
+    private void closeCurrentIndex() {
+        if (index != null && !index.wasClosed()) {
+            index.close();
+        }
     }
 
     private static <K, V> void replaceSegment(
