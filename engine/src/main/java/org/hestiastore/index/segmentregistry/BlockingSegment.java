@@ -16,6 +16,12 @@ import org.hestiastore.index.segment.SegmentStats;
  * The blocking segment keeps the registry as the source of truth for
  * loading/reloading a segment and converts retryable operation statuses into
  * bounded blocking calls.
+ * <p>
+ * Blocking calls treat {@code WRITE_CACHE_FULL} as retryable when automatic
+ * maintenance is enabled. In that mode, flush or compact work can free segment
+ * write-cache capacity, so the status has the same blocking meaning as
+ * {@code BUSY}. When automatic maintenance is disabled, the same status is a
+ * terminal failure because no background path can free capacity.
  *
  * @param <K> key type
  * @param <V> value type

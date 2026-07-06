@@ -46,6 +46,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     private final SegmentRegistry.Materialization<K, V> materialization;
     private final SegmentRegistry.Runtime<K, V> runtime;
     private final ConcurrentMap<SegmentId, BlockingSegment<K, V>> blockingSegments;
+    private final boolean automaticMaintenanceEnabled;
 
     /**
      * Creates a registry using prebuilt dependencies from the builder.
@@ -63,7 +64,8 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
             final SegmentRegistryStateMachine gate,
             final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory,
             final SegmentRuntimeTuner runtimeTuner,
-            final BusyRetryPolicy blockingRetryPolicy) {
+            final BusyRetryPolicy blockingRetryPolicy,
+            final boolean automaticMaintenanceEnabled) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
         this.fileSystem = Vldtn.requireNonNull(fileSystem, "fileSystem");
@@ -77,6 +79,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
                 .requireNonNull(preparedSegmentWriterFactory,
                         "preparedSegmentWriterFactory");
         this.runtimeTuner = Vldtn.requireNonNull(runtimeTuner, "runtimeTuner");
+        this.automaticMaintenanceEnabled = automaticMaintenanceEnabled;
         this.blockingFacade = new BlockingSegmentRegistryAdapter<>(this,
                 this.blockingRetryPolicy);
         this.blockingSegments = new ConcurrentHashMap<>();
@@ -335,7 +338,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         return blockingSegments.computeIfAbsent(segmentId,
                 id -> new DefaultBlockingSegment<>(id,
                         () -> blockingFacade.loadSegment(id),
-                        blockingRetryPolicy));
+                        blockingRetryPolicy, automaticMaintenanceEnabled));
     }
 
     private static OperationStatus resultForState(

@@ -106,7 +106,7 @@ class SegmentRegistryImplCloseTest {
         final BusyRetryPolicy blockingRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
-                gate, writerFactory, runtimeTuner, blockingRetryPolicy);
+                gate, writerFactory, runtimeTuner, blockingRetryPolicy, false);
     }
 
     private static SegmentRegistryCache<Integer, String> newCache(

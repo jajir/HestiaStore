@@ -84,6 +84,7 @@
 - Changes in persistence, configuration, or codec layers must include direct tests for round-trip behavior, backward compatibility, and invalid-input handling.
 - Changes in factory, lifecycle, or transaction layers must include direct tests for open/close/commit ordering, repeated calls, and rollback or cleanup on failure paths.
 - Changes in registry, provider, supplier, or spec-mapping layers must include direct tests for unknown IDs, duplicate registration, canonicalization, and negative-path resolution failures.
+- When an operation status is interpreted differently by configuration, test both the status producer and the caller/config interpretation path for enabled and disabled modes.
 - New public classes, public overloads, and new persistence/runtime adaptation paths must have direct tests for the main happy path and at least one representative failure path.
 - If a JUnit test class uses mocks, annotate it with `@ExtendWith(MockitoExtension.class)`.
 - Create one private field per mocked dependency.

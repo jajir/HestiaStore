@@ -1,15 +1,17 @@
 package org.hestiastore.index.segmentregistry;
 
 import org.hestiastore.index.BusyRetryPolicy;
-import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
@@ -37,9 +39,7 @@ class DefaultBlockingSegmentTest {
 
     @BeforeEach
     void setUp() {
-        handle = new DefaultBlockingSegment<>(SEGMENT_ID,
-                () -> segmentRegistry.loadSegment(SEGMENT_ID).getSegment(),
-                new BusyRetryPolicy(1, 25));
+        handle = newHandle(false);
     }
 
     @Test
@@ -74,7 +74,23 @@ class DefaultBlockingSegmentTest {
     }
 
     @Test
-    void putThrowsImmediatelyWhenWriteCacheFullStatusReturned() {
+    void putRetriesWriteCacheFullStatusWhenMaintenanceEnabled() {
+        handle = newHandle(true);
+        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
+        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
+        when(segmentHandle.getSegment()).thenReturn(segment);
+        when(segment.put(1, "one"))
+                .thenReturn(OperationResult.writeCacheFull())
+                .thenReturn(OperationResult.ok());
+
+        handle.put(1, "one");
+
+        verify(segmentRegistry, times(2)).loadSegment(SEGMENT_ID);
+        verify(segment, times(2)).put(1, "one");
+    }
+
+    @Test
+    void putThrowsImmediatelyWhenWriteCacheFullStatusReturnedAndMaintenanceDisabled() {
         final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
@@ -88,6 +104,23 @@ class DefaultBlockingSegmentTest {
                 exception.getMessage());
         verify(segmentRegistry).loadSegment(SEGMENT_ID);
         verify(segment).put(1, "one");
+    }
+
+    @Test
+    void putTimesOutWhenWriteCacheFullStatusPersistsAndMaintenanceEnabled() {
+        handle = newHandle(new BusyRetryPolicy(1, 5), true);
+        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
+        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
+        when(segmentHandle.getSegment()).thenReturn(segment);
+        when(segment.put(1, "one"))
+                .thenReturn(OperationResult.writeCacheFull());
+
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> handle.put(1, "one"));
+
+        assertTrue(exception.getMessage().contains("timed out"));
+        assertFalse(exception.getMessage().contains(
+                "automatic maintenance is disabled"));
     }
 
     @Test
@@ -109,6 +142,20 @@ class DefaultBlockingSegmentTest {
         handle.getRuntime().updateRuntimeLimits(runtimeLimits);
 
         verify(segment).applyRuntimeLimits(runtimeLimits);
+    }
+
+    private BlockingSegment<Integer, String> newHandle(
+            final boolean automaticMaintenanceEnabled) {
+        return newHandle(new BusyRetryPolicy(1, 25),
+                automaticMaintenanceEnabled);
+    }
+
+    private BlockingSegment<Integer, String> newHandle(
+            final BusyRetryPolicy retryPolicy,
+            final boolean automaticMaintenanceEnabled) {
+        return new DefaultBlockingSegment<>(SEGMENT_ID,
+                () -> segmentRegistry.loadSegment(SEGMENT_ID).getSegment(),
+                retryPolicy, automaticMaintenanceEnabled);
     }
 
     @SuppressWarnings("unchecked")

@@ -153,8 +153,9 @@ public interface Segment<K, V> {
      * @param key   key to write (non-null)
      * @param value value to write (non-null)
      * @return write result, including {@link OperationStatus#WRITE_CACHE_FULL}
-     *         when capacity is exhausted and no automatic maintenance path can
-     *         make progress
+     *         when the segment write cache has no immediate capacity. Blocking
+     *         registry callers may treat that status as retryable when
+     *         automatic maintenance is enabled.
      */
     OperationResult<Void> put(K key, V value);
 
