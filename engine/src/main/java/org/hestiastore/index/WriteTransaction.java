@@ -1,5 +1,7 @@
 package org.hestiastore.index;
 
+import java.util.function.Consumer;
+
 /**
  * Interface for write transactions that allow writing key-value entries and
  * committing changes.
@@ -36,18 +38,10 @@ public interface WriteTransaction<K, V> extends Commitable {
      *
      * @param writeFunction the function to apply
      */
-    default void execute(final WriterFunction<K, V> writeFunction) {
+    default void execute(final Consumer<EntryWriter<K, V>> writeFunction) {
         try (EntryWriter<K, V> writer = open()) {
-            writeFunction.apply(writer);
+            writeFunction.accept(writer);
         }
         commit();
-    }
-
-    /**
-     * Function that is used to write entries to the transaction.
-     */
-    @FunctionalInterface
-    interface WriterFunction<K, V> {
-        void apply(EntryWriter<K, V> writer);
     }
 }

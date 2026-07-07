@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.wal;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
@@ -34,7 +35,7 @@ final class WalRecoveryManager<K, V> {
     }
 
     WalRecoveryOutcome recover(
-            final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
+            final Consumer<WalRuntime.ReplayRecord<K, V>> replayConsumer) {
         final WalCatalogView catalogView = metadataCatalog.loadRecoveryCatalog();
         long checkpointLsn = catalogView.checkpointLsn();
         segmentCatalog.resetRecoveredSegments();
@@ -120,7 +121,7 @@ final class WalRecoveryManager<K, V> {
 
     private ScanResult scanAndReplaySegment(final String fileName,
             final long replayAfterLsn, final long minimumLsnExclusive,
-            final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
+            final Consumer<WalRuntime.ReplayRecord<K, V>> replayConsumer) {
         long offset = 0L;
         long validOffset = 0L;
         long maxLsn = 0L;

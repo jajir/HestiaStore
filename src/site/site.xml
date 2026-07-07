@@ -9,9 +9,6 @@
         <version>2.0.0-M11</version>
     </skin>
     <body>
-        <menu name="Dependency Reports">
-            <item name="Module Dependencies" href="module-dependencies.html" />
-        </menu>
         <menu ref="reports" />
     </body>
 </site>

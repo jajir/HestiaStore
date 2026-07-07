@@ -74,6 +74,38 @@ class CacheLruTest {
     }
 
     @Test
+    void putExistingKeyUpdatesRecencyWithoutEvictingOldValue() {
+        Cache<Integer, String> cache = new CacheLruImpl<>(2, evictionListener);
+
+        cache.put(1, "one");
+        cache.put(2, "two");
+        cache.put(1, "updated");
+        cache.put(3, "three");
+
+        assertTrue(cache.get(2).isEmpty());
+        assertEquals("updated", cache.get(1).get());
+        assertEquals("three", cache.get(3).get());
+        verify(evictionListener).accept(2, "two");
+        verify(evictionListener, never()).accept(1, "one");
+    }
+
+    @Test
+    void readingNullMarkerUpdatesRecency() {
+        CacheLru<Integer, String> cache = new CacheLruImpl<>(2,
+                evictionListener);
+
+        cache.put(1, "one");
+        cache.putNull(2);
+        assertThrows(IllegalStateException.class, () -> cache.get(2));
+        cache.put(3, "three");
+
+        assertTrue(cache.get(1).isEmpty());
+        assertThrows(IllegalStateException.class, () -> cache.get(2));
+        assertEquals("three", cache.get(3).get());
+        verify(evictionListener).accept(1, "one");
+    }
+
+    @Test
     void evictionOfNullElementDoesNotThrowOrNotify() {
         CacheLru<Integer, String> cache = new CacheLruImpl<>(1,
                 evictionListener);

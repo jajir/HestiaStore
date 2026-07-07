@@ -1,8 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.hestiastore.index.OptimisticLockObjectVersionProvider;
+import java.util.function.IntSupplier;
 
 /**
  * Holds information about segment version.
@@ -12,7 +11,7 @@ import org.hestiastore.index.OptimisticLockObjectVersionProvider;
  * @author honza
  *
  */
-public class VersionController implements OptimisticLockObjectVersionProvider {
+public class VersionController implements IntSupplier {
 
     private final AtomicInteger segmentVersion = new AtomicInteger(0);
 
@@ -41,8 +40,17 @@ public class VersionController implements OptimisticLockObjectVersionProvider {
      * @return current version value
      */
     @Override
-    public int getVersion() {
+    public int getAsInt() {
         return segmentVersion.get();
+    }
+
+    /**
+     * Returns the current segment version for optimistic locking.
+     *
+     * @return current version value
+     */
+    public int getVersion() {
+        return getAsInt();
     }
 
 }

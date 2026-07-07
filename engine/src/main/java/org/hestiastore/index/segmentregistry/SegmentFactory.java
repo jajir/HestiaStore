@@ -28,7 +28,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
  */
 final class SegmentFactory<K, V>
         implements SegmentBuildService<K, V>,
-        PreparedSegmentWriterFactory<K, V>, SegmentRuntimeTuner {
+        PreparedSegmentWriterFactory<K, V> {
 
     private final Directory directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
@@ -172,7 +172,6 @@ final class SegmentFactory<K, V>
      *
      * @param runtimeLimits validated runtime limits for future materialization
      */
-    @Override
     public void updateRuntimeLimits(final SegmentRuntimeLimits runtimeLimits) {
         this.runtimeLimits = Vldtn.requireNonNull(runtimeLimits,
                 "runtimeLimits");

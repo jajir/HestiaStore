@@ -14,24 +14,24 @@ public class IndexConfigurationBuilder<K, V> {
 
     private final IndexIdentityConfigurationBuilder<K, V> identity =
             new IndexIdentityConfigurationBuilder<>();
-    private final IndexSegmentConfigurationBuilder<K, V> segment =
-            new IndexSegmentConfigurationBuilder<>();
-    private final IndexWritePathConfigurationBuilder<K, V> writePath =
-            new IndexWritePathConfigurationBuilder<>();
-    private final IndexBloomFilterConfigurationBuilder<K, V> bloomFilter =
-            new IndexBloomFilterConfigurationBuilder<>();
+    private final IndexSegmentConfigurationBuilder segment =
+            new IndexSegmentConfigurationBuilder();
+    private final IndexWritePathConfigurationBuilder writePath =
+            new IndexWritePathConfigurationBuilder();
+    private final IndexBloomFilterConfigurationBuilder bloomFilter =
+            new IndexBloomFilterConfigurationBuilder();
     private final IndexWalConfigurationBuilder wal =
             new IndexWalConfigurationBuilder();
-    private final IndexMaintenanceConfigurationBuilder<K, V> maintenance =
-            new IndexMaintenanceConfigurationBuilder<>();
-    private final IndexIoConfigurationBuilder<K, V> io =
-            new IndexIoConfigurationBuilder<>();
-    private final IndexLoggingConfigurationBuilder<K, V> logging =
-            new IndexLoggingConfigurationBuilder<>();
-    private final IndexFilterConfigurationBuilder<K, V> filters =
-            new IndexFilterConfigurationBuilder<>();
-    private final IndexChunkStoreCacheConfigurationBuilder<K, V> chunkStoreCache =
-            new IndexChunkStoreCacheConfigurationBuilder<>();
+    private final IndexMaintenanceConfigurationBuilder maintenance =
+            new IndexMaintenanceConfigurationBuilder();
+    private final IndexIoConfigurationBuilder io =
+            new IndexIoConfigurationBuilder();
+    private final IndexLoggingConfigurationBuilder logging =
+            new IndexLoggingConfigurationBuilder();
+    private final IndexFilterConfigurationBuilder filters =
+            new IndexFilterConfigurationBuilder();
+    private final IndexChunkStoreCacheConfigurationBuilder chunkStoreCache =
+            new IndexChunkStoreCacheConfigurationBuilder();
     private boolean walConfigured;
 
     IndexConfigurationBuilder() {
@@ -57,7 +57,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> segment(
-            final Consumer<IndexSegmentConfigurationBuilder<K, V>> customizer) {
+            final Consumer<IndexSegmentConfigurationBuilder> customizer) {
         applyCustomizer(customizer, segment);
         return this;
     }
@@ -69,7 +69,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> writePath(
-            final Consumer<IndexWritePathConfigurationBuilder<K, V>> customizer) {
+            final Consumer<IndexWritePathConfigurationBuilder> customizer) {
         applyCustomizer(customizer, writePath);
         return this;
     }
@@ -81,7 +81,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> bloomFilter(
-            final Consumer<IndexBloomFilterConfigurationBuilder<K, V>> customizer) {
+            final Consumer<IndexBloomFilterConfigurationBuilder> customizer) {
         applyCustomizer(customizer, bloomFilter);
         return this;
     }
@@ -106,7 +106,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> maintenance(
-            final Consumer<IndexMaintenanceConfigurationBuilder<K, V>> customizer) {
+            final Consumer<IndexMaintenanceConfigurationBuilder> customizer) {
         applyCustomizer(customizer, maintenance);
         return this;
     }
@@ -118,7 +118,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> io(
-            final Consumer<IndexIoConfigurationBuilder<K, V>> customizer) {
+            final Consumer<IndexIoConfigurationBuilder> customizer) {
         applyCustomizer(customizer, io);
         return this;
     }
@@ -130,7 +130,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> logging(
-            final Consumer<IndexLoggingConfigurationBuilder<K, V>> customizer) {
+            final Consumer<IndexLoggingConfigurationBuilder> customizer) {
         applyCustomizer(customizer, logging);
         return this;
     }
@@ -142,7 +142,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> filters(
-            final Consumer<IndexFilterConfigurationBuilder<K, V>> customizer) {
+            final Consumer<IndexFilterConfigurationBuilder> customizer) {
         applyCustomizer(customizer, filters);
         return this;
     }
@@ -154,7 +154,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> chunkStoreCache(
-            final Consumer<IndexChunkStoreCacheConfigurationBuilder<K, V>> customizer) {
+            final Consumer<IndexChunkStoreCacheConfigurationBuilder> customizer) {
         applyCustomizer(customizer, chunkStoreCache);
         return this;
     }

@@ -84,7 +84,7 @@ class DefaultRuntimeTuningTest {
 
         assertTrue(result.applied());
         assertEquals(RuntimeTuningApplyStatus.APPLIED, result.status());
-        verify(splitService).requestFullSplitScan();
+        verify(splitService).run();
         assertEquals(0L, result.before().revision());
         assertEquals(1L, result.after().revision());
         assertEquals(List.of(RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD),

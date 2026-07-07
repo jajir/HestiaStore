@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentregistry;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
@@ -29,7 +30,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private EffectiveIndexConfiguration<K, V> conf;
     private ExecutorService segmentMaintenanceExecutor;
     private ExecutorService registryMaintenanceExecutor;
-    private SegmentIdAllocator segmentIdAllocator;
+    private Supplier<SegmentId> segmentIdAllocator;
     private ChunkStoreCache<K, V> chunkStoreCache = new LruChunkStoreCache<>(0);
 
     SegmentRegistryBuilder() {
@@ -121,7 +122,7 @@ public final class SegmentRegistryBuilder<K, V> {
      * @return this builder
      */
     SegmentRegistryBuilder<K, V> withSegmentIdAllocator(
-            final SegmentIdAllocator segmentIdAllocator) {
+            final Supplier<SegmentId> segmentIdAllocator) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
         return this;
@@ -176,7 +177,7 @@ public final class SegmentRegistryBuilder<K, V> {
                 resolvedDirectory, resolvedKeyDescriptor,
                 resolvedValueDescriptor, resolvedConf,
                 resolvedSegmentMaintenanceExecutor, chunkStoreCache);
-        final SegmentIdAllocator resolvedAllocator = segmentIdAllocator == null
+        final Supplier<SegmentId> resolvedAllocator = segmentIdAllocator == null
                 ? new DirectorySegmentIdAllocator(resolvedDirectory)
                 : segmentIdAllocator;
         final SegmentRegistryFileSystem resolvedFileSystem = new SegmentRegistryFileSystem(
@@ -205,7 +206,7 @@ public final class SegmentRegistryBuilder<K, V> {
                 resolvedRegistryMaintenanceExecutor);
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
                 cache, resolvedRegistryCloseRetryPolicy, gate, resolvedFactory,
-                resolvedFactory, resolvedBlockingRetryPolicy,
+                resolvedFactory::updateRuntimeLimits, resolvedBlockingRetryPolicy,
                 automaticMaintenanceEnabled);
     }
 

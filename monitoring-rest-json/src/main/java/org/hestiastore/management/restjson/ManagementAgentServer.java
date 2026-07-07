@@ -31,10 +31,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.segmentindex.monitoring.MonitoredIndex;
-import org.hestiastore.index.segmentindex.monitoring.MonitoredIndexProvider;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexExecutorMetrics;
@@ -77,6 +78,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 /**
@@ -84,7 +86,7 @@ import com.sun.net.httpserver.HttpServer;
  */
 @SuppressWarnings("java:S3776")
 public final class ManagementAgentServer
-        implements AutoCloseable, MonitoredIndexProvider {
+        implements AutoCloseable, Supplier<List<MonitoredIndex>> {
 
     private static final String METHOD_GET = "GET";
     private static final String METHOD_POST = "POST";
@@ -301,9 +303,18 @@ public final class ManagementAgentServer
         return List.copyOf(new ArrayList<>(auditTrail));
     }
 
+    /**
+     * Returns an immutable snapshot of currently monitored indexes.
+     *
+     * @return monitored index list
+     */
+    public List<MonitoredIndex> monitoredIndexes() {
+        return get();
+    }
+
     /** {@inheritDoc} */
     @Override
-    public List<MonitoredIndex> monitoredIndexes() {
+    public List<MonitoredIndex> get() {
         return activeIndexesSnapshot().stream().map(MonitoredIndex.class::cast)
                 .toList();
     }
@@ -335,7 +346,8 @@ public final class ManagementAgentServer
                 exchange -> safeHandle(exchange, this::handleReady));
     }
 
-    private void safeHandle(final HttpExchange exchange, final Handler handler)
+    private void safeHandle(final HttpExchange exchange,
+            final HttpHandler handler)
             throws IOException {
         try {
             handler.handle(exchange);
@@ -467,7 +479,7 @@ public final class ManagementAgentServer
     }
 
     private void handleMutatingAction(final HttpExchange exchange,
-            final ActionType action, final IndexOperation operation)
+            final ActionType action, final Consumer<RegisteredIndex> operation)
             throws IOException {
         final String endpoint = exchange.getRequestURI().getPath();
         final MutatingRequestContext context = prepareMutatingRequest(exchange,
@@ -677,7 +689,8 @@ public final class ManagementAgentServer
     }
 
     private ActionReplay resolveAndExecuteAction(final ActionRequest request,
-            final ActionType action, final IndexOperation operation) {
+            final ActionType action,
+            final Consumer<RegisteredIndex> operation) {
         try {
             final List<RegisteredIndex> targets = resolveActionTargets(request);
             if (targets.isEmpty()) {
@@ -699,14 +712,14 @@ public final class ManagementAgentServer
     }
 
     private ActionReplay executeAction(final ActionRequest request,
-            final ActionType action, final IndexOperation operation,
+            final ActionType action, final Consumer<RegisteredIndex> operation,
             final List<RegisteredIndex> targets) {
         int appliedCount = 0;
         String failedIndexName = null;
         try {
             for (final RegisteredIndex target : targets) {
                 failedIndexName = target.indexName();
-                operation.run(target);
+                operation.accept(target);
                 appliedCount++;
             }
             return new ActionReplay(request.indexName(), 200,
@@ -1432,16 +1445,6 @@ public final class ManagementAgentServer
             return ACTOR_ANONYMOUS;
         }
         return "anonymous@" + exchange.getRemoteAddress().getHostString();
-    }
-
-    @FunctionalInterface
-    private interface Handler {
-        void handle(HttpExchange exchange) throws IOException;
-    }
-
-    @FunctionalInterface
-    private interface IndexOperation {
-        void run(RegisteredIndex index);
     }
 
     private record MutatingRequestContext(String endpoint, String body,

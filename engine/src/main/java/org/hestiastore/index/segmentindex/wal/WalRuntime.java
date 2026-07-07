@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -189,14 +190,6 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
                     + ", maxLsn=" + maxLsn + ", truncatedTail="
                     + truncatedTail + "]";
         }
-    }
-
-    /**
-     * Replay callback.
-     */
-    @FunctionalInterface
-    public interface ReplayConsumer<K, V> {
-        void accept(ReplayRecord<K, V> replayRecord);
     }
 
     private final Object monitor;
@@ -397,7 +390,8 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
      * @param replayConsumer replay callback
      * @return recovery summary
      */
-    public RecoveryResult recover(final ReplayConsumer<K, V> replayConsumer) {
+    public RecoveryResult recover(
+            final Consumer<ReplayRecord<K, V>> replayConsumer) {
         Vldtn.requireNonNull(replayConsumer, "replayConsumer");
         synchronized (monitor) {
             syncPolicy.checkSyncFailure();

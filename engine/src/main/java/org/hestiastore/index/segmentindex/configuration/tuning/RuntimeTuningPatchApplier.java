@@ -14,12 +14,12 @@ final class RuntimeTuningPatchApplier<K, V> {
     private final RuntimeTuningPatchValidator validator;
     private final RuntimeTuningState runtimeTuningState;
     private final RuntimeSegmentLimitApplier<K, V> effectiveLimitsApplier;
-    private final SplitPolicyScanRequester splitScanRequester;
+    private final Runnable splitScanRequester;
 
     RuntimeTuningPatchApplier(final RuntimeTuningPatchValidator validator,
             final RuntimeTuningState runtimeTuningState,
             final RuntimeSegmentLimitApplier<K, V> effectiveLimitsApplier,
-            final SplitPolicyScanRequester splitScanRequester) {
+            final Runnable splitScanRequester) {
         this.validator = Vldtn.requireNonNull(validator, "validator");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
@@ -84,7 +84,7 @@ final class RuntimeTuningPatchApplier<K, V> {
             final List<RuntimeTuningChange> changes) {
         if (changes.stream().anyMatch(
                 change -> change.field() == RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD)) {
-            splitScanRequester.requestFullSplitScan();
+            splitScanRequester.run();
         }
     }
 }

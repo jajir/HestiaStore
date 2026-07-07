@@ -1,6 +1,7 @@
 package org.hestiastore.index.chunkstorecache;
 
 import java.util.Comparator;
+import java.util.function.Supplier;
 
 /**
  * Index-scoped cache for parsed persisted chunk pages.
@@ -20,7 +21,7 @@ public interface ChunkStoreCache<K, V> {
      * @return value when found, otherwise {@code null}
      */
     V find(ChunkStoreCacheKey cacheKey, K lookupKey, Comparator<K> comparator,
-            ChunkPageLoader<K, V> loader);
+            Supplier<ParsedChunkPage<K, V>> loader);
 
     /**
      * Resolves a key through the parsed page cache.
@@ -36,7 +37,7 @@ public interface ChunkStoreCache<K, V> {
     default V find(final String ownerId, final long activeVersion,
             final long chunkPosition, final K lookupKey,
             final Comparator<K> comparator,
-            final ChunkPageLoader<K, V> loader) {
+            final Supplier<ParsedChunkPage<K, V>> loader) {
         return find(ChunkStoreCacheKey.of(ownerId, activeVersion, chunkPosition),
                 lookupKey, comparator, loader);
     }
