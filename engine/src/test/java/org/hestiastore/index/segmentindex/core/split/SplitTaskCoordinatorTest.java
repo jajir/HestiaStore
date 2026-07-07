@@ -1,6 +1,10 @@
 package org.hestiastore.index.segmentindex.core.split;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -143,16 +147,30 @@ class SplitTaskCoordinatorTest {
 
         verifyNoInteractions(splitCoordinator);
         final Runnable task = scheduledTask.get();
-        org.junit.jupiter.api.Assertions.assertNotNull(task);
-        org.junit.jupiter.api.Assertions.assertEquals(1,
-                coordinator.splitInFlightCount());
+        assertNotNull(task);
+        assertEquals(1, coordinator.splitInFlightCount());
 
         task.run();
 
         verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L, 101L);
         coordinator.awaitSplitsIdle(1_000L);
-        org.junit.jupiter.api.Assertions.assertEquals(0,
-                coordinator.splitInFlightCount());
+        assertEquals(0, coordinator.splitInFlightCount());
+    }
+
+    @Test
+    void failedSplitSubmissionClearsInFlightStateForErrors() {
+        final SegmentId segmentId = SegmentId.of(23);
+        final Executor splitExecutor = task -> {
+            throw new OutOfMemoryError("split executor failed");
+        };
+        final SplitTaskCoordinator<String, String> coordinator = newCoordinator(
+                splitExecutor);
+
+        assertThrows(OutOfMemoryError.class,
+                () -> coordinator.scheduleEligibleSplit(segmentId, 100L, 101L));
+
+        assertEquals(0, coordinator.splitInFlightCount());
+        assertFalse(coordinator.isSplitBlocked(segmentId));
     }
 
     @Test
@@ -179,10 +197,8 @@ class SplitTaskCoordinatorTest {
         scheduledTask.get().run();
 
         final SplitStats stats = statsRecorder.statsSnapshot(0, 0);
-        org.junit.jupiter.api.Assertions.assertEquals(3_000L,
-                stats.splitTaskStartDelayP95Micros());
-        org.junit.jupiter.api.Assertions.assertEquals(4_000L,
-                stats.splitTaskRunLatencyP95Micros());
+        assertEquals(3_000L, stats.splitTaskStartDelayP95Micros());
+        assertEquals(4_000L, stats.splitTaskRunLatencyP95Micros());
     }
 
     @Test
@@ -317,7 +333,7 @@ class SplitTaskCoordinatorTest {
         verify(splitLease).abort();
         verify(splitLease, never()).completeAfterPublish();
         verifyNoInteractions(splitPublishCoordinator);
-        org.junit.jupiter.api.Assertions.assertFalse(rescheduled);
+        assertFalse(rescheduled);
     }
 
     @Test
@@ -367,9 +383,8 @@ class SplitTaskCoordinatorTest {
         final boolean rescheduled = coordinator
                 .scheduleEligibleSplit(segmentId, 100L, 101L);
 
-        org.junit.jupiter.api.Assertions.assertFalse(rescheduled);
-        org.junit.jupiter.api.Assertions.assertEquals(1,
-                scheduledCount.get());
+        assertFalse(rescheduled);
+        assertEquals(1, scheduledCount.get());
     }
 
     @Test
@@ -399,9 +414,8 @@ class SplitTaskCoordinatorTest {
                 .scheduleEligibleSplit(segmentId, 100L,
                         currentKeys.get());
 
-        org.junit.jupiter.api.Assertions.assertTrue(rescheduled);
-        org.junit.jupiter.api.Assertions.assertEquals(2,
-                scheduledCount.get());
+        assertTrue(rescheduled);
+        assertEquals(2, scheduledCount.get());
     }
 
     @Test
@@ -428,9 +442,8 @@ class SplitTaskCoordinatorTest {
         final boolean rescheduled = coordinator
                 .scheduleEligibleSplit(segmentId, 100L, 101L);
 
-        org.junit.jupiter.api.Assertions.assertTrue(rescheduled);
-        org.junit.jupiter.api.Assertions.assertEquals(2,
-                scheduledCount.get());
+        assertTrue(rescheduled);
+        assertEquals(2, scheduledCount.get());
     }
 
     @Test
@@ -460,18 +473,15 @@ class SplitTaskCoordinatorTest {
         final boolean blockedByAdaptiveCooldown = coordinator
                 .scheduleEligibleSplit(segmentId, 100L, 101L);
 
-        org.junit.jupiter.api.Assertions
-                .assertFalse(blockedByAdaptiveCooldown);
-        org.junit.jupiter.api.Assertions.assertEquals(1,
-                scheduledCount.get());
+        assertFalse(blockedByAdaptiveCooldown);
+        assertEquals(1, scheduledCount.get());
 
         nowNanos.addAndGet(TimeUnit.MILLISECONDS.toNanos(800L));
         final boolean rescheduled = coordinator
                 .scheduleEligibleSplit(segmentId, 100L, 101L);
 
-        org.junit.jupiter.api.Assertions.assertTrue(rescheduled);
-        org.junit.jupiter.api.Assertions.assertEquals(2,
-                scheduledCount.get());
+        assertTrue(rescheduled);
+        assertEquals(2, scheduledCount.get());
     }
 
     private SplitTaskCoordinator<String, String> newCoordinator() {

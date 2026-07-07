@@ -111,15 +111,26 @@ final class SplitPolicyScheduler<K, V> {
         final int workersToSchedule = policyState
                 .reserveWorkers(workerParallelism());
         for (int i = 0; i < workersToSchedule; i++) {
+            boolean submitted = false;
             try {
                 workerExecutor.execute(this::runWorkerLoop);
+                submitted = true;
             } catch (final RuntimeException e) {
-                policyState.markWorkerFinished();
                 if (!isClosedOrClosingState()) {
                     throw e;
                 }
                 return;
+            } finally {
+                if (!submitted) {
+                    releaseReservedWorkers(workersToSchedule - i);
+                }
             }
+        }
+    }
+
+    private void releaseReservedWorkers(final int workerCount) {
+        for (int i = 0; i < workerCount; i++) {
+            policyState.markWorkerFinished();
         }
     }
 

@@ -1,13 +1,13 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
-import java.util.Set;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -168,14 +168,17 @@ final class SplitTaskCoordinator<K, V> {
             return false;
         }
         final long scheduledAtNanos = nanoTimeSupplier.getAsLong();
+        boolean submitted = false;
         try {
             splitExecutor.execute(
                     () -> executeScheduledSplit(segmentId, splitThreshold,
                             observedKeyCount, scheduledAtNanos));
-        } catch (final RuntimeException e) {
-            scheduledSplits.remove(segmentId);
-            markSplitFinished();
-            throw e;
+            submitted = true;
+        } finally {
+            if (!submitted) {
+                scheduledSplits.remove(segmentId);
+                markSplitFinished();
+            }
         }
         return true;
     }
