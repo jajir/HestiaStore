@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
@@ -103,22 +104,17 @@ public final class IndexPropertiesSchema {
     public static final IndexPropertiesSchema SEGMENT_SCHEMA = buildSegmentSchema();
     public static final IndexPropertiesSchema INDEX_CONFIGURATION_SCHEMA = buildIndexConfigurationSchema();
 
-    @FunctionalInterface
-    private interface DefaultValueProvider {
-        String provide(PropertyView view);
-    }
-
     private final String schemaName;
     private final int currentSchemaVersion;
     private final List<String> requiredKeys;
-    private final Map<String, DefaultValueProvider> defaultProviders;
+    private final Map<String, Function<PropertyView, String>> defaultProviders;
     private final Set<String> blankAllowedKeys;
     private final Set<String> unsupportedKeys;
 
     private IndexPropertiesSchema(final String schemaName,
             final int currentSchemaVersion,
             final Collection<String> requiredKeys,
-            final Map<String, DefaultValueProvider> defaultProviders) {
+            final Map<String, Function<PropertyView, String>> defaultProviders) {
         this(schemaName, currentSchemaVersion, requiredKeys, defaultProviders,
                 Set.of(), Set.of());
     }
@@ -126,7 +122,7 @@ public final class IndexPropertiesSchema {
     private IndexPropertiesSchema(final String schemaName,
             final int currentSchemaVersion,
             final Collection<String> requiredKeys,
-            final Map<String, DefaultValueProvider> defaultProviders,
+            final Map<String, Function<PropertyView, String>> defaultProviders,
             final Collection<String> blankAllowedKeys,
             final Collection<String> unsupportedKeys) {
         this.schemaName = Vldtn.requireNonNull(schemaName, "schemaName");
@@ -225,11 +221,12 @@ public final class IndexPropertiesSchema {
     }
 
     private String resolveDefaultValue(final PropertyView view, final String key) {
-        final DefaultValueProvider provider = defaultProviders.get(key);
+        final Function<PropertyView, String> provider = defaultProviders.get(
+                key);
         if (provider == null) {
             return null;
         }
-        final String value = provider.provide(view);
+        final String value = provider.apply(view);
         final boolean blankValueNotAllowed = value != null && value.isBlank()
                 && !blankAllowedKeys.contains(key);
         if (value == null || blankValueNotAllowed) {
@@ -300,7 +297,8 @@ public final class IndexPropertiesSchema {
     }
 
     private static IndexPropertiesSchema buildSegmentSchema() {
-        final Map<String, DefaultValueProvider> defaults = new LinkedHashMap<>();
+        final Map<String, Function<PropertyView, String>> defaults =
+                new LinkedHashMap<>();
         defaults.put(SegmentKeys.NUMBER_OF_KEYS_IN_DELTA_CACHE,
                 view -> "0");
         defaults.put(SegmentKeys.NUMBER_OF_KEYS_IN_MAIN_INDEX, view -> "0");
@@ -314,7 +312,8 @@ public final class IndexPropertiesSchema {
     }
 
     private static IndexPropertiesSchema buildIndexConfigurationSchema() {
-        final Map<String, DefaultValueProvider> defaults = new LinkedHashMap<>();
+        final Map<String, Function<PropertyView, String>> defaults =
+                new LinkedHashMap<>();
         addCoreDefaults(defaults);
         addSegmentDefaults(defaults);
         addThreadingDefaults(defaults);
@@ -340,7 +339,7 @@ public final class IndexPropertiesSchema {
     }
 
     private static void addCoreDefaults(
-            final Map<String, DefaultValueProvider> defaults) {
+            final Map<String, Function<PropertyView, String>> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_CONTEXT_LOGGING_ENABLED,
                 view -> Boolean.FALSE.toString());
         defaults.put(
@@ -350,7 +349,7 @@ public final class IndexPropertiesSchema {
     }
 
     private static void addSegmentDefaults(
-            final Map<String, DefaultValueProvider> defaults) {
+            final Map<String, Function<PropertyView, String>> defaults) {
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                 view -> String.valueOf(
@@ -382,7 +381,7 @@ public final class IndexPropertiesSchema {
     }
 
     private static void addThreadingDefaults(
-            final Map<String, DefaultValueProvider> defaults) {
+            final Map<String, Function<PropertyView, String>> defaults) {
         defaults.put(
                 IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                 view -> String.valueOf(
@@ -400,7 +399,7 @@ public final class IndexPropertiesSchema {
     }
 
     private static void addBloomAndIoDefaults(
-            final Map<String, DefaultValueProvider> defaults) {
+            final Map<String, Function<PropertyView, String>> defaults) {
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 view -> String.valueOf(
@@ -420,7 +419,7 @@ public final class IndexPropertiesSchema {
     }
 
     private static void addChunkFilterDefaults(
-            final Map<String, DefaultValueProvider> defaults) {
+            final Map<String, Function<PropertyView, String>> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS,
                 view -> "");
         defaults.put(IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS,
@@ -428,14 +427,14 @@ public final class IndexPropertiesSchema {
     }
 
     private static void addChunkStoreCacheDefaults(
-            final Map<String, DefaultValueProvider> defaults) {
+            final Map<String, Function<PropertyView, String>> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_CHUNK_STORE_CACHE_PAGE_LIMIT,
                 view -> String.valueOf(
                         IndexConfigurationDefaults.DEFAULT_CHUNK_STORE_CACHE_PAGE_LIMIT));
     }
 
     private static void addWalDefaults(
-            final Map<String, DefaultValueProvider> defaults) {
+            final Map<String, Function<PropertyView, String>> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_WAL_ENABLED,
                 view -> Boolean.FALSE.toString());
         defaults.put(IndexConfigurationKeys.PROP_WAL_DURABILITY_MODE,

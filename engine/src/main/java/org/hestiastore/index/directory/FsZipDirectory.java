@@ -7,9 +7,6 @@ import org.hestiastore.index.Vldtn;
 
 public final class FsZipDirectory extends AbstractDirectory {
 
-    private static final String DIRECTORY_NAME_ARG = "directoryName";
-    private static final String ERROR_REQUIRED_DIRECTORY_IS_FILE = "There is required directory but '%s' is file.";
-
     public FsZipDirectory(final File directory) {
         super(directory);
     }
@@ -45,83 +42,13 @@ public final class FsZipDirectory extends AbstractDirectory {
     }
 
     @Override
-    public boolean isFileExists(final String fileName) {
-        final File file = getFile(fileName);
-        return file.exists();
-    }
-
-    @Override
     public FileLock getLock(final String fileName) {
         throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
-    public Directory openSubDirectory(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
-        final File subdirectory = getFile(directoryName);
-        if (subdirectory.exists()) {
-            if (subdirectory.isFile()) {
-                throw new IndexException(String.format(
-                        ERROR_REQUIRED_DIRECTORY_IS_FILE,
-                        subdirectory.getAbsolutePath()));
-            }
-        } else if (!subdirectory.mkdirs()) {
-            throw new IndexException(String.format(
-                    "Unable to create directory '%s'.",
-                    subdirectory.getAbsolutePath()));
-        }
+    protected Directory createSubDirectory(final File subdirectory) {
         return new FsZipDirectory(subdirectory);
-    }
-
-    @Override
-    public boolean mkdir(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
-        final File subdirectory = getFile(directoryName);
-        if (subdirectory.exists()) {
-            if (subdirectory.isFile()) {
-                throw new IndexException(String.format(
-                        ERROR_REQUIRED_DIRECTORY_IS_FILE,
-                        subdirectory.getAbsolutePath()));
-            }
-            return false;
-        }
-        if (!subdirectory.mkdirs()) {
-            throw new IndexException(String.format(
-                    "Unable to create directory '%s'.",
-                    subdirectory.getAbsolutePath()));
-        }
-        return true;
-    }
-
-    @Override
-    public boolean rmdir(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
-        final File subdirectory = getFile(directoryName);
-        if (!subdirectory.exists()) {
-            return false;
-        }
-        if (subdirectory.isFile()) {
-            throw new IndexException(String.format(
-                    ERROR_REQUIRED_DIRECTORY_IS_FILE,
-                    subdirectory.getAbsolutePath()));
-        }
-        final String[] entries = subdirectory.list();
-        if (entries == null) {
-            throw new IndexException(String.format(
-                    "Unable to list directory '%s'.",
-                    subdirectory.getAbsolutePath()));
-        }
-        if (entries.length > 0) {
-            throw new IndexException(String.format(
-                    "Directory '%s' is not empty.",
-                    subdirectory.getAbsolutePath()));
-        }
-        if (!subdirectory.delete()) {
-            throw new IndexException(String.format(
-                    "Unable to remove directory '%s'.",
-                    subdirectory.getAbsolutePath()));
-        }
-        return true;
     }
 
     @Override

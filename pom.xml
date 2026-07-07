@@ -40,7 +40,8 @@
         <project.info.reports.plugin.version>3.9.0</project.info.reports.plugin.version>
         <jdepend.plugin.version>2.2.0</jdepend.plugin.version>
         <jdeps.plugin.version>3.2.0</jdeps.plugin.version>
-        <depgraph.plugin.version>4.0.3</depgraph.plugin.version>
+        <source.plugin.version>3.4.0</source.plugin.version>
+        <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
         <central.publishing.plugin.version>0.11.0</central.publishing.plugin.version>
         <antrun.plugin.version>3.2.0</antrun.plugin.version>
         <pmd.plugin.version>3.28.0</pmd.plugin.version>
@@ -126,68 +127,6 @@
                 <version>${maven.site.plugin.version}</version>
             </plugin>
             <plugin>
-                <groupId>com.github.ferstl</groupId>
-                <artifactId>depgraph-maven-plugin</artifactId>
-                <version>${depgraph.plugin.version}</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>generate-reactor-dependency-json</id>
-                        <phase>pre-site</phase>
-                        <goals>
-                            <goal>aggregate</goal>
-                        </goals>
-                        <configuration>
-                            <classpathScope>compile</classpathScope>
-                            <graphFormat>json</graphFormat>
-                            <mergeClassifiers>true</mergeClassifiers>
-                            <mergeScopes>true</mergeScopes>
-                            <mergeTypes>true</mergeTypes>
-                            <outputDirectory>${project.build.directory}/site/depgraph</outputDirectory>
-                            <outputFileName>reactor-dependencies</outputFileName>
-                            <reduceEdges>false</reduceEdges>
-                            <showGroupIds>true</showGroupIds>
-                            <showVersions>true</showVersions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>${antrun.plugin.version}</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>render-reactor-dependency-site</id>
-                        <phase>pre-site</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${project.build.directory}/site/depgraph" />
-                                <exec executable="python3" failonerror="true">
-                                    <arg value="${maven.multiModuleProjectDirectory}/scripts/generate_dependency_site_report.py" />
-                                    <arg value="reactor" />
-                                    <arg value="--json" />
-                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.json" />
-                                    <arg value="--html" />
-                                    <arg value="${project.build.directory}/site/module-dependencies.html" />
-                                    <arg value="--dot" />
-                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.dot" />
-                                    <arg value="--png" />
-                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.png" />
-                                    <arg value="--include-group-id" />
-                                    <arg value="${project.groupId}" />
-                                    <arg value="--page-title" />
-                                    <arg value="${project.name} Module Dependencies" />
-                                </exec>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.5.0</version>
@@ -266,7 +205,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>3.4.0</version>
+                    <version>${source.plugin.version}</version>
                     <executions>
                         <execution>
                             <id>attach-sources</id>
@@ -278,7 +217,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.12.0</version>
+                    <version>${javadoc.plugin.version}</version>
                     <configuration>
                         <quiet>true</quiet>
                         <additionalOptions>-Xdoclint:none</additionalOptions>

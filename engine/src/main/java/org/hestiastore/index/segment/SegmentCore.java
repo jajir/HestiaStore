@@ -3,11 +3,12 @@ package org.hestiastore.index.segment;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.WriteTransaction.WriterFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +122,8 @@ final class SegmentCore<K, V> {
      *
      * @param writeFunction writer callback
      */
-    void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
+    void executeFullWriteTx(
+            final Consumer<EntryWriter<K, V>> writeFunction) {
         maintenancePath.executeFullWriteTx(writeFunction);
     }
 

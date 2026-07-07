@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
@@ -140,7 +141,7 @@ public final class StorageCoordinator<K, V> {
      * @param replayConsumer replay consumer invoked for each recovered entry
      */
     public void recoverFromWal(
-            final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
+            final Consumer<WalRuntime.ReplayRecord<K, V>> replayConsumer) {
         walCoordinator.recover(replayConsumer);
     }
 

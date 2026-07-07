@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
@@ -12,6 +14,7 @@ import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +41,10 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     private final BusyRetryPolicy closeRetryPolicy;
     private final BusyRetryPolicy blockingRetryPolicy;
 
-    private final SegmentIdAllocator segmentIdAllocator;
+    private final Supplier<SegmentId> segmentIdAllocator;
     private final SegmentRegistryFileSystem fileSystem;
     private final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory;
-    private final SegmentRuntimeTuner runtimeTuner;
+    private final Consumer<SegmentRuntimeLimits> runtimeTuner;
     private final BlockingSegmentRegistryAdapter<K, V> blockingFacade;
     private final SegmentRegistry.Materialization<K, V> materialization;
     private final SegmentRegistry.Runtime<K, V> runtime;
@@ -57,13 +60,13 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
      * @param closeRetryPolicy   retry policy for draining cache on close
      * @param gate               registry gate state machine shared by collaborators
      */
-    SegmentRegistryImpl(final SegmentIdAllocator segmentIdAllocator,
+    SegmentRegistryImpl(final Supplier<SegmentId> segmentIdAllocator,
             final SegmentRegistryFileSystem fileSystem,
             final SegmentRegistryCache<K, V> cache,
             final BusyRetryPolicy closeRetryPolicy,
             final SegmentRegistryStateMachine gate,
             final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory,
-            final SegmentRuntimeTuner runtimeTuner,
+            final Consumer<SegmentRuntimeLimits> runtimeTuner,
             final BusyRetryPolicy blockingRetryPolicy,
             final boolean automaticMaintenanceEnabled) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
@@ -160,7 +163,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
             return OperationResult.fromStatus(resultForState(state));
         }
         try {
-            final SegmentId segmentId = segmentIdAllocator.nextId();
+            final SegmentId segmentId = segmentIdAllocator.get();
             if (segmentId == null) {
                 return OperationResult.error();
             }

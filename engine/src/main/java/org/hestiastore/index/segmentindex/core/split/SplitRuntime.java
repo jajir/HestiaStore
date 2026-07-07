@@ -9,7 +9,6 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.tuning.SplitPolicyScanRequester;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.SegmentIndexRuntimeState;
 import org.hestiastore.index.segmentindex.core.routing.MappedSegmentLeaseService;
@@ -24,7 +23,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  * @param <V> value type
  */
 public final class SplitRuntime<K, V>
-        implements AutoCloseable, SplitPolicyScanRequester {
+        implements AutoCloseable, Runnable {
 
     private final SplitTaskCoordinator<K, V> splitCoordinator;
     private final SplitPolicyScheduler<K, V> splitPolicyCoordinator;
@@ -168,11 +167,16 @@ public final class SplitRuntime<K, V>
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public void run() {
+        requestFullSplitScan();
+    }
+
     /**
      * Requests a full split-policy scan regardless of current in-flight split
      * state.
      */
-    @Override
     public void requestFullSplitScan() {
         splitPolicyCoordinator.requestFullSplitScan();
     }

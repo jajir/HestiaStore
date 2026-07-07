@@ -2,11 +2,8 @@ package org.hestiastore.index.segmentindex.configuration.api;
 
 /**
  * Builder section for Bloom filter settings.
- *
- * @param <K> key type
- * @param <V> value type
  */
-public final class IndexBloomFilterConfigurationBuilder<K, V> {
+public final class IndexBloomFilterConfigurationBuilder {
 
     private Integer hashFunctions;
     private Integer indexSizeBytes;
@@ -21,7 +18,7 @@ public final class IndexBloomFilterConfigurationBuilder<K, V> {
      * @param value hash function count
      * @return this section builder
      */
-    public IndexBloomFilterConfigurationBuilder<K, V> hashFunctions(
+    public IndexBloomFilterConfigurationBuilder hashFunctions(
             final Integer value) {
         this.hashFunctions = value;
         return this;
@@ -33,7 +30,7 @@ public final class IndexBloomFilterConfigurationBuilder<K, V> {
      * @param value index size in bytes
      * @return this section builder
      */
-    public IndexBloomFilterConfigurationBuilder<K, V> indexSizeBytes(
+    public IndexBloomFilterConfigurationBuilder indexSizeBytes(
             final Integer value) {
         this.indexSizeBytes = value;
         return this;
@@ -45,7 +42,7 @@ public final class IndexBloomFilterConfigurationBuilder<K, V> {
      * @param value false-positive probability
      * @return this section builder
      */
-    public IndexBloomFilterConfigurationBuilder<K, V> falsePositiveProbability(
+    public IndexBloomFilterConfigurationBuilder falsePositiveProbability(
             final Double value) {
         this.falsePositiveProbability = value;
         return this;
@@ -56,7 +53,7 @@ public final class IndexBloomFilterConfigurationBuilder<K, V> {
      *
      * @return this section builder
      */
-    public IndexBloomFilterConfigurationBuilder<K, V> disabled() {
+    public IndexBloomFilterConfigurationBuilder disabled() {
         this.indexSizeBytes = Integer.valueOf(0);
         return this;
     }

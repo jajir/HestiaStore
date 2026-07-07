@@ -2,11 +2,8 @@ package org.hestiastore.index.segmentindex.configuration.api;
 
 /**
  * Builder section for parsed persisted chunk page cache settings.
- *
- * @param <K> key type
- * @param <V> value type
  */
-public final class IndexChunkStoreCacheConfigurationBuilder<K, V> {
+public final class IndexChunkStoreCacheConfigurationBuilder {
 
     private Integer pageLimit;
 
@@ -19,7 +16,7 @@ public final class IndexChunkStoreCacheConfigurationBuilder<K, V> {
      * @param value max cached pages
      * @return this section builder
      */
-    public IndexChunkStoreCacheConfigurationBuilder<K, V> pageLimit(
+    public IndexChunkStoreCacheConfigurationBuilder pageLimit(
             final Integer value) {
         this.pageLimit = value;
         return this;

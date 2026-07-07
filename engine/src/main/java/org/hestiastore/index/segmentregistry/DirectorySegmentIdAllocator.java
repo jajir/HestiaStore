@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -13,7 +14,7 @@ import org.hestiastore.index.segment.SegmentId;
  * Segment id allocator that scans existing segment directories and allocates
  * ids above the current maximum.
  */
-final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
+final class DirectorySegmentIdAllocator implements Supplier<SegmentId> {
 
     private static final Pattern SEGMENT_DIR_PATTERN = Pattern
             .compile("^segment-(\\d{5})$");
@@ -33,11 +34,9 @@ final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
         this.nextId = new AtomicInteger(startId);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
-    public SegmentId nextId() {
+    public SegmentId get() {
         return SegmentId.of(nextId.getAndIncrement());
     }
 

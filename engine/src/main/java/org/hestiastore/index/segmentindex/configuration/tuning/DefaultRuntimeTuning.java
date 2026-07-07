@@ -18,7 +18,7 @@ public final class DefaultRuntimeTuning<K, V>
 
     public DefaultRuntimeTuning(final RuntimeTuningState runtimeTuningState,
             final RuntimeSegmentLimitApplier<K, V> effectiveLimitsApplier,
-            final SplitPolicyScanRequester splitScanRequester,
+            final Runnable splitScanRequester,
             final EffectiveIndexConfiguration<K, V> configuration,
             final IndexConfigurationStore<K, V> configurationStorage) {
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,

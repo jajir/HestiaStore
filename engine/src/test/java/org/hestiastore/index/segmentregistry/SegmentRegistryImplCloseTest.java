@@ -12,6 +12,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
@@ -19,6 +20,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -94,15 +96,16 @@ class SegmentRegistryImplCloseTest {
         final SegmentRegistryFileSystem fs = new SegmentRegistryFileSystem(
                 directory);
         final AtomicInteger counter = new AtomicInteger();
-        final SegmentIdAllocator allocator = () -> SegmentId
+        final Supplier<SegmentId> allocator = () -> SegmentId
                 .of(counter.getAndIncrement());
         final BusyRetryPolicy closeRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         @SuppressWarnings("unchecked")
         final PreparedSegmentWriterFactory<Integer, String> writerFactory = Mockito
                 .mock(PreparedSegmentWriterFactory.class);
-        final SegmentRuntimeTuner runtimeTuner = Mockito
-                .mock(SegmentRuntimeTuner.class);
+        @SuppressWarnings("unchecked")
+        final Consumer<SegmentRuntimeLimits> runtimeTuner = Mockito
+                .mock(Consumer.class);
         final BusyRetryPolicy blockingRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,

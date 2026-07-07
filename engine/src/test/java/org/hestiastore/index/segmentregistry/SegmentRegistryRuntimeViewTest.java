@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentRegistryRuntimeViewTest {
 
     @Mock
-    private SegmentRuntimeTuner runtimeTuner;
+    private Consumer<SegmentRuntimeLimits> runtimeTuner;
 
     @Mock
     private BlockingSegment<Integer, String> firstSegment;
@@ -32,7 +33,7 @@ class SegmentRegistryRuntimeViewTest {
 
         view.updateRuntimeLimits(limits);
 
-        verify(runtimeTuner).updateRuntimeLimits(limits);
+        verify(runtimeTuner).accept(limits);
     }
 
     @Test

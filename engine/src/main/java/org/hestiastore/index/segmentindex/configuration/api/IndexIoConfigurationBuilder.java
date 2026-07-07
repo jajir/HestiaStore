@@ -2,11 +2,8 @@ package org.hestiastore.index.segmentindex.configuration.api;
 
 /**
  * Builder section for disk I/O settings.
- *
- * @param <K> key type
- * @param <V> value type
  */
-public final class IndexIoConfigurationBuilder<K, V> {
+public final class IndexIoConfigurationBuilder {
 
     private Integer diskBufferSizeBytes;
 
@@ -19,7 +16,7 @@ public final class IndexIoConfigurationBuilder<K, V> {
      * @param value disk I/O buffer size
      * @return this section builder
      */
-    public IndexIoConfigurationBuilder<K, V> diskBufferSizeBytes(
+    public IndexIoConfigurationBuilder diskBufferSizeBytes(
             final Integer value) {
         this.diskBufferSizeBytes = value;
         return this;

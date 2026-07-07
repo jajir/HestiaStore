@@ -179,8 +179,7 @@ public class MonitoringConsoleWebController {
      */
     @PostMapping("/actions/{action}")
     public String triggerAction(@PathVariable("action") final String action,
-            @org.springframework.web.bind.annotation.RequestParam("nodeId")
-            @NotBlank final String nodeId,
+            @RequestParam("nodeId") @NotBlank final String nodeId,
             @RequestParam(name = "returnTo",
                     defaultValue = "dashboard") final String returnTo,
             @RequestHeader(value = "HX-Request",

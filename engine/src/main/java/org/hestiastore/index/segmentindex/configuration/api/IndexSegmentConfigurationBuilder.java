@@ -2,11 +2,8 @@ package org.hestiastore.index.segmentindex.configuration.api;
 
 /**
  * Builder section for segment sizing and segment cache settings.
- *
- * @param <K> key type
- * @param <V> value type
  */
-public final class IndexSegmentConfigurationBuilder<K, V> {
+public final class IndexSegmentConfigurationBuilder {
 
     private Integer maxKeys;
     private Integer chunkKeyLimit;
@@ -23,7 +20,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      * @param value max keys in one segment
      * @return this section builder
      */
-    public IndexSegmentConfigurationBuilder<K, V> maxKeys(
+    public IndexSegmentConfigurationBuilder maxKeys(
             final Integer value) {
         this.maxKeys = value;
         return this;
@@ -35,7 +32,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      * @param value max keys per chunk
      * @return this section builder
      */
-    public IndexSegmentConfigurationBuilder<K, V> chunkKeyLimit(
+    public IndexSegmentConfigurationBuilder chunkKeyLimit(
             final Integer value) {
         this.chunkKeyLimit = value;
         return this;
@@ -47,7 +44,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      * @param value segment cache key limit
      * @return this section builder
      */
-    public IndexSegmentConfigurationBuilder<K, V> cacheKeyLimit(
+    public IndexSegmentConfigurationBuilder cacheKeyLimit(
             final Integer value) {
         this.cacheKeyLimit = value;
         return this;
@@ -59,7 +56,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      * @param value cached segment limit
      * @return this section builder
      */
-    public IndexSegmentConfigurationBuilder<K, V> cachedSegmentLimit(
+    public IndexSegmentConfigurationBuilder cachedSegmentLimit(
             final Integer value) {
         this.cachedSegmentLimit = value;
         return this;
@@ -71,7 +68,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      * @param value delta cache file limit
      * @return this section builder
      */
-    public IndexSegmentConfigurationBuilder<K, V> deltaCacheFileLimit(
+    public IndexSegmentConfigurationBuilder deltaCacheFileLimit(
             final Integer value) {
         this.deltaCacheFileLimit = value;
         return this;
