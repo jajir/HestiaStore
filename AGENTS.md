@@ -3,11 +3,12 @@
 - Be honest.
 - When it makes sense, structure responses as numbered lists.
 
-# Hestia Store Repository Rules
+## Hestia Store Repository Rules
 
 - This repository is a Maven-based Java library project with a multi-module parent build.
 - Prefer focused changes that stay within the requested scope.
 - Avoid unnecessary API-breaking changes.
+- Project-specific thrown exceptions should extend `org.hestiastore.index.IndexException` so upper application layers can handle store failures consistently.
 - Run `mvn clean verify` after non-trivial changes.
 - Use the `fix-ci-failure` skill for failing CI jobs and broken local verification runs.
 - Use the `update-dependencies` skill for Maven dependency and plugin refresh work.

@@ -35,7 +35,7 @@ class SegmentRegistryImplCloseTest {
                 gate, 1, 2_000);
 
         final SegmentId segmentId = SegmentId.of(11);
-        final SegmentRegistryCache.Entry<Segment<Integer, String>> entry = new SegmentRegistryCache.Entry<>(
+        final SegmentRegistryEntry<Integer, String> entry = new SegmentRegistryEntry<>(
                 1L);
         readCacheMap(cache).put(segmentId, entry);
 
@@ -70,7 +70,7 @@ class SegmentRegistryImplCloseTest {
                 gate, 1, 40);
 
         final SegmentId segmentId = SegmentId.of(12);
-        final SegmentRegistryCache.Entry<Segment<Integer, String>> loadingEntry = new SegmentRegistryCache.Entry<>(
+        final SegmentRegistryEntry<Integer, String> loadingEntry = new SegmentRegistryEntry<>(
                 1L);
         readCacheMap(cache).put(segmentId, loadingEntry);
 
@@ -132,13 +132,13 @@ class SegmentRegistryImplCloseTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<SegmentId, SegmentRegistryCache.Entry<Segment<Integer, String>>> readCacheMap(
+    private static Map<SegmentId, SegmentRegistryEntry<Integer, String>> readCacheMap(
             final SegmentRegistryCache<Integer, String> cache) {
         try {
             final Field mapField = SegmentRegistryCache.class
                     .getDeclaredField("map");
             mapField.setAccessible(true);
-            return (Map<SegmentId, SegmentRegistryCache.Entry<Segment<Integer, String>>>) mapField
+            return (Map<SegmentId, SegmentRegistryEntry<Integer, String>>) mapField
                     .get(cache);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException("Unable to access cache map", ex);

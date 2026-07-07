@@ -21,10 +21,19 @@ final class SegmentUnloadEligibility {
                 || isReadySegmentEvictable(segment));
     }
 
+    boolean canForceUnload(final Segment<?, ?> segment) {
+        return segment != null && (segment.getState() == SegmentState.CLOSED
+                || isReadySegmentWithId(segment));
+    }
+
     private boolean isReadySegmentEvictable(final Segment<?, ?> segment) {
         final boolean closing = gate.getState() != SegmentRegistryState.READY;
-        final SegmentId segmentId = segment.getId();
-        return segmentId != null && segment.getState() == SegmentState.READY
+        return isReadySegmentWithId(segment)
                 && (closing || segment.getNumberOfKeysInWriteCache() == 0);
+    }
+
+    private boolean isReadySegmentWithId(final Segment<?, ?> segment) {
+        final SegmentId segmentId = segment.getId();
+        return segmentId != null && segment.getState() == SegmentState.READY;
     }
 }

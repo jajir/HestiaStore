@@ -400,12 +400,6 @@ final class IndexMemoryEstimator {
                 : UNKNOWN;
     }
 
-    private static String aboutText(final OptionalLong estimate) {
-        return estimate.isPresent()
-                ? "about " + formatBytes(estimate.getAsLong())
-                : UNKNOWN;
-    }
-
     private static void appendEstimateTreeLine(final StringBuilder out,
             final String prefix, final String connector, final String label,
             final OptionalLong estimateBytes, final String unknownReason,

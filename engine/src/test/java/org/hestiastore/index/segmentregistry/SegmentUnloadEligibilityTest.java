@@ -62,6 +62,31 @@ class SegmentUnloadEligibilityTest {
     }
 
     @Test
+    void canForceUnloadReturnsTrueForDirtyReadySegmentWhenRegistryReady() {
+        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        gate.finishFreezeToReady();
+        final SegmentUnloadEligibility eligibility = new SegmentUnloadEligibility(
+                gate);
+        @SuppressWarnings("unchecked")
+        final Segment<Integer, String> segment = Mockito.mock(Segment.class);
+        when(segment.getId()).thenReturn(SegmentId.of(9));
+        when(segment.getState()).thenReturn(SegmentState.READY);
+
+        assertTrue(eligibility.canForceUnload(segment));
+    }
+
+    @Test
+    void canForceUnloadReturnsFalseForReadySegmentWithoutId() {
+        final SegmentUnloadEligibility eligibility = new SegmentUnloadEligibility(
+                new SegmentRegistryStateMachine());
+        @SuppressWarnings("unchecked")
+        final Segment<Integer, String> segment = Mockito.mock(Segment.class);
+        when(segment.getState()).thenReturn(SegmentState.READY);
+
+        assertFalse(eligibility.canForceUnload(segment));
+    }
+
+    @Test
     void canUnloadReturnsTrueForDirtyReadySegmentWhenRegistryClosing() {
         final SegmentUnloadEligibility eligibility = new SegmentUnloadEligibility(
                 new SegmentRegistryStateMachine());

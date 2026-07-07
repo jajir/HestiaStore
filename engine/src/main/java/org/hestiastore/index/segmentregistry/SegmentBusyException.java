@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationStatus;
+
 /**
  * Signals that a segment operation cannot proceed because the target segment
  * or registry path is currently busy.
@@ -8,8 +10,15 @@ import org.hestiastore.index.OperationStatus;
  * This exception is internal to the segment registry package and is translated
  * to {@link OperationStatus#BUSY} at API boundaries.
  */
-final class SegmentBusyException extends RuntimeException {
+final class SegmentBusyException extends IndexException {
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Creates a busy exception without a detail message.
+     */
+    SegmentBusyException() {
+        super();
+    }
 
     /**
      * Creates a busy exception with the provided detail message.

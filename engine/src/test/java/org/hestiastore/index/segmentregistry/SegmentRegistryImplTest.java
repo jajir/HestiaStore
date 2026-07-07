@@ -410,24 +410,14 @@ class SegmentRegistryImplTest {
     }
 
     private Object createLoadingEntry(final long accessCx) {
-        try {
-            final Class<?> entryClass = Class.forName(
-                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
-            final java.lang.reflect.Constructor<?> constructor = entryClass
-                    .getDeclaredConstructor(long.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance(accessCx);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException("Unable to create loading entry",
-                    ex);
-        }
+        return new SegmentRegistryEntry<Integer, String>(accessCx);
     }
 
     private void finishLoad(final Object entry,
             final Segment<Integer, String> segment) {
         try {
             final java.lang.reflect.Method method = entry.getClass()
-                    .getDeclaredMethod("finishLoad", Object.class);
+                    .getDeclaredMethod("finishLoad", Segment.class);
             method.setAccessible(true);
             method.invoke(entry, segment);
         } catch (final ReflectiveOperationException ex) {
@@ -438,7 +428,7 @@ class SegmentRegistryImplTest {
     private boolean invokeTryStartUnload(final Object entry) {
         try {
             final java.lang.reflect.Method method = entry.getClass()
-                    .getDeclaredMethod("tryStartUnload", Object.class);
+                    .getDeclaredMethod("tryStartUnload", Segment.class);
             method.setAccessible(true);
             return ((Boolean) method.invoke(entry, getReadyValue(entry)))
                     .booleanValue();

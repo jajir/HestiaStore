@@ -231,8 +231,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         final Segment<K, V> segment;
         try {
             segment = cache.get(segmentId);
-        } catch (final SegmentRegistryCache.EntryBusyException
-                | SegmentBusyException ex) {
+        } catch (final SegmentBusyException ex) {
             return OperationResult.busy();
         } catch (final RuntimeException ex) {
             logger.error("Failed to load segment '{}'.", segmentId, ex);
