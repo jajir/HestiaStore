@@ -31,7 +31,7 @@ final class SegmentRuntimeMetrics {
             new ArrayList<>();
 
     void setTotalMappedStableSegmentCount(final int count) {
-        totalMappedStableSegmentCount = nonNegative(count,
+        totalMappedStableSegmentCount = nonNegativeInt(count,
                 "totalMappedStableSegmentCount");
     }
 
@@ -72,7 +72,7 @@ final class SegmentRuntimeMetrics {
     }
 
     void setUnloadedMappedStableSegmentCount(final int count) {
-        unloadedMappedStableSegmentCount = nonNegative(count,
+        unloadedMappedStableSegmentCount = nonNegativeInt(count,
                 "unloadedMappedStableSegmentCount");
     }
 
@@ -83,31 +83,31 @@ final class SegmentRuntimeMetrics {
     void addSegmentRuntimeSnapshot(final SegmentRuntimeSnapshot segmentRuntime) {
         final SegmentRuntimeSnapshot snapshot = Vldtn.requireNonNull(
                 segmentRuntime, "segmentRuntime");
-        final long numberOfKeys = nonNegative(snapshot.getNumberOfKeys(),
+        final long numberOfKeys = nonNegativeLong(snapshot.getNumberOfKeys(),
                 "numberOfKeys");
-        final long numberOfKeysInSegmentCache = nonNegative(
+        final long numberOfKeysInSegmentCache = nonNegativeLong(
                 snapshot.getNumberOfKeysInSegmentCache(),
                 "numberOfKeysInSegmentCache");
-        final int numberOfKeysInWriteCache = nonNegative(
+        final int numberOfKeysInWriteCache = nonNegativeInt(
                 snapshot.getNumberOfKeysInWriteCache(),
                 "numberOfKeysInWriteCache");
-        final int numberOfDeltaCacheFiles = nonNegative(
+        final int numberOfDeltaCacheFiles = nonNegativeInt(
                 snapshot.getNumberOfDeltaCacheFiles(),
                 "numberOfDeltaCacheFiles");
-        final long compactRequestCount = nonNegative(
+        final long compactRequestCount = nonNegativeLong(
                 snapshot.getNumberOfCompacts(), "compactRequestCount");
-        final long flushRequestCount = nonNegative(snapshot.getNumberOfFlushes(),
-                "flushRequestCount");
-        final long bloomFilterRequestCount = nonNegative(
+        final long flushRequestCount = nonNegativeLong(
+                snapshot.getNumberOfFlushes(), "flushRequestCount");
+        final long bloomFilterRequestCount = nonNegativeLong(
                 snapshot.getBloomFilterRequestCount(),
                 "bloomFilterRequestCount");
-        final long bloomFilterRefusedCount = nonNegative(
+        final long bloomFilterRefusedCount = nonNegativeLong(
                 snapshot.getBloomFilterRefusedCount(),
                 "bloomFilterRefusedCount");
-        final long bloomFilterPositiveCount = nonNegative(
+        final long bloomFilterPositiveCount = nonNegativeLong(
                 snapshot.getBloomFilterPositiveCount(),
                 "bloomFilterPositiveCount");
-        final long bloomFilterFalsePositiveCount = nonNegative(
+        final long bloomFilterFalsePositiveCount = nonNegativeLong(
                 snapshot.getBloomFilterFalsePositiveCount(),
                 "bloomFilterFalsePositiveCount");
 
@@ -171,11 +171,11 @@ final class SegmentRuntimeMetrics {
         return List.copyOf(stableSegmentRuntimeSnapshots);
     }
 
-    private static int nonNegative(final int value, final String name) {
+    private static int nonNegativeInt(final int value, final String name) {
         return Vldtn.requireGreaterThanOrEqualToZero(value, name);
     }
 
-    private static long nonNegative(final long value, final String name) {
+    private static long nonNegativeLong(final long value, final String name) {
         return Vldtn.requireGreaterThanOrEqualToZero(value, name);
     }
 }

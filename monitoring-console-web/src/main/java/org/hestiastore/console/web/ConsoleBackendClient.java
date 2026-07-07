@@ -659,8 +659,8 @@ public class ConsoleBackendClient {
                 return method + " " + path + FAILED_SEPARATOR
                         + response.statusCode() + " " + code + " " + message;
             }
-        } catch (final Exception ignore) {
-            // Fallback to plain body below.
+        } catch (final Exception e) {
+            logger.trace("Response body is not a JSON error payload.", e);
         }
         return method + " " + path + FAILED_SEPARATOR + response.statusCode()
                 + " body=" + body;
@@ -1359,7 +1359,7 @@ public class ConsoleBackendClient {
             if (jvmHeapCommittedBytes <= 0L) {
                 return 0L;
             }
-            return Math.round((heapFreeBytes() * 100D) / jvmHeapCommittedBytes);
+            return Math.round(heapFreeBytes() * 100D / jvmHeapCommittedBytes);
         }
 
         /**
@@ -1392,7 +1392,7 @@ public class ConsoleBackendClient {
                 return 0L;
             }
             return Math.round(
-                    (Math.max(0L, totalSegmentCacheKeys) * 100D) / limit);
+                    Math.max(0L, totalSegmentCacheKeys) * 100D / limit);
         }
 
         /**
@@ -1404,7 +1404,7 @@ public class ConsoleBackendClient {
             if (cacheLimit <= 0) {
                 return 0L;
             }
-            return Math.round((Math.max(0, cacheSize) * 100D) / cacheLimit);
+            return Math.round(Math.max(0, cacheSize) * 100D / cacheLimit);
         }
 
         /**
@@ -1490,7 +1490,7 @@ public class ConsoleBackendClient {
         if (deltaOps <= 0L || deltaNanos <= 0L) {
             return new Throughput(0D, OPS_PER_SECOND);
         }
-        double value = (deltaOps * 1_000_000_000D) / deltaNanos;
+        double value = deltaOps * 1_000_000_000D / deltaNanos;
         String unit = OPS_PER_SECOND;
         if (value >= 10_000D) {
             value /= 1_000D;
@@ -1528,7 +1528,7 @@ public class ConsoleBackendClient {
         if (deltaCount <= 0L || deltaNanos <= 0L) {
             return new CounterRate(0D, "/s");
         }
-        final double perSecond = (deltaCount * 1_000_000_000D) / deltaNanos;
+        final double perSecond = deltaCount * 1_000_000_000D / deltaNanos;
         if (perSecond >= 1D) {
             return new CounterRate(perSecond, "/s");
         }
@@ -1612,7 +1612,7 @@ public class ConsoleBackendClient {
                 return 0L;
             }
             return Math.round(
-                    (Math.max(0L, totalSegmentCacheKeys) * 100D) / limit);
+                    Math.max(0L, totalSegmentCacheKeys) * 100D / limit);
         }
 
         /**
@@ -1639,7 +1639,7 @@ public class ConsoleBackendClient {
             if (total <= 0L) {
                 return 0L;
             }
-            return Math.round((cacheHitCount * 100D) / total);
+            return Math.round(cacheHitCount * 100D / total);
         }
 
         /**
@@ -1651,7 +1651,7 @@ public class ConsoleBackendClient {
             if (cacheLimit <= 0) {
                 return 0L;
             }
-            return Math.round((Math.max(0, cacheSize) * 100D) / cacheLimit);
+            return Math.round(Math.max(0, cacheSize) * 100D / cacheLimit);
         }
 
         /**

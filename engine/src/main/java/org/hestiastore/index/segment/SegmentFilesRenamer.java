@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
  * Provides a utility method to rename all files associated with a segment from
  * one SegmentFiles instance to another.
  */
-public class SegmentFilesRenamer {
+class SegmentFilesRenamer {
 
     private static final Logger logger = LoggerFactory
             .getLogger(SegmentFilesRenamer.class);
@@ -25,7 +25,7 @@ public class SegmentFilesRenamer {
      * @param <K>            the key type
      * @param <V>            the value type
      */
-    public <K, V> void renameFiles(final SegmentFiles<K, V> from,
+    <K, V> void renameFiles(final SegmentFiles<K, V> from,
             final SegmentFiles<K, V> to,
             final SegmentPropertiesManager fromProperties) {
         Vldtn.requireNonNull(from, "from");

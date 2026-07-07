@@ -243,7 +243,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final Directory directory,
             final IndexConfiguration<M, N> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return operation(
+        return bootstrapOperation(
                 requireDirectory(directory),
                 requireUserProvidedConfiguration(userProvidedConfiguration),
                 chunkFilterProviderResolver,
@@ -255,14 +255,14 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver,
             final HestiaStoreRuntime runtime) {
-        return operation(
+        return bootstrapOperation(
                 requireDirectory(directory),
                 requireUserProvidedConfiguration(userProvidedConfiguration),
                 chunkFilterProviderResolver,
                 HestiaStoreRuntimeAccess.borrowed(runtime));
     }
 
-    private static <M, N> SegmentIndexBootstrapOperation<M, N> operation(
+    private static <M, N> SegmentIndexBootstrapOperation<M, N> bootstrapOperation(
             final Directory directory,
             final IndexConfiguration<M, N> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver,
