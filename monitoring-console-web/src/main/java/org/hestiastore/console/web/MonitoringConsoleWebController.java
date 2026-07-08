@@ -288,9 +288,9 @@ public class MonitoringConsoleWebController {
         final long cacheLimit = nodes.stream()
                 .mapToLong(ConsoleBackendClient.NodeRow::cacheLimit).sum();
         final long cacheHitRatio = cacheHits + cacheMisses == 0L ? 0L
-                : Math.round((cacheHits * 100D) / (cacheHits + cacheMisses));
+                : Math.round(cacheHits * 100D / (cacheHits + cacheMisses));
         final long cacheFillRatio = cacheLimit == 0L ? 0L
-                : Math.round((cacheSize * 100D) / cacheLimit);
+                : Math.round(cacheSize * 100D / cacheLimit);
         model.addAttribute("nodes", nodes);
         model.addAttribute("statNodes", nodes.size());
         model.addAttribute("statNodesDisplay",

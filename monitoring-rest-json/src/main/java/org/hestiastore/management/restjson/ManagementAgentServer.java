@@ -842,7 +842,7 @@ public final class ManagementAgentServer
 
     private List<RegisteredIndex> activeIndexesSnapshot() {
         final List<RegisteredIndex> active = new ArrayList<>();
-        for (final java.util.Map.Entry<String, SegmentIndex<?, ?>> entry : indexes
+        for (final Map.Entry<String, SegmentIndex<?, ?>> entry : indexes
                 .entrySet()) {
             final String name = entry.getKey();
             final SegmentIndex<?, ?> index = entry.getValue();
