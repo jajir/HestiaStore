@@ -135,30 +135,55 @@ public final class SegmentIndexBootstrapOperation<K, V> {
             }
             sessionResources.acquireDirectoryLock(directory);
             resolveConfiguration(mode, state, configurationManager);
-            resolveTypeDescriptors(state);
-            writeConfiguration(state, configurationManager);
-            openKeyToSegmentMap(state);
-            createStartupMemoryEstimate(state);
-            logStartupMemoryEstimate(state);
-            createExecutorRegistry(state);
-            createChunkStoreCache(state);
-            openSegmentRegistry(state);
-            openCoreStorage(state);
-            createRuntimeTopology(state, sessionResources);
-            openRuntimeWal(state);
-            createMaintenance(state, sessionResources);
-            initializeWal(state, sessionResources);
-            createRuntimeMonitoring(state, sessionResources);
-            createRuntimeTuning(state);
-            createOperationAccess(state, sessionResources);
-            transferRuntimeCloseOwnership(state, sessionResources);
-            createIndex(state, sessionResources);
-            completeStartup(state, sessionResources);
-            applyContextLogging(state);
-            return Optional.of(state.getIndex());
+            return openConfiguredSessionWithContext(state, sessionResources,
+                    configurationManager);
         } catch (final RuntimeException failure) {
             throw closeAfterFailedBootstrap(state, failure);
         }
+    }
+
+    private Optional<SegmentIndex<K, V>> openConfiguredSessionWithContext(
+            final BootstrapState<K, V> state,
+            final SegmentIndexRuntimeResources<K, V> sessionResources,
+            final IndexConfigurationManager<K, V> configurationManager) {
+        final EffectiveIndexConfiguration<K, V> configuration =
+                state.getConfiguration();
+        if (!configuration.logging().contextEnabled()) {
+            return openConfiguredSession(state, sessionResources,
+                    configurationManager);
+        }
+        try (IndexMdcScope ignored = new IndexMdcScope(
+                configuration.identity().name())) {
+            return openConfiguredSession(state, sessionResources,
+                    configurationManager);
+        }
+    }
+
+    private Optional<SegmentIndex<K, V>> openConfiguredSession(
+            final BootstrapState<K, V> state,
+            final SegmentIndexRuntimeResources<K, V> sessionResources,
+            final IndexConfigurationManager<K, V> configurationManager) {
+        resolveTypeDescriptors(state);
+        writeConfiguration(state, configurationManager);
+        openKeyToSegmentMap(state);
+        createStartupMemoryEstimate(state);
+        logStartupMemoryEstimate(state);
+        createExecutorRegistry(state);
+        createChunkStoreCache(state);
+        openSegmentRegistry(state);
+        openCoreStorage(state);
+        createRuntimeTopology(state, sessionResources);
+        openRuntimeWal(state);
+        createMaintenance(state, sessionResources);
+        initializeWal(state, sessionResources);
+        createRuntimeMonitoring(state, sessionResources);
+        createRuntimeTuning(state);
+        createOperationAccess(state, sessionResources);
+        transferRuntimeCloseOwnership(state, sessionResources);
+        createIndex(state, sessionResources);
+        completeStartup(state, sessionResources);
+        applyContextLogging(state);
+        return Optional.of(state.getIndex());
     }
 
     private boolean checkExistingConfiguration(

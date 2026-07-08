@@ -24,35 +24,41 @@ import org.junit.jupiter.api.Test;
 class IndexLoggingMessageIT {
 
     private static final String LOCK_FILE_NAME = ".lock";
+    private static final String INDEX_NAME = "logging-message-it";
     private static final String LOG_PATTERN = "%d{ISO8601} %-5level [%t] "
             + "index='%X{index.name}' %msg%n%throwable";
-    private static final String EXPECTED_BOOTSTRAP_FORMAT_FRAGMENT = " INFO  [main] index='' ";
+    private static final String EXPECTED_INDEX_CONTEXT_FORMAT_FRAGMENT =
+            " INFO  [main] index='" + INDEX_NAME + "' ";
+    private static final String EXPECTED_EMPTY_INDEX_CONTEXT_FORMAT_FRAGMENT =
+            " INFO  [main] index='' ";
     private static final String EXPECTED_RECOVERY_MESSAGE = "Recovered stale index lock (.lock). Index is going to be checked "
             + "for consistency and unlocked.";
 
     @Test
-    void verify_bootstrap_log_omits_index_name_when_context_logging_enabled() {
+    void verify_bootstrap_log_includes_index_name_when_context_logging_enabled() {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class)
                         .valueClass(String.class)
-                        .name("logging-message-it"))
+                        .name(INDEX_NAME))
                 .logging(logging -> logging.contextEnabled(true))
                 .build();
         final String logs = prepareLogMessages(directory, configuration);
-        assertBootstrapRecoveryLog(logs);
+        assertBootstrapRecoveryLog(logs,
+                EXPECTED_INDEX_CONTEXT_FORMAT_FRAGMENT);
     }
 
     @Test
-    void verify_bootstrap_log_omits_index_name_when_context_logging_uses_default() {
+    void verify_bootstrap_log_includes_index_name_when_context_logging_uses_default() {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class)
                         .valueClass(String.class)
-                        .name("logging-message-it"))
+                        .name(INDEX_NAME))
                 .build();
         final String logs = prepareLogMessages(directory, configuration);
-        assertBootstrapRecoveryLog(logs);
+        assertBootstrapRecoveryLog(logs,
+                EXPECTED_INDEX_CONTEXT_FORMAT_FRAGMENT);
     }
 
     @Test
@@ -61,17 +67,19 @@ class IndexLoggingMessageIT {
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class)
                         .valueClass(String.class)
-                        .name("logging-message-it"))
+                        .name(INDEX_NAME))
                 .logging(logging -> logging.contextEnabled(false))
                 .build();
         final String logs = prepareLogMessages(directory, configuration);
-        assertBootstrapRecoveryLog(logs);
+        assertBootstrapRecoveryLog(logs,
+                EXPECTED_EMPTY_INDEX_CONTEXT_FORMAT_FRAGMENT);
     }
 
-    private static void assertBootstrapRecoveryLog(final String logs) {
+    private static void assertBootstrapRecoveryLog(final String logs,
+            final String expectedFormatFragment) {
         assertAll(
                 () -> assertTrue(
-                        logs.contains(EXPECTED_BOOTSTRAP_FORMAT_FRAGMENT),
+                        logs.contains(expectedFormatFragment),
                         () -> "Expected formatted INFO log fragment in:\n"
                                 + logs),
                 () -> assertTrue(logs.contains(EXPECTED_RECOVERY_MESSAGE),
