@@ -1,0 +1,106 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putHotRoute",
+        "mode" : "thrpt",
+        "threads" : 20,
+        "forks" : 1,
+        "jvm" : "/usr/lib/jvm/temurin-21-jdk-amd64/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.11",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.11+10-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "2 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "2 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 2060214.590895271,
+            "scoreError" : 18832.84322213385,
+            "scoreConfidence" : [
+                2041381.747673137,
+                2079047.4341174047
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2055322.9963679372,
+                "50.0" : 2058045.2262860078,
+                "90.0" : 2067181.4544212692,
+                "95.0" : 2067181.4544212692,
+                "99.0" : 2067181.4544212692,
+                "99.9" : 2067181.4544212692,
+                "99.99" : 2067181.4544212692,
+                "99.999" : 2067181.4544212692,
+                "99.9999" : 2067181.4544212692,
+                "100.0" : 2067181.4544212692
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    2058045.2262860078,
+                    2063303.463946647,
+                    2055322.9963679372,
+                    2057219.8134544934,
+                    2067181.4544212692
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute",
+        "mode" : "thrpt",
+        "threads" : 20,
+        "forks" : 1,
+        "jvm" : "/usr/lib/jvm/temurin-21-jdk-amd64/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.11",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.11+10-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "2 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "2 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 1134482.1162442416,
+            "scoreError" : 8511.622433263241,
+            "scoreConfidence" : [
+                1125970.4938109783,
+                1142993.738677505
+            ],
+            "scorePercentiles" : {
+                "0.0" : 1131061.942191027,
+                "50.0" : 1135022.7956135045,
+                "90.0" : 1136846.5206898288,
+                "95.0" : 1136846.5206898288,
+                "99.0" : 1136846.5206898288,
+                "99.9" : 1136846.5206898288,
+                "99.99" : 1136846.5206898288,
+                "99.999" : 1136846.5206898288,
+                "99.9999" : 1136846.5206898288,
+                "100.0" : 1136846.5206898288
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    1135696.5341747138,
+                    1136846.5206898288,
+                    1133782.7885521334,
+                    1135022.7956135045,
+                    1131061.942191027
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+
