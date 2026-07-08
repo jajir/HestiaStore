@@ -253,11 +253,13 @@ class SegmentIndexBootstrapOperationTest {
         try {
             final SegmentIndex<Integer, String> index = operation(
                     new MemDirectory(),
-                    buildConf("bootstrap-operation-memory-estimate", false))
+                    buildConf("bootstrap-operation-memory-estimate", true))
                     .create();
             try {
+                final List<LogEvent> memoryEstimateEvents = appender
+                        .eventsStartingWith("memory-estimate ");
                 final List<String> loggedReportLines = appender
-                        .messagesStartingWith("memory-estimate ")
+                        .messages(memoryEstimateEvents)
                         .stream()
                         .map(message -> message
                                 .substring("memory-estimate ".length()))
@@ -265,6 +267,10 @@ class SegmentIndexBootstrapOperationTest {
 
                 assertEquals(index.startupMemoryEstimate().lines(),
                         loggedReportLines);
+                assertTrue(memoryEstimateEvents.stream()
+                        .allMatch(event -> "bootstrap-operation-memory-estimate"
+                                .equals(event.getContextData()
+                                        .getValue(MDC_INDEX_NAME_KEY))));
                 printReport("bootstrap-complete",
                         index.startupMemoryEstimate());
                 assertTrue(appender.countMessageStartingWith(
@@ -600,7 +606,7 @@ class SegmentIndexBootstrapOperationTest {
 
         private final LoggerContext loggerContext;
         private final String loggerConfigName;
-        private final List<String> messages = Collections
+        private final List<LogEvent> events = Collections
                 .synchronizedList(new ArrayList<>());
 
         private TestLogAppender(final String name,
@@ -630,23 +636,34 @@ class SegmentIndexBootstrapOperationTest {
 
         @Override
         public void append(final LogEvent event) {
-            messages.add(event.getMessage().getFormattedMessage());
+            events.add(event.toImmutable());
         }
 
         long countMessageStartingWith(final String prefix) {
-            synchronized (messages) {
-                return messages.stream()
+            synchronized (events) {
+                return messages(events).stream()
                         .filter(message -> message.startsWith(prefix))
                         .count();
             }
         }
 
         List<String> messagesStartingWith(final String prefix) {
-            synchronized (messages) {
-                return messages.stream()
-                        .filter(message -> message.startsWith(prefix))
+            return messages(eventsStartingWith(prefix));
+        }
+
+        List<LogEvent> eventsStartingWith(final String prefix) {
+            synchronized (events) {
+                return events.stream()
+                        .filter(event -> event.getMessage()
+                                .getFormattedMessage().startsWith(prefix))
                         .toList();
             }
+        }
+
+        List<String> messages(final List<LogEvent> sourceEvents) {
+            return sourceEvents.stream()
+                    .map(event -> event.getMessage().getFormattedMessage())
+                    .toList();
         }
 
         void detach() {
