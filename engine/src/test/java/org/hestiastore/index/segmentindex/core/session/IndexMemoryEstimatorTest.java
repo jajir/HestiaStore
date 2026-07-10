@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
-
 import org.hestiastore.index.datatype.ByteArray;
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -35,67 +33,59 @@ class IndexMemoryEstimatorTest {
         assertTrue(estimate.isComplete());
         assertEquals(93_330L, estimate.totalEstimatedBytes().orElseThrow());
         final String log = estimate.text();
-        assertTrue(log.contains("Estimated memory use at startup"));
-        assertTrue(log.contains("├─ Total index memory - 91.14 KiB"));
-        assertTrue(log.contains("│  ├─ All segments - 72.91 KiB"));
-        assertTrue(log.contains(
-                "│  │  │              3 segment cache slots"));
-        assertTrue(log.contains(
-                "│  │  ├─ One cached segment - 24.30 KiB"));
-        assertTrue(log.contains(
-                "│  └─ Maintenance overhead - 18.23 KiB"));
-        assertLineAppearsBefore(log, "├─ Total index memory - 91.14 KiB",
-                "├─ Key/value entry - 228 B");
-        assertTrue(log.contains(
-                "not a JVM cap or measured allocation"));
-        assertTrue(log.contains("├─ Key/value entry - 228 B"));
-        assertLineAppearsBefore(log, "├─ Key/value entry - 228 B",
-                "├─ Key/position entry - 104 B");
-        assertTrue(log.contains("├─ Key/position entry - 104 B"));
-        assertTrue(log.contains("overhead: 96 B"));
-        assertTrue(log.contains(
-                "├─ Formula constants - shown for transparency, not added separately"));
-        assertTrue(log.contains(
-                "fixed per loaded/cached segment: about 16.00 KiB"));
-        assertTrue(log.contains(
-                "details: docs/operations/memory-estimate.md"));
-        assertTrue(log.contains(
-                "│  │  │  └─ Segment runtime - 16.00 KiB"));
-        assertTrue(log.contains(
-                "│  │  │  ├─ Scarce index - 5.08 KiB"));
-        assertTrue(log.contains(
-                "│  │  │  │  ├─ Max number of keys in scarce index - 50"));
-        assertDetailAlignsWithValue(estimate,
-                "│  │  │  │  ├─ Max number of keys in scarce index - 50",
-                "max number of keys in segment: 100");
-        assertTrue(log.contains(
-                "number of keys per page: 2"));
-        assertFalse(log.contains(
-                "│  │  │  │  │        max number of keys in segment: 100"));
-        assertFalse(log.contains(
-                "│  │  │  │  │  │                                    max number of keys in segment: 100"));
-        assertTrue(log.contains(
-                "│  │  │  │  └─ Key/position entry - 104 B"));
-        assertTrue(log.contains(
-                "key: TypeDescriptorInteger, about 4 B"));
-        assertTrue(log.contains(
-                "integer position: TypeDescriptorInteger, about 4 B"));
-        assertTrue(log.contains(
-                "├─ Other requirements - reported but not included"));
-        assertTrue(log.contains("index write-buffer keys: 18"));
-        assertTrue(log.contains("chunk keys per page: 2"));
-        assertTrue(log.contains("configured bloom filter size: 1.00 KiB"));
-        assertTrue(log.contains(
-                "│  │  │  ├─ Delta cache - 2.23 KiB"));
-        assertTrue(log.contains(
-                "configured max number of keys in cache: 10"));
-        assertTrue(log.contains("key/value entry: 228 B"));
+        assertContains(log, "Estimated memory use at startup");
+        assertContains(log, "Included memory");
+        assertContains(log,
+                "+------------------------+------------+--------------------------------------+");
+        assertContains(log,
+                "| Total index memory     | 91.14 KiB  | segments + page cache + maintenance  |");
+        assertContains(log,
+                "| All segments           | 72.91 KiB  | cached segment slots: 3; cached      |");
+        assertContains(log,
+                "| One cached segment     | 24.30 KiB  | delta cache + bloom filter + scarce  |");
+        assertContains(log,
+                "| Delta cache            | 2.23 KiB   | cache key limit: 10; cache key limit |");
+        assertContains(log,
+                "| Bloom filter           | 1.00 KiB   | configured bloom filter size: 1.00   |");
+        assertContains(log,
+                "| Scarce index           | 5.08 KiB   | max scarce keys: 50; max scarce keys |");
+        assertContains(log,
+                "| Segment runtime        | 16.00 KiB  | fixed overhead per cached segment    |");
+        assertContains(log,
+                "| Maintenance overhead   | 18.23 KiB  | max(25% of memory before maintenance |");
+        assertLineAppearsBefore(log, "| Total index memory",
+                "Entry sizes");
+        assertContains(log,
+                "not a JVM cap or measured allocation");
+        assertContains(log,
+                "| Key/value entry        | 228 B      | key size + value size + overhead;    |");
+        assertLineAppearsBefore(log, "| Key/value entry        | 228 B",
+                "| Key/position entry     | 104 B");
+        assertContains(log,
+                "| Key/position entry     | 104 B      | key size + integer position +        |");
+        assertContains(log, "overhead: 96 B");
+        assertContains(log,
+                "| Entry overhead         | 96 B       | fixed overhead in key/value and      |");
+        assertContains(log,
+                "details: docs/operations/memory-estimate.md");
+        assertContains(log,
+                "| Max scarce keys        | 50         | ceil(max segment keys / chunk keys   |");
+        assertContains(log, "per page)");
+        assertContains(log,
+                "key: TypeDescriptorInteger, about 4");
+        assertContains(log,
+                "integer position:");
+        assertContains(log, "Write-buffer keys");
+        assertContains(log, "reported, not included in total");
+        assertContains(log, "Chunk keys per page");
+        assertContains(log,
+                "configured bloom filter size: 1.00");
+        assertContains(log, "key/value entry 228 B");
         assertFalse(log.contains(
                 "entry overhead: 96 B inside key/value entry"));
-        assertDetailAlignsWithValue(estimate,
-                "│  │  ├─ One cached segment - 24.30 KiB",
-                "multiplied by 3 segment cache slots");
-        assertTrue(log.contains("End memory estimate"));
+        assertContains(log, "End memory estimate");
+        assertFalse(log.contains("├─"));
+        assertFalse(log.contains("│"));
         assertFalse(log.contains("based on:"));
         assertFalse(log.contains("reported only"));
     }
@@ -113,12 +103,16 @@ class IndexMemoryEstimatorTest {
         printReport("chunk-store-cache", estimate);
 
         assertEquals(97_880L, estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "│  ├─ Chunk-store page cache - 3.55 KiB"));
-        assertTrue(estimate.text().contains("7 pages"));
-        assertTrue(estimate.text().contains("chunk keys per page: 2"));
-        assertTrue(estimate.text().contains("page overhead: 64 B"));
-        assertTrue(estimate.text().contains("key/value entry: 228 B"));
+        assertContains(estimate.text(),
+                "| Chunk-store page cache | 3.55 KiB   | pages: 7; pages * (page overhead +   |");
+        assertContains(estimate.text(),
+                "| Chunk-store pages      | 7          | configured page cache size           |");
+        assertContains(estimate.text(),
+                "| Chunk keys per page    | 2          | keys stored in one chunk-store page  |");
+        assertContains(estimate.text(),
+                "| Page overhead          | 64 B       | fixed overhead per chunk-store page  |");
+        assertContains(estimate.text(),
+                "| Key/value entry        | 228 B");
     }
 
     @Test
@@ -134,12 +128,12 @@ class IndexMemoryEstimatorTest {
         printReport("cached-segment-limit", estimate);
 
         assertEquals(155_550L, estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "│  ├─ All segments - 121.52 KiB"));
-        assertTrue(estimate.text().contains(
-                "│  │  ├─ One cached segment - 24.30 KiB"));
-        assertTrue(estimate.text().contains(
-                "5 segment cache slots"));
+        assertContains(estimate.text(),
+                "| All segments           | 121.52 KiB | cached segment slots: 5; cached      |");
+        assertContains(estimate.text(),
+                "| One cached segment     | 24.30 KiB");
+        assertContains(estimate.text(),
+                "| Cached segment slots   | 5          | multiplier for one cached segment    |");
     }
 
     @Test
@@ -154,16 +148,13 @@ class IndexMemoryEstimatorTest {
         printReport("route-count", estimate);
 
         assertEquals(93_430L, estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "│  │  └─ Segment routing map - 80 B"));
-        assertTrue(estimate.text().contains(
-                "│  │     ├─ Number of segment routes - 10"));
-        assertTrue(estimate.text().contains(
-                "│  │     └─ Key/segment-id entry - 8 B"));
-        assertDetailAlignsWithValue(estimate,
-                "│  │     └─ Key/segment-id entry - 8 B",
-                "key: 4 B");
-        assertTrue(estimate.text().contains("segment id: 4 B"));
+        assertContains(estimate.text(),
+                "| Segment routing map    | 80 B       | route count: 10; route count *       |");
+        assertContains(estimate.text(),
+                "| Segment routes         | 10         | route-map entries                    |");
+        assertContains(estimate.text(),
+                "| Key/segment-id entry   | 8 B        | key size + segment id size; key: 4   |");
+        assertContains(estimate.text(), "B; segment id: 4 B");
         assertFalse(estimate.text().contains("segment id: 16 B"));
         assertFalse(estimate.text().contains("route-map tree entry"));
     }
@@ -181,17 +172,13 @@ class IndexMemoryEstimatorTest {
         printReport("cache-key-limits", estimate);
 
         assertEquals(101_880L, estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "│  │  │  ├─ Delta cache - 4.45 KiB"));
-        assertTrue(estimate.text().contains(
-                "configured max number of keys in cache: 20"));
-        assertTrue(estimate.text().contains("key/value entry: 228 B"));
-        assertTrue(estimate.text().contains(
-                "│  └─ Maintenance overhead - 19.90 KiB"));
-        assertTrue(estimate.text().contains(
-                "max(25% of memory before maintenance = 79.59 KiB,"));
-        assertTrue(estimate.text().contains(
-                "one delta cache = 4.45 KiB)"));
+        assertContains(estimate.text(),
+                "| Delta cache            | 4.45 KiB   | cache key limit: 20; cache key limit |");
+        assertContains(estimate.text(), "key/value entry 228 B");
+        assertContains(estimate.text(),
+                "| Maintenance overhead   | 19.90 KiB  | max(25% of memory before maintenance |");
+        assertContains(estimate.text(),
+                "= 79.59 KiB, one delta cache = 4.45");
     }
 
     @Test
@@ -208,15 +195,15 @@ class IndexMemoryEstimatorTest {
 
         assertEquals(1_425_282_600L,
                 estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "├─ Total index memory - 1.33 GiB"));
-        assertTrue(estimate.text().contains(
-                "│  ├─ All segments - 1.06 GiB"));
-        assertTrue(estimate.text().contains(
-                "│  │  │  ├─ Delta cache - 108.72 MiB"));
-        assertTrue(estimate.text().contains(
-                "configured max number of keys in cache: 500,000"));
-        assertTrue(estimate.text().contains("key/value entry: 228 B"));
+        assertContains(estimate.text(),
+                "| Total index memory     | 1.33 GiB");
+        assertContains(estimate.text(),
+                "| All segments           | 1.06 GiB");
+        assertContains(estimate.text(),
+                "| Delta cache            | 108.72 MiB");
+        assertContains(estimate.text(),
+                "cache key limit: 500,000");
+        assertContains(estimate.text(), "key/value entry 228 B");
     }
 
     @Test
@@ -233,14 +220,18 @@ class IndexMemoryEstimatorTest {
 
         assertEquals(1_429_074_220L,
                 estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "├─ Total index memory - 1.33 GiB"));
-        assertTrue(estimate.text().contains(
-                "│  ├─ Chunk-store page cache - 1.06 GiB"));
-        assertTrue(estimate.text().contains("50,000 pages"));
-        assertTrue(estimate.text().contains("chunk keys per page: 100"));
-        assertTrue(estimate.text().contains("page overhead: 64 B"));
-        assertTrue(estimate.text().contains("key/value entry: 228 B"));
+        assertContains(estimate.text(),
+                "| Total index memory     | 1.33 GiB");
+        assertContains(estimate.text(),
+                "| Chunk-store page cache | 1.06 GiB");
+        assertContains(estimate.text(),
+                "| Chunk-store pages      | 50,000");
+        assertContains(estimate.text(),
+                "| Chunk keys per page    | 100");
+        assertContains(estimate.text(),
+                "| Page overhead          | 64 B");
+        assertContains(estimate.text(),
+                "| Key/value entry        | 228 B");
     }
 
     @Test
@@ -257,13 +248,14 @@ class IndexMemoryEstimatorTest {
         assertFalse(estimate.isComplete());
         assertTrue(estimate.totalEstimatedBytes().isEmpty());
         final String log = estimate.text();
-        assertTrue(log.contains("value: TypeDescriptorByteArray, unknown"));
-        assertTrue(log.contains(
-                "│  │  │  ├─ Delta cache - unknown"));
-        assertTrue(log.contains(
-                "reason: needs key and value descriptor estimates"));
-        assertTrue(log.contains("Bloom filter"));
-        assertTrue(log.contains("├─ Total index memory - unknown"));
+        assertContains(log, "value: TypeDescriptorByteArray,");
+        assertContains(log,
+                "| Delta cache            | unknown    | reason: needs key and value          |");
+        assertContains(log,
+                "reason: needs key and value");
+        assertContains(log, "Bloom filter");
+        assertContains(log,
+                "| Total index memory     | unknown    | reason: needs segment, page-cache,   |");
     }
 
     @Test
@@ -279,9 +271,9 @@ class IndexMemoryEstimatorTest {
 
         assertTrue(estimate.isComplete());
         assertTrue(estimate.totalEstimatedBytes().isPresent());
-        assertTrue(estimate.text().contains(
-                "├─ Key/value entry - 100 B"));
-        assertTrue(estimate.text().contains("overhead: 96 B"));
+        assertContains(estimate.text(),
+                "| Key/value entry        | 100 B");
+        assertContains(estimate.text(), "overhead: 96 B");
     }
 
     @Test
@@ -298,16 +290,12 @@ class IndexMemoryEstimatorTest {
 
         final String log = estimate.text();
         assertTrue(estimate.isComplete());
-        assertTrue(log.contains("│  │  │  ├─ Scarce index - 11.13 KiB"));
-        assertTrue(log.contains(
-                "│  │  │  │  └─ Key/position entry - 228 B"));
-        assertLineAppearsBefore(log, "├─ Key/value entry - 228 B",
-                "├─ Key/position entry - 228 B");
-        assertDetailAlignsWithValue(estimate,
-                "├─ Key/position entry - 228 B",
-                "key: TypeDescriptorShortString, about 128 B");
-        assertTrue(log.contains(
-                "integer position: TypeDescriptorInteger, about 4 B"));
+        assertContains(log, "| Scarce index           | 11.13 KiB");
+        assertContains(log, "| Key/position entry     | 228 B");
+        assertLineAppearsBefore(log, "| Key/value entry        | 228 B",
+                "| Key/position entry     | 228 B");
+        assertContains(log, "TypeDescriptorShortString, about 128");
+        assertContains(log, "integer position:");
     }
 
     private static <V> EffectiveIndexConfiguration<Integer, V> effectiveConfiguration(
@@ -396,23 +384,13 @@ class IndexMemoryEstimatorTest {
 
     private static void assertReadableLineLengths(
             final MemoryEstimateReport report) {
-        report.lines().forEach(line -> assertTrue(line.length() <= 100,
+        report.lines().forEach(line -> assertTrue(line.length() <= 80,
                 () -> "Report line is too long: " + line));
     }
 
-    private static void assertDetailAlignsWithValue(
-            final MemoryEstimateReport report, final String treeLine,
-            final String detail) {
-        final List<String> lines = report.lines();
-        final int lineIndex = lines.indexOf(treeLine);
-
-        assertTrue(lineIndex >= 0, () -> "Missing line: " + treeLine);
-        final String detailLine = lines.get(lineIndex + 1);
-        final int valueColumn = treeLine.indexOf(" - ") + " - ".length();
-
-        assertEquals(valueColumn, detailLine.indexOf(detail));
-        assertTrue(detailLine.substring(0, valueColumn).contains("│"),
-                () -> "Missing tree connection before detail: " + detailLine);
+    private static void assertContains(final String log,
+            final String expected) {
+        assertTrue(log.contains(expected), () -> "Missing text: " + expected);
     }
 
     private static void assertLineAppearsBefore(final String log,
