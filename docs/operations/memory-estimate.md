@@ -17,7 +17,15 @@ it as a sizing hint, then verify real usage with JVM and application monitoring.
 
 ## How to read the report
 
-The report puts the final estimate first and then expands the calculated areas:
+The report uses fixed-width text tables with three columns:
+
+- `Component`: short name for the calculated area, input, or constant.
+- `Estimate`: estimated memory or configured value.
+- `Description`: formula, input context, or reason why an estimate is unknown.
+
+Long descriptions wrap onto continuation rows so each report line stays within
+the fixed report width. The final estimate appears first, followed by the
+calculated memory areas:
 
 - `Total index memory`: all segments, chunk-store page cache, and maintenance
   overhead.
@@ -34,17 +42,16 @@ The report puts the final estimate first and then expands the calculated areas:
   used by key/value cache estimates.
 - `Key/position entry`: key size, integer position size, and fixed per-entry
   overhead used by scarce-index estimates.
-- `Formula constants`: fixed constants used by the estimator. This section is
-  shown for transparency and is not added separately to the total.
-- `Other requirements`: related settings reported for context but not included
-  in the total.
+- `Key/segment-id entry`: key size and segment id size used by the segment
+  routing map.
+- `Inputs and constants`: configuration values and fixed assumptions used by
+  the estimator. Values such as `Write-buffer keys` are reported for context
+  and are not added to the total.
 
-The tree keeps each detail line aligned under the value it explains. Area
-branches such as `All segments`, `One cached segment`, `Segment routing map`,
-and `Chunk-store page cache` show their configuration inputs below the memory
-area they affect. `Bloom filter` and `Scarce index` are shown as per-segment
-areas when they can contribute to loaded segment memory. `Scarce index` groups
-the maximum sparse-entry count calculation and the reused `Key/position entry`.
+Area rows such as `Delta cache`, `Chunk-store page cache`, and `Maintenance
+overhead` summarize the formula in the description column. Supporting rows in
+`Entry sizes` and `Inputs and constants` show the entry-size assumptions and
+configuration values used by those formulas.
 
 ## What the report uses
 
