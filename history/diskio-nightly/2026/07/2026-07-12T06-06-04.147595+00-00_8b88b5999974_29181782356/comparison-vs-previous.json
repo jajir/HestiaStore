@@ -1,0 +1,66 @@
+{
+  "baselineSha": "8b88b599997497df9b956d4be577a2b7424cedcb",
+  "candidateSha": "8b88b599997497df9b956d4be577a2b7424cedcb",
+  "failThresholdPct": 7.0,
+  "metrics": [
+    {
+      "baselineScore": 83.68479194017095,
+      "candidateScore": 89.085693,
+      "deltaPct": 6.453862087259937,
+      "displayName": "diskio-sequential-read-1k:readSequentialFile",
+      "key": "diskio-sequential-read-1k::readSequentialFile::primary",
+      "status": "better",
+      "unit": "ms/op"
+    },
+    {
+      "baselineScore": 55.06798010526315,
+      "candidateScore": 57.053683777777785,
+      "deltaPct": 3.6059133978020137,
+      "displayName": "diskio-sequential-read-32k:readSequentialFile",
+      "key": "diskio-sequential-read-32k::readSequentialFile::primary",
+      "status": "better",
+      "unit": "ms/op"
+    },
+    {
+      "baselineScore": 61.80989539215687,
+      "candidateScore": 61.35508805882353,
+      "deltaPct": -0.7358163776977463,
+      "displayName": "diskio-sequential-read-4k:readSequentialFile",
+      "key": "diskio-sequential-read-4k::readSequentialFile::primary",
+      "status": "neutral",
+      "unit": "ms/op"
+    },
+    {
+      "baselineScore": 39.67064826923076,
+      "candidateScore": 39.35902766666667,
+      "deltaPct": -0.785519310017903,
+      "displayName": "diskio-sequential-write-1k:writeSequentialFile",
+      "key": "diskio-sequential-write-1k::writeSequentialFile::primary",
+      "status": "neutral",
+      "unit": "ms/op"
+    },
+    {
+      "baselineScore": 25.757143277136752,
+      "candidateScore": 25.771843789102565,
+      "deltaPct": 0.05707353415571555,
+      "displayName": "diskio-sequential-write-32k:writeSequentialFile",
+      "key": "diskio-sequential-write-32k::writeSequentialFile::primary",
+      "status": "neutral",
+      "unit": "ms/op"
+    },
+    {
+      "baselineScore": 31.026002775252522,
+      "candidateScore": 31.708484947916663,
+      "deltaPct": 2.199710280463566,
+      "displayName": "diskio-sequential-write-4k:writeSequentialFile",
+      "key": "diskio-sequential-write-4k::writeSequentialFile::primary",
+      "status": "neutral",
+      "unit": "ms/op"
+    }
+  ],
+  "neutralThresholdPct": 3.0,
+  "newMetricCount": 0,
+  "profile": "diskio-nightly",
+  "removedMetricCount": 0,
+  "worseCount": 0
+}
