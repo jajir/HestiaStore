@@ -68,6 +68,29 @@ Open:
 
 - [http://127.0.0.1:8090/](http://127.0.0.1:8090/)
 
+## Start against running nodes
+
+Use `monitoring-console-web/scripts/start.sh` when the monitored stores are
+already running and each store exposes `monitoring-rest-json`.
+
+Pass one or more monitoring API base URLs. Use the base URL of each node, not
+the `/api/v1/report` path:
+
+```bash
+./monitoring-console-web/scripts/start.sh http://localhost:8091
+./monitoring-console-web/scripts/start.sh http://localhost:8091 http://localhost:8092
+```
+
+The script assigns the nodes as `node-1`, `node-2`, and so on, builds
+`monitoring-console-web`, and starts the web UI on
+[http://127.0.0.1:8090/](http://127.0.0.1:8090/).
+
+Override the web UI port with `WEB_PORT`:
+
+```bash
+WEB_PORT=18090 ./monitoring-console-web/scripts/start.sh http://localhost:8091
+```
+
 ## One-command local demo (direct mode)
 
 This command starts:
