@@ -1,0 +1,120 @@
+{
+  "baselineSha": "8b88b599997497df9b956d4be577a2b7424cedcb",
+  "candidateSha": "396256436abefd12881c219f7068f850abea1526",
+  "failThresholdPct": 7.0,
+  "metrics": [
+    {
+      "baselineScore": 2159817.64358942,
+      "candidateScore": 2027819.7721430834,
+      "deltaPct": -6.111528528258893,
+      "displayName": "segment-index-get-live:getHitSync",
+      "key": "segment-index-get-live::getHitSync::primary",
+      "status": "warning",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 2085400.1517347246,
+      "candidateScore": 2164161.578341803,
+      "deltaPct": 3.7768016148632815,
+      "displayName": "segment-index-get-live:getMissSync",
+      "key": "segment-index-get-live::getMissSync::primary",
+      "status": "better",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 1800506.235022371,
+      "candidateScore": 1838033.3754873283,
+      "deltaPct": 2.084254957578143,
+      "displayName": "segment-index-get-persisted:getHitSync",
+      "key": "segment-index-get-persisted::getHitSync::primary",
+      "status": "neutral",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 2001664.5746408273,
+      "candidateScore": 2072537.8350056869,
+      "deltaPct": 3.5407161251068695,
+      "displayName": "segment-index-get-persisted:getMissSync",
+      "key": "segment-index-get-persisted::getMissSync::primary",
+      "status": "better",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 2042816.0850644615,
+      "candidateScore": 2164252.8039145092,
+      "deltaPct": 5.944574244245577,
+      "displayName": "segment-index-hot-route-put:putHotRoute",
+      "key": "segment-index-hot-route-put::putHotRoute::primary",
+      "status": "better",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 1107865.236419653,
+      "candidateScore": 1101764.7484615303,
+      "deltaPct": -0.5506525304321321,
+      "displayName": "segment-index-hot-route-put:putThenGetHotRoute",
+      "key": "segment-index-hot-route-put::putThenGetHotRoute::primary",
+      "status": "neutral",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 462359.02514081,
+      "candidateScore": 441287.7400773693,
+      "deltaPct": -4.5573426531521655,
+      "displayName": "segment-index-mixed-drain:partitionedIngestMixed",
+      "key": "segment-index-mixed-drain::partitionedIngestMixed::primary",
+      "status": "warning",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 288180.63413081353,
+      "candidateScore": 271621.9452771011,
+      "deltaPct": -5.7459408761644735,
+      "displayName": "segment-index-mixed-drain:partitionedIngestMixed:getWorkload",
+      "key": "segment-index-mixed-drain::partitionedIngestMixed::secondary::getWorkload",
+      "status": "warning",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 174178.3910099964,
+      "candidateScore": 169665.79480026814,
+      "deltaPct": -2.590789927247226,
+      "displayName": "segment-index-mixed-drain:partitionedIngestMixed:putWorkload",
+      "key": "segment-index-mixed-drain::partitionedIngestMixed::secondary::putWorkload",
+      "status": "neutral",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 681248.3890439126,
+      "candidateScore": 545187.6040392475,
+      "deltaPct": -19.972272550342105,
+      "displayName": "segment-index-mixed-split-heavy:partitionedIngestMixed",
+      "key": "segment-index-mixed-split-heavy::partitionedIngestMixed::primary",
+      "status": "worse",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 665555.3733882052,
+      "candidateScore": 531767.8464046257,
+      "deltaPct": -20.101637269111777,
+      "displayName": "segment-index-mixed-split-heavy:partitionedIngestMixed:getWorkload",
+      "key": "segment-index-mixed-split-heavy::partitionedIngestMixed::secondary::getWorkload",
+      "status": "worse",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 15693.015655707553,
+      "candidateScore": 13419.757634621885,
+      "deltaPct": -14.485794642401215,
+      "displayName": "segment-index-mixed-split-heavy:partitionedIngestMixed:putWorkload",
+      "key": "segment-index-mixed-split-heavy::partitionedIngestMixed::secondary::putWorkload",
+      "status": "worse",
+      "unit": "ops/s"
+    }
+  ],
+  "neutralThresholdPct": 3.0,
+  "newMetricCount": 0,
+  "profile": "segment-index-pr-smoke",
+  "removedMetricCount": 0,
+  "worseCount": 3
+}
