@@ -1083,8 +1083,8 @@
         "317": {
           "channel": "pr-317",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-317/latest.json",
-          "sha": "396256436abefd12881c219f7068f850abea1526",
-          "timestampUtc": "2026-07-15T14:48:05.778734+00:00"
+          "sha": "957ca600540b53220809c6159850ededfb429366",
+          "timestampUtc": "2026-07-16T05:41:01.687880+00:00"
         },
         "318": {
           "channel": "pr-318",
