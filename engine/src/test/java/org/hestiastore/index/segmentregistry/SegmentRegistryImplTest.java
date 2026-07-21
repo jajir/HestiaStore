@@ -88,6 +88,35 @@ class SegmentRegistryImplTest {
     }
 
     @Test
+    void blockingPointOperationUsesSingleRegistryLookup() {
+        final Segment<Integer, String> created = registry.tryCreateSegment()
+                .getValue();
+        assertSame(OperationStatus.OK, created.put(1, "one").getStatus());
+        final SegmentRegistryCacheStats before = registry.metricsSnapshot();
+
+        final String value = registry.loadSegment(created.getId()).get(1);
+
+        final SegmentRegistryCacheStats after = registry.metricsSnapshot();
+        assertEquals("one", value);
+        assertEquals(before.hitCount() + 1L, after.hitCount());
+    }
+
+    @Test
+    void blockingHandleRefreshesAfterSegmentCloses() {
+        final BlockingSegment<Integer, String> handle = registry
+                .createSegment();
+        final Segment<Integer, String> first = handle.getSegment();
+        closeAndAssertClosed(first);
+
+        final BlockingSegment<Integer, String> reloaded = registry
+                .loadSegment(handle.getId());
+
+        assertSame(handle, reloaded);
+        assertNotSame(first, reloaded.getSegment());
+        assertSame(SegmentState.READY, reloaded.getRuntime().getState());
+    }
+
+    @Test
     void registryStartupTransitionsGateToReady() {
         final SegmentRegistryStateMachine gate = readGate(registry);
         assertSame(SegmentRegistryState.READY, gate.getState());

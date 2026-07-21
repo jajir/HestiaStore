@@ -1,20 +1,23 @@
 package org.hestiastore.index.segmentregistry;
 
-import org.hestiastore.index.BusyRetryPolicy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
+import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +30,7 @@ class DefaultBlockingSegmentTest {
     private static final SegmentId SEGMENT_ID = SegmentId.of(7);
 
     @Mock
-    private SegmentRegistry<Integer, String> segmentRegistry;
+    private BlockingSegmentRegistryAdapter<Integer, String> segmentRegistry;
 
     @Mock
     private Segment<Integer, String> segment;
@@ -44,26 +47,19 @@ class DefaultBlockingSegmentTest {
 
     @Test
     void getRetriesBusyStatusUntilSuccessful() {
-        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
-        when(segmentHandle.getSegment()).thenReturn(segment);
         when(segment.get(11)).thenReturn(OperationResult.busy())
                 .thenReturn(OperationResult.ok("value"));
 
         assertEquals("value", handle.get(11));
-        verify(segmentRegistry, times(2)).loadSegment(SEGMENT_ID);
         verify(segment, times(2)).get(11);
+        verifyNoInteractions(segmentRegistry);
     }
 
     @Test
     void putRetriesClosedStatusUntilSegmentReloads() {
         final Segment<Integer, String> reloadedSegment = mockSegment();
-        final BlockingSegment<Integer, String> firstHandle = mockBlockingSegment();
-        final BlockingSegment<Integer, String> secondHandle = mockBlockingSegment();
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(firstHandle)
-                .thenReturn(secondHandle);
-        when(firstHandle.getSegment()).thenReturn(segment);
-        when(secondHandle.getSegment()).thenReturn(reloadedSegment);
+        when(segmentRegistry.loadSegment(SEGMENT_ID))
+                .thenReturn(reloadedSegment);
         when(segment.put(1, "one")).thenReturn(OperationResult.closed());
         when(reloadedSegment.put(1, "one")).thenReturn(OperationResult.ok());
 
@@ -71,29 +67,24 @@ class DefaultBlockingSegmentTest {
 
         verify(segment).put(1, "one");
         verify(reloadedSegment).put(1, "one");
+        verify(segmentRegistry).loadSegment(SEGMENT_ID);
     }
 
     @Test
     void putRetriesWriteCacheFullStatusWhenMaintenanceEnabled() {
         handle = newHandle(true);
-        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
-        when(segmentHandle.getSegment()).thenReturn(segment);
         when(segment.put(1, "one"))
                 .thenReturn(OperationResult.writeCacheFull())
                 .thenReturn(OperationResult.ok());
 
         handle.put(1, "one");
 
-        verify(segmentRegistry, times(2)).loadSegment(SEGMENT_ID);
         verify(segment, times(2)).put(1, "one");
+        verifyNoInteractions(segmentRegistry);
     }
 
     @Test
     void putThrowsImmediatelyWhenWriteCacheFullStatusReturnedAndMaintenanceDisabled() {
-        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
-        when(segmentHandle.getSegment()).thenReturn(segment);
         when(segment.put(1, "one")).thenReturn(OperationResult.writeCacheFull());
 
         final IndexException exception = assertThrows(IndexException.class,
@@ -102,16 +93,13 @@ class DefaultBlockingSegmentTest {
         assertEquals(
                 "Write cache is full for segment 'segment-00007' and automatic maintenance is disabled.",
                 exception.getMessage());
-        verify(segmentRegistry).loadSegment(SEGMENT_ID);
         verify(segment).put(1, "one");
+        verifyNoInteractions(segmentRegistry);
     }
 
     @Test
     void putTimesOutWhenWriteCacheFullStatusPersistsAndMaintenanceEnabled() {
         handle = newHandle(new BusyRetryPolicy(1, 5), true);
-        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
-        when(segmentHandle.getSegment()).thenReturn(segment);
         when(segment.put(1, "one"))
                 .thenReturn(OperationResult.writeCacheFull());
 
@@ -121,27 +109,51 @@ class DefaultBlockingSegmentTest {
         assertTrue(exception.getMessage().contains("timed out"));
         assertFalse(exception.getMessage().contains(
                 "automatic maintenance is disabled"));
+        verifyNoInteractions(segmentRegistry);
     }
 
     @Test
     void compactThrowsOnErrorStatus() {
-        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
-        when(segmentHandle.getSegment()).thenReturn(segment);
         when(segment.compact()).thenReturn(OperationResult.error());
 
         assertThrows(IndexException.class, () -> handle.compact());
+        verifyNoInteractions(segmentRegistry);
     }
 
     @Test
     void updateRuntimeLimitsDelegatesToLoadedSegment() {
-        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
-        when(segmentHandle.getSegment()).thenReturn(segment);
+        when(segment.getState()).thenReturn(SegmentState.READY);
 
         handle.getRuntime().updateRuntimeLimits(runtimeLimits);
 
         verify(segment).applyRuntimeLimits(runtimeLimits);
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void tryGetReloadsClosedSegmentBeforeOperation() {
+        final Segment<Integer, String> reloadedSegment = mockSegment();
+        when(segment.getState()).thenReturn(SegmentState.CLOSED);
+        when(segmentRegistry.loadSegment(SEGMENT_ID))
+                .thenReturn(reloadedSegment);
+        when(reloadedSegment.get(11)).thenReturn(OperationResult.ok("value"));
+
+        final OperationResult<String> result = handle.tryGet(11);
+
+        assertEquals("value", result.getValue());
+        verify(segmentRegistry).loadSegment(SEGMENT_ID);
+    }
+
+    @Test
+    void updateSegmentDoesNotReplaceLiveGeneration() {
+        final Segment<Integer, String> staleSegment = mockSegment();
+        when(segment.getState()).thenReturn(SegmentState.READY);
+
+        ((DefaultBlockingSegment<Integer, String>) handle)
+                .updateSegment(staleSegment);
+
+        assertSame(segment, handle.getSegment());
+        verifyNoInteractions(segmentRegistry);
     }
 
     private BlockingSegment<Integer, String> newHandle(
@@ -153,14 +165,9 @@ class DefaultBlockingSegmentTest {
     private BlockingSegment<Integer, String> newHandle(
             final BusyRetryPolicy retryPolicy,
             final boolean automaticMaintenanceEnabled) {
-        return new DefaultBlockingSegment<>(SEGMENT_ID,
-                () -> segmentRegistry.loadSegment(SEGMENT_ID).getSegment(),
+        return new DefaultBlockingSegment<>(SEGMENT_ID, segment,
+                segmentRegistry,
                 retryPolicy, automaticMaintenanceEnabled);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <K, V> BlockingSegment<K, V> mockBlockingSegment() {
-        return mock(BlockingSegment.class);
     }
 
     @SuppressWarnings("unchecked")

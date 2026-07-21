@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
@@ -200,6 +201,7 @@ class SegmentIndexSessionRetryTest {
             final Segment<K, V> segment) {
         final Object cache = readCache(registry);
         putReadyEntry(cache, segmentId, segment);
+        removeBlockingSegment(registry, segmentId);
     }
 
     @SuppressWarnings("unchecked")
@@ -223,6 +225,19 @@ class SegmentIndexSessionRetryTest {
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read registry cache for test", ex);
+        }
+    }
+
+    private static void removeBlockingSegment(final Object registry,
+            final SegmentId segmentId) {
+        try {
+            final Field field = registry.getClass()
+                    .getDeclaredField("blockingSegments");
+            field.setAccessible(true);
+            ((Map<?, ?>) field.get(registry)).remove(segmentId);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to update blocking segment cache for test", ex);
         }
     }
 

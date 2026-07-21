@@ -1,18 +1,28 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
+
 /**
  * Tracks foreground segment-index operations and waits for them during close.
  *
  * <p>
- * The gate tracks synchronous operations while they execute and exposes a wait
- * point used by close coordination. Lifecycle validation remains the caller's
- * responsibility and should be performed inside the tracked operation.
+ * Foreground admission uses an atomic in-flight counter so ordinary operations
+ * do not contend on the close-side drain mechanism. Lifecycle validation
+ * remains the caller's responsibility and should be performed inside the
+ * tracked operation. Callers must enter the closing state before waiting for
+ * the counter to drain.
  * </p>
  */
 public final class SessionOperationGate {
 
-    private final Object operationMonitor = new Object();
-    private int syncOperationsInFlight;
+    private static final long INITIAL_WAIT_NANOS = TimeUnit.MICROSECONDS
+            .toNanos(50);
+    private static final long MAX_WAIT_NANOS = TimeUnit.MILLISECONDS
+            .toNanos(1);
+
+    private final AtomicInteger syncOperationsInFlight = new AtomicInteger();
     private final ThreadLocal<Integer> syncOperationDepth = ThreadLocal
             .withInitial(() -> 0);
 
@@ -58,24 +68,20 @@ public final class SessionOperationGate {
     }
 
     /**
-     * Waits until currently tracked foreground operations finish.
+     * Waits with bounded backoff until tracked foreground operations finish.
+     * The caller must stop admitting operational work before invoking this
+     * method.
      */
     void awaitOperationDrain() {
         if (isInSyncOperation()) {
             throw new IllegalStateException(
                     "close() must not be called from an index operation.");
         }
-        synchronized (operationMonitor) {
-            while (syncOperationsInFlight > 0) {
-                try {
-                    operationMonitor.wait();
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException(
-                            "Interrupted while waiting for tracked operations to finish.",
-                            e);
-                }
-            }
+        long waitNanos = INITIAL_WAIT_NANOS;
+        while (syncOperationsInFlight.get() > 0) {
+            LockSupport.parkNanos(waitNanos);
+            throwIfInterrupted();
+            waitNanos = Math.min(MAX_WAIT_NANOS, waitNanos << 1);
         }
     }
 
@@ -84,15 +90,19 @@ public final class SessionOperationGate {
     }
 
     private void incrementSyncOperations() {
-        synchronized (operationMonitor) {
-            syncOperationsInFlight++;
-        }
+        syncOperationsInFlight.incrementAndGet();
     }
 
     private void decrementSyncOperations() {
-        synchronized (operationMonitor) {
-            syncOperationsInFlight--;
-            operationMonitor.notifyAll();
+        syncOperationsInFlight.decrementAndGet();
+    }
+
+    private static void throwIfInterrupted() {
+        if (Thread.interrupted()) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "Interrupted while waiting for tracked operations to finish.",
+                    new InterruptedException());
         }
     }
 }
