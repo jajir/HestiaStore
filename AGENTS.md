@@ -41,6 +41,11 @@
 - Keep packages under `org.hestiastore.index...`.
 - Avoid inner enums and exception classes when a separate file is clearer.
 - Avoid non-trivial inner classes when a separate file is clearer; if an inner class grows beyond roughly 20 lines or carries its own state and behavior, prefer a dedicated top-level class.
+- WAL package structure (`engine/src/main/java/org/hestiastore/index/segmentindex/wal`):
+  - Default to one top-level type per file. A nested type is allowed only when it is `private static`, stateless, no more than 10 lines, and used solely as a local implementation detail of its enclosing type.
+  - A nested type with fields, lifecycle, parsing, persistence, concurrency, or reusable behavior belongs in a descriptive `Wal*` top-level class; keep it package-private and `final` unless the public API requires otherwise.
+  - When changing an existing qualifying nested type, extract it if the extraction stays within the task. Do not extract unrelated types opportunistically, and do not break existing public nested APIs such as `WalRuntime.Operation`, `WalRuntime.ReplayRecord`, or `WalRuntime.RecoveryResult` merely to flatten the file.
+  - Extraction must reduce the enclosing class's responsibility. Do not add an interface, factory, adapter, wrapper, or configuration option solely to move a nested type into another file.
 - Prefer clear, descriptive class names such as `*Adapter`, `*Cache`, and `*Descriptor`.
 - Javadoc is mandatory before finishing a Java change for every new or changed
   public type, public constructor, public method, and non-trivial

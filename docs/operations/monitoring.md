@@ -63,12 +63,16 @@ Use these fields whenever `wal().enabled()` is `true`:
   - `wal().appendCount()`
   - `wal().appendBytes()`
 - Sync health:
-  - `wal().syncCount()`
+  - `wal().syncCount()` (successful physical sync batches, not appended records)
   - `wal().syncFailureCount()`
   - `wal().syncAverageNanos()`
   - `wal().syncMaxNanos()`
   - `wal().syncAverageBatchBytes()`
   - `wal().syncBatchBytesMax()`
+
+For concurrent `SYNC` writers, a healthy batching effect appears as append
+count growing faster than sync count and a larger average sync batch. A batch
+still acknowledges no member until its physical sync succeeds.
 - Recovery/corruption:
   - `getWalCorruptionCount()`
   - `getWalTruncationCount()`

@@ -1,11 +1,10 @@
 package org.hestiastore.index.segmentindex.wal;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -24,7 +23,20 @@ final class WalRuntimeTestSupport {
                 requireEnabledWal(effective(wal));
         return createRuntime(resolvedWal,
                 Vldtn.requireNonNull(storage, "storage"), keyDescriptor,
-                valueDescriptor);
+                valueDescriptor, new ArrayBlockingQueue<>(8192));
+    }
+
+    static <K, V> WalRuntime<K, V> openWithStorageAndQueue(
+            final IndexWalConfiguration wal, final WalStorage storage,
+            final TypeDescriptor<K> keyDescriptor,
+            final TypeDescriptor<V> valueDescriptor,
+            final BlockingQueue<WalAppendTask<K, V>> appendQueue) {
+        final IndexWalConfiguration resolvedWal =
+                requireEnabledWal(effective(wal));
+        return createRuntime(resolvedWal,
+                Vldtn.requireNonNull(storage, "storage"), keyDescriptor,
+                valueDescriptor,
+                Vldtn.requireNonNull(appendQueue, "appendQueue"));
     }
 
     static IndexWalConfiguration effective(
@@ -44,7 +56,8 @@ final class WalRuntimeTestSupport {
     private static <K, V> WalRuntime<K, V> createRuntime(
             final IndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
-            final TypeDescriptor<V> valueDescriptor) {
+            final TypeDescriptor<V> valueDescriptor,
+            final BlockingQueue<WalAppendTask<K, V>> appendQueue) {
         final Object monitor = new Object();
         final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
         final AtomicBoolean closed = new AtomicBoolean();
@@ -60,7 +73,7 @@ final class WalRuntimeTestSupport {
         final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(wal,
                 storage, metadataCatalog);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage,
-                metrics, monitor, segmentCatalog, closed);
+                metrics, monitor, segmentCatalog);
         final WalWriter<K, V> writer = new WalWriter<>(storage,
                 recordCodec, segmentCatalog, metrics);
         final WalRecoveryManager<K, V> recoveryManager =
@@ -68,45 +81,19 @@ final class WalRuntimeTestSupport {
                         recordCodec, segmentCatalog, metrics);
         final WalRuntime<K, V> runtime = new WalRuntime<>(monitor, metrics,
                 closed, storage, metadataCatalog, segmentCatalog, syncPolicy,
-                writer, recoveryManager, newGroupSyncExecutor(wal, syncPolicy),
-                "hestia-wal-runtime-test-wal-append");
+                writer, recoveryManager, appendQueue,
+                appendThreadFactory());
         metadataCatalog.ensureFormatMarker();
         return runtime;
     }
 
-    private static ScheduledExecutorService newGroupSyncExecutor(
-            final IndexWalConfiguration wal,
-            final WalSyncPolicy syncPolicy) {
-        if (!wal.isGroupSyncDurabilityMode()
-                || wal.getGroupSyncDelayMillis() <= 0) {
-            return null;
-        }
-        final ScheduledExecutorService executor =
-                Executors.newSingleThreadScheduledExecutor(
-                        new NamedDaemonThreadFactory(
-                                "hestia-wal-runtime-test-wal-group-sync"));
-        executor.scheduleWithFixedDelay(syncPolicy::syncGroupPendingSafely,
-                wal.getGroupSyncDelayMillis(), wal.getGroupSyncDelayMillis(),
-                TimeUnit.MILLISECONDS);
-        return executor;
-    }
-
-    private static final class NamedDaemonThreadFactory
-            implements ThreadFactory {
-
-        private final String namePrefix;
-        private final AtomicLong sequence = new AtomicLong(0L);
-
-        private NamedDaemonThreadFactory(final String namePrefix) {
-            this.namePrefix = Vldtn.requireNonNull(namePrefix, "namePrefix");
-        }
-
-        @Override
-        public Thread newThread(final Runnable runnable) {
-            final Thread thread = new Thread(runnable,
-                    namePrefix + "-" + sequence.incrementAndGet());
+    private static ThreadFactory appendThreadFactory() {
+        final ThreadFactory delegate = Executors.defaultThreadFactory();
+        return runnable -> {
+            final Thread thread = delegate.newThread(runnable);
+            thread.setName("hestia-wal-runtime-test-wal-append-1");
             thread.setDaemon(true);
             return thread;
-        }
+        };
     }
 }

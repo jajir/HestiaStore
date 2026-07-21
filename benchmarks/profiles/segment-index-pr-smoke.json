@@ -63,6 +63,24 @@
         "-f", "1",
         "-r", "1s",
         "-w", "1s",
+        "-t", "1",
+        "-p", "snappy=true",
+        "-p", "walMode=sync",
+        "-p", "seededKeyCount=25000",
+        "-p", "valueLength=64",
+        "-p", "flushBatchSize=256"
+      ]
+    },
+    {
+      "label": "segment-index-persisted-mutation-concurrent",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-t", "16",
         "-p", "snappy=true",
         "-p", "walMode=sync",
         "-p", "seededKeyCount=25000",
