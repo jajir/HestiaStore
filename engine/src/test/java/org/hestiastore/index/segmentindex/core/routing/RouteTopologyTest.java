@@ -34,7 +34,7 @@ class RouteTopologyTest {
     void setUp() {
         keyToSegmentMap = new PersistentSegmentRouteMap<>(new MemDirectory(),
                 new TypeDescriptorInteger());
-        executor = Executors.newSingleThreadExecutor();
+        executor = Executors.newFixedThreadPool(4);
     }
 
     @AfterEach
@@ -64,7 +64,11 @@ class RouteTopologyTest {
     void drainWaitsForInflightLeaseAndRejectsNewLease() throws Exception {
         keyToSegmentMap.extendMaxKeyIfNeeded(100);
         final RouteTopology<Integer> topology = newTopology();
-        final RouteTopology.RouteLease lease = topology
+        final RouteTopology.RouteLease firstLease = topology
+                .tryAcquire(SegmentId.of(0), keyToSegmentMap.snapshot()
+                        .version())
+                .lease();
+        final RouteTopology.RouteLease secondLease = topology
                 .tryAcquire(SegmentId.of(0), keyToSegmentMap.snapshot()
                         .version())
                 .lease();
@@ -82,11 +86,54 @@ class RouteTopologyTest {
         assertTrue(topology.tryAcquire(SegmentId.of(0),
                 keyToSegmentMap.snapshot().version()).isRouteUnavailable());
 
-        lease.close();
+        firstLease.close();
+        assertFalse(waitFuture.isDone());
+        secondLease.close();
 
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
             waitFuture.get(5, TimeUnit.SECONDS);
         });
+    }
+
+    @Test
+    void acquireAndDrainRaceLeavesRouteUnavailableAfterDrainWins()
+            throws Exception {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final RouteTopology<Integer> topology = newTopology();
+        final SegmentId segmentId = SegmentId.of(0);
+        final long version = keyToSegmentMap.snapshot().version();
+        final CountDownLatch ready = new CountDownLatch(2);
+        final CountDownLatch start = new CountDownLatch(1);
+
+        final Future<RouteTopology.RouteLeaseResult> acquireFuture = executor
+                .submit(() -> {
+                    ready.countDown();
+                    start.await();
+                    return topology.tryAcquire(segmentId, version);
+                });
+        final Future<RouteTopology.RouteDrain> drainFuture = executor
+                .submit(() -> {
+                    ready.countDown();
+                    start.await();
+                    return topology.tryBeginDrain(segmentId).orElseThrow();
+                });
+
+        assertTrue(ready.await(5, TimeUnit.SECONDS));
+        start.countDown();
+        final RouteTopology.RouteLeaseResult acquire = acquireFuture.get(5,
+                TimeUnit.SECONDS);
+        final RouteTopology.RouteDrain drain = drainFuture.get(5,
+                TimeUnit.SECONDS);
+
+        assertTrue(topology.tryAcquire(segmentId, version)
+                .isRouteUnavailable());
+        if (acquire.isAcquired()) {
+            acquire.lease().close();
+        } else {
+            assertTrue(acquire.isRouteUnavailable());
+        }
+        assertTimeoutPreemptively(Duration.ofSeconds(5), drain::awaitDrained);
+        drain.abort();
     }
 
     @Test
@@ -112,6 +159,97 @@ class RouteTopologyTest {
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
             waitFuture.get(5, TimeUnit.SECONDS);
         });
+    }
+
+    @Test
+    void routeDrainDoesNotBlockAnotherRoute() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final RouteTopology<Integer> topology = newTopology();
+        applySplitPlan();
+        topology.reconcile(keyToSegmentMap.snapshot());
+        final long version = keyToSegmentMap.snapshot().version();
+        final RouteTopology.RouteLease lower = topology
+                .tryAcquire(SegmentId.of(1), version).lease();
+        final RouteTopology.RouteDrain drain = topology
+                .tryBeginDrain(SegmentId.of(1)).orElseThrow();
+
+        try (RouteTopology.RouteLease upper = topology
+                .tryAcquire(SegmentId.of(2), version).lease()) {
+            assertEquals(SegmentId.of(2), upper.segmentId());
+            assertTrue(topology.tryAcquire(SegmentId.of(1), version)
+                    .isRouteUnavailable());
+        } finally {
+            lower.close();
+        }
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), drain::awaitDrained);
+        drain.abort();
+    }
+
+    @Test
+    void reconcileRetainsRetiredLeaseForGlobalDrain() throws Exception {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final RouteTopology<Integer> topology = newTopology();
+        final RouteTopology.RouteLease parent = topology
+                .tryAcquire(SegmentId.of(0), keyToSegmentMap.snapshot()
+                        .version())
+                .lease();
+        applySplitPlan();
+        topology.reconcile(keyToSegmentMap.snapshot());
+        final CountDownLatch waiting = new CountDownLatch(1);
+
+        final Future<?> waitFuture = executor.submit(() -> {
+            waiting.countDown();
+            topology.drain();
+        });
+
+        assertTrue(waiting.await(5, TimeUnit.SECONDS));
+        assertFalse(waitFuture.isDone());
+        parent.close();
+        assertTimeoutPreemptively(Duration.ofSeconds(5),
+                () -> waitFuture.get(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void abortDrainAllowsAnotherDrainCycle() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final RouteTopology<Integer> topology = newTopology();
+        final SegmentId segmentId = SegmentId.of(0);
+
+        topology.tryBeginDrain(segmentId).orElseThrow().abort();
+
+        try (RouteTopology.RouteLease lease = topology
+                .tryAcquire(segmentId, keyToSegmentMap.snapshot().version())
+                .lease()) {
+            assertEquals(segmentId, lease.segmentId());
+        }
+        final RouteTopology.RouteDrain secondDrain = topology
+                .tryBeginDrain(segmentId).orElseThrow();
+        secondDrain.awaitDrained();
+        secondDrain.abort();
+        try (RouteTopology.RouteLease lease = topology.tryAcquire(segmentId,
+                keyToSegmentMap.snapshot().version()).lease()) {
+            assertEquals(segmentId, lease.segmentId());
+        }
+    }
+
+    @Test
+    void closingLeaseConcurrentlyIsIdempotent() throws Exception {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final RouteTopology<Integer> topology = newTopology();
+        final long version = keyToSegmentMap.snapshot().version();
+        final RouteTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(0), version).lease();
+
+        final Future<?> firstClose = executor.submit(lease::close);
+        final Future<?> secondClose = executor.submit(lease::close);
+
+        firstClose.get(5, TimeUnit.SECONDS);
+        secondClose.get(5, TimeUnit.SECONDS);
+        try (RouteTopology.RouteLease nextLease = topology
+                .tryAcquire(SegmentId.of(0), version).lease()) {
+            assertEquals(SegmentId.of(0), nextLease.segmentId());
+        }
     }
 
     @Test
@@ -165,6 +303,45 @@ class RouteTopologyTest {
         assertEquals(newerSnapshot.version(), topology.version());
         assertTrue(topology.tryAcquire(SegmentId.of(0),
                 olderSnapshot.version()).isStaleTopology());
+        assertTrue(topology.tryAcquire(SegmentId.of(0),
+                newerSnapshot.version()).isRouteUnavailable());
+        try (RouteTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(1), newerSnapshot.version())
+                .lease()) {
+            assertEquals(SegmentId.of(1), lease.segmentId());
+        }
+    }
+
+    @Test
+    void concurrentReconcileKeepsNewestTopology() throws Exception {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final RouteMapSnapshot<Integer> olderSnapshot = keyToSegmentMap.snapshot();
+        final RouteTopology<Integer> topology = RouteTopology.create(
+                olderSnapshot, 1, 1000);
+        applySplitPlan();
+        final RouteMapSnapshot<Integer> newerSnapshot = keyToSegmentMap.snapshot();
+        final CountDownLatch ready = new CountDownLatch(2);
+        final CountDownLatch start = new CountDownLatch(1);
+
+        final Future<?> olderReconcile = executor.submit(() -> {
+            ready.countDown();
+            start.await();
+            topology.reconcile(olderSnapshot);
+            return null;
+        });
+        final Future<?> newerReconcile = executor.submit(() -> {
+            ready.countDown();
+            start.await();
+            topology.reconcile(newerSnapshot);
+            return null;
+        });
+
+        assertTrue(ready.await(5, TimeUnit.SECONDS));
+        start.countDown();
+        olderReconcile.get(5, TimeUnit.SECONDS);
+        newerReconcile.get(5, TimeUnit.SECONDS);
+
+        assertEquals(newerSnapshot.version(), topology.version());
         assertTrue(topology.tryAcquire(SegmentId.of(0),
                 newerSnapshot.version()).isRouteUnavailable());
         try (RouteTopology.RouteLease lease = topology

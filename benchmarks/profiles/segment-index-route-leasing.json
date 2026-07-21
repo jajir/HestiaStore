@@ -1,0 +1,36 @@
+{
+  "profile": "segment-index-route-leasing",
+  "description": "Focused steady-state RouteTopology lease scaling for one hot route and distributed routes.",
+  "benchmarks": [
+    {
+      "label": "route-lease-1-route-1-thread",
+      "include": "org.hestiastore.benchmark.segmentindex.RouteTopologyLeaseBenchmark",
+      "args": ["-wi", "3", "-i", "5", "-f", "3", "-w", "1s", "-r", "1s", "-t", "1", "-p", "routeCount=1", "-prof", "gc"]
+    },
+    {
+      "label": "route-lease-1-route-10-threads",
+      "include": "org.hestiastore.benchmark.segmentindex.RouteTopologyLeaseBenchmark",
+      "args": ["-wi", "3", "-i", "5", "-f", "3", "-w", "1s", "-r", "1s", "-t", "10", "-p", "routeCount=1", "-prof", "gc"]
+    },
+    {
+      "label": "route-lease-1-route-40-threads",
+      "include": "org.hestiastore.benchmark.segmentindex.RouteTopologyLeaseBenchmark",
+      "args": ["-wi", "3", "-i", "5", "-f", "3", "-w", "1s", "-r", "1s", "-t", "40", "-p", "routeCount=1", "-prof", "gc"]
+    },
+    {
+      "label": "route-lease-64-routes-1-thread",
+      "include": "org.hestiastore.benchmark.segmentindex.RouteTopologyLeaseBenchmark",
+      "args": ["-wi", "3", "-i", "5", "-f", "3", "-w", "1s", "-r", "1s", "-t", "1", "-p", "routeCount=64", "-prof", "gc"]
+    },
+    {
+      "label": "route-lease-64-routes-10-threads",
+      "include": "org.hestiastore.benchmark.segmentindex.RouteTopologyLeaseBenchmark",
+      "args": ["-wi", "3", "-i", "5", "-f", "3", "-w", "1s", "-r", "1s", "-t", "10", "-p", "routeCount=64", "-prof", "gc"]
+    },
+    {
+      "label": "route-lease-64-routes-40-threads",
+      "include": "org.hestiastore.benchmark.segmentindex.RouteTopologyLeaseBenchmark",
+      "args": ["-wi", "3", "-i", "5", "-f", "3", "-w", "1s", "-r", "1s", "-t", "40", "-p", "routeCount=64", "-prof", "gc"]
+    }
+  ]
+}
