@@ -27,7 +27,8 @@ Both SegmentIndex profiles currently include:
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
 - `SegmentIndexGetBenchmark` with `readPathMode=live`
 - `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=hot`
-- `SegmentIndexPersistedMutationBenchmark` for persisted `put`/`delete`
+- `SegmentIndexPersistedMutationBenchmark` for persisted `put`/`delete` at one
+  writer and 16 concurrent writers
 - `SegmentIndexHotRoutePutBenchmark` (20-thread hot `put` + `putThenGet`)
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=drainOnly`
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=splitHeavy`

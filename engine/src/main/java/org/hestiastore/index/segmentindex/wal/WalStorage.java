@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.wal;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 /**
  * Internal filesystem abstraction used by WAL runtime.
@@ -28,7 +28,12 @@ interface WalStorage extends AutoCloseable {
 
     void rename(String currentFileName, String newFileName);
 
-    Stream<String> listFileNames();
+    /**
+     * Returns a snapshot of file names currently in WAL storage.
+     *
+     * @return file-name snapshot
+     */
+    List<String> listFileNames();
 
     /**
      * Persists buffered data/metadata for the given file to stable storage.
@@ -40,7 +45,9 @@ interface WalStorage extends AutoCloseable {
      *
      * @param fileName file to sync
      */
-    void sync(String fileName);
+    default void sync(final String fileName) {
+        // Default no-op for storage without fsync support.
+    }
 
     /**
      * Persists WAL directory metadata changes (create/rename/delete) to stable
@@ -51,7 +58,9 @@ interface WalStorage extends AutoCloseable {
      * implement this as a no-op.
      * </p>
      */
-    void syncMetadata();
+    default void syncMetadata() {
+        // Default no-op for storage without metadata fsync support.
+    }
 
     @Override
     default void close() {

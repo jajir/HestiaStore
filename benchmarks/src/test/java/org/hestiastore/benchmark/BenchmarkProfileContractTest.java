@@ -32,6 +32,7 @@ class BenchmarkProfileContractTest {
             "segment-index-get-live",
             "segment-index-get-multisegment-hot",
             "segment-index-persisted-mutation",
+            "segment-index-persisted-mutation-concurrent",
             "segment-index-hot-route-put",
             "segment-index-mixed-drain",
             "segment-index-mixed-split-heavy");
@@ -41,6 +42,7 @@ class BenchmarkProfileContractTest {
             "segment-index-get-multisegment-hot",
             "segment-index-get-multisegment-cold",
             "segment-index-persisted-mutation",
+            "segment-index-persisted-mutation-concurrent",
             "segment-index-lifecycle",
             "segment-index-hot-route-put",
             "segment-index-mixed-drain",
@@ -135,6 +137,13 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-persisted-mutation"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
                 Map.of("walMode", "sync"));
+        assertThreadCount(byLabel.get("segment-index-persisted-mutation"), 1);
+        assertEntry(byLabel.get("segment-index-persisted-mutation-concurrent"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+                Map.of("walMode", "sync"));
+        assertThreadCount(
+                byLabel.get("segment-index-persisted-mutation-concurrent"),
+                16);
         assertEntry(byLabel.get("segment-index-hot-route-put"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
                 Map.of());
@@ -172,6 +181,13 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-persisted-mutation"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
                 Map.of("walMode", "sync"));
+        assertThreadCount(byLabel.get("segment-index-persisted-mutation"), 1);
+        assertEntry(byLabel.get("segment-index-persisted-mutation-concurrent"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+                Map.of("walMode", "sync"));
+        assertThreadCount(
+                byLabel.get("segment-index-persisted-mutation-concurrent"),
+                16);
         assertEntry(byLabel.get("segment-index-lifecycle"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark",
                 Map.of("walMode", "sync"));
@@ -233,6 +249,17 @@ class BenchmarkProfileContractTest {
                     () -> "Missing value " + required.getValue() + " for "
                             + required.getKey() + " in " + entry.label());
         }
+    }
+
+    private void assertThreadCount(final BenchmarkEntry entry,
+            final int expectedThreadCount) {
+        final List<String> args = entry.args();
+        final int threadOption = args.indexOf("-t");
+        assertTrue(threadOption >= 0 && threadOption + 1 < args.size(),
+                () -> "Missing thread count for " + entry.label());
+        assertEquals(Integer.toString(expectedThreadCount),
+                args.get(threadOption + 1),
+                () -> "Unexpected thread count for " + entry.label());
     }
 
     private List<BenchmarkProfile> loadProfiles() throws Exception {

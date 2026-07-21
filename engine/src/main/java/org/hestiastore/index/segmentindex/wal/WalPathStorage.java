@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
@@ -34,15 +35,9 @@ final class WalPathStorage implements WalStorage {
     @Override
     public void touch(final String fileName) {
         final Path path = resolve(fileName);
-        try {
-            if (!Files.exists(path)) {
-                Files.createFile(path);
-            } else {
-                try (FileChannel ignored = FileChannel.open(path,
-                        StandardOpenOption.WRITE)) {
-                    // Keep existing file.
-                }
-            }
+        try (FileChannel ignored = FileChannel.open(path,
+                StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+            // Keep existing content.
         } catch (IOException e) {
             throw new IndexException(
                     String.format("Unable to touch WAL file '%s'.", fileName),
@@ -170,11 +165,6 @@ final class WalPathStorage implements WalStorage {
         closeAppendChannelFor(currentFileName);
         closeAppendChannelFor(newFileName);
         try {
-            if (!Files.exists(source)) {
-                throw new IndexException(
-                        String.format("Unable to rename missing WAL file '%s'.",
-                                currentFileName));
-            }
             Files.move(source, target,
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING,
                     java.nio.file.StandardCopyOption.ATOMIC_MOVE);
@@ -187,11 +177,10 @@ final class WalPathStorage implements WalStorage {
     }
 
     @Override
-    public Stream<String> listFileNames() {
+    public List<String> listFileNames() {
         try (Stream<Path> listing = Files.list(walDirectory)) {
             return listing.sorted(Comparator.comparing(Path::getFileName))
-                    .map(path -> path.getFileName().toString()).toList()
-                    .stream();
+                    .map(path -> path.getFileName().toString()).toList();
         } catch (IOException e) {
             throw new IndexException("Unable to list WAL files.", e);
         }
@@ -203,19 +192,15 @@ final class WalPathStorage implements WalStorage {
         if (!Files.exists(path)) {
             return;
         }
-        if (fileName.equals(appendFileName) && appendChannel != null) {
-            try {
+        try {
+            if (fileName.equals(appendFileName) && appendChannel != null) {
                 appendChannel.force(true);
                 return;
-            } catch (IOException e) {
-                throw new IndexException(
-                        String.format("Unable to sync WAL file '%s'.", fileName),
-                        e);
             }
-        }
-        try (FileChannel channel = FileChannel.open(path,
-                StandardOpenOption.WRITE)) {
-            channel.force(true);
+            try (FileChannel channel = FileChannel.open(path,
+                    StandardOpenOption.WRITE)) {
+                channel.force(true);
+            }
         } catch (IOException e) {
             throw new IndexException(
                     String.format("Unable to sync WAL file '%s'.", fileName),

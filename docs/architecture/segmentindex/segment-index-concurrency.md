@@ -203,8 +203,9 @@ Notes:
   ExecutorRegistry.
 - Registry maintenance pool: `hestia-<indexName>-registry-maintenance-*` from
   ExecutorRegistry.
-- WAL group-sync scheduler: `hestia-<indexName>-wal-group-sync-*` when
-  GROUP_SYNC WAL durability is enabled with a positive delay.
+- WAL append and delayed group sync worker:
+  `hestia-<indexName>-wal-append-*`, created by `ExecutorRegistry` and drained
+  by `WalRuntime` before executor shutdown.
 - Shared segment maintenance pool: `hestia-segment-maintenance-*` from
   HestiaStoreRuntime.
 - Shared split worker pool: `hestia-split-maintenance-*` from

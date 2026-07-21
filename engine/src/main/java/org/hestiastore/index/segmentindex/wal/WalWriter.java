@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex.wal;
 
-import java.util.Objects;
-
 /**
  * Serial WAL record writer. Callers serialize access and handle durability.
  *
@@ -40,10 +38,6 @@ final class WalWriter<K, V> {
      */
     WalAppendResult append(final WalRuntime.Operation operation, final K key,
             final V value) {
-        Objects.requireNonNull(key, "key");
-        if (operation == WalRuntime.Operation.PUT) {
-            Objects.requireNonNull(value, "value");
-        }
         final long lsn = nextLsn;
         final byte[] recordBytes = recordCodec.encodeRecord(operation, lsn, key,
                 value);

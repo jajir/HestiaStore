@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.wal;
 
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
@@ -119,17 +120,9 @@ final class WalStorageDirectory implements WalStorage {
     }
 
     @Override
-    public Stream<String> listFileNames() {
-        return walDirectory.getFileNames();
-    }
-
-    @Override
-    public void sync(final String fileName) {
-        // No-op: generic directory abstraction does not expose fsync.
-    }
-
-    @Override
-    public void syncMetadata() {
-        // No-op: generic directory abstraction does not expose fsync.
+    public List<String> listFileNames() {
+        try (Stream<String> names = walDirectory.getFileNames()) {
+            return names.toList();
+        }
     }
 }

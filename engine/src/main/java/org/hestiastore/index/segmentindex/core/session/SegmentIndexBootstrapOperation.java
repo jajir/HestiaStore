@@ -370,8 +370,7 @@ public final class SegmentIndexBootstrapOperation<K, V> {
         state.setRuntimeWalRuntime(WalRuntime.open(directory, wal,
                 state.getKeyTypeDescriptor(),
                 state.getValueTypeDescriptor(),
-                runtimeHandle.threadNamePrefix(),
-                state.getConfiguration().identity().name()));
+                state.getExecutorRegistry().getWalAppendThreadFactory()));
     }
 
     private void createMaintenance(

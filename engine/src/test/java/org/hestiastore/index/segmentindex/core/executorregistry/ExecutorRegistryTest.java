@@ -41,6 +41,7 @@ class ExecutorRegistryTest {
             assertNotNull(registry.getSplitPolicyScheduler());
             assertNotNull(registry.getStableSegmentMaintenanceExecutor());
             assertNotNull(registry.getRegistryMaintenanceExecutor());
+            assertNotNull(registry.getWalAppendThreadFactory());
         } finally {
             registry.close();
         }
@@ -140,6 +141,8 @@ class ExecutorRegistryTest {
                 registry::getStableSegmentMaintenanceExecutor);
         assertThrows(IllegalStateException.class,
                 registry::getRegistryMaintenanceExecutor);
+        assertThrows(IllegalStateException.class,
+                registry::getWalAppendThreadFactory);
     }
 
     @Test
@@ -156,6 +159,8 @@ class ExecutorRegistryTest {
                     registry.getStableSegmentMaintenanceExecutor());
             assertSame(registry.getRegistryMaintenanceExecutor(),
                     registry.getRegistryMaintenanceExecutor());
+            assertSame(registry.getWalAppendThreadFactory(),
+                    registry.getWalAppendThreadFactory());
         } finally {
             registry.close();
         }
@@ -199,6 +204,9 @@ class ExecutorRegistryTest {
             final String registryMaintenanceName = registry
                     .getRegistryMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().getName()).get();
+            final Thread walAppendThread = registry
+                    .getWalAppendThreadFactory().newThread(() -> {
+                    });
 
             final boolean indexMaintenanceDaemon = registry
                     .getIndexMaintenanceExecutor()
@@ -226,11 +234,14 @@ class ExecutorRegistryTest {
                     .startsWith("hestia-test-segment-maintenance-"));
             assertTrue(registryMaintenanceName.startsWith(
                     "hestia-test-executor-registry-test-registry-maintenance-"));
+            assertTrue(walAppendThread.getName().startsWith(
+                    "hestia-test-executor-registry-test-wal-append-"));
             assertTrue(indexMaintenanceDaemon);
             assertTrue(splitMaintenanceDaemon);
             assertTrue(splitPolicyDaemon);
             assertTrue(stableSegmentMaintenanceDaemon);
             assertTrue(registryMaintenanceDaemon);
+            assertTrue(walAppendThread.isDaemon());
         } finally {
             registry.close();
         }

@@ -23,11 +23,6 @@ public final class WalTool {
     private static final String JSON_FILE_FIELD = "\"file\":";
     private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
 
-    private enum OutputMode {
-        TEXT,
-        JSON
-    }
-
     private WalTool() {
     }
 
@@ -49,7 +44,7 @@ public final class WalTool {
             printUsage(out);
             return 1;
         }
-        final OutputMode outputMode = outputMode(args);
+        final boolean jsonOutput = args.length == 3;
         final String command = args[0];
         final Path walDirectory = Path.of(args[1]);
         if (!Files.isDirectory(walDirectory)) {
@@ -60,11 +55,11 @@ public final class WalTool {
         try {
             if ("verify".equals(command)) {
                 final VerifyResult result = verify(walDirectory);
-                printVerifyResult(result, out, outputMode);
+                printVerifyResult(result, out, jsonOutput);
                 return result.ok() ? 0 : 2;
             }
             if ("dump".equals(command)) {
-                dump(walDirectory, out, outputMode);
+                dump(walDirectory, out, jsonOutput);
                 return 0;
             }
             printUsage(out);
@@ -102,8 +97,8 @@ public final class WalTool {
             }
             if (scan.hasInvalidTail()) {
                 return new VerifyResult(false, files.size(), records, maxLsn,
-                        scan.fileName(), scan.invalidTail().offset(),
-                        scan.invalidTail().reason());
+                        scan.fileName(), scan.invalidOffset(),
+                        scan.invalidReason());
             }
         }
         if (checkpointValidation.hasCheckpoint()
@@ -116,17 +111,12 @@ public final class WalTool {
                 null);
     }
 
-    @SuppressWarnings("java:S106")
-    static void dump(final Path walDirectory) {
-        dump(walDirectory, System.out);
-    }
-
     static void dump(final Path walDirectory, final PrintStream out) {
-        dump(walDirectory, out, OutputMode.TEXT);
+        dump(walDirectory, out, false);
     }
 
     static void dump(final Path walDirectory, final PrintStream out,
-            final OutputMode outputMode) {
+            final boolean jsonOutput) {
         final VerifyResult formatResult = verifyFormatMetadata(walDirectory);
         if (!formatResult.ok()) {
             throw metadataError(formatResult);
@@ -144,7 +134,7 @@ public final class WalTool {
         for (final Path file : files) {
             final WalFileScan scan = scanFile(file, 0L, false);
             for (final WalToolRecord walRecord : scan.records()) {
-                if (outputMode == OutputMode.JSON) {
+                if (jsonOutput) {
                     out.println(jsonRecord(scan.fileName(), walRecord.offset(),
                             walRecord.lsn(), walRecord.operation(),
                             walRecord.keyLen(), walRecord.valueLen(),
@@ -159,17 +149,16 @@ public final class WalTool {
                 }
             }
             if (scan.hasInvalidTail()) {
-                if (outputMode == OutputMode.JSON) {
+                if (jsonOutput) {
                     out.println(jsonInvalidTail(scan.fileName(),
-                            scan.invalidTail().offset(),
-                            scan.invalidTail().reason()));
+                            scan.invalidOffset(), scan.invalidReason()));
                 } else {
                     out.println("invalid file=" + scan.fileName() + " offset="
-                            + scan.invalidTail().offset() + " reason="
-                            + scan.invalidTail().reason());
+                            + scan.invalidOffset() + " reason="
+                            + scan.invalidReason());
                 }
             }
-            if (outputMode == OutputMode.JSON) {
+            if (jsonOutput) {
                 out.println(jsonSummary(scan.fileName(), scan.size(),
                         scan.recordCount(), scan.firstLsn(), scan.lastLsn()));
             } else {
@@ -259,7 +248,6 @@ public final class WalTool {
                     e);
         }
 
-        final List<SegmentFile> discovered = new ArrayList<>(candidates.size());
         final Set<Long> uniqueBaseLsns = new HashSet<>();
         for (final Path file : candidates) {
             final String fileName = file.getFileName().toString();
@@ -280,12 +268,8 @@ public final class WalTool {
                         new VerifyResult(false, 0, 0L, 0L, fileName, -1L,
                                 "Duplicate WAL segment base LSN."));
             }
-            discovered.add(new SegmentFile(file, baseLsn));
         }
-        discovered.sort(Comparator.comparingLong(SegmentFile::baseLsn));
-        final List<Path> files = discovered.stream().map(SegmentFile::path)
-                .toList();
-        return new SegmentDiscovery(files, null);
+        return new SegmentDiscovery(candidates, null);
     }
 
     private static boolean isSupportedOperationCode(final byte opCode) {
@@ -317,13 +301,9 @@ public final class WalTool {
         return args.length == 2 || args.length == 3 && "--json".equals(args[2]);
     }
 
-    private static OutputMode outputMode(final String[] args) {
-        return args.length == 3 ? OutputMode.JSON : OutputMode.TEXT;
-    }
-
     private static void printVerifyResult(final VerifyResult result,
-            final PrintStream out, final OutputMode outputMode) {
-        if (outputMode == OutputMode.JSON) {
+            final PrintStream out, final boolean jsonOutput) {
+        if (jsonOutput) {
             out.println(jsonVerifyResult(result));
             return;
         }
@@ -558,24 +538,6 @@ public final class WalTool {
         }
     }
 
-    private static final class SegmentFile {
-        private final Path path;
-        private final long baseLsn;
-
-        SegmentFile(final Path path, final long baseLsn) {
-            this.path = path;
-            this.baseLsn = baseLsn;
-        }
-
-        Path path() {
-            return path;
-        }
-
-        long baseLsn() {
-            return baseLsn;
-        }
-    }
-
     private static final class SegmentDiscovery {
         private final List<Path> files;
         private final VerifyResult error;
@@ -639,126 +601,4 @@ public final class WalTool {
         }
     }
 
-    private static final class WalFileScan {
-        private final String fileName;
-        private final long size;
-        private final List<WalToolRecord> records;
-        private final InvalidWalTail invalidTail;
-
-        private WalFileScan(final String fileName, final long size,
-                final List<WalToolRecord> records,
-                final InvalidWalTail invalidTail) {
-            this.fileName = fileName;
-            this.size = size;
-            this.records = List.copyOf(records);
-            this.invalidTail = invalidTail;
-        }
-
-        static WalFileScan valid(final String fileName, final long size,
-                final List<WalToolRecord> records) {
-            return new WalFileScan(fileName, size, records, null);
-        }
-
-        static WalFileScan invalid(final String fileName, final long size,
-                final List<WalToolRecord> records, final long offset,
-                final String reason) {
-            return new WalFileScan(fileName, size, records,
-                    new InvalidWalTail(offset, reason));
-        }
-
-        String fileName() {
-            return fileName;
-        }
-
-        long size() {
-            return size;
-        }
-
-        List<WalToolRecord> records() {
-            return records;
-        }
-
-        long recordCount() {
-            return records.size();
-        }
-
-        long firstLsn() {
-            return records.isEmpty() ? 0L : records.get(0).lsn();
-        }
-
-        long lastLsn() {
-            return records.isEmpty() ? 0L
-                    : records.get(records.size() - 1).lsn();
-        }
-
-        boolean hasInvalidTail() {
-            return invalidTail != null;
-        }
-
-        InvalidWalTail invalidTail() {
-            return invalidTail;
-        }
-    }
-
-    private static final class WalToolRecord {
-        private final long offset;
-        private final long lsn;
-        private final String operation;
-        private final int keyLen;
-        private final int valueLen;
-        private final int bodyLen;
-
-        WalToolRecord(final long offset, final long lsn,
-                final String operation, final int keyLen,
-                final int valueLen, final int bodyLen) {
-            this.offset = offset;
-            this.lsn = lsn;
-            this.operation = operation;
-            this.keyLen = keyLen;
-            this.valueLen = valueLen;
-            this.bodyLen = bodyLen;
-        }
-
-        long offset() {
-            return offset;
-        }
-
-        long lsn() {
-            return lsn;
-        }
-
-        String operation() {
-            return operation;
-        }
-
-        int keyLen() {
-            return keyLen;
-        }
-
-        int valueLen() {
-            return valueLen;
-        }
-
-        int bodyLen() {
-            return bodyLen;
-        }
-    }
-
-    private static final class InvalidWalTail {
-        private final long offset;
-        private final String reason;
-
-        InvalidWalTail(final long offset, final String reason) {
-            this.offset = offset;
-            this.reason = reason;
-        }
-
-        long offset() {
-            return offset;
-        }
-
-        String reason() {
-            return reason;
-        }
-    }
 }

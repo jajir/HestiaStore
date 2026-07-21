@@ -20,7 +20,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
 import java.util.function.IntPredicate;
@@ -70,16 +72,20 @@ class WalRuntimeTest {
     }
 
     @Test
-    void openUsesDefaultWalRuntimeGroupSyncThreadName() {
+    void groupSyncUsesAppendWorkerWithoutSeparateScheduler() {
         final IndexWalConfiguration wal = IndexWalConfiguration.builder()
                 .durability(WalDurabilityMode.GROUP_SYNC)
-                .groupSyncDelayMillis(1).build();
+                .groupSyncDelayMillis(10).build();
 
-        try (WalRuntime<String, String> ignored = WalRuntime.open(
+        try (WalRuntime<String, String> runtime = WalRuntime.open(
                 new MemDirectory(), effective(wal), STRING_DESCRIPTOR,
-                STRING_DESCRIPTOR)) {
+                STRING_DESCRIPTOR, "hestia-no-group-sync-scheduler",
+                "orders")) {
+            runtime.appendPut("key", "value");
             assertTrue(awaitThreadNameStartingWith(
-                    "hestia-standalone-wal-group-sync-"));
+                    "hestia-no-group-sync-scheduler-orders-wal-append-"));
+            assertFalse(threadNameStartingWithExists(
+                    "hestia-no-group-sync-scheduler-orders-wal-group-sync-"));
         }
     }
 
@@ -97,20 +103,6 @@ class WalRuntimeTest {
     }
 
     @Test
-    void openUsesIndexSpecificGroupSyncThreadName() {
-        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
-                .durability(WalDurabilityMode.GROUP_SYNC)
-                .groupSyncDelayMillis(1).build();
-
-        try (WalRuntime<String, String> ignored = WalRuntime.open(
-                new MemDirectory(), effective(wal), STRING_DESCRIPTOR,
-                STRING_DESCRIPTOR, "hestia-test", "orders")) {
-            assertTrue(awaitThreadNameStartingWith(
-                    "hestia-test-orders-wal-group-sync-"));
-        }
-    }
-
-    @Test
     void openUsesIndexSpecificAppendThreadName() {
         final IndexWalConfiguration wal = IndexWalConfiguration.builder()
                 .durability(WalDurabilityMode.ASYNC).build();
@@ -124,7 +116,41 @@ class WalRuntimeTest {
     }
 
     @Test
-    void openRejectsBlankThreadNamePrefixForGroupSyncThreadName() {
+    void openUsesProvidedAppendThreadFactory() {
+        final AtomicBoolean factoryUsed = new AtomicBoolean(false);
+        final ThreadFactory delegate = Executors.defaultThreadFactory();
+        final ThreadFactory appendThreadFactory = runnable -> {
+            factoryUsed.set(true);
+            final Thread thread = delegate.newThread(runnable);
+            thread.setName("provided-wal-append-1");
+            thread.setDaemon(true);
+            return thread;
+        };
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.ASYNC).build();
+
+        try (WalRuntime<String, String> ignored = WalRuntime.open(
+                new MemDirectory(), effective(wal), STRING_DESCRIPTOR,
+                STRING_DESCRIPTOR, appendThreadFactory)) {
+            assertTrue(factoryUsed.get());
+            assertTrue(awaitThreadNameStartingWith("provided-wal-append-"));
+        }
+    }
+
+    @Test
+    void openRejectsNullAppendThreadFactory() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.ASYNC).build();
+        final ThreadFactory appendThreadFactory = null;
+
+        assertThrows(IllegalArgumentException.class,
+                () -> WalRuntime.open(new MemDirectory(), effective(wal),
+                        STRING_DESCRIPTOR, STRING_DESCRIPTOR,
+                        appendThreadFactory));
+    }
+
+    @Test
+    void openRejectsBlankThreadNamePrefix() {
         final IndexWalConfiguration wal = IndexWalConfiguration.builder()
                 .durability(WalDurabilityMode.GROUP_SYNC)
                 .groupSyncDelayMillis(1).build();
@@ -139,7 +165,7 @@ class WalRuntimeTest {
     }
 
     @Test
-    void openRejectsBlankIndexNameForGroupSyncThreadName() {
+    void openRejectsBlankIndexName() {
         final IndexWalConfiguration wal = IndexWalConfiguration.builder()
                 .durability(WalDurabilityMode.GROUP_SYNC)
                 .groupSyncDelayMillis(1).build();
@@ -1369,6 +1395,7 @@ class WalRuntimeTest {
                     () -> runtime.appendPut("k1", "v1"));
             assertThrows(IndexException.class,
                     () -> runtime.appendPut("k2", "v2"));
+            assertEquals(1L, runtime.statsSnapshot().syncFailureCount());
         }
     }
 
@@ -1501,6 +1528,7 @@ class WalRuntimeTest {
             executor.shutdownNow();
         }
         final Set<String> walFiles = storage.listFileNames()
+                .stream()
                 .filter(name -> name.endsWith(".wal"))
                 .collect(Collectors.toSet());
         assertTrue(walFiles.size() > 1);
@@ -1552,7 +1580,6 @@ class WalRuntimeTest {
                     .recover(replayed::add);
             assertEquals(writers, result.maxLsn());
         }
-        replayed.sort(Comparator.comparingLong(WalRuntime.ReplayRecord::getLsn));
         assertEquals(writers, replayed.size());
         assertEquals(writers, lsns.size());
         for (int i = 0; i < writers; i++) {
@@ -1591,9 +1618,8 @@ class WalRuntimeTest {
     }
 
     private static List<String> walSegmentNames(final WalStorage storage) {
-        try (java.util.stream.Stream<String> names = storage.listFileNames()) {
-            return names.filter(name -> name.endsWith(".wal")).sorted().toList();
-        }
+        return storage.listFileNames().stream()
+                .filter(name -> name.endsWith(".wal")).sorted().toList();
     }
 
     private static Map<String, byte[]> walSegmentSnapshot(final MemDirectory root) {
@@ -1991,7 +2017,7 @@ class WalRuntimeTest {
         }
 
         @Override
-        public java.util.stream.Stream<String> listFileNames() {
+        public List<String> listFileNames() {
             return delegate.listFileNames();
         }
 
@@ -2080,9 +2106,11 @@ class WalRuntimeTest {
         }
 
         @Override
-        public java.util.stream.Stream<String> listFileNames() {
-            return java.util.stream.Stream.concat(delegate.listFileNames(),
-                    java.util.stream.Stream.of(duplicateFileName));
+        public List<String> listFileNames() {
+            return java.util.stream.Stream
+                    .concat(delegate.listFileNames().stream(),
+                            java.util.stream.Stream.of(duplicateFileName))
+                    .toList();
         }
 
         @Override
@@ -2168,7 +2196,7 @@ class WalRuntimeTest {
         }
 
         @Override
-        public java.util.stream.Stream<String> listFileNames() {
+        public List<String> listFileNames() {
             return delegate.listFileNames();
         }
 
@@ -2298,8 +2326,8 @@ class WalRuntimeTest {
         }
 
         @Override
-        public synchronized java.util.stream.Stream<String> listFileNames() {
-            return workingFiles.keySet().stream().sorted();
+        public synchronized List<String> listFileNames() {
+            return workingFiles.keySet().stream().sorted().toList();
         }
 
         @Override

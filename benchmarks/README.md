@@ -73,9 +73,14 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrain
 Persisted mutation and lifecycle paths:
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -p walMode=sync -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -t 1 -p walMode=sync -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -t 16 -p walMode=sync -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleBenchmark -p walMode=sync
 ```
+
+Run both persisted-mutation thread counts with otherwise identical parameters.
+The one-writer case protects latency-sensitive behavior; the 16-writer case
+exposes WAL queue admission and sync-batching contention.
 
 Quick smoke run:
 

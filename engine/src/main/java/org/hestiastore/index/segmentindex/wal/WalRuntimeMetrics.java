@@ -3,6 +3,9 @@ package org.hestiastore.index.segmentindex.wal;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
+/**
+ * Collects thread-safe WAL runtime counters and synchronization measurements.
+ */
 final class WalRuntimeMetrics {
 
     private final LongAdder appendCount = new LongAdder();
@@ -56,19 +59,7 @@ final class WalRuntimeMetrics {
                 syncBatchBytesMax.get());
     }
 
-    static WalMonitoring emptySnapshot() {
-        return WalMonitoring.empty();
-    }
-
     static void updateMax(final AtomicLong target, final long candidate) {
-        while (true) {
-            final long current = target.get();
-            if (candidate <= current) {
-                return;
-            }
-            if (target.compareAndSet(current, candidate)) {
-                return;
-            }
-        }
+        target.accumulateAndGet(candidate, Math::max);
     }
 }

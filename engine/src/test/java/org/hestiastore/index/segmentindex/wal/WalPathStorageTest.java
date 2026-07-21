@@ -17,7 +17,7 @@ class WalPathStorageTest {
     Path tempDir;
 
     @Test
-    void listFileNamesReturnsConsumableStreamAfterDirectoryListingCloses() {
+    void listFileNamesReturnsSortedSnapshot() {
         try (WalPathStorage storage = new WalPathStorage(tempDir)) {
             storage.append("000000000001.wal", "a".getBytes(StandardCharsets.UTF_8),
                     0, 1);
@@ -26,10 +26,8 @@ class WalPathStorageTest {
             storage.append("000000000002.wal", "c".getBytes(StandardCharsets.UTF_8),
                     0, 1);
 
-            try (var names = storage.listFileNames()) {
-                assertEquals(List.of("000000000001.wal", "000000000002.wal",
-                        "000000000003.wal"), names.toList());
-            }
+            assertEquals(List.of("000000000001.wal", "000000000002.wal",
+                    "000000000003.wal"), storage.listFileNames());
         }
     }
 

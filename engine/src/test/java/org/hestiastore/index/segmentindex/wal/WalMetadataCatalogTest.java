@@ -21,9 +21,9 @@ class WalMetadataCatalogTest {
         storage.overwrite("checkpoint.meta.tmp", checkpoint, 0,
                 checkpoint.length);
 
-        final WalCatalogView view = catalog.loadRecoveryCatalog();
+        final long checkpointLsn = catalog.readCheckpointLsn();
 
-        assertEquals(5L, view.checkpointLsn());
+        assertEquals(5L, checkpointLsn);
         assertTrue(storage.exists("checkpoint.meta"));
         assertFalse(storage.exists("checkpoint.meta.tmp"));
     }
