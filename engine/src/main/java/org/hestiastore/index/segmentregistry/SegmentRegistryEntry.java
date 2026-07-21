@@ -8,6 +8,9 @@ import org.hestiastore.index.segment.Segment;
 
 /**
  * Coordinates one registry cache entry through load, ready, and unload states.
+ * READY reads are lock-free; the volatile state transition safely publishes
+ * the value written before it. Lifecycle transitions remain serialized by the
+ * entry lock.
  *
  * @param <K> segment key type
  * @param <V> segment value type
@@ -17,7 +20,7 @@ final class SegmentRegistryEntry<K, V> {
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition ready = lock.newCondition();
     private volatile long accessCx;
-    private EntryState state = EntryState.LOADING;
+    private volatile EntryState state = EntryState.LOADING;
     private Segment<K, V> value;
     private IndexException failure;
 
@@ -53,6 +56,11 @@ final class SegmentRegistryEntry<K, V> {
      * @return loaded value when ready, otherwise null when unavailable
      */
     Segment<K, V> waitWhileLoading(final long currentAccessCx) {
+        final Segment<K, V> readyValue = getReadyValue();
+        if (readyValue != null) {
+            accessCx = currentAccessCx;
+            return readyValue;
+        }
         lock.lock();
         try {
             while (state == EntryState.LOADING) {
@@ -235,20 +243,17 @@ final class SegmentRegistryEntry<K, V> {
     }
 
     /**
-     * Returns the cached value only when this entry is ready.
+     * Returns the cached value without locking only when this entry is ready.
+     * Reading the volatile READY state makes the previously stored value
+     * visible to the caller.
      *
      * @return ready value, or null when loading, unloading, or failed
      */
     Segment<K, V> getReadyValue() {
-        lock.lock();
-        try {
-            if (state != EntryState.READY || value == null || failure != null) {
-                return null;
-            }
-            return value;
-        } finally {
-            lock.unlock();
+        if (state != EntryState.READY) {
+            return null;
         }
+        return value;
     }
 
     private enum EntryState {

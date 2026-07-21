@@ -27,6 +27,14 @@
 
 ## Done (Archive)
 
+[x] 99. Replace `SessionOperationGate` per-operation monitor contention with atomic in-flight tracking and bounded close-side drain polling (Risk: MEDIUM)
+    - Focused session concurrency tests, benchmark module tests, and the full
+      Maven verification pipeline pass.
+    - Targeted JMH stack sampling removed all `SessionOperationGate` blocked
+      frames and the per-operation `Object.notifyAll()` frame.
+    - The targeted throughput result moved by -3.3%, with heavily overlapping
+      confidence intervals; the canonical smoke profile was also too noisy to
+      establish a throughput regression or improvement.
 [x] 97. Clarify `core.session` responsibility boundaries by moving topology runtime composition to route/topology internals, giving core storage its own open spec and observer types, and preserving lifecycle behavior.
 [x] 98. Simplify SegmentIndex initialization after the broad assembly refactor by keeping explicit opening points for bootstrap, session startup, and runtime resources while removing pattern-only assembler/request/components layers.
 [x] 89. Rework split routing around a runtime `RouteTopology` so route handoff, draining, and split publish are owned by topology code while `SegmentRegistry` remains responsible only for physical segment instances and `SegmentRouteMap` remains responsible only for persisted routing.
