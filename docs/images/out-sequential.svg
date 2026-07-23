@@ -7,8 +7,8 @@
     </style>
   <rect x="0" y="10" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="30">ChronicleMap</text>
-  <rect x="250" y="17" width="189" height="26" rx="6" ry="6" fill="#1F77B4" stroke="#1A6599" stroke-width="2" />
-  <text class="value" x="455" y="30">2,450,005</text>
+  <rect x="250" y="17" width="187" height="26" rx="6" ry="6" fill="#1F77B4" stroke="#1A6599" stroke-width="2" />
+  <text class="value" x="453" y="30">2,450,005</text>
   <rect x="0" y="70" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="90">H2</text>
   <rect x="250" y="77" width="71" height="26" rx="6" ry="6" fill="#2CA02C" stroke="#258825" stroke-width="2" />
@@ -16,15 +16,15 @@
   <rect x="0" y="130" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="150">HestiaStoreBasic</text>
   <rect x="250" y="137" width="8" height="26" rx="6" ry="6" fill="#E53935" stroke="#C2302D" stroke-width="2" />
-  <text class="value" x="274" y="150">4,535</text>
+  <text class="value" x="274" y="150">4,507</text>
   <rect x="0" y="190" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="210">HestiaStoreCompress</text>
   <rect x="250" y="197" width="8" height="26" rx="6" ry="6" fill="#E53935" stroke="#C2302D" stroke-width="2" />
-  <text class="value" x="274" y="210">4,508</text>
+  <text class="value" x="274" y="210">4,404</text>
   <rect x="0" y="250" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="270">HestiaStoreStream</text>
   <rect x="250" y="257" width="590" height="26" rx="6" ry="6" fill="#E53935" stroke="#C2302D" stroke-width="2" />
-  <text class="value" x="856" y="270">7,645,505</text>
+  <text class="value" x="856" y="270">7,718,615</text>
   <rect x="0" y="310" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="330">LevelDB</text>
   <rect x="250" y="317" width="8" height="26" rx="6" ry="6" fill="#ebeb49" stroke="#C7C73E" stroke-width="2" />
