@@ -126,6 +126,16 @@ python3 benchmarks/scripts/run_jmh_profile.py \
   --output-dir /tmp/hestia-bench/current
 ```
 
+Measure Logback-backed MDC overhead on otherwise identical live-get and hot-put
+workloads:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile segment-index-context-logging \
+  --output-dir /tmp/hestia-bench/context-logging
+```
+
 Run the nightly disk I/O profile locally:
 
 ```sh

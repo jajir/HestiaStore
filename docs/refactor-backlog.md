@@ -4,6 +4,26 @@
 
 ### To Solve
 
+#### Point-operation hot-path cleanup
+
+Items `100.1` through `100.3` and `100.5` are complete. Item `100.4` is
+intentionally deferred from this sequence; item `100.6` is the final active
+step.
+
+- [ ] 100.6 Re-profile the accepted sequence and stop at the measured boundary
+  (Risk: LOW). Owner: `benchmarks` and refactoring docs. Outcome: run the
+  canonical SegmentIndex comparison and focused JFR profiles, record accepted,
+  rejected, and still-deferred candidates, and update architecture docs only
+  for behavior that actually changed. Validation: benchmark comparison reports,
+  `python3 scripts/check_docs_nav.py`, `mkdocs build --strict`, and
+  `git diff --check`.
+  Status: blocked by the performance gate. The complete canonical profile now
+  runs, but its one-fork comparison produced contradictory large deltas and
+  several `worse` results. Two focused five-fork live-get A/B cycles retained
+  overlapping throughput intervals and did not reproduce a stable whole-path
+  allocation mean. Next safe action: rerun the same artifacts on a quiet,
+  dedicated host before archiving this item.
+
 [ ] 80. Make WAL durability explicit for non-fsync storage adapters so `SYNC` and `GROUP_SYNC` never claim guarantees that the active storage backend cannot provide.
 [ ] 81. Split `WalRuntime` into focused writer, recovery, segment-catalog, and sync-policy responsibilities instead of keeping all lifecycle paths behind one shared monitor.
 [ ] 82. Replace the slow generic `WalStorageDirectory` fallback with an explicit seekable/capability-aware storage path, or reject unsupported backends early.
@@ -25,8 +45,133 @@
 [ ] M42 Review `segmentregistry` package for test and Javadoc coverage (Risk: LOW)
 [ ] M43 Avoid pattern-name abstractions unless they own lifecycle, resource opening, or rollback-sensitive cleanup (Risk: LOW)
 
+## Unfinished Audit
+
+- Deferred status-value reuse. Boundary: `engine` point-operation and route
+  leasing results. Reason: exploratory JFR did not identify `OperationResult`
+  or `RouteLeaseAttempt` as material allocation sources, and generic singleton
+  reuse adds type-safety and semantic risk. Evidence still needed: a
+  representative allocation profile with these constructors on a material hot
+  stack. Item `100.6` JFR still did not show that evidence. Next safe action:
+  revisit only after a new production-equivalent profile does.
+- Deferred 100.4 sampled point-operation latency recording. Boundary: `engine`
+  operation monitoring. Reason: explicitly excluded from the current
+  refactoring sequence; operation counts and latency observations remain
+  unchanged. Item `100.6` sampled latency recording in execution stacks but
+  recorded no live-get monitor contention. Next safe action: reconsider only
+  after a production profile identifies material contention.
+- Deferred chunk-store cache redesign. Boundary:
+  `engine` `LruChunkStoreCache`. Reason: the implementation has one synchronized
+  access-ordered map, but the persisted cache-enabled profile recorded no
+  contention events, and item `100.6` JFR did not make it material. Evidence
+  still needed: representative blocked-time or duplicate same-page load
+  measurements. Next safe action: shard or add minimal per-key single-flight
+  only for the demonstrated failure mode.
+- Canonical comparison gate remains blocked. Boundary: `benchmarks`
+  `segment-index-pr-smoke`. The benchmark now completes for both baseline and
+  candidate, but the one-fork report simultaneously marked all get paths
+  `22.07%` to `45.53%` worse and hot-put/split-heavy paths roughly `47%` to
+  `57%` better. Focused five-fork throughput intervals overlapped, and a
+  reverse-order live-get repeat remained inconclusive. Evidence still needed:
+  the same A/B artifacts on a quiet, dedicated host. Next safe action: rerun;
+  do not tune code to these contradictory point estimates.
+- Repeated explicit maintenance during background split population can time
+  out. Boundary: multi-segment benchmark setup and the production
+  `flushAndWait()`/split interaction. The failure reproduced at 8,192 and
+  32,768 keys and with segment-cache limits from `3` through `256`; the stack
+  timed out in `MappedSegmentMaintenanceService.awaitSegmentReady(...)` while
+  reloading a closed segment. The read benchmark now performs one final settled
+  flush so it can measure reads, but that does not fix the underlying
+  maintenance interaction. Next safe action: investigate it as a dedicated
+  lifecycle/concurrency issue outside item `100.6`.
+- Route-lease monitor contention needs production confirmation. Boundary:
+  `RouteEntry` lease acquisition/release. The item `100.6` JFR hot-put stress
+  profile recorded 14 blocked monitor events totaling `143 ms` with twenty
+  threads targeting one route; live get recorded none. Next safe action:
+  redesign only if a production JFR shows the same monitor as material.
+- Deferred immutable segment-ID set. Boundary: `RouteMapSnapshot`. Reason:
+  direct map-value scanning removed the temporary list and improved the
+  50,000-route lookup from `323.428 us/op` to `115.267 us/op` with effectively
+  zero per-call allocation. Item `100.6` JFR did not show the remaining scan as
+  material. Evidence still needed: an end-to-end exact-segment acquisition
+  profile showing that it justifies duplicate snapshot state and extra
+  publication cost.
+
 ## Done (Archive)
 
+- [x] 100.5 Replace list-building segment membership checks with direct
+  snapshot lookup (Risk: MEDIUM).
+    - `RouteMapSnapshot.containsSegmentId(...)` now scans immutable map values
+      directly, and `MappedSegmentLeaseService` uses it for exact mapped-segment
+      checks without constructing an unbounded list.
+    - A focused one-thread JMH benchmark measured a successful middle-position
+      lookup with five forks, three warmup iterations, five measurement
+      iterations, and GC profiling on the same JDK 25 arm64 macOS environment.
+    - Results were `63.807 -> 5.627 ns/op` at 10 routes,
+      `5.647 -> 1.649 us/op` at 1,000, `64.027 -> 22.364 us/op` at 10,000,
+      `323.428 -> 115.267 us/op` at 50,000, and
+      `660.687 -> 228.547 us/op` at 100,000. Reported confidence intervals did
+      not overlap at any tested size.
+    - Allocation changed from `384 B/op`, `4,344 B/op`, `40,361 B/op`,
+      `200,346 B/op`, and `400,355 B/op`, respectively, to effectively
+      zero. The improvement is measurable from 10 routes, the smallest tested
+      size; no claim is made below 10.
+    - Focused engine tests passed with 23 tests, benchmark contract/tooling tests
+      passed with 12 tests, and `mvn clean verify` passed across all 10 reactor
+      modules.
+- [x] 100.3 Publish and reuse one immutable `RouteMapSnapshot` per route-map
+  version (Risk: MEDIUM).
+    - `PersistentSegmentRouteMap` now publishes copied routes and their version
+      together through one volatile `RouteMapSnapshot` reference. Repeated
+      `snapshot()` calls perform no locking or wrapper allocation, and only real
+      mutations publish the next instance.
+    - Focused identity, no-op mutation, version-transition, and concurrent split
+      publication coverage passed: 17 route-map tests. `mvn clean verify`
+      passed across all 10 reactor modules.
+    - Five-fork live-get JMH with GC data moved from
+      `3.493 M ops/s`, `168.175 B/op` to
+      `3.427 M ops/s`, `148.507 B/op`. Throughput changed by `-1.87%` with
+      overlapping confidence intervals; allocation fell by `19.668 B/op`
+      (`-11.70%`) with non-overlapping reported confidence intervals.
+    - Five-fork hot-put throughput moved from `2.853 M ops/s` to
+      `3.170 M ops/s`, but its confidence intervals overlapped. Allocation was
+      bimodal across the candidate and repeat runs (`136` to `216 B/op`), so no
+      hot-put allocation or throughput improvement is claimed.
+    - The focused throughput summaries passed the canonical comparison tool
+      with no regression: live get was `neutral` and hot put was `better` under
+      its percentage thresholds. The broader canonical-profile setup failure is
+      retained in the unfinished audit rather than hidden.
+- [x] 100.2 Add production-equivalent context-logging benchmark coverage
+  (Risk: LOW).
+    - `SegmentIndexGetBenchmark` and `SegmentIndexHotRoutePutBenchmark` now
+      expose the same enabled/disabled context-logging parameter. Existing
+      canonical profiles pin it off, while
+      `segment-index-context-logging.json` runs the focused comparison with a
+      Logback MDC backend and log emission disabled.
+    - The profile runner now rejects empty JMH result files instead of
+      publishing a successful summary after all forks fail.
+    - Benchmark profile contract and script smoke coverage passed with 11
+      tests; the packaged runner also passed a direct enabled-MDC smoke run.
+      `mvn clean verify` passed across all 10 reactor modules.
+    - Three forks with three warmup and five measurement iterations reported
+      live-get means of `3.487 M ops/s`, `171.884 B/op` disabled and
+      `3.122 M ops/s`, `204.007 B/op` enabled. Hot-put means were
+      `2.527 M ops/s`, `201.239 B/op` disabled and `2.800 M ops/s`,
+      `237.404 B/op` enabled.
+    - Enabled-MDC allocation means were about `32.123 B/op` higher for live
+      gets and `36.165 B/op` higher for hot puts. Throughput and allocation
+      confidence intervals overlapped in both comparisons, so this run alone
+      does not establish either effect. Production logging behavior was
+      unchanged.
+- [x] 100.1 Close the losing `SegmentReadPath` searcher after concurrent first
+  access (Risk: MEDIUM).
+    - `SegmentReadPath` now closes a redundantly constructed searcher
+      immediately after losing the cache CAS; the winner remains cached.
+    - A deterministic two-thread `SegmentReadPathTest` verifies that exactly
+      one supplier closes after the race and the winner closes with the read
+      path.
+    - `mvn -pl engine -Dtest=SegmentReadPathTest test` passed with 7 tests.
+    - `mvn clean verify` passed across all 10 reactor modules.
 [x] 99. Replace `SessionOperationGate` per-operation monitor contention with atomic in-flight tracking and bounded close-side drain polling (Risk: MEDIUM)
     - Focused session concurrency tests, benchmark module tests, and the full
       Maven verification pipeline pass.

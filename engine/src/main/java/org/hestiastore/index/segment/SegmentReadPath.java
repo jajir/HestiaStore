@@ -119,6 +119,8 @@ final class SegmentReadPath<K, V> {
 
     /**
      * Returns (and caches) the index searcher for point lookups.
+     * Concurrent callers may construct redundant searchers; only the CAS
+     * winner is cached and every losing instance is closed immediately.
      *
      * @return cached index searcher
      */
@@ -138,6 +140,7 @@ final class SegmentReadPath<K, V> {
         if (segmentIndexSearcher.compareAndSet(null, created)) {
             return created;
         }
+        created.close();
         return segmentIndexSearcher.get();
     }
 

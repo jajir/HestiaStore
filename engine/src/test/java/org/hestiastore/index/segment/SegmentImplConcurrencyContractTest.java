@@ -137,6 +137,30 @@ class SegmentImplConcurrencyContractTest {
     }
 
     @Test
+    void consistencyCheck_isBusyDuringMaintenanceAndSucceedsAfterward() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final Segment<Integer, String> segment = newSegment(4, executor);
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+
+            assertEquals(OperationStatus.BUSY,
+                    segment.tryCheckAndRepairConsistency().getStatus());
+
+            executor.runTask();
+
+            final OperationResult<Integer> result = segment
+                    .tryCheckAndRepairConsistency();
+            assertEquals(OperationStatus.OK, result.getStatus());
+            assertEquals(1, result.getValue());
+        } finally {
+            closeAfterMaintenanceIfNeeded(segment, executor);
+        }
+    }
+
+    @Test
     void put_returns_writeCacheFull_when_write_cache_full_and_no_maintenance_policy() {
         final Segment<Integer, String> segment = newSegment(1);
         try {

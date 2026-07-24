@@ -39,8 +39,10 @@
   a global executor.
 - SegmentRegistrySynchronized serializes access to the segment instance map and
   registry mutations.
-- SegmentRouteMap uses snapshot reads plus a mapping version; updates take a
-  write lock and increment the version.
+- SegmentRouteMap publishes the immutable routes and mapping version together
+  through one volatile snapshot. Foreground snapshot and version reads do not
+  take the route-map lock; updates take the write lock and publish the next
+  snapshot after the mutation.
 - RouteTopology is rebuilt from the persisted map on startup and reconciled
   after route-map changes. It does not own segment instances or persistence.
 - Foreground `put`, `delete`, and `get` use `MappedSegmentLeaseService` to resolve a

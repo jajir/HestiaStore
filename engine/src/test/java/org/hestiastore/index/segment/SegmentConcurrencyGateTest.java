@@ -133,9 +133,9 @@ class SegmentConcurrencyGateTest {
 
         assertFalse(result.get(1, TimeUnit.SECONDS));
         assertTrue(interruptPreserved.get());
+        assertEquals(SegmentState.READY, gate.getState());
 
         gate.exitRead();
-        assertTrue(gate.finishFreezeToReady());
         waiter.join(1_000);
     }
 }

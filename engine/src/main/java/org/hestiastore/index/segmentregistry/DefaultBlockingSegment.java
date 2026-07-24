@@ -143,7 +143,8 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     @Override
     public K checkAndRepairConsistency() {
-        return currentSegment().checkAndRepairConsistency();
+        return runBlocking("checkAndRepairConsistency",
+                Segment::tryCheckAndRepairConsistency);
     }
 
     @Override

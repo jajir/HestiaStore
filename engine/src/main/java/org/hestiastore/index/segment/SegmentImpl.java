@@ -121,6 +121,16 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
+    public OperationResult<K> tryCheckAndRepairConsistency() {
+        final SegmentConsistencyChecker<K, V> consistencyChecker = new SegmentConsistencyChecker<>(
+                this, core.getKeyComparator());
+        return consistencyChecker.tryCheckAndRepairConsistency();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void invalidateIterators() {
         core.invalidateIterators();
     }

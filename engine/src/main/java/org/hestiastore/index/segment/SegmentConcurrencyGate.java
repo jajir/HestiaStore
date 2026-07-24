@@ -97,7 +97,11 @@ final class SegmentConcurrencyGate {
         if (!stateMachine.tryEnterFreeze()) {
             return false;
         }
-        return awaitNoInFlight();
+        if (awaitNoInFlight()) {
+            return true;
+        }
+        stateMachine.finishFreezeToReady();
+        return false;
     }
 
     /**
