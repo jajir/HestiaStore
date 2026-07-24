@@ -12,8 +12,8 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.routing.RouteTopology.RouteDrain;
 import org.hestiastore.index.segmentindex.core.routing.RouteTopology.RouteLease;
 import org.hestiastore.index.segmentindex.core.routing.RouteTopology.RouteLeaseResult;
-import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
 import org.hestiastore.index.segmentindex.routemap.RouteMapSnapshot;
+import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -419,7 +419,6 @@ public final class MappedSegmentLeaseService<K, V> {
 
     private boolean isRoutedSegment(final RouteMapSnapshot<K> snapshot,
             final SegmentId segmentId) {
-        return snapshot.getSegmentIds(SegmentWindow.unbounded())
-                .contains(segmentId);
+        return snapshot.containsSegmentId(segmentId);
     }
 }

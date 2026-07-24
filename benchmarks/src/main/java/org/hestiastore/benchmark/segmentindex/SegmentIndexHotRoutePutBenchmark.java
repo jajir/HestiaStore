@@ -15,6 +15,7 @@ import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -24,7 +25,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Benchmark focused on the hot-route write path.
+ * Benchmark focused on the hot-route write path, with optional
+ * production-default MDC context logging.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -41,6 +43,9 @@ public class SegmentIndexHotRoutePutBenchmark {
 
     private SegmentIndex<Integer, String> index;
     private AtomicInteger sequence;
+
+    @Param({ "false", "true" })
+    private boolean contextLogging;
 
     @Setup(Level.Trial)
     public void setup() {
@@ -81,7 +86,7 @@ public class SegmentIndexHotRoutePutBenchmark {
                         .keyTypeDescriptor(KEY_DESCRIPTOR)
                         .valueTypeDescriptor(VALUE_DESCRIPTOR)
                         .name("segment-index-hot-route-put-benchmark"))//
-                .logging(logging -> logging.contextEnabled(false))//
+                .logging(logging -> logging.contextEnabled(contextLogging))//
                 .segment(segment -> segment.cacheKeyLimit(512)
                         .chunkKeyLimit(64).cachedSegmentLimit(8)
                         .deltaCacheFileLimit(2))//

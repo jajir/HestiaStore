@@ -12,6 +12,7 @@
         "-r", "1s",
         "-w", "1s",
         "-t", "4",
+        "-p", "contextLogging=false",
         "-p", "readPathMode=persisted",
         "-p", "snappy=true",
         "-p", "keyCount=12000",
@@ -29,6 +30,7 @@
         "-r", "1s",
         "-w", "1s",
         "-t", "4",
+        "-p", "contextLogging=false",
         "-p", "readPathMode=live",
         "-p", "snappy=true",
         "-p", "keyCount=12000",
@@ -96,7 +98,8 @@
         "-i", "3",
         "-f", "1",
         "-r", "1s",
-        "-w", "1s"
+        "-w", "1s",
+        "-p", "contextLogging=false"
       ]
     },
     {

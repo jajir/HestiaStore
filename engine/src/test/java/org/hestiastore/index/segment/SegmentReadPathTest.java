@@ -10,11 +10,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.intThat;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -26,6 +35,8 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReaderSeekable;
+import org.hestiastore.index.directory.FileReaderSeekableSupplier;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +67,10 @@ class SegmentReadPathTest {
     private EntryIteratorWithCurrent<Integer, String> baseIterator;
     @Mock
     private FileReaderSeekable seekableReader;
+    @Mock
+    private FileReaderSeekableSupplier firstSeekableReaderSupplier;
+    @Mock
+    private FileReaderSeekableSupplier secondSeekableReaderSupplier;
 
     private SegmentReadPath<Integer, String> subject;
     private final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
@@ -94,6 +109,11 @@ class SegmentReadPathTest {
         when(baseIterator.hasNext()).thenReturn(false);
         subject = new SegmentReadPath<>(segmentFiles, conf, segmentResources,
                 segmentSearcher, segmentCache, versionController);
+    }
+
+    @AfterEach
+    void tearDown() {
+        subject.close();
     }
 
     @Test
@@ -159,5 +179,50 @@ class SegmentReadPathTest {
                 .getSegmentIndexSearcher();
         assertNotNull(third);
         assertNotSame(first, third);
+    }
+
+    @Test
+    void getSegmentIndexSearcher_closes_concurrent_cas_loser()
+            throws InterruptedException, ExecutionException, TimeoutException {
+        final CountDownLatch suppliersRequested = new CountDownLatch(2);
+        final CountDownLatch allowConstruction = new CountDownLatch(1);
+        final AtomicInteger supplierIndex = new AtomicInteger();
+        final AtomicInteger closedSupplierCount = new AtomicInteger();
+        doAnswer(invocation -> closedSupplierCount.incrementAndGet())
+                .when(firstSeekableReaderSupplier).close();
+        doAnswer(invocation -> closedSupplierCount.incrementAndGet())
+                .when(secondSeekableReaderSupplier).close();
+        when(asyncDirectory.getFileReaderSeekableSupplier("segment.index"))
+                .thenAnswer(invocation -> {
+                    final int index = supplierIndex.getAndIncrement();
+                    suppliersRequested.countDown();
+                    allowConstruction.await();
+                    return index == 0 ? firstSeekableReaderSupplier
+                            : secondSeekableReaderSupplier;
+                });
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            final Future<SegmentIndexSearcher<Integer, String>> firstFuture = executor
+                    .submit(subject::getSegmentIndexSearcher);
+            final Future<SegmentIndexSearcher<Integer, String>> secondFuture = executor
+                    .submit(subject::getSegmentIndexSearcher);
+            assertTrue(suppliersRequested.await(5, TimeUnit.SECONDS));
+            allowConstruction.countDown();
+
+            assertSame(firstFuture.get(5, TimeUnit.SECONDS),
+                    secondFuture.get(5, TimeUnit.SECONDS));
+            assertEquals(2, supplierIndex.get());
+            assertEquals(1, closedSupplierCount.get());
+
+            subject.close();
+
+            assertEquals(2, closedSupplierCount.get());
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
+        } finally {
+            allowConstruction.countDown();
+            executor.shutdownNow();
+        }
     }
 }

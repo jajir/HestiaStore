@@ -43,6 +43,17 @@ public final class RouteMapSnapshot<K> {
                 .toList();
     }
 
+    /**
+     * Returns whether this snapshot contains the provided segment id.
+     *
+     * @param segmentId segment id to find
+     * @return {@code true} when the segment id is routed
+     */
+    public boolean containsSegmentId(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        return map.containsValue(segmentId);
+    }
+
     public long version() {
         return version;
     }

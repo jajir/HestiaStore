@@ -77,9 +77,9 @@ public class SegmentIndexMultiSegmentGetBenchmark
 
     @Override
     protected void populateIndex(final SegmentIndex<Integer, String> created) {
-        final int flushBatchSize = Math.max(512, maxKeysInSegment / 2);
+        // Let background splits settle before one final full maintenance pass.
         SegmentIndexBenchmarkSupport.populateSequential(created, keyCount,
-                flushBatchSize, this::buildValue);
+                keyCount, this::buildValue);
     }
 
     @Override

@@ -100,6 +100,31 @@ class BenchmarkHistoryScriptsSmokeTest {
     }
 
     @Test
+    void profileRunnerRejectsEmptyJmhResults() throws Exception {
+        assumePython3Available();
+        final Path emptyResult = tempDir.resolve("empty-jmh-result.json");
+        Files.writeString(emptyResult, "[]", StandardCharsets.UTF_8);
+
+        final String snippet = """
+                import importlib.util
+                import pathlib
+                import sys
+
+                spec = importlib.util.spec_from_file_location("run_jmh_profile", sys.argv[1])
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                module.normalize_result(pathlib.Path(sys.argv[2]))
+                """;
+        final ProcessResult result = runCommand(List.of("python3", "-c",
+                snippet, scriptPath("run_jmh_profile.py").toString(),
+                emptyResult.toString()));
+
+        assertTrue(result.exitCode() != 0, result.output());
+        assertTrue(result.output().contains("JMH produced no benchmark results"),
+                result.output());
+    }
+
+    @Test
     void publishAndResolveScriptsRoundTripHistoryPointer() throws Exception {
         assumePython3Available();
         final Path sourceDir = tempDir.resolve("candidate-run");

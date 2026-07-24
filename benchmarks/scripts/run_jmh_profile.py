@@ -124,6 +124,8 @@ def host_metadata() -> dict[str, Any]:
 
 def normalize_result(result_path: Path) -> dict[str, Any]:
     rows = json.loads(result_path.read_text(encoding="utf-8"))
+    if not rows:
+        raise ValueError(f"JMH produced no benchmark results in {result_path}.")
     normalized_rows = []
     for row in rows:
         normalized_rows.append({

@@ -1,0 +1,76 @@
+{
+  "profile": "segment-index-context-logging",
+  "description": "Focused three-fork comparison of SegmentIndex point workloads with Logback-backed MDC context logging disabled and enabled.",
+  "benchmarks": [
+    {
+      "label": "segment-index-live-get-context-disabled",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "args": [
+        "-wi", "3",
+        "-i", "5",
+        "-f", "3",
+        "-r", "1s",
+        "-w", "1s",
+        "-t", "4",
+        "-prof", "gc",
+        "-e", ".*getMissSync",
+        "-p", "contextLogging=false",
+        "-p", "readPathMode=live",
+        "-p", "snappy=true",
+        "-p", "chunkStoreCachePageLimit=0",
+        "-p", "keyCount=12000",
+        "-p", "maxKeysInChunk=256",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-live-get-context-enabled",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "args": [
+        "-wi", "3",
+        "-i", "5",
+        "-f", "3",
+        "-r", "1s",
+        "-w", "1s",
+        "-t", "4",
+        "-prof", "gc",
+        "-e", ".*getMissSync",
+        "-p", "contextLogging=true",
+        "-p", "readPathMode=live",
+        "-p", "snappy=true",
+        "-p", "chunkStoreCachePageLimit=0",
+        "-p", "keyCount=12000",
+        "-p", "maxKeysInChunk=256",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-hot-put-context-disabled",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
+      "args": [
+        "-wi", "3",
+        "-i", "5",
+        "-f", "3",
+        "-r", "1s",
+        "-w", "1s",
+        "-prof", "gc",
+        "-e", ".*putThenGetHotRoute",
+        "-p", "contextLogging=false"
+      ]
+    },
+    {
+      "label": "segment-index-hot-put-context-enabled",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
+      "args": [
+        "-wi", "3",
+        "-i", "5",
+        "-f", "3",
+        "-r", "1s",
+        "-w", "1s",
+        "-prof", "gc",
+        "-e", ".*putThenGetHotRoute",
+        "-p", "contextLogging=true"
+      ]
+    }
+  ]
+}

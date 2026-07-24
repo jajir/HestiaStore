@@ -54,6 +54,11 @@ class BenchmarkProfileContractTest {
             "diskio-sequential-read-1k",
             "diskio-sequential-read-4k",
             "diskio-sequential-read-32k");
+    private static final Set<String> REQUIRED_CONTEXT_LOGGING_LABELS = Set.of(
+            "segment-index-live-get-context-disabled",
+            "segment-index-live-get-context-enabled",
+            "segment-index-hot-put-context-disabled",
+            "segment-index-hot-put-context-enabled");
 
     @Test
     void allBenchmarkProfilesUseUniqueLabelsAndResolvableBenchmarkClasses()
@@ -97,6 +102,8 @@ class BenchmarkProfileContractTest {
         assertCanonicalNightlySegmentIndexProfile(
                 profilesByName.get("segment-index-nightly"));
         assertCanonicalDiskIoNightlyProfile(profilesByName.get("diskio-nightly"));
+        assertContextLoggingProfile(
+                profilesByName.get("segment-index-context-logging"));
     }
 
     @Test
@@ -127,10 +134,11 @@ class BenchmarkProfileContractTest {
 
         assertEntry(byLabel.get("segment-index-get-persisted"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
-                Map.of("readPathMode", "persisted"));
+                Map.of("contextLogging", "false", "readPathMode",
+                        "persisted"));
         assertEntry(byLabel.get("segment-index-get-live"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
-                Map.of("readPathMode", "live"));
+                Map.of("contextLogging", "false", "readPathMode", "live"));
         assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
                 Map.of("workingSetMode", "hot"));
@@ -146,7 +154,7 @@ class BenchmarkProfileContractTest {
                 16);
         assertEntry(byLabel.get("segment-index-hot-route-put"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
-                Map.of());
+                Map.of("contextLogging", "false"));
         assertEntry(byLabel.get("segment-index-mixed-drain"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
                 Map.of("workloadMode", "drainOnly"));
@@ -168,10 +176,11 @@ class BenchmarkProfileContractTest {
 
         assertEntry(byLabel.get("segment-index-get-persisted"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
-                Map.of("readPathMode", "persisted"));
+                Map.of("contextLogging", "false", "readPathMode",
+                        "persisted"));
         assertEntry(byLabel.get("segment-index-get-live"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
-                Map.of("readPathMode", "live"));
+                Map.of("contextLogging", "false", "readPathMode", "live"));
         assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
                 Map.of("workingSetMode", "hot"));
@@ -193,7 +202,7 @@ class BenchmarkProfileContractTest {
                 Map.of("walMode", "sync"));
         assertEntry(byLabel.get("segment-index-hot-route-put"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
-                Map.of());
+                Map.of("contextLogging", "false"));
         assertEntry(byLabel.get("segment-index-mixed-drain"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
                 Map.of("workloadMode", "drainOnly"));
@@ -233,6 +242,47 @@ class BenchmarkProfileContractTest {
                 Map.of("diskIoBufferSizeBytes", "32768"));
     }
 
+    private void assertContextLoggingProfile(final BenchmarkProfile profile) {
+        assertNotNull(profile, "Missing context-logging profile");
+        final Map<String, BenchmarkEntry> byLabel = new LinkedHashMap<>();
+        for (final BenchmarkEntry benchmark : profile.benchmarks()) {
+            byLabel.put(benchmark.label(), benchmark);
+        }
+        assertEquals(REQUIRED_CONTEXT_LOGGING_LABELS, byLabel.keySet(),
+                () -> "Unexpected benchmark labels in profile "
+                        + profile.profile());
+
+        assertContextLoggingEntry(
+                byLabel.get("segment-index-live-get-context-disabled"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+                "false", "live");
+        assertContextLoggingEntry(
+                byLabel.get("segment-index-live-get-context-enabled"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+                "true", "live");
+        assertContextLoggingEntry(
+                byLabel.get("segment-index-hot-put-context-disabled"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
+                "false", null);
+        assertContextLoggingEntry(
+                byLabel.get("segment-index-hot-put-context-enabled"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
+                "true", null);
+    }
+
+    private void assertContextLoggingEntry(final BenchmarkEntry entry,
+            final String include, final String contextLogging,
+            final String readPathMode) {
+        final Map<String, String> params = new LinkedHashMap<>();
+        params.put("contextLogging", contextLogging);
+        if (readPathMode != null) {
+            params.put("readPathMode", readPathMode);
+        }
+        assertEntry(entry, include, params);
+        assertOptionValue(entry, "-f", "3");
+        assertOptionValue(entry, "-prof", "gc");
+    }
+
     private void assertEntry(final BenchmarkEntry entry, final String include,
             final Map<String, String> requiredParams) {
         assertNotNull(entry, "Missing benchmark entry for " + include);
@@ -253,13 +303,17 @@ class BenchmarkProfileContractTest {
 
     private void assertThreadCount(final BenchmarkEntry entry,
             final int expectedThreadCount) {
+        assertOptionValue(entry, "-t", Integer.toString(expectedThreadCount));
+    }
+
+    private void assertOptionValue(final BenchmarkEntry entry,
+            final String option, final String expectedValue) {
         final List<String> args = entry.args();
-        final int threadOption = args.indexOf("-t");
-        assertTrue(threadOption >= 0 && threadOption + 1 < args.size(),
-                () -> "Missing thread count for " + entry.label());
-        assertEquals(Integer.toString(expectedThreadCount),
-                args.get(threadOption + 1),
-                () -> "Unexpected thread count for " + entry.label());
+        final int optionIndex = args.indexOf(option);
+        assertTrue(optionIndex >= 0 && optionIndex + 1 < args.size(),
+                () -> "Missing " + option + " for " + entry.label());
+        assertEquals(expectedValue, args.get(optionIndex + 1),
+                () -> "Unexpected " + option + " for " + entry.label());
     }
 
     private List<BenchmarkProfile> loadProfiles() throws Exception {
