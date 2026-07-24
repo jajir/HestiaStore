@@ -53,6 +53,7 @@ public class SegmentIndexPersistedMutationBenchmark {
 
     private File tempDir;
     private SegmentIndex<Integer, String> index;
+    private MutationFlushCoordinator flushCoordinator;
 
     /**
      * Creates the persisted benchmark index and its stable seed data.
@@ -65,6 +66,7 @@ public class SegmentIndexPersistedMutationBenchmark {
                 .createTempDir("hestia-jmh-mutation");
         index = SegmentIndex.create(new FsDirectory(tempDir),
                 buildConfiguration(resolveWal()));
+        flushCoordinator = new MutationFlushCoordinator();
         seedStableBase(index);
     }
 
@@ -75,6 +77,7 @@ public class SegmentIndexPersistedMutationBenchmark {
     public void flushAfterIteration() {
         if (index != null) {
             index.maintenance().flushAndWait();
+            flushCoordinator.reset();
         }
     }
 
@@ -87,6 +90,7 @@ public class SegmentIndexPersistedMutationBenchmark {
             index.close();
             index = null;
         }
+        flushCoordinator = null;
         if (tempDir != null) {
             SegmentIndexBenchmarkSupport.deleteRecursively(tempDir);
             tempDir = null;
@@ -102,7 +106,7 @@ public class SegmentIndexPersistedMutationBenchmark {
     public void putSync(final MutationCursor cursor) {
         final int key = cursor.nextPutKey(seededKeyCount);
         index.put(Integer.valueOf(key), buildValue("put-", key, 'p'));
-        flushIfNeeded(cursor);
+        flushIfNeeded();
     }
 
     /**
@@ -113,21 +117,23 @@ public class SegmentIndexPersistedMutationBenchmark {
     @Benchmark
     public void deleteSync(final MutationCursor cursor) {
         index.delete(Integer.valueOf(cursor.nextDeleteKey(seededKeyCount)));
-        flushIfNeeded(cursor);
+        flushIfNeeded();
     }
 
     private IndexConfiguration<Integer, String> buildConfiguration(
             final IndexWalConfiguration wal) {
         final int maxKeysBeforeSplit = Math.max(65_536, seededKeyCount * 8);
+        final int writeCacheKeyLimit = Math.max(8_192, flushBatchSize * 32);
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-persisted-mutation-benchmark")//
                 .wal(walBuilder -> walBuilder.configuration(wal))//
                 .segment(segment -> segment.cacheKeyLimit(32)
                         .chunkKeyLimit(128).maxKeys(maxKeysBeforeSplit)
                         .cachedSegmentLimit(8).deltaCacheFileLimit(2))//
-                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
-                        .maintenanceWriteCacheKeyLimit(1024)
-                        .indexBufferedWriteKeyLimit(8192)
+                .writePath(writePath -> writePath
+                        .segmentWriteCacheKeyLimit(writeCacheKeyLimit)
+                        .maintenanceWriteCacheKeyLimit(writeCacheKeyLimit * 2)
+                        .indexBufferedWriteKeyLimit(writeCacheKeyLimit * 4)
                         .segmentSplitKeyThreshold(maxKeysBeforeSplit))//
                 .bloomFilter(bloomFilter -> bloomFilter
                         .indexSizeBytes(Math.max(16_384, seededKeyCount / 2))
@@ -167,9 +173,14 @@ public class SegmentIndexPersistedMutationBenchmark {
         seedingIndex.maintenance().compactAndWait();
     }
 
-    private void flushIfNeeded(final MutationCursor cursor) {
-        if (cursor.shouldFlush(flushBatchSize)) {
+    private void flushIfNeeded() {
+        if (!flushCoordinator.recordAndTryStartFlush(flushBatchSize)) {
+            return;
+        }
+        try {
             index.maintenance().flushAndWait();
+        } finally {
+            flushCoordinator.finishFlush();
         }
     }
 
@@ -180,7 +191,7 @@ public class SegmentIndexPersistedMutationBenchmark {
     }
 
     /**
-     * Thread-local key selection and flush scheduling for concurrent writers.
+     * Thread-local key selection for concurrent writers.
      */
     @State(Scope.Thread)
     public static class MutationCursor {
@@ -189,11 +200,9 @@ public class SegmentIndexPersistedMutationBenchmark {
         private int threadCount;
         private int putOffset;
         private int deleteKey;
-        private int mutationsUntilFlush;
-        private boolean firstFlush;
 
         /**
-         * Resets the cursor and staggers the first flush across writers.
+         * Resets the cursor for this writer's disjoint key partitions.
          *
          * @param threadParams JMH thread metadata
          */
@@ -203,8 +212,6 @@ public class SegmentIndexPersistedMutationBenchmark {
             threadCount = threadParams.getThreadCount();
             putOffset = threadIndex;
             deleteKey = threadIndex;
-            mutationsUntilFlush = 0;
-            firstFlush = true;
         }
 
         /**
@@ -234,23 +241,5 @@ public class SegmentIndexPersistedMutationBenchmark {
             return key;
         }
 
-        /**
-         * Staggers per-writer flushes to preserve the configured aggregate flush
-         * cadence under multiple JMH threads.
-         *
-         * @param flushBatchSize aggregate mutation count between flushes
-         * @return true when this writer should request a flush
-         */
-        boolean shouldFlush(final int flushBatchSize) {
-            if (mutationsUntilFlush == 0) {
-                mutationsUntilFlush = firstFlush
-                        ? Math.max(1, (threadIndex + 1) * flushBatchSize
-                                / threadCount)
-                        : flushBatchSize;
-                firstFlush = false;
-            }
-            mutationsUntilFlush--;
-            return mutationsUntilFlush == 0;
-        }
     }
 }

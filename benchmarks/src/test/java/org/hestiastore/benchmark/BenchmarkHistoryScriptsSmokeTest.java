@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -216,6 +219,116 @@ class BenchmarkHistoryScriptsSmokeTest {
                 "--channel", "main");
 
         assertEquals(1, resolveResult.exitCode(), resolveResult.output());
+    }
+
+    @Test
+    void resolveScriptRequiresMatchingProfileFingerprint() throws Exception {
+        assumePython3Available();
+        final Path sourceDir = tempDir.resolve("candidate-run-fingerprint");
+        final Path historyDir = tempDir.resolve("perf-artifacts-fingerprint");
+        final Path profileSpec = tempDir.resolve("fingerprint-profile.json");
+        Files.createDirectories(sourceDir.resolve("raw"));
+        Files.createDirectories(sourceDir.resolve("logs"));
+        Files.writeString(profileSpec, """
+                {
+                  "profile": "segment-index-pr-smoke",
+                  "benchmarks": [
+                    { "label": "segment-index-get-live" },
+                    { "label": "segment-index-mixed-drain" }
+                  ]
+                }
+                """, StandardCharsets.UTF_8);
+        final Map<String, Object> summary = new LinkedHashMap<>(
+                candidateSummaryModel());
+        summary.put("profileFingerprint", sha256(profileSpec));
+        writeSummary(sourceDir.resolve("summary.json"), summary);
+        Files.writeString(sourceDir.resolve("raw/sample.json"), "{}",
+                StandardCharsets.UTF_8);
+        Files.writeString(sourceDir.resolve("logs/sample.log"), "ok\n",
+                StandardCharsets.UTF_8);
+
+        final ProcessResult publishResult = runPythonScript(
+                "publish_jmh_history.py",
+                "--source-dir", sourceDir.toString(),
+                "--history-dir", historyDir.toString(),
+                "--channel", "main",
+                "--run-suffix", "fingerprint");
+        assertEquals(0, publishResult.exitCode(), publishResult.output());
+
+        final ProcessResult matchingResult = runPythonScript(
+                "resolve_jmh_history_baseline.py",
+                "--history-dir", historyDir.toString(),
+                "--profile", PROFILE,
+                "--profile-spec", profileSpec.toString(),
+                "--channel", "main");
+        assertEquals(0, matchingResult.exitCode(), matchingResult.output());
+
+        Files.writeString(profileSpec, "\n", StandardCharsets.UTF_8,
+                StandardOpenOption.APPEND);
+        final ProcessResult changedResult = runPythonScript(
+                "resolve_jmh_history_baseline.py",
+                "--history-dir", historyDir.toString(),
+                "--profile", PROFILE,
+                "--profile-spec", profileSpec.toString(),
+                "--channel", "main");
+        assertEquals(1, changedResult.exitCode(), changedResult.output());
+    }
+
+    @Test
+    void runProfileScriptRejectsEmptyJmhResults() throws Exception {
+        assumePython3Available();
+        final Path rawResult = tempDir.resolve("empty-jmh.json");
+        Files.writeString(rawResult, "[]", StandardCharsets.UTF_8);
+
+        final ProcessResult result = runCommand(List.of(
+                "python3",
+                "-c",
+                "import sys; from pathlib import Path; "
+                        + "sys.path.insert(0, sys.argv[1]); "
+                        + "from run_jmh_profile import normalize_result; "
+                        + "normalize_result(Path(sys.argv[2]))",
+                scriptPath("run_jmh_profile.py").getParent().toString(),
+                rawResult.toString()));
+
+        assertEquals(1, result.exitCode(), result.output());
+        assertTrue(result.output().contains("no benchmark results"));
+    }
+
+    @Test
+    void runProfileScriptRejectsPartialParameterResults() throws Exception {
+        assumePython3Available();
+        final Path rawResult = tempDir.resolve("partial-jmh.json");
+        Files.writeString(rawResult, """
+                [
+                  {
+                    "benchmark": "example.Benchmark.first",
+                    "mode": "thrpt",
+                    "threads": 1,
+                    "primaryMetric": {
+                      "score": 1.0,
+                      "scoreUnit": "ops/s"
+                    },
+                    "secondaryMetrics": {}
+                  }
+                ]
+                """, StandardCharsets.UTF_8);
+
+        final ProcessResult result = runCommand(List.of(
+                "python3",
+                "-c",
+                "import sys; from pathlib import Path; "
+                        + "sys.path.insert(0, sys.argv[1]); "
+                        + "from run_jmh_profile import normalize_result; "
+                        + "normalize_result(Path(sys.argv[2]), "
+                        + "sys.argv[4:], int(sys.argv[3]))",
+                scriptPath("run_jmh_profile.py").getParent().toString(),
+                rawResult.toString(),
+                "2",
+                "example.Benchmark.first"));
+
+        assertEquals(1, result.exitCode(), result.output());
+        assertTrue(result.output().contains(
+                "produced 1 benchmark results"));
     }
 
     @Test
@@ -570,6 +683,11 @@ class BenchmarkHistoryScriptsSmokeTest {
         path.getParent().toFile().mkdirs();
         Files.writeString(path, value, StandardCharsets.UTF_8);
         Files.setLastModifiedTime(path, FileTime.fromMillis(modifiedMillis));
+    }
+
+    private String sha256(final Path path) throws Exception {
+        final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        return HexFormat.of().formatHex(digest.digest(Files.readAllBytes(path)));
     }
 
     private Map<String, Object> baselineSummaryModel() {

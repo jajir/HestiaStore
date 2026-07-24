@@ -117,6 +117,7 @@ class BenchmarkProfileContractTest {
     private void assertCanonicalPrSegmentIndexProfile(
             final BenchmarkProfile profile) {
         assertNotNull(profile, "Missing canonical segment-index profile");
+        assertCanonicalProfileMetadata(profile);
         final Map<String, BenchmarkEntry> byLabel = new LinkedHashMap<>();
         for (final BenchmarkEntry benchmark : profile.benchmarks()) {
             byLabel.put(benchmark.label(), benchmark);
@@ -158,6 +159,7 @@ class BenchmarkProfileContractTest {
     private void assertCanonicalNightlySegmentIndexProfile(
             final BenchmarkProfile profile) {
         assertNotNull(profile, "Missing canonical segment-index profile");
+        assertCanonicalProfileMetadata(profile);
         final Map<String, BenchmarkEntry> byLabel = new LinkedHashMap<>();
         for (final BenchmarkEntry benchmark : profile.benchmarks()) {
             byLabel.put(benchmark.label(), benchmark);
@@ -251,6 +253,43 @@ class BenchmarkProfileContractTest {
         }
     }
 
+    private void assertCanonicalProfileMetadata(
+            final BenchmarkProfile profile) {
+        assertNotNull(profile.supportSources(),
+                () -> "Missing support sources for " + profile.profile());
+        assertFalse(profile.supportSources().isEmpty(),
+                () -> "Empty support sources for " + profile.profile());
+        for (final String supportSource : profile.supportSources()) {
+            assertTrue(Files.isRegularFile(repoRoot().resolve(supportSource)),
+                    () -> "Missing benchmark support source "
+                            + supportSource);
+        }
+        for (final BenchmarkEntry benchmark : profile.benchmarks()) {
+            assertNotNull(benchmark.expectedBenchmarks(),
+                    () -> "Missing expected benchmark methods for "
+                            + benchmark.label());
+            assertFalse(benchmark.expectedBenchmarks().isEmpty(),
+                    () -> "Empty expected benchmark methods for "
+                            + benchmark.label());
+            assertEquals(benchmark.expectedBenchmarks().size(),
+                    new LinkedHashSet<>(benchmark.expectedBenchmarks()).size(),
+                    () -> "Duplicate expected benchmark methods for "
+                            + benchmark.label());
+            assertTrue(benchmark.expectedResultCount() >= benchmark
+                    .expectedBenchmarks().size(),
+                    () -> "Invalid expected result count for "
+                            + benchmark.label());
+            for (final String expectedBenchmark : benchmark
+                    .expectedBenchmarks()) {
+                assertTrue(
+                        expectedBenchmark.startsWith(benchmark.include() + "."),
+                        () -> "Unexpected benchmark method "
+                                + expectedBenchmark + " for "
+                                + benchmark.label());
+            }
+        }
+    }
+
     private void assertThreadCount(final BenchmarkEntry entry,
             final int expectedThreadCount) {
         final List<String> args = entry.args();
@@ -326,6 +365,11 @@ class BenchmarkProfileContractTest {
         return current.resolve("benchmarks").resolve("src/main/java");
     }
 
+    private Path repoRoot() {
+        final Path sourceRoot = sourceRoot();
+        return sourceRoot.getParent().getParent().getParent().getParent();
+    }
+
     private String readUtf8(final Path path) {
         try {
             return Files.readString(path, StandardCharsets.UTF_8);
@@ -335,9 +379,12 @@ class BenchmarkProfileContractTest {
     }
 
     record BenchmarkProfile(String profile, String description,
+            List<String> supportSources,
             List<BenchmarkEntry> benchmarks) {
     }
 
-    record BenchmarkEntry(String label, String include, List<String> args) {
+    record BenchmarkEntry(String label, String include,
+            List<String> expectedBenchmarks, int expectedResultCount,
+            List<String> args) {
     }
 }

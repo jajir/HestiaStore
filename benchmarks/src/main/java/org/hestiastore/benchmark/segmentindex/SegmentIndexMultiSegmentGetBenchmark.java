@@ -51,12 +51,22 @@ public class SegmentIndexMultiSegmentGetBenchmark
     }
 
     @Override
+    protected IndexConfiguration<Integer, String> buildSetupConfiguration() {
+        return buildConfiguration(Math.max(maxSegmentsInCache, keyCount));
+    }
+
+    @Override
     protected IndexConfiguration<Integer, String> buildConfiguration() {
+        return buildConfiguration(maxSegmentsInCache);
+    }
+
+    private IndexConfiguration<Integer, String> buildConfiguration(
+            final int cachedSegmentLimit) {
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-multi-segment-get-benchmark")//
                 .segment(segment -> segment.cacheKeyLimit(32)
                         .chunkKeyLimit(64).maxKeys(maxKeysInSegment)
-                        .cachedSegmentLimit(maxSegmentsInCache)
+                        .cachedSegmentLimit(cachedSegmentLimit)
                         .deltaCacheFileLimit(2))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
                         .maintenanceWriteCacheKeyLimit(512)
@@ -77,9 +87,8 @@ public class SegmentIndexMultiSegmentGetBenchmark
 
     @Override
     protected void populateIndex(final SegmentIndex<Integer, String> created) {
-        final int flushBatchSize = Math.max(512, maxKeysInSegment / 2);
         SegmentIndexBenchmarkSupport.populateSequential(created, keyCount,
-                flushBatchSize, this::buildValue);
+                keyCount, this::buildValue);
     }
 
     @Override
@@ -88,7 +97,6 @@ public class SegmentIndexMultiSegmentGetBenchmark
                 () -> created.runtimeMonitoring().snapshot()
                         .segments().count() > 1, 15_000L,
                 "Expected persisted multi-segment benchmark layout.");
-        created.maintenance().flushAndWait();
     }
 
     @Override
