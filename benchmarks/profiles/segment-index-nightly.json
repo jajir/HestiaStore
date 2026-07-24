@@ -1,10 +1,20 @@
 {
   "profile": "segment-index-nightly",
   "description": "Longer canonical SegmentIndex benchmark set for trend tracking on main/nightly runs.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/benchmark/segmentindex/AbstractSegmentIndexGetBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/benchmark/segmentindex/MutationFlushCoordinator.java",
+    "benchmarks/src/main/java/org/hestiastore/benchmark/segmentindex/SegmentIndexBenchmarkSupport.java"
+  ],
   "benchmarks": [
     {
       "label": "segment-index-get-persisted",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync"
+      ],
+      "expectedResultCount": 4,
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -23,6 +33,11 @@
     {
       "label": "segment-index-get-live",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync"
+      ],
+      "expectedResultCount": 4,
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -41,6 +56,11 @@
     {
       "label": "segment-index-get-multisegment-hot",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitSync",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissSync"
+      ],
+      "expectedResultCount": 2,
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -59,6 +79,11 @@
     {
       "label": "segment-index-get-multisegment-cold",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitSync",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissSync"
+      ],
+      "expectedResultCount": 2,
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -77,6 +102,11 @@
     {
       "label": "segment-index-persisted-mutation",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync"
+      ],
+      "expectedResultCount": 2,
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -94,6 +124,11 @@
     {
       "label": "segment-index-persisted-mutation-concurrent",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync"
+      ],
+      "expectedResultCount": 2,
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -111,6 +146,12 @@
     {
       "label": "segment-index-lifecycle",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCheckAndRepairConsistency",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCompact",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openExisting"
+      ],
+      "expectedResultCount": 3,
       "args": [
         "-wi", "1",
         "-i", "3",
@@ -126,6 +167,11 @@
     {
       "label": "segment-index-hot-route-put",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putHotRoute",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute"
+      ],
+      "expectedResultCount": 2,
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -138,6 +184,10 @@
     {
       "label": "segment-index-mixed-drain",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed"
+      ],
+      "expectedResultCount": 1,
       "args": [
         "-wi", "2",
         "-i", "5",
@@ -151,6 +201,10 @@
     {
       "label": "segment-index-mixed-split-heavy",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed"
+      ],
+      "expectedResultCount": 1,
       "args": [
         "-wi", "2",
         "-i", "5",
