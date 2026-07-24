@@ -105,6 +105,22 @@ public interface Segment<K, V> {
     K checkAndRepairConsistency();
 
     /**
+     * Attempts one consistency check without waiting for transient segment
+     * states.
+     * <p>
+     * Implementations that coordinate concurrent maintenance should override
+     * this method and return the corresponding non-OK status when exclusive
+     * access cannot be acquired. The default preserves compatibility with
+     * implementations whose existing consistency check is already synchronous.
+     *
+     * @return consistency result containing the last key, or {@code null} when
+     *         the segment is empty
+     */
+    default OperationResult<K> tryCheckAndRepairConsistency() {
+        return OperationResult.ok(checkAndRepairConsistency());
+    }
+
+    /**
      * Invalidates any active iterators by bumping the internal version counter.
      * Readers using optimistic locks should stop on the next check.
      *

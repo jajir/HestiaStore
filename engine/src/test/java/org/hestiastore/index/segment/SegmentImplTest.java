@@ -747,6 +747,29 @@ class SegmentImplTest {
     }
 
     @Test
+    void tryCheckAndRepairConsistency_empty_returns_ok() {
+        when(indexIterator.hasNext()).thenReturn(false);
+
+        final OperationResult<Integer> result = subject
+                .tryCheckAndRepairConsistency();
+
+        assertEquals(OperationStatus.OK, result.getStatus());
+        assertNull(result.getValue());
+    }
+
+    @Test
+    void tryCheckAndRepairConsistency_iteratorFailure_returns_error() {
+        when(chunkPairFile.openIterator())
+                .thenThrow(new RuntimeException("boom"));
+
+        final OperationResult<Integer> result = subject
+                .tryCheckAndRepairConsistency();
+
+        assertEquals(OperationStatus.ERROR, result.getStatus());
+        assertEquals(SegmentState.ERROR, subject.getState());
+    }
+
+    @Test
     void checkAndRepairConsistency_invalid_order_throws() {
         when(indexIterator.hasNext()).thenReturn(true, true, true, false);
         when(indexIterator.next()).thenReturn(Entry.of(1, "a"))

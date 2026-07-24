@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -117,6 +118,104 @@ class DefaultBlockingSegmentTest {
         when(segment.compact()).thenReturn(OperationResult.error());
 
         assertThrows(IndexException.class, () -> handle.compact());
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void checkAndRepairConsistencyRetriesBusyStatusUntilSuccessful() {
+        when(segment.tryCheckAndRepairConsistency())
+                .thenReturn(OperationResult.busy())
+                .thenReturn(OperationResult.ok(17));
+
+        assertEquals(17, handle.checkAndRepairConsistency());
+        verify(segment, times(2)).tryCheckAndRepairConsistency();
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void checkAndRepairConsistencyReturnsNullForEmptySegment() {
+        when(segment.tryCheckAndRepairConsistency())
+                .thenReturn(OperationResult.ok(null));
+
+        assertNull(handle.checkAndRepairConsistency());
+        verify(segment).tryCheckAndRepairConsistency();
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void checkAndRepairConsistencyReloadsClosedSegment() {
+        final Segment<Integer, String> reloadedSegment = mockSegment();
+        when(segment.tryCheckAndRepairConsistency())
+                .thenReturn(OperationResult.closed());
+        when(segmentRegistry.loadSegment(SEGMENT_ID))
+                .thenReturn(reloadedSegment);
+        when(reloadedSegment.tryCheckAndRepairConsistency())
+                .thenReturn(OperationResult.ok(19));
+
+        assertEquals(19, handle.checkAndRepairConsistency());
+        verify(segmentRegistry).loadSegment(SEGMENT_ID);
+        verify(reloadedSegment).tryCheckAndRepairConsistency();
+    }
+
+    @Test
+    void checkAndRepairConsistencyTimesOutWhenBusyPersists() {
+        handle = newHandle(new BusyRetryPolicy(1, 5), false);
+        when(segment.tryCheckAndRepairConsistency())
+                .thenReturn(OperationResult.busy());
+
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> handle.checkAndRepairConsistency());
+
+        assertTrue(exception.getMessage().contains(
+                "'checkAndRepairConsistency' timed out after 5 ms"));
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void checkAndRepairConsistencyPreservesInterrupt() {
+        when(segment.tryCheckAndRepairConsistency())
+                .thenReturn(OperationResult.busy());
+
+        try {
+            Thread.currentThread().interrupt();
+
+            final IndexException exception = assertThrows(IndexException.class,
+                    () -> handle.checkAndRepairConsistency());
+
+            assertTrue(exception.getMessage().contains(
+                    "'checkAndRepairConsistency' was interrupted"));
+            assertTrue(Thread.currentThread().isInterrupted());
+            verifyNoInteractions(segmentRegistry);
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void checkAndRepairConsistencyDoesNotRetryErrorStatus() {
+        when(segment.tryCheckAndRepairConsistency())
+                .thenReturn(OperationResult.error());
+
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> handle.checkAndRepairConsistency());
+
+        assertEquals(
+                "Segment 'segment-00007' failed to checkAndRepairConsistency: ERROR",
+                exception.getMessage());
+        verify(segment).tryCheckAndRepairConsistency();
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void checkAndRepairConsistencyPropagatesCorruption() {
+        final IndexException corruption = new IndexException("broken keys");
+        when(segment.tryCheckAndRepairConsistency()).thenThrow(corruption);
+
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> handle.checkAndRepairConsistency());
+
+        assertSame(corruption, exception);
+        verify(segment).tryCheckAndRepairConsistency();
         verifyNoInteractions(segmentRegistry);
     }
 

@@ -1,12 +1,14 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.junit.jupiter.api.Test;
 
 class SegmentTest {
@@ -19,6 +21,20 @@ class SegmentTest {
 
             assertEquals(SegmentIteratorIsolation.FAIL_FAST,
                     segment.getLastIsolation());
+        } finally {
+            segment.close();
+        }
+    }
+
+    @Test
+    void tryCheckAndRepairConsistencyDefaultsToExistingCheck() {
+        final StubSegment segment = new StubSegment();
+        try {
+            final OperationResult<Integer> result = segment
+                    .tryCheckAndRepairConsistency();
+
+            assertEquals(OperationStatus.OK, result.getStatus());
+            assertNull(result.getValue());
         } finally {
             segment.close();
         }
