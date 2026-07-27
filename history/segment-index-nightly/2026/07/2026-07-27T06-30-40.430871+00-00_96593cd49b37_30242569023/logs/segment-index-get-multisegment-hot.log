@@ -1,0 +1,127 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitSync
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, maxSegmentsInCache = 3, snappy = true, valueLength = 64, workingSetMode = hot)
+
+# Run progress: 0.00% complete, ETA 00:00:28
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+<failure>
+
+org.hestiastore.index.IndexException: Segment access operation 'loadSegment' timed out after 30000 ms on target 'segment-00008'
+	at org.hestiastore.index.BusyRetryPolicy.backoffOrThrow(BusyRetryPolicy.java:75)
+	at org.hestiastore.index.segmentregistry.BlockingSegmentRegistryAdapter.loadSegment(BlockingSegmentRegistryAdapter.java:55)
+	at org.hestiastore.index.segmentregistry.SegmentRegistryImpl.lambda$toBlockingSegment$2(SegmentRegistryImpl.java:344)
+	at org.hestiastore.index.segmentregistry.DefaultBlockingSegment.loadSegment(DefaultBlockingSegment.java:138)
+	at org.hestiastore.index.segmentregistry.DefaultBlockingSegment$RuntimeView.getState(DefaultBlockingSegment.java:187)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.awaitSegmentReady(MappedSegmentMaintenanceService.java:338)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.awaitAcceptedToReadyNanos(MappedSegmentMaintenanceService.java:330)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.completeAcceptedOperation(MappedSegmentMaintenanceService.java:282)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.completeOperation(MappedSegmentMaintenanceService.java:232)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.runSegmentMaintenance(MappedSegmentMaintenanceService.java:202)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.flushSegment(MappedSegmentMaintenanceService.java:188)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.flushSegments(MappedSegmentMaintenanceService.java:154)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.flushMappedSegmentsAndWait(MappedSegmentMaintenanceService.java:159)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.flushAndWait(MappedSegmentMaintenanceService.java:135)
+	at org.hestiastore.index.segmentindex.core.session.MaintenanceApiAdapter.flushAndWait(MaintenanceApiAdapter.java:96)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexBenchmarkSupport.populateSequential(SegmentIndexBenchmarkSupport.java:79)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.populateIndex(SegmentIndexMultiSegmentGetBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.AbstractSegmentIndexGetBenchmark.setup(AbstractSegmentIndexGetBenchmark.java:30)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMultiSegmentGetBenchmark_getHitSync_jmhTest._jmh_tryInit_f_segmentindexmultisegmentgetbenchmark0_G(SegmentIndexMultiSegmentGetBenchmark_getHitSync_jmhTest.java:476)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMultiSegmentGetBenchmark_getHitSync_jmhTest.getHitSync_Throughput(SegmentIndexMultiSegmentGetBenchmark_getHitSync_jmhTest.java:72)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissSync
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, maxSegmentsInCache = 3, snappy = true, valueLength = 64, workingSetMode = hot)
+
+# Run progress: 50.00% complete, ETA 00:00:31
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+<failure>
+
+org.hestiastore.index.IndexException: Segment access operation 'loadSegment' timed out after 30000 ms on target 'segment-00000'
+	at org.hestiastore.index.BusyRetryPolicy.backoffOrThrow(BusyRetryPolicy.java:75)
+	at org.hestiastore.index.segmentregistry.BlockingSegmentRegistryAdapter.loadSegment(BlockingSegmentRegistryAdapter.java:55)
+	at org.hestiastore.index.segmentregistry.SegmentRegistryImpl.lambda$toBlockingSegment$2(SegmentRegistryImpl.java:344)
+	at org.hestiastore.index.segmentregistry.DefaultBlockingSegment.loadSegment(DefaultBlockingSegment.java:138)
+	at org.hestiastore.index.segmentregistry.DefaultBlockingSegment$RuntimeView.getState(DefaultBlockingSegment.java:187)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.awaitSegmentReady(MappedSegmentMaintenanceService.java:338)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.awaitAcceptedToReadyNanos(MappedSegmentMaintenanceService.java:330)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.completeAcceptedOperation(MappedSegmentMaintenanceService.java:282)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.completeOperation(MappedSegmentMaintenanceService.java:232)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.runSegmentMaintenance(MappedSegmentMaintenanceService.java:202)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.flushSegment(MappedSegmentMaintenanceService.java:188)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.flushSegments(MappedSegmentMaintenanceService.java:154)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.flushMappedSegmentsAndWait(MappedSegmentMaintenanceService.java:159)
+	at org.hestiastore.index.segmentindex.core.execution.MappedSegmentMaintenanceService.flushAndWait(MappedSegmentMaintenanceService.java:135)
+	at org.hestiastore.index.segmentindex.core.session.MaintenanceApiAdapter.flushAndWait(MaintenanceApiAdapter.java:96)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexBenchmarkSupport.populateSequential(SegmentIndexBenchmarkSupport.java:79)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.populateIndex(SegmentIndexMultiSegmentGetBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.AbstractSegmentIndexGetBenchmark.setup(AbstractSegmentIndexGetBenchmark.java:30)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMultiSegmentGetBenchmark_getMissSync_jmhTest._jmh_tryInit_f_segmentindexmultisegmentgetbenchmark0_G(SegmentIndexMultiSegmentGetBenchmark_getMissSync_jmhTest.java:476)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMultiSegmentGetBenchmark_getMissSync_jmhTest.getMissSync_Throughput(SegmentIndexMultiSegmentGetBenchmark_getMissSync_jmhTest.java:72)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+
+
+
+# Run complete. Total time: 00:01:02
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark  Mode  Cnt  Score   Error  Units
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-get-multisegment-hot.json
