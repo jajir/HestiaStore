@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 0.0.6 (Unreleased)
 
+### Added
+
+- Added strict UTF-8 string descriptors for emoji and multilingual keys and
+  values: `TypeDescriptorTinyUtf8String` for payloads up to 255 encoded bytes
+  and `TypeDescriptorUtf8String` for larger payloads.
+
 ### Changed
 
 - Key encoding now uses a single-pass API (`TypeEncoder#encode(T, byte[])`) across read and write paths, including Bloom filter lookup, WAL encoding, and type writers.
