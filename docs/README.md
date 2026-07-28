@@ -51,6 +51,7 @@ range scans, and operational simplicity inside a single application process.
 
 - Pure Java embedding with no native dependency requirement
 - In-memory or filesystem-backed directories
+- Strict UTF-8 keys and values for emoji and multilingual text
 - Custom key and value type descriptors
 - Bloom-filter assisted negative lookups
 - Segment-based storage with ordered scans
@@ -108,6 +109,11 @@ try (SegmentIndex<String, String> index = SegmentIndex.create(directory, conf)) 
     System.out.println(index.get("hello"));
 }
 ```
+
+String indexes use the compact ISO-8859-1 descriptor by default for on-disk
+compatibility. To store emoji or multilingual text, explicitly select one of
+the [UTF-8 string descriptors](configuration/data-types.md#utf-8-string-descriptors)
+when creating the index.
 
 For the next step after this example, go to [Quick Start](how-to-use/quick-start.md).
 

@@ -109,6 +109,13 @@ Supported built-in types are the common compact types such as `Integer`,
 `Long`, `String`, and `Byte`. Custom types must provide a
 `TypeDescriptor` with stable serialization and comparison behavior.
 
+For emoji and multilingual strings, configure
+`TypeDescriptorTinyUtf8String` for payloads up to 255 encoded bytes or
+`TypeDescriptorUtf8String` for larger payloads. The default `String` mapping is
+the legacy ISO-8859-1 descriptor for on-disk compatibility. See
+[Data Types](data-types.md#utf-8-string-descriptors) for configuration, byte
+limits, and migration guidance.
+
 ### Segment sizing and cache behavior
 
 - `segment(...).maxKeys()` controls when segments split.
@@ -215,7 +222,8 @@ recovery for acknowledged writes.
 
 - [Filters](filters.md) for chunk filter setup, provider-backed custom filters,
   and registry wiring
-- [Data Types](data-types.md) for custom serialization and comparator contracts
+- [Data Types](data-types.md) for UTF-8 strings, custom serialization, and
+  comparator contracts
 - [Logging](logging.md) for logger configuration
 - [Monitoring Console](monitoring-console.md) for monitoring-side configuration
 
