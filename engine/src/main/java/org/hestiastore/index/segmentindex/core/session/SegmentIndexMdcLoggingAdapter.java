@@ -90,6 +90,15 @@ final class SegmentIndexMdcLoggingAdapter<K, V>
     }
 
     @Override
+    public Stream<Entry<K, V>> scan(final K fromInclusive,
+            final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        try (IndexMdcScope ignored = openScope()) {
+            return delegate.scan(fromInclusive, toExclusive, isolation);
+        }
+    }
+
+    @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows) {
         try (IndexMdcScope ignored = openScope()) {
             return delegate.getStream(segmentWindows);

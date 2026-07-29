@@ -100,6 +100,46 @@
       ]
     },
     {
+      "label": "segment-index-range-scan",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.boundedScan",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.fullStreamRangeFallback",
+        "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.sequentialRead"
+      ],
+      "expectedResultCount": 3,
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-t", "1",
+        "-p", "snappy=true",
+        "-p", "keyCount=32768",
+        "-p", "rangeSize=128",
+        "-p", "maxKeysInSegment=1024",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-merge-sequential",
+      "include": "org.hestiastore.index.segment.SegmentMergeSequentialBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.segment.SegmentMergeSequentialBenchmark.mergeSequential"
+      ],
+      "expectedResultCount": 1,
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-t", "1",
+        "-p", "keyCount=32768"
+      ]
+    },
+    {
       "label": "segment-index-persisted-mutation",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
       "expectedBenchmarks": [

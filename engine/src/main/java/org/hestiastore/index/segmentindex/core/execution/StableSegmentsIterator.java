@@ -42,6 +42,9 @@ class StableSegmentsIterator<K, V> extends AbstractCloseableResource
     private final SegmentIteratorIsolation isolation;
     private final BusyRetryPolicy retryPolicy;
     private final List<SegmentId> ids;
+    private final K fromInclusive;
+    private final K toExclusive;
+    private final boolean bounded;
     private Entry<K, V> nextEntry = null;
     private EntryIterator<K, V> currentIterator = null;
 
@@ -49,17 +52,46 @@ class StableSegmentsIterator<K, V> extends AbstractCloseableResource
 
     StableSegmentsIterator(final List<SegmentId> ids,
             final MappedSegmentLeaseService<K, V> segmentLeaseService) {
-        this(ids, segmentLeaseService, SegmentIteratorIsolation.FAIL_FAST);
+        this(ids, segmentLeaseService, SegmentIteratorIsolation.FAIL_FAST,
+                null, null, false);
     }
 
     StableSegmentsIterator(final List<SegmentId> ids,
             final MappedSegmentLeaseService<K, V> segmentLeaseService,
             final SegmentIteratorIsolation isolation) {
+        this(ids, segmentLeaseService, isolation, null, null, false);
+    }
+
+    /**
+     * Creates a stable-segment iterator restricted to a half-open key range.
+     *
+     * @param ids routed segment ids in key order
+     * @param segmentLeaseService segment lease service
+     * @param isolation iterator isolation mode
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     */
+    StableSegmentsIterator(final List<SegmentId> ids,
+            final MappedSegmentLeaseService<K, V> segmentLeaseService,
+            final SegmentIteratorIsolation isolation, final K fromInclusive,
+            final K toExclusive) {
+        this(ids, segmentLeaseService, isolation,
+                Vldtn.requireNonNull(fromInclusive, "fromInclusive"),
+                toExclusive, true);
+    }
+
+    private StableSegmentsIterator(final List<SegmentId> ids,
+            final MappedSegmentLeaseService<K, V> segmentLeaseService,
+            final SegmentIteratorIsolation isolation, final K fromInclusive,
+            final K toExclusive, final boolean bounded) {
         this.ids = Vldtn.requireNonNull(ids, "ids");
         this.segmentLeaseService = Vldtn.requireNonNull(segmentLeaseService,
                 "segmentLeaseService");
         this.isolation = Vldtn.requireNonNull(isolation, "isolation");
         this.retryPolicy = DEFAULT_RETRY_POLICY;
+        this.fromInclusive = fromInclusive;
+        this.toExclusive = toExclusive;
+        this.bounded = bounded;
         nextSegmentIterator();
     }
 
@@ -141,6 +173,10 @@ class StableSegmentsIterator<K, V> extends AbstractCloseableResource
         if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
             return awaitOpenFailFastIterator(segmentHandle, segmentId);
         }
+        if (bounded) {
+            return segmentHandle.openIterator(fromInclusive, toExclusive,
+                    isolation);
+        }
         return segmentHandle.openIterator(isolation);
     }
 
@@ -149,8 +185,10 @@ class StableSegmentsIterator<K, V> extends AbstractCloseableResource
             final SegmentId segmentId) {
         final long startNanos = retryPolicy.startNanos();
         for (int attempt = 0; attempt < 2; attempt++) {
-            final OperationResult<EntryIterator<K, V>> result = segmentHandle
-                    .tryOpenIterator(isolation);
+            final OperationResult<EntryIterator<K, V>> result = bounded
+                    ? segmentHandle.tryOpenIterator(fromInclusive, toExclusive,
+                            isolation)
+                    : segmentHandle.tryOpenIterator(isolation);
             if (result.getStatus() == OperationStatus.OK
                     && result.getValue() != null) {
                 return result.getValue();

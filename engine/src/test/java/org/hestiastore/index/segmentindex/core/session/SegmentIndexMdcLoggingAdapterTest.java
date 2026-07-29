@@ -105,6 +105,22 @@ class SegmentIndexMdcLoggingAdapterTest {
     }
 
     @Test
+    void wrapsFailFastRangeScanWithMdc() {
+        final AtomicReference<String> mdcAtScan = new AtomicReference<>();
+        when(delegate.scan("a", "z", SegmentIteratorIsolation.FAIL_FAST))
+                .thenAnswer(invocation -> {
+                    mdcAtScan.set(MDC.get("index.name"));
+                    return Stream.empty();
+                });
+
+        try (Stream<Entry<String, String>> ignored = adapter.scan("a", "z")) {
+            assertEquals("idx", mdcAtScan.get());
+        }
+
+        assertNull(MDC.get("index.name"));
+    }
+
+    @Test
     void wraps_conditional_mutations_with_mdc() {
         final AtomicReference<String> mdcAtPutIfAbsent = new AtomicReference<>();
         final AtomicReference<String> mdcAtReplace = new AtomicReference<>();

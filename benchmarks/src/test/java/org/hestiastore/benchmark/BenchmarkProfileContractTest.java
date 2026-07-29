@@ -31,6 +31,8 @@ class BenchmarkProfileContractTest {
             "segment-index-get-persisted",
             "segment-index-get-live",
             "segment-index-get-multisegment-hot",
+            "segment-index-range-scan",
+            "segment-merge-sequential",
             "segment-index-persisted-mutation",
             "segment-index-persisted-mutation-concurrent",
             "segment-index-hot-route-put",
@@ -41,6 +43,8 @@ class BenchmarkProfileContractTest {
             "segment-index-get-live",
             "segment-index-get-multisegment-hot",
             "segment-index-get-multisegment-cold",
+            "segment-index-range-scan",
+            "segment-merge-sequential",
             "segment-index-persisted-mutation",
             "segment-index-persisted-mutation-concurrent",
             "segment-index-lifecycle",
@@ -143,6 +147,9 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
                 Map.of("workingSetMode", "hot"));
+        assertEntry(byLabel.get("segment-index-range-scan"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark",
+                Map.of("keyCount", "32768", "rangeSize", "128"));
         assertEntry(byLabel.get("segment-index-persisted-mutation"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
                 Map.of("walMode", "sync"));
@@ -189,6 +196,9 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-get-multisegment-cold"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
                 Map.of("workingSetMode", "cold"));
+        assertEntry(byLabel.get("segment-index-range-scan"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark",
+                Map.of("keyCount", "32768", "rangeSize", "128"));
         assertEntry(byLabel.get("segment-index-persisted-mutation"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
                 Map.of("walMode", "sync"));

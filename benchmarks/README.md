@@ -38,6 +38,8 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Bench
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar StringEncodingBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexRangeScanBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentMergeSequentialBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotRoutePutBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark
@@ -61,7 +63,16 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SortedDataFileWriterB
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=live -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark -p workingSetMode=cold -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexRangeScanBenchmark -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentMergeSequentialBenchmark -prof gc
 ```
+
+The range-scan benchmark compares the bounded API with full-stream filtering
+and also measures a complete sequential read. All measurements use `FAIL_FAST`
+and reject an invocation unless it returns the complete expected result. This
+prevents maintenance, cache-capacity eviction, or index closing from appearing
+as an artificial speedup. The segment-merge benchmark isolates the unbounded
+per-entry hot loop so bounded-scan checks cannot regress it unnoticed.
 
 Mixed partitioned-ingest workloads with concurrent reads:
 

@@ -163,6 +163,23 @@ public interface Segment<K, V> {
             SegmentIteratorIsolation isolation);
 
     /**
+     * Opens a read iterator over a half-open key range.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation level
+     * @return result with an ordered iterator over the requested range
+     * @throws UnsupportedOperationException when the implementation does not
+     *         support bounded iteration
+     */
+    default OperationResult<EntryIterator<K, V>> openIterator(
+            final K fromInclusive, final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        throw new UnsupportedOperationException(
+                "Bounded segment iteration is not implemented.");
+    }
+
+    /**
      * Writes directly into the in-memory segment cache without persisting to
      * disk. This is intended for specialized use cases.
      *

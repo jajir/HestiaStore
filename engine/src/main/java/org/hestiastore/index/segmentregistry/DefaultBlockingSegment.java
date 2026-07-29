@@ -139,11 +139,31 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
     }
 
     @Override
+    public OperationResult<EntryIterator<K, V>> tryOpenIterator(
+            final K fromInclusive, final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(fromInclusive, "fromInclusive");
+        Vldtn.requireNonNull(isolation, "isolation");
+        return currentSegment().openIterator(fromInclusive, toExclusive,
+                isolation);
+    }
+
+    @Override
     public EntryIterator<K, V> openIterator(
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(isolation, "isolation");
         return runBlocking("openIterator",
                 segmentValue -> segmentValue.openIterator(isolation));
+    }
+
+    @Override
+    public EntryIterator<K, V> openIterator(final K fromInclusive,
+            final K toExclusive, final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(fromInclusive, "fromInclusive");
+        Vldtn.requireNonNull(isolation, "isolation");
+        return runBlocking("openIterator",
+                segmentValue -> segmentValue.openIterator(fromInclusive,
+                        toExclusive, isolation));
     }
 
     @Override

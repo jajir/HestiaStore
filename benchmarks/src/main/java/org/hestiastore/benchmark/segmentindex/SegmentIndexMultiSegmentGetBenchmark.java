@@ -87,8 +87,8 @@ public class SegmentIndexMultiSegmentGetBenchmark
 
     @Override
     protected void populateIndex(final SegmentIndex<Integer, String> created) {
-        SegmentIndexBenchmarkSupport.populateSequential(created, keyCount,
-                keyCount, this::buildValue);
+        SegmentIndexBenchmarkSupport.putSequential(created, keyCount,
+                this::buildValue);
     }
 
     @Override

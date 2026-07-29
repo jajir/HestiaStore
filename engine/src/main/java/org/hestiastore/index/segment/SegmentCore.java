@@ -98,6 +98,20 @@ final class SegmentCore<K, V> {
     }
 
     /**
+     * Opens a read iterator over a half-open key range.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation mode
+     * @return bounded entry iterator
+     */
+    EntryIterator<K, V> openIterator(final K fromInclusive,
+            final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        return readPath.openIterator(fromInclusive, toExclusive, isolation);
+    }
+
+    /**
      * Opens an iterator over the index and stable compaction snapshot.
      *
      * @return iterator over the merged snapshot view

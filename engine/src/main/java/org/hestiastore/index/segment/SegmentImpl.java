@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.OperationResult;
@@ -149,15 +150,41 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     @Override
     public OperationResult<EntryIterator<K, V>> openIterator(
             final SegmentIteratorIsolation isolation) {
-        Vldtn.requireNonNull(isolation, "isolation");
+        final SegmentIteratorIsolation nonNullIsolation = Vldtn.requireNonNull(
+                isolation, "isolation");
+        return openIteratorWithGate(nonNullIsolation,
+                () -> core.openIterator(nonNullIsolation));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public OperationResult<EntryIterator<K, V>> openIterator(
+            final K fromInclusive, final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        final K lowerBound = Vldtn.requireNonNull(fromInclusive,
+                "fromInclusive");
+        final SegmentIteratorIsolation nonNullIsolation = Vldtn.requireNonNull(
+                isolation, "isolation");
+        if (toExclusive != null
+                && core.getKeyComparator().compare(lowerBound, toExclusive) > 0) {
+            throw new IllegalArgumentException(
+                    "fromInclusive must not sort after toExclusive.");
+        }
+        return openIteratorWithGate(nonNullIsolation,
+                () -> core.openIterator(lowerBound, toExclusive,
+                        nonNullIsolation));
+    }
+
+    private OperationResult<EntryIterator<K, V>> openIteratorWithGate(
+            final SegmentIteratorIsolation isolation,
+            final Supplier<EntryIterator<K, V>> iteratorSupplier) {
         if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
             if (!gate.tryEnterFreezeAndDrain()) {
                 return resultForState(gate.getState());
             }
             try {
                 core.invalidateIterators();
-                final EntryIterator<K, V> iterator = core
-                        .openIterator(isolation);
+                final EntryIterator<K, V> iterator = iteratorSupplier.get();
                 return OperationResult.ok(
                         new ExclusiveAccessIterator<>(iterator, gate));
             } catch (final RuntimeException e) {
@@ -169,7 +196,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             return resultForState(gate.getState());
         }
         try {
-            return OperationResult.ok(core.openIterator(isolation));
+            return OperationResult.ok(iteratorSupplier.get());
         } catch (final RuntimeException e) {
             failUnlessClosed();
             return OperationResult.error();
