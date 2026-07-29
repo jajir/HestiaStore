@@ -106,6 +106,24 @@ class UniqueCacheTest {
     }
 
     @Test
+    void putIfAbsent_does_not_overwrite_existing_value() {
+        assertTrue(cache.putIfAbsent(Entry.of(10, "hello")));
+        assertFalse(cache.putIfAbsent(Entry.of(10, "dear")));
+
+        assertEquals("hello", cache.get(10));
+    }
+
+    @Test
+    void replace_requires_the_observed_value() {
+        cache.put(Entry.of(10, "hello"));
+
+        assertFalse(cache.replace(10, "other", "dear"));
+        assertTrue(cache.replace(10, "hello", "dear"));
+
+        assertEquals("dear", cache.get(10));
+    }
+
+    @Test
     void test_constructor_null_comparator_throws() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 this::buildWithNullComparator);

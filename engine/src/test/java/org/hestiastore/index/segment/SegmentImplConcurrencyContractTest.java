@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.OperationResult;
@@ -174,6 +175,26 @@ class SegmentImplConcurrencyContractTest {
     }
 
     @Test
+    void conditional_mutation_reuses_active_slot_when_cache_is_full() {
+        final Segment<Integer, String> segment = newSegment(1);
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+            assertEquals(OperationStatus.WRITE_CACHE_FULL,
+                    segment.putIfAbsent(2, "b").getStatus());
+
+            final OperationResult<Boolean> replaced = segment.replace(1, "a",
+                    "c");
+
+            assertEquals(OperationStatus.OK, replaced.getStatus());
+            assertTrue(replaced.getValue());
+            assertEquals("c", segment.get(1).getValue());
+        } finally {
+            closeAndAssertClosed(segment);
+        }
+    }
+
+    @Test
     void put_returns_busy_when_write_cache_full_during_manual_maintenance() {
         final CapturingExecutor executor = new CapturingExecutor();
         final Segment<Integer, String> segment = newSegment(2, executor);
@@ -307,6 +328,68 @@ class SegmentImplConcurrencyContractTest {
                 assertEquals("v" + i, result.getValue());
             }
         } finally {
+            closeAndAssertClosed(segment);
+        }
+    }
+
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void concurrent_conditional_mutations_have_one_winner()
+            throws Exception {
+        final Segment<Integer, String> segment = newSegment(32);
+        final int threads = 16;
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        final CountDownLatch ready = new CountDownLatch(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        final AtomicInteger replaced = new AtomicInteger();
+        final AtomicInteger inserted = new AtomicInteger();
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "start").getStatus());
+            final Future<?>[] tasks = new Future<?>[threads];
+            for (int i = 0; i < threads; i++) {
+                final int worker = i;
+                tasks[i] = executor.submit(() -> {
+                    ready.countDown();
+                    try {
+                        start.await();
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(
+                                "Worker interrupted before start", e);
+                    }
+                    final OperationResult<Boolean> result = segment.replace(1,
+                            "start", "value-" + worker);
+                    if (result.getStatus() != OperationStatus.OK) {
+                        throw new IllegalStateException(
+                                "Replace returned " + result.getStatus());
+                    }
+                    if (Boolean.TRUE.equals(result.getValue())) {
+                        replaced.incrementAndGet();
+                    }
+                    final OperationResult<Boolean> insertResult = segment
+                            .putIfAbsent(2, "insert-" + worker);
+                    if (insertResult.getStatus() != OperationStatus.OK) {
+                        throw new IllegalStateException(
+                                "Put-if-absent returned "
+                                        + insertResult.getStatus());
+                    }
+                    if (Boolean.TRUE.equals(insertResult.getValue())) {
+                        inserted.incrementAndGet();
+                    }
+                });
+            }
+            assertTrue(ready.await(2, TimeUnit.SECONDS));
+            start.countDown();
+            for (final Future<?> task : tasks) {
+                task.get(2, TimeUnit.SECONDS);
+            }
+
+            assertEquals(1, replaced.get());
+            assertEquals(1, inserted.get());
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
             closeAndAssertClosed(segment);
         }
     }

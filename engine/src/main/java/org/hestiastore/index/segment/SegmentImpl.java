@@ -225,6 +225,51 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         return OperationResult.busy();
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public OperationResult<Boolean> putIfAbsent(final K key, final V value) {
+        if (!gate.tryEnterWrite()) {
+            return resultForState(gate.getState());
+        }
+        final OperationResult<Boolean> result;
+        try {
+            result = core.tryPutIfAbsentWithoutWaiting(key, value);
+        } finally {
+            gate.exitWrite();
+        }
+        return completeConditionalMutation(result);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public OperationResult<Boolean> replace(final K key,
+            final V expectedValue, final V newValue) {
+        if (!gate.tryEnterWrite()) {
+            return resultForState(gate.getState());
+        }
+        final OperationResult<Boolean> result;
+        try {
+            result = core.tryReplaceWithoutWaiting(key, expectedValue,
+                    newValue);
+        } finally {
+            gate.exitWrite();
+        }
+        return completeConditionalMutation(result);
+    }
+
+    private OperationResult<Boolean> completeConditionalMutation(
+            final OperationResult<Boolean> result) {
+        if (result.isOk() && !Boolean.TRUE.equals(result.getValue())) {
+            return result;
+        }
+        scheduleMaintenanceIfNeeded();
+        if (result.getStatus() == OperationStatus.WRITE_CACHE_FULL
+                && gate.getState() != SegmentState.READY) {
+            return OperationResult.busy();
+        }
+        return result;
+    }
+
     /**
      * {@inheritDoc}
      */

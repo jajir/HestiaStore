@@ -76,6 +76,34 @@ public class UniqueCache<K, V> {
     }
 
     /**
+     * Stores an entry only when its key is not already present.
+     *
+     * @param entry entry to store
+     * @return true when the entry was added
+     */
+    public boolean putIfAbsent(final Entry<K, V> entry) {
+        Vldtn.requireNonNull(entry, "entry");
+        final K key = Vldtn.requireNonNull(entry.getKey(), "entry.key");
+        final V value = Vldtn.requireNonNull(entry.getValue(), "entry.value");
+        return map.putIfAbsent(key, value) == null;
+    }
+
+    /**
+     * Replaces an entry only when its current value is the observed value.
+     *
+     * @param key key to replace
+     * @param observedValue value previously read from this cache
+     * @param newValue replacement value
+     * @return true when the value was replaced
+     */
+    public boolean replace(final K key, final V observedValue,
+            final V newValue) {
+        return map.replace(Vldtn.requireNonNull(key, "key"),
+                Vldtn.requireNonNull(observedValue, "observedValue"),
+                Vldtn.requireNonNull(newValue, "newValue"));
+    }
+
+    /**
      * Get value for given key or null when there is no such key.
      * 
      * @param key required key

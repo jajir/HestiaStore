@@ -86,6 +86,47 @@ public interface BlockingSegment<K, V> {
     void put(K key, V value);
 
     /**
+     * Performs a single-attempt conditional insert without retrying
+     * BUSY/CLOSED.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return raw segment result
+     */
+    OperationResult<Boolean> tryPutIfAbsent(K key, V value);
+
+    /**
+     * Performs a blocking insert only when the key is logically absent.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return true when the value was inserted
+     */
+    boolean putIfAbsent(K key, V value);
+
+    /**
+     * Performs a single-attempt conditional replacement without retrying
+     * BUSY/CLOSED.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return raw segment result
+     */
+    OperationResult<Boolean> tryReplace(K key, V expectedValue, V newValue);
+
+    /**
+     * Performs a blocking replacement when the current value matches the
+     * expected value.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return true when the value was replaced
+     */
+    boolean replace(K key, V expectedValue, V newValue);
+
+    /**
      * Opens an iterator in a single attempt without retrying BUSY/CLOSED.
      *
      * @param isolation iterator isolation

@@ -351,6 +351,23 @@ class SegmentCacheTest {
     }
 
     @Test
+    void conditional_write_primitives_are_atomic_and_preserve_capacity() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(), 1, 2, 1024);
+
+        assertTrue(cache.tryPutIfAbsentToWriteCacheWithoutWaiting(
+                Entry.of(1, "A")));
+        assertFalse(cache.tryPutIfAbsentToWriteCacheWithoutWaiting(
+                Entry.of(1, "B")));
+        assertFalse(cache.replaceInWriteCache(1, "B", "C"));
+        assertTrue(cache.replaceInWriteCache(1, "A", "C"));
+        assertEquals("C", cache.getFromWriteCache(1));
+        assertFalse(cache.tryPutIfAbsentToWriteCacheWithoutWaiting(
+                Entry.of(2, "D")));
+        assertEquals(1, cache.getNumberOfKeysInWriteCache());
+    }
+
+    @Test
     void put_overwrite_does_not_block_at_capacity() throws Exception {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType, List.of(), 1, 2, 1024);

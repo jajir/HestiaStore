@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.execution;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.core.routing.MappedSegmentLease;
@@ -19,6 +20,7 @@ public final class PointOperationCoordinator<K, V> {
     private final MappedSegmentLeaseService<K, V> segmentLeaseService;
     private final StorageCoordinator<K, V> storageService;
     private final TypeDescriptor<V> valueTypeDescriptor;
+    private final boolean walEnabled;
 
     /**
      * Creates an operation coordinator from initialized runtime services.
@@ -27,12 +29,14 @@ public final class PointOperationCoordinator<K, V> {
      * @param statsRecorder operation metrics recorder
      * @param segmentLeaseService segment lease service
      * @param storageService storage and WAL service
+     * @param walEnabled whether WAL is enabled for this index
      */
     public PointOperationCoordinator(
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexOperationStatsRecorder statsRecorder,
             final MappedSegmentLeaseService<K, V> segmentLeaseService,
-            final StorageCoordinator<K, V> storageService) {
+            final StorageCoordinator<K, V> storageService,
+            final boolean walEnabled) {
         this.statsRecorder = Vldtn.requireNonNull(statsRecorder,
                 "statsRecorder");
         this.segmentLeaseService = Vldtn.requireNonNull(segmentLeaseService,
@@ -41,6 +45,7 @@ public final class PointOperationCoordinator<K, V> {
                 "storageService");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
+        this.walEnabled = walEnabled;
     }
 
     /**
@@ -60,6 +65,50 @@ public final class PointOperationCoordinator<K, V> {
         writeToSegment(nonNullKey, nonNullValue);
         storageService.recordAppliedWalLsn(walLsn);
         recordWriteLatency(startedNanos);
+    }
+
+    /**
+     * Inserts a value only when its key is logically absent.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return true when the value was inserted
+     * @throws IndexException when WAL is enabled
+     */
+    public boolean putIfAbsent(final K key, final V value) {
+        rejectConditionalMutationWhenWalEnabled();
+        final long startedNanos = startWriteOperation();
+        final K nonNullKey = requireKey(key);
+        final V nonNullValue = requireConditionalValue(value, "value");
+        statsRecorder.recordPutRequest();
+        final boolean changed = putIfAbsentInSegment(nonNullKey,
+                nonNullValue);
+        recordWriteLatency(startedNanos);
+        return changed;
+    }
+
+    /**
+     * Replaces a value only when its current value matches the expected value.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return true when the value was replaced
+     * @throws IndexException when WAL is enabled
+     */
+    public boolean replace(final K key, final V expectedValue,
+            final V newValue) {
+        rejectConditionalMutationWhenWalEnabled();
+        final long startedNanos = startWriteOperation();
+        final K nonNullKey = requireKey(key);
+        final V nonNullExpected = requireConditionalValue(expectedValue,
+                "expectedValue");
+        final V nonNullValue = requireConditionalValue(newValue, "newValue");
+        statsRecorder.recordPutRequest();
+        final boolean changed = replaceInSegment(nonNullKey, nonNullExpected,
+                nonNullValue);
+        recordWriteLatency(startedNanos);
+        return changed;
     }
 
     /**
@@ -124,6 +173,21 @@ public final class PointOperationCoordinator<K, V> {
         }
     }
 
+    private boolean putIfAbsentInSegment(final K key, final V value) {
+        try (MappedSegmentLease<K, V> lease = segmentLeaseService
+                .acquireForWrite(key)) {
+            return lease.segment().putIfAbsent(key, value);
+        }
+    }
+
+    private boolean replaceInSegment(final K key, final V expectedValue,
+            final V newValue) {
+        try (MappedSegmentLease<K, V> lease = segmentLeaseService
+                .acquireForWrite(key)) {
+            return lease.segment().replace(key, expectedValue, newValue);
+        }
+    }
+
     private long startWriteOperation() {
         return System.nanoTime();
     }
@@ -140,12 +204,29 @@ public final class PointOperationCoordinator<K, V> {
         return Vldtn.requireNonNull(value, "value");
     }
 
+    private V requireConditionalValue(final V value,
+            final String propertyName) {
+        final V nonNullValue = Vldtn.requireNonNull(value, propertyName);
+        if (valueTypeDescriptor.isTombstone(nonNullValue)) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must not be a tombstone.", propertyName));
+        }
+        return nonNullValue;
+    }
+
     private void rejectTombstoneValue(final V value) {
         if (!valueTypeDescriptor.isTombstone(value)) {
             return;
         }
         throw new IllegalArgumentException(String.format(
                 "Can't insert tombstone value '%s' into index", value));
+    }
+
+    private void rejectConditionalMutationWhenWalEnabled() {
+        if (walEnabled) {
+            throw new IndexException(
+                    "Conditional mutations are supported only when WAL is disabled.");
+        }
     }
 
     private V tombstoneValue() {

@@ -176,6 +176,33 @@ public interface Segment<K, V> {
     OperationResult<Void> put(K key, V value);
 
     /**
+     * Writes directly into the in-memory segment cache only when the key is
+     * logically absent. Tombstones are treated as absence.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return result containing {@code true} when the value was inserted,
+     *         {@code false} when the key was already present, or
+     *         {@link OperationStatus#WRITE_CACHE_FULL} when no immediate write
+     *         capacity is available
+     */
+    OperationResult<Boolean> putIfAbsent(K key, V value);
+
+    /**
+     * Replaces a value only when the current logical value matches the expected
+     * value according to the configured value comparator.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return result containing {@code true} when the value was replaced,
+     *         {@code false} on absence or mismatch, or
+     *         {@link OperationStatus#WRITE_CACHE_FULL} when no immediate write
+     *         capacity is available
+     */
+    OperationResult<Boolean> replace(K key, V expectedValue, V newValue);
+
+    /**
      * Starts a flush of the in-memory write cache into the delta cache. The
      * call returns once flush is accepted.
      *

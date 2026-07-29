@@ -3,6 +3,7 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,7 +15,10 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithCurrent;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
+import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +47,8 @@ class SegmentCoreTest {
     private SegmentMaintenancePath<Integer, String> maintenancePath;
     @Mock
     private ChunkEntryFile<Integer, String> indexFile;
+    @Mock
+    private TypeDescriptor<String> conditionalValueDescriptor;
 
     private final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
     private final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
@@ -80,6 +86,66 @@ class SegmentCoreTest {
         assertEquals(0, core.getNumberOfKeysInWriteCache());
         assertTrue(core.tryPutWithoutWaiting(1, "one"));
         assertEquals(1, core.getNumberOfKeysInWriteCache());
+    }
+
+    @Test
+    void replace_uses_atomic_active_write_cache_replacement() {
+        when(segmentFiles.getValueTypeDescriptor())
+                .thenReturn(conditionalValueDescriptor);
+        when(conditionalValueDescriptor.getComparator())
+                .thenReturn(String.CASE_INSENSITIVE_ORDER);
+        when(segmentCache.getFromWriteCache(1)).thenReturn("ONE");
+        when(segmentCache.replaceInWriteCache(1, "ONE", "new"))
+                .thenReturn(true);
+
+        final OperationResult<Boolean> result = core
+                .tryReplaceWithoutWaiting(1, "one", "new");
+
+        assertEquals(OperationStatus.OK, result.getStatus());
+        assertTrue(result.getValue());
+        verify(readPath, never()).get(1);
+    }
+
+    @Test
+    void replace_returns_false_for_mismatched_active_value() {
+        when(segmentFiles.getValueTypeDescriptor())
+                .thenReturn(valueDescriptor);
+        when(segmentCache.getFromWriteCache(1)).thenReturn("other");
+
+        final OperationResult<Boolean> result = core
+                .tryReplaceWithoutWaiting(1, "one", "new");
+
+        assertEquals(OperationStatus.OK, result.getStatus());
+        assertFalse(result.getValue());
+        verify(segmentCache, never()).replaceInWriteCache(1, "other", "new");
+    }
+
+    @Test
+    void putIfAbsent_inserts_after_complete_logical_read() {
+        when(segmentFiles.getValueTypeDescriptor())
+                .thenReturn(valueDescriptor);
+        when(readPath.get(1)).thenReturn(null);
+        when(segmentCache.tryPutIfAbsentToWriteCacheWithoutWaiting(
+                Entry.of(1, "one"))).thenReturn(true);
+
+        final OperationResult<Boolean> result = core
+                .tryPutIfAbsentWithoutWaiting(1, "one");
+
+        assertEquals(OperationStatus.OK, result.getStatus());
+        assertTrue(result.getValue());
+        verify(readPath).get(1);
+    }
+
+    @Test
+    void putIfAbsent_reports_full_cache_when_insert_cannot_reserve_capacity() {
+        when(segmentFiles.getValueTypeDescriptor())
+                .thenReturn(valueDescriptor);
+        when(readPath.get(1)).thenReturn(null);
+
+        final OperationResult<Boolean> result = core
+                .tryPutIfAbsentWithoutWaiting(1, "one");
+
+        assertEquals(OperationStatus.WRITE_CACHE_FULL, result.getStatus());
     }
 
     @Test

@@ -111,6 +111,29 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public boolean putIfAbsent(final K key, final V value) {
+        beginOperationalOperation();
+        try {
+            return operationAccess.putIfAbsent(key, value);
+        } finally {
+            operationGate.endOperation();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean replace(final K key, final V expectedValue,
+            final V newValue) {
+        beginOperationalOperation();
+        try {
+            return operationAccess.replace(key, expectedValue, newValue);
+        } finally {
+            operationGate.endOperation();
+        }
+    }
+
     /**
      * Opens an iterator for one segment with fail-fast isolation.
      *
