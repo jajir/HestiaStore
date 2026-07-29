@@ -136,6 +136,22 @@ public interface BlockingSegment<K, V> {
             SegmentIteratorIsolation isolation);
 
     /**
+     * Opens a bounded iterator in a single attempt without retrying
+     * BUSY/CLOSED.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation
+     * @return raw segment result
+     */
+    default OperationResult<EntryIterator<K, V>> tryOpenIterator(
+            final K fromInclusive, final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        throw new UnsupportedOperationException(
+                "Bounded segment iteration is not implemented.");
+    }
+
+    /**
      * Opens a blocking iterator using fail-fast isolation.
      *
      * @return iterator over segment entries
@@ -149,6 +165,21 @@ public interface BlockingSegment<K, V> {
      * @return iterator over segment entries
      */
     EntryIterator<K, V> openIterator(SegmentIteratorIsolation isolation);
+
+    /**
+     * Opens a blocking bounded iterator with the requested isolation.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation
+     * @return iterator over the requested segment range
+     */
+    default EntryIterator<K, V> openIterator(final K fromInclusive,
+            final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        throw new UnsupportedOperationException(
+                "Bounded segment iteration is not implemented.");
+    }
 
     /**
      * Starts a flush in a single attempt without retrying BUSY/CLOSED.

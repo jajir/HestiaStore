@@ -357,6 +357,75 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     void delete(K key);
 
     /**
+     * Lazily scans entries in configured key-comparator order. The lower bound
+     * is inclusive and the upper bound is exclusive. A {@code null} upper bound
+     * scans from {@code fromInclusive} through the end of the index.
+     * <p>
+     * Implementations must reject a lower bound that sorts after a non-null
+     * upper bound using the comparator supplied by the key type descriptor.
+     * Equal non-null bounds produce an empty stream. The returned stream must be
+     * closed after use.
+     * </p>
+     * <p>
+     * With {@link SegmentIteratorIsolation#FAIL_FAST}, iteration is
+     * optimistic and may end normally before reaching {@code toExclusive}.
+     * Maintenance, segment eviction or unloading caused by cache capacity,
+     * index closing, or another iterator invalidation can therefore reduce the
+     * number of returned entries without reporting an error. Callers must not
+     * interpret a fail-fast result count as proof that the complete range was
+     * visited.
+     * </p>
+     * <p>
+     * <strong>Experimental API:</strong> this contract may change before
+     * becoming stable. The default implementation is a compatibility
+     * placeholder.
+     * </p>
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound; {@code null} means
+     *        the end of the index
+     * @param isolation required iterator isolation mode
+     * @return ordered stream of entries within the requested key range
+     * @throws IllegalArgumentException if {@code fromInclusive} or
+     *         {@code isolation} is null, or if {@code fromInclusive} sorts
+     *         after a non-null {@code toExclusive}
+     * @throws UnsupportedOperationException if the implementation does not yet
+     *         support key-range scans
+     */
+    default Stream<Entry<K, V>> scan(final K fromInclusive,
+            final K toExclusive, final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(fromInclusive, "fromInclusive");
+        Vldtn.requireNonNull(isolation, "isolation");
+        throw new UnsupportedOperationException(
+                "Key-range scans are not implemented.");
+    }
+
+    /**
+     * Lazily scans entries using {@link SegmentIteratorIsolation#FAIL_FAST}.
+     * Consequently, maintenance, segment eviction or unloading, and index
+     * closing may terminate the stream normally with only a prefix of the
+     * requested range.
+     * <p>
+     * <strong>Experimental API:</strong> this contract may change before
+     * becoming stable.
+     * </p>
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound; {@code null} means
+     *        the end of the index
+     * @return ordered stream of entries within the requested key range
+     * @throws IllegalArgumentException if {@code fromInclusive} is null, or if
+     *         it sorts after a non-null {@code toExclusive}
+     * @throws UnsupportedOperationException if the implementation does not yet
+     *         support key-range scans
+     */
+    default Stream<Entry<K, V>> scan(final K fromInclusive,
+            final K toExclusive) {
+        return scan(fromInclusive, toExclusive,
+                SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    /**
      * Went through all records. In fact read all index data. Doesn't use
      * indexes and caches in segments.
      * 

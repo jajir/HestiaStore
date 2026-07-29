@@ -109,6 +109,26 @@ class StableSegmentsIteratorTest {
     }
 
     @Test
+    void boundedIteratorPassesRangeToSegment() {
+        when(segmentLeaseService.tryAcquireMappedSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(lease17));
+        when(lease17.segment()).thenReturn(handle17);
+        when(handle17.tryOpenIterator("b", "d",
+                SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(OperationResult.ok(entryIterator17));
+        when(entryIterator17.hasNext()).thenReturn(false);
+
+        try (StableSegmentsIterator<String, String> iterator = new StableSegmentsIterator<>(
+                List.of(SEGMENT_ID_17), segmentLeaseService,
+                SegmentIteratorIsolation.FAIL_FAST, "b", "d")) {
+            assertFalse(iterator.hasNext());
+        }
+
+        verify(handle17).tryOpenIterator("b", "d",
+                SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    @Test
     void test_fail_fast_skips_segment_when_registry_stays_busy() {
         when(segmentLeaseService.tryAcquireMappedSegment(SEGMENT_ID_17))
                 .thenReturn(Optional.empty());

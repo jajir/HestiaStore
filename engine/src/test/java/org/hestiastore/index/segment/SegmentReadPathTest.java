@@ -36,6 +36,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReaderSeekable;
 import org.hestiastore.index.directory.FileReaderSeekableSupplier;
+import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,8 @@ class SegmentReadPathTest {
     private SegmentFiles<Integer, String> segmentFiles;
     @Mock
     private SegmentResources<Integer> segmentResources;
+    @Mock
+    private ScarceSegmentIndex<Integer> scarceIndex;
     @Mock
     private SegmentSearcher<Integer, String> segmentSearcher;
     @Mock
@@ -92,6 +95,7 @@ class SegmentReadPathTest {
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .build();
         when(segmentFiles.getIndexFile()).thenReturn(chunkEntryFile);
+        when(segmentResources.getScarceIndex()).thenReturn(scarceIndex);
         when(segmentFiles.getKeyTypeDescriptor()).thenReturn(keyDescriptor);
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(valueDescriptor);
         when(segmentFiles.getId()).thenReturn(SegmentId.of(1));
@@ -130,6 +134,21 @@ class SegmentReadPathTest {
                 .openIterator(SegmentIteratorIsolation.FULL_ISOLATION)) {
             assertFalse(iterator instanceof EntryIteratorWithLock);
         }
+    }
+
+    @Test
+    void openBoundedIteratorStartsAtScarceIndexPosition() {
+        when(scarceIndex.get(10)).thenReturn(3);
+        when(chunkEntryFile.openIteratorAtPosition(3L))
+                .thenReturn(baseIterator);
+
+        try (EntryIterator<Integer, String> iterator = subject.openIterator(10,
+                20, SegmentIteratorIsolation.FAIL_FAST)) {
+            assertFalse(iterator.hasNext());
+        }
+
+        verify(scarceIndex).get(10);
+        verify(chunkEntryFile).openIteratorAtPosition(3L);
     }
 
     @Test
