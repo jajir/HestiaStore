@@ -85,8 +85,8 @@ public class SegmentIndexRangeScanBenchmark {
                 .createTempDir("hestia-jmh-range-scan");
         try (SegmentIndex<Integer, String> created = SegmentIndex.create(
                 new FsDirectory(tempDir), buildConfiguration(true))) {
-            SegmentIndexBenchmarkSupport.populateSequential(created, keyCount,
-                    keyCount, this::buildValue);
+            SegmentIndexBenchmarkSupport.putSequential(created, keyCount,
+                    this::buildValue);
             SegmentIndexBenchmarkSupport.awaitCondition(() -> {
                 final var snapshot = created.runtimeMonitoring().snapshot();
                 return snapshot.segments().count() > 1
