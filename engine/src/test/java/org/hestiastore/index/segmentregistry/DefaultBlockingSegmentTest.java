@@ -114,6 +114,30 @@ class DefaultBlockingSegmentTest {
     }
 
     @Test
+    void putIfAbsent_retries_write_cache_full_when_maintenance_enabled() {
+        handle = newHandle(true);
+        when(segment.putIfAbsent(1, "one"))
+                .thenReturn(OperationResult.writeCacheFull())
+                .thenReturn(OperationResult.ok(true));
+
+        assertTrue(handle.putIfAbsent(1, "one"));
+
+        verify(segment, times(2)).putIfAbsent(1, "one");
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void replace_returns_condition_result() {
+        when(segment.replace(1, "one", "new"))
+                .thenReturn(OperationResult.ok(false));
+
+        assertFalse(handle.replace(1, "one", "new"));
+
+        verify(segment).replace(1, "one", "new");
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
     void compactThrowsOnErrorStatus() {
         when(segment.compact()).thenReturn(OperationResult.error());
 

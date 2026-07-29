@@ -80,6 +80,18 @@ class SegmentTest {
         }
 
         @Override
+        public OperationResult<Boolean> putIfAbsent(final Integer key,
+                final String value) {
+            return OperationResult.ok(false);
+        }
+
+        @Override
+        public OperationResult<Boolean> replace(final Integer key,
+                final String expectedValue, final String newValue) {
+            return OperationResult.ok(false);
+        }
+
+        @Override
         public OperationResult<Void> flush() {
             return OperationResult.ok();
         }

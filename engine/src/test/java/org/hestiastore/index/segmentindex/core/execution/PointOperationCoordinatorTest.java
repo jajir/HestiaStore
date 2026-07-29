@@ -1,11 +1,15 @@
 package org.hestiastore.index.segmentindex.core.execution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.core.routing.MappedSegmentLease;
 import org.hestiastore.index.segmentindex.core.routing.MappedSegmentLeaseService;
@@ -43,7 +47,7 @@ class PointOperationCoordinatorTest {
     void setUp() {
         statsRecorder = new IndexOperationStatsRecorder();
         coordinator = new PointOperationCoordinator<>(typeDescriptor,
-                statsRecorder, segmentLeaseService, storageService);
+                statsRecorder, segmentLeaseService, storageService, false);
     }
 
     @Test
@@ -123,5 +127,54 @@ class PointOperationCoordinatorTest {
         assertThrows(IllegalArgumentException.class,
                 () -> coordinator.put(1,
                         TypeDescriptorShortString.TOMBSTONE_VALUE));
+    }
+
+    @Test
+    void putIfAbsent_routes_without_wal_activity() {
+        when(segmentLeaseService.acquireForWrite(1)).thenReturn(segmentLease);
+        when(segmentLease.segment()).thenReturn(blockingSegment);
+        when(blockingSegment.putIfAbsent(1, "one")).thenReturn(true);
+
+        assertTrue(coordinator.putIfAbsent(1, "one"));
+
+        assertEquals(1L, statsRecorder.statsSnapshot().getPutCount());
+        verify(blockingSegment).putIfAbsent(1, "one");
+        verify(segmentLease).close();
+        verifyNoInteractions(storageService);
+    }
+
+    @Test
+    void replace_routes_without_wal_activity() {
+        when(segmentLeaseService.acquireForWrite(1)).thenReturn(segmentLease);
+        when(segmentLease.segment()).thenReturn(blockingSegment);
+        when(blockingSegment.replace(1, "one", "new")).thenReturn(false);
+
+        assertFalse(coordinator.replace(1, "one", "new"));
+
+        assertEquals(1L, statsRecorder.statsSnapshot().getPutCount());
+        verify(blockingSegment).replace(1, "one", "new");
+        verify(segmentLease).close();
+        verifyNoInteractions(storageService);
+    }
+
+    @Test
+    void conditional_mutations_fail_before_routing_when_wal_is_enabled() {
+        coordinator = new PointOperationCoordinator<>(typeDescriptor,
+                statsRecorder, segmentLeaseService, storageService, true);
+
+        final IndexException putIfAbsentFailure = assertThrows(
+                IndexException.class,
+                () -> coordinator.putIfAbsent(1, "one"));
+        final IndexException replaceFailure = assertThrows(IndexException.class,
+                () -> coordinator.replace(1, "one", "new"));
+
+        assertEquals(
+                "Conditional mutations are supported only when WAL is disabled.",
+                putIfAbsentFailure.getMessage());
+        assertEquals(putIfAbsentFailure.getMessage(),
+                replaceFailure.getMessage());
+        assertEquals(0L, statsRecorder.statsSnapshot().getPutCount());
+        verifyNoInteractions(segmentLeaseService, storageService,
+                segmentLease, blockingSegment);
     }
 }

@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,6 +17,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
@@ -62,6 +64,44 @@ class SegmentIndexSessionPutTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> index.put(1, TypeDescriptorShortString.TOMBSTONE_VALUE));
+    }
+
+    @Test
+    void conditional_mutations_work_when_wal_is_disabled() {
+        resetIndex(10, 3);
+
+        assertTrue(index.putIfAbsent(1, "one"));
+        assertFalse(index.putIfAbsent(1, "other"));
+        index.maintenance().flushAndWait();
+
+        assertFalse(index.replace(1, "other", "new"));
+        assertTrue(index.replace(1, "one", "new"));
+        assertEquals("new", index.get(1));
+
+        index.delete(1);
+        assertTrue(index.putIfAbsent(1, "restored"));
+        assertEquals("restored", index.get(1));
+    }
+
+    @Test
+    void conditional_mutations_are_rejected_without_changes_when_wal_is_enabled() {
+        resetIndex(10, 2, IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.SYNC).build());
+
+        final IndexException putIfAbsentFailure = assertThrows(
+                IndexException.class, () -> index.putIfAbsent(1, "one"));
+        assertNull(index.get(1));
+
+        index.put(1, "one");
+        final IndexException replaceFailure = assertThrows(IndexException.class,
+                () -> index.replace(1, "one", "new"));
+
+        assertEquals(
+                "Conditional mutations are supported only when WAL is disabled.",
+                putIfAbsentFailure.getMessage());
+        assertEquals(putIfAbsentFailure.getMessage(),
+                replaceFailure.getMessage());
+        assertEquals("one", index.get(1));
     }
 
     @Test

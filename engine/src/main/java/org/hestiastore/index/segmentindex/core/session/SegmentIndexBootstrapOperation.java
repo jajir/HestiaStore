@@ -460,7 +460,8 @@ public final class SegmentIndexBootstrapOperation<K, V> {
                 state.getValueTypeDescriptor(),
                 sessionResources.operationStatsRecorder(),
                 state.getRuntimeSegmentLeaseService(),
-                state.getStorageService()));
+                state.getStorageService(),
+                state.getConfiguration().wal().isEnabled()));
     }
 
     private void transferRuntimeCloseOwnership(

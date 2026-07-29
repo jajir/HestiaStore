@@ -102,6 +102,31 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
     }
 
     @Override
+    public OperationResult<Boolean> tryPutIfAbsent(final K key,
+            final V value) {
+        return currentSegment().putIfAbsent(key, value);
+    }
+
+    @Override
+    public boolean putIfAbsent(final K key, final V value) {
+        return runBlocking("putIfAbsent",
+                segmentValue -> segmentValue.putIfAbsent(key, value));
+    }
+
+    @Override
+    public OperationResult<Boolean> tryReplace(final K key,
+            final V expectedValue, final V newValue) {
+        return currentSegment().replace(key, expectedValue, newValue);
+    }
+
+    @Override
+    public boolean replace(final K key, final V expectedValue,
+            final V newValue) {
+        return runBlocking("replace", segmentValue -> segmentValue.replace(key,
+                expectedValue, newValue));
+    }
+
+    @Override
     public EntryIterator<K, V> openIterator() {
         return openIterator(SegmentIteratorIsolation.FAIL_FAST);
     }

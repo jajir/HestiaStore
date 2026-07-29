@@ -111,6 +111,62 @@ final class SegmentCache<K, V> {
     }
 
     /**
+     * Returns the raw value from the active write cache.
+     * <p>
+     * The caller must hold a segment write admission while using the returned
+     * value in a following conditional mutation, so maintenance cannot replace
+     * the active cache between those operations.
+     *
+     * @param key key to read
+     * @return active write-cache value or {@code null}
+     */
+    V getFromWriteCache(final K key) {
+        return writeCache.get(Vldtn.requireNonNull(key, "key"));
+    }
+
+    /**
+     * Replaces the active write-cache value only when it still equals the
+     * previously observed value.
+     *
+     * @param key key to replace
+     * @param observedValue exact value observed in the active write cache
+     * @param newValue replacement value
+     * @return true when the value was replaced
+     */
+    boolean replaceInWriteCache(final K key, final V observedValue,
+            final V newValue) {
+        return writeCache.replace(key, observedValue, newValue);
+    }
+
+    /**
+     * Attempts to insert an entry only when its key is absent from the active
+     * write cache.
+     *
+     * @param entry entry to insert
+     * @return true when the entry was inserted
+     */
+    boolean tryPutIfAbsentToWriteCacheWithoutWaiting(
+            final Entry<K, V> entry) {
+        final Entry<K, V> nonNullEntry = validateEntry(entry);
+        final UniqueCache<K, V> write = writeCache;
+        if (write.get(nonNullEntry.getKey()) != null
+                || !tryReserveWriteSlot()) {
+            return false;
+        }
+        final boolean added;
+        try {
+            added = write.putIfAbsent(nonNullEntry);
+        } catch (final RuntimeException e) {
+            releaseWriteSlots(1);
+            throw e;
+        }
+        if (!added) {
+            releaseWriteSlots(1);
+        }
+        return added;
+    }
+
+    /**
      * Adds an entry into the delta cache portion.
      *
      * @param entry entry to store

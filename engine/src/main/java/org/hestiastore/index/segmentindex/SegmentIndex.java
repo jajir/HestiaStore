@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
@@ -312,6 +313,33 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         Vldtn.requireNonNull(entry, "entry");
         put(entry.getKey(), entry.getValue());
     }
+
+    /**
+     * Inserts a value only when the key is logically absent. A deleted
+     * (tombstoned) key is considered absent.
+     * <p>
+     * This operation is currently supported only when WAL is disabled.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return true when the value was inserted
+     * @throws IndexException when WAL is enabled
+     */
+    boolean putIfAbsent(K key, V value);
+
+    /**
+     * Replaces a value only when its current value matches
+     * {@code expectedValue} according to the configured value comparator.
+     * <p>
+     * This operation is currently supported only when WAL is disabled.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return true when the value was replaced
+     * @throws IndexException when WAL is enabled
+     */
+    boolean replace(K key, V expectedValue, V newValue);
 
     /**
      * Performs a point lookup for the given key.

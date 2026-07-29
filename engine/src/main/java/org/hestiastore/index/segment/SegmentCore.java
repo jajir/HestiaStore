@@ -8,7 +8,9 @@ import java.util.function.Consumer;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.TypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,6 +148,95 @@ final class SegmentCore<K, V> {
      */
     boolean tryPutWithoutWaiting(final K key, final V value) {
         return writePath.tryPutWithoutWaiting(key, value);
+    }
+
+    /**
+     * Inserts a value only when the key is logically absent.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return conditional mutation result
+     */
+    OperationResult<Boolean> tryPutIfAbsentWithoutWaiting(final K key,
+            final V value) {
+        final K nonNullKey = Vldtn.requireNonNull(key, "key");
+        final V nonNullValue = requireConditionalValue(value, "value");
+        return tryConditionalPutWithoutWaiting(nonNullKey, null, nonNullValue);
+    }
+
+    /**
+     * Replaces a value only when the current logical value matches the expected
+     * value according to the configured value comparator.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return conditional mutation result
+     */
+    OperationResult<Boolean> tryReplaceWithoutWaiting(final K key,
+            final V expectedValue, final V newValue) {
+        final K nonNullKey = Vldtn.requireNonNull(key, "key");
+        final V nonNullExpected = requireConditionalValue(expectedValue,
+                "expectedValue");
+        final V nonNullValue = requireConditionalValue(newValue, "newValue");
+        return tryConditionalPutWithoutWaiting(nonNullKey, nonNullExpected,
+                nonNullValue);
+    }
+
+    private OperationResult<Boolean> tryConditionalPutWithoutWaiting(
+            final K key, final V expectedValue, final V newValue) {
+        final TypeDescriptor<V> valueDescriptor = segmentFiles
+                .getValueTypeDescriptor();
+        while (true) {
+            final V observedValue = segmentCache.getFromWriteCache(key);
+            if (observedValue != null) {
+                final V logicalValue = valueDescriptor
+                        .isTombstone(observedValue) ? null : observedValue;
+                if (!matchesExpectedValue(valueDescriptor, logicalValue,
+                        expectedValue)) {
+                    return OperationResult.ok(false);
+                }
+                if (segmentCache.replaceInWriteCache(key, observedValue,
+                        newValue)) {
+                    return OperationResult.ok(true);
+                }
+                continue;
+            }
+
+            final V logicalValue = readPath.get(key);
+            if (!matchesExpectedValue(valueDescriptor, logicalValue,
+                    expectedValue)) {
+                return OperationResult.ok(false);
+            }
+            if (segmentCache.tryPutIfAbsentToWriteCacheWithoutWaiting(
+                    Entry.of(key, newValue))) {
+                return OperationResult.ok(true);
+            }
+            if (segmentCache.getFromWriteCache(key) == null) {
+                return OperationResult.writeCacheFull();
+            }
+        }
+    }
+
+    private boolean matchesExpectedValue(
+            final TypeDescriptor<V> valueDescriptor, final V currentValue,
+            final V expectedValue) {
+        if (expectedValue == null) {
+            return currentValue == null;
+        }
+        return currentValue != null && valueDescriptor.getComparator()
+                .compare(currentValue, expectedValue) == 0;
+    }
+
+    private V requireConditionalValue(final V value,
+            final String propertyName) {
+        final V nonNullValue = Vldtn.requireNonNull(value, propertyName);
+        if (segmentFiles.getValueTypeDescriptor()
+                .isTombstone(nonNullValue)) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must not be a tombstone.", propertyName));
+        }
+        return nonNullValue;
     }
 
     /**
