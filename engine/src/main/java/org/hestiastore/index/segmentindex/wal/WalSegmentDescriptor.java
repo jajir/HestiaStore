@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.wal;
 
+/**
+ * Mutable size and LSN metadata for one WAL segment.
+ */
 final class WalSegmentDescriptor {
 
     private final String name;
@@ -33,8 +36,6 @@ final class WalSegmentDescriptor {
 
     void grow(final long bytes, final long lsn) {
         this.sizeBytes += bytes;
-        if (lsn > this.maxLsn) {
-            this.maxLsn = lsn;
-        }
+        this.maxLsn = Math.max(this.maxLsn, lsn);
     }
 }

@@ -3,11 +3,12 @@
 - Be honest.
 - When it makes sense, structure responses as numbered lists.
 
-# Hestia Store Repository Rules
+## Hestia Store Repository Rules
 
 - This repository is a Maven-based Java library project with a multi-module parent build.
 - Prefer focused changes that stay within the requested scope.
 - Avoid unnecessary API-breaking changes.
+- Project-specific thrown exceptions should extend `org.hestiastore.index.IndexException` so upper application layers can handle store failures consistently.
 - Run `mvn clean verify` after non-trivial changes.
 - Use the `fix-ci-failure` skill for failing CI jobs and broken local verification runs.
 - Use the `update-dependencies` skill for Maven dependency and plugin refresh work.
@@ -40,6 +41,11 @@
 - Keep packages under `org.hestiastore.index...`.
 - Avoid inner enums and exception classes when a separate file is clearer.
 - Avoid non-trivial inner classes when a separate file is clearer; if an inner class grows beyond roughly 20 lines or carries its own state and behavior, prefer a dedicated top-level class.
+- WAL package structure (`engine/src/main/java/org/hestiastore/index/segmentindex/wal`):
+  - Default to one top-level type per file. A nested type is allowed only when it is `private static`, stateless, no more than 10 lines, and used solely as a local implementation detail of its enclosing type.
+  - A nested type with fields, lifecycle, parsing, persistence, concurrency, or reusable behavior belongs in a descriptive `Wal*` top-level class; keep it package-private and `final` unless the public API requires otherwise.
+  - When changing an existing qualifying nested type, extract it if the extraction stays within the task. Do not extract unrelated types opportunistically, and do not break existing public nested APIs such as `WalRuntime.Operation`, `WalRuntime.ReplayRecord`, or `WalRuntime.RecoveryResult` merely to flatten the file.
+  - Extraction must reduce the enclosing class's responsibility. Do not add an interface, factory, adapter, wrapper, or configuration option solely to move a nested type into another file.
 - Prefer clear, descriptive class names such as `*Adapter`, `*Cache`, and `*Descriptor`.
 - Javadoc is mandatory before finishing a Java change for every new or changed
   public type, public constructor, public method, and non-trivial
@@ -84,6 +90,7 @@
 - Changes in persistence, configuration, or codec layers must include direct tests for round-trip behavior, backward compatibility, and invalid-input handling.
 - Changes in factory, lifecycle, or transaction layers must include direct tests for open/close/commit ordering, repeated calls, and rollback or cleanup on failure paths.
 - Changes in registry, provider, supplier, or spec-mapping layers must include direct tests for unknown IDs, duplicate registration, canonicalization, and negative-path resolution failures.
+- When an operation status is interpreted differently by configuration, test both the status producer and the caller/config interpretation path for enabled and disabled modes.
 - New public classes, public overloads, and new persistence/runtime adaptation paths must have direct tests for the main happy path and at least one representative failure path.
 - If a JUnit test class uses mocks, annotate it with `@ExtendWith(MockitoExtension.class)`.
 - Create one private field per mocked dependency.

@@ -2,7 +2,8 @@
 
 HestiaStore is an embeddable Java key-value storage engine for large local
 datasets. It is optimized for predictable file I/O, bounded-memory lookups,
-range scans, and operational simplicity inside a single application process.
+bounded range scans, and operational simplicity inside a single application
+process.
 
 [![Build (main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml?query=branch%3Amain)
 ![test results](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-main.svg)
@@ -20,7 +21,8 @@ range scans, and operational simplicity inside a single application process.
 - embedded storage inside a Java service or application
 - datasets that do not fit comfortably in memory
 - predictable local persistence with optional WAL-based crash recovery
-- point lookups plus ordered iteration over large key ranges
+- point lookups plus ordered and bounded range scans over large key ranges
+- local uniqueness or compare-and-replace checks when WAL is disabled
 - teams that want a pure-Java dependency without native libraries
 
 ## What it is not trying to be
@@ -51,9 +53,11 @@ range scans, and operational simplicity inside a single application process.
 
 - Pure Java embedding with no native dependency requirement
 - In-memory or filesystem-backed directories
+- Strict UTF-8 keys and values for emoji and multilingual text
 - Custom key and value type descriptors
 - Bloom-filter assisted negative lookups
-- Segment-based storage with ordered scans
+- Segment-based storage with ordered and bounded range scans
+- Conditional `putIfAbsent` and `replace` mutations for WAL-disabled indexes
 - Optional write-ahead logging for local crash recovery
 - Monitoring snapshots and optional monitoring modules
 
@@ -108,6 +112,11 @@ try (SegmentIndex<String, String> index = SegmentIndex.create(directory, conf)) 
     System.out.println(index.get("hello"));
 }
 ```
+
+String indexes use the compact ISO-8859-1 descriptor by default for on-disk
+compatibility. To store emoji or multilingual text, explicitly select one of
+the [UTF-8 string descriptors](configuration/data-types.md#utf-8-string-descriptors)
+when creating the index.
 
 For the next step after this example, go to [Quick Start](how-to-use/quick-start.md).
 

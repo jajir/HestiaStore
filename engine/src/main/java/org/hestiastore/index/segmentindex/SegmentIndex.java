@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
@@ -243,7 +244,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final Directory directory,
             final IndexConfiguration<M, N> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return operation(
+        return bootstrapOperation(
                 requireDirectory(directory),
                 requireUserProvidedConfiguration(userProvidedConfiguration),
                 chunkFilterProviderResolver,
@@ -255,14 +256,14 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver,
             final HestiaStoreRuntime runtime) {
-        return operation(
+        return bootstrapOperation(
                 requireDirectory(directory),
                 requireUserProvidedConfiguration(userProvidedConfiguration),
                 chunkFilterProviderResolver,
                 HestiaStoreRuntimeAccess.borrowed(runtime));
     }
 
-    private static <M, N> SegmentIndexBootstrapOperation<M, N> operation(
+    private static <M, N> SegmentIndexBootstrapOperation<M, N> bootstrapOperation(
             final Directory directory,
             final IndexConfiguration<M, N> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver,
@@ -314,6 +315,33 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     /**
+     * Inserts a value only when the key is logically absent. A deleted
+     * (tombstoned) key is considered absent.
+     * <p>
+     * This operation is currently supported only when WAL is disabled.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return true when the value was inserted
+     * @throws IndexException when WAL is enabled
+     */
+    boolean putIfAbsent(K key, V value);
+
+    /**
+     * Replaces a value only when its current value matches
+     * {@code expectedValue} according to the configured value comparator.
+     * <p>
+     * This operation is currently supported only when WAL is disabled.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return true when the value was replaced
+     * @throws IndexException when WAL is enabled
+     */
+    boolean replace(K key, V expectedValue, V newValue);
+
+    /**
      * Performs a point lookup for the given key.
      *
      * @param key key to search for
@@ -327,6 +355,70 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param key key to remove from the index
      */
     void delete(K key);
+
+    /**
+     * Lazily scans entries in configured key-comparator order. The lower bound
+     * is inclusive and the upper bound is exclusive. A {@code null} upper bound
+     * scans from {@code fromInclusive} through the end of the index.
+     * <p>
+     * Implementations must reject a lower bound that sorts after a non-null
+     * upper bound using the comparator supplied by the key type descriptor.
+     * Equal non-null bounds produce an empty stream. The returned stream must be
+     * closed after use.
+     * </p>
+     * <p>
+     * With {@link SegmentIteratorIsolation#FAIL_FAST}, iteration is
+     * optimistic and may end normally before reaching {@code toExclusive}.
+     * Maintenance, segment eviction or unloading caused by cache capacity,
+     * index closing, or another iterator invalidation can therefore reduce the
+     * number of returned entries without reporting an error. Callers must not
+     * interpret a fail-fast result count as proof that the complete range was
+     * visited.
+     * </p>
+     * <p>
+     * The default implementation is a compatibility placeholder for external
+     * implementations that have not added bounded scan support yet.
+     * </p>
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound; {@code null} means
+     *        the end of the index
+     * @param isolation required iterator isolation mode
+     * @return ordered stream of entries within the requested key range
+     * @throws IllegalArgumentException if {@code fromInclusive} or
+     *         {@code isolation} is null, or if {@code fromInclusive} sorts
+     *         after a non-null {@code toExclusive}
+     * @throws UnsupportedOperationException if the implementation does not yet
+     *         support key-range scans
+     */
+    default Stream<Entry<K, V>> scan(final K fromInclusive,
+            final K toExclusive, final SegmentIteratorIsolation isolation) {
+        Vldtn.requireNonNull(fromInclusive, "fromInclusive");
+        Vldtn.requireNonNull(isolation, "isolation");
+        throw new UnsupportedOperationException(
+                "Key-range scans are not implemented.");
+    }
+
+    /**
+     * Lazily scans entries using {@link SegmentIteratorIsolation#FAIL_FAST}.
+     * Consequently, maintenance, segment eviction or unloading, and index
+     * closing may terminate the stream normally with only a prefix of the
+     * requested range.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound; {@code null} means
+     *        the end of the index
+     * @return ordered stream of entries within the requested key range
+     * @throws IllegalArgumentException if {@code fromInclusive} is null, or if
+     *         it sorts after a non-null {@code toExclusive}
+     * @throws UnsupportedOperationException if the implementation does not yet
+     *         support key-range scans
+     */
+    default Stream<Entry<K, V>> scan(final K fromInclusive,
+            final K toExclusive) {
+        return scan(fromInclusive, toExclusive,
+                SegmentIteratorIsolation.FAIL_FAST);
+    }
 
     /**
      * Went through all records. In fact read all index data. Doesn't use

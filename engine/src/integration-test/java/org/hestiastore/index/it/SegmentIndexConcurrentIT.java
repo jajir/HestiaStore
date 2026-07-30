@@ -191,6 +191,7 @@ class SegmentIndexConcurrentIT {
         final Map<Integer, Integer>[] expectedByThread = new Map[threads];
 
         final AtomicBoolean stop = new AtomicBoolean(false);
+        final AtomicReference<Throwable> writerFailure = new AtomicReference<>();
         final AtomicReference<Throwable> maintenanceError = new AtomicReference<>();
         final Thread maintenance = new Thread(() -> {
             try {
@@ -198,9 +199,9 @@ class SegmentIndexConcurrentIT {
                 int iteration = 0;
                 while (!stop.get()) {
                     try {
-                        index.maintenance().flush();
+                        index.maintenance().flushAndWait();
                         if ((iteration++ % 3) == 0) {
-                            index.maintenance().compact();
+                            index.maintenance().compactAndWait();
                         }
                     } catch (final IndexException ex) {
                         if (!isTransientIndexFailure(ex)) {
@@ -222,30 +223,36 @@ class SegmentIndexConcurrentIT {
         for (int t = 0; t < threads; t++) {
             final int threadId = t;
             executor.submit(() -> {
-                final Random rnd = new Random(112233L + threadId);
-                final int keySpaceOffset = threadId * 1_000;
-                final Map<Integer, Integer> expectedLocal = new HashMap<>();
-                startGate.await();
-                for (int i = 0; i < operationsPerThread; i++) {
-                    final int key = keySpaceOffset + rnd.nextInt(80);
-                    if (rnd.nextDouble() < 0.7) {
-                        final int value = rnd.nextInt(10_000);
-                        expectedLocal.put(key, value);
-                        index.put(key, value);
-                    } else {
-                        expectedLocal.remove(key);
-                        index.delete(key);
+                try {
+                    final Random rnd = new Random(112233L + threadId);
+                    final int keySpaceOffset = threadId * 1_000;
+                    final Map<Integer, Integer> expectedLocal = new HashMap<>();
+                    startGate.await();
+                    for (int i = 0; i < operationsPerThread; i++) {
+                        final int key = keySpaceOffset + rnd.nextInt(80);
+                        if (rnd.nextDouble() < 0.7) {
+                            final int value = rnd.nextInt(10_000);
+                            expectedLocal.put(key, value);
+                            index.put(key, value);
+                        } else {
+                            expectedLocal.remove(key);
+                            index.delete(key);
+                        }
                     }
+                    expectedByThread[threadId] = expectedLocal;
+                } catch (final Throwable t1) {
+                    writerFailure.compareAndSet(null, t1);
+                } finally {
+                    doneGate.countDown();
                 }
-                expectedByThread[threadId] = expectedLocal;
-                doneGate.countDown();
                 return null;
             });
         }
 
         startGate.countDown();
-        assertTrue(doneGate.await(60, TimeUnit.SECONDS),
+        assertTrue(doneGate.await(WORKER_AWAIT_SECONDS, TimeUnit.SECONDS),
                 "Writer threads did not finish in time");
+        assertNoWorkerFailure(writerFailure, "Writer thread failed");
 
         stop.set(true);
         // Stop cooperatively so maintenance retries are not interrupted and
@@ -860,7 +867,7 @@ class SegmentIndexConcurrentIT {
                         .name(name))//
                 .maintenance(maintenance -> maintenance
                         .backgroundAutoEnabled(false))//
-                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
                         .maintenanceWriteCacheKeyLimit(1_024)
                         .indexBufferedWriteKeyLimit(4_096)
                         .segmentSplitKeyThreshold(10_000_000))//

@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -86,6 +88,29 @@ class UniqueCacheTest {
     }
 
     @Test
+    void getSortedKeyIterator_returns_sorted_shallow_snapshot() {
+        cache.put(Entry.of(15, "dear"));
+        cache.put(Entry.of(13, "my"));
+        cache.put(Entry.of(-199, "hello"));
+
+        final Iterator<Integer> iterator = cache.getSortedKeyIterator();
+        cache.clear();
+        final List<Integer> keys = new ArrayList<>();
+        iterator.forEachRemaining(keys::add);
+
+        assertEquals(List.of(-199, 13, 15), keys);
+    }
+
+    @Test
+    void getSortedKeyIterator_does_not_support_removal() {
+        cache.put(Entry.of(10, "hello"));
+        final Iterator<Integer> iterator = cache.getSortedKeyIterator();
+        iterator.next();
+
+        assertThrows(UnsupportedOperationException.class, iterator::remove);
+    }
+
+    @Test
     void test_last_value_wins_for_same_key() {
         cache.put(Entry.of(10, "hello"));
         cache.put(Entry.of(10, "my"));
@@ -102,6 +127,24 @@ class UniqueCacheTest {
         assertFalse(cache.putAndReportNewKey(Entry.of(10, "dear")));
 
         assertEquals(1, cache.size());
+        assertEquals("dear", cache.get(10));
+    }
+
+    @Test
+    void putIfAbsent_does_not_overwrite_existing_value() {
+        assertTrue(cache.putIfAbsent(Entry.of(10, "hello")));
+        assertFalse(cache.putIfAbsent(Entry.of(10, "dear")));
+
+        assertEquals("hello", cache.get(10));
+    }
+
+    @Test
+    void replace_requires_the_observed_value() {
+        cache.put(Entry.of(10, "hello"));
+
+        assertFalse(cache.replace(10, "other", "dear"));
+        assertTrue(cache.replace(10, "hello", "dear"));
+
         assertEquals("dear", cache.get(10));
     }
 
@@ -180,12 +223,11 @@ class UniqueCacheTest {
     }
 
     @Test
-    void test_threadSafe_cache_handles_concurrent_updates() throws Exception {
+    void test_cache_handles_concurrent_updates_by_default() throws Exception {
         final UniqueCache<Integer, String> threadSafe = UniqueCache
                 .<Integer, String>builder()
                 .withKeyComparator(Integer::compareTo)
                 .withInitialCapacity(16)
-                .withThreadSafe(true)
                 .buildEmpty();
         final int threads = 6;
         final int perThread = 200;

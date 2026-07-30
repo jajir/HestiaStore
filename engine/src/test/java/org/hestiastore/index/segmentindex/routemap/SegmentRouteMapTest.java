@@ -2,6 +2,8 @@ package org.hestiastore.index.segmentindex.routemap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,9 +62,30 @@ class SegmentRouteMapTest {
 
         cache.extendMaxKeyIfNeeded(20);
 
+        assertSame(before, cache.snapshot());
         assertTrue(cache.isAtVersion(before.version()));
         assertEquals(segmentIdsBefore, cache.getSegmentIds());
         assertEquals(SegmentId.of(0), cache.findSegmentIdForKey(20));
+    }
+
+    @Test
+    void snapshotReusesPublishedInstanceUntilRouteChanges() {
+        final PersistentSegmentRouteMap<Integer> cache = newCacheWithEntries(
+                List.of());
+        final RouteMapSnapshot<Integer> initial = cache.snapshot();
+
+        assertSame(initial, cache.snapshot());
+
+        cache.extendMaxKeyIfNeeded(10);
+        final RouteMapSnapshot<Integer> published = cache.snapshot();
+
+        assertNotSame(initial, published);
+        assertEquals(initial.version() + 1, published.version());
+        assertSame(published, cache.snapshot());
+
+        cache.extendMaxKeyIfNeeded(20);
+
+        assertSame(published, cache.snapshot());
     }
 
     @Test
@@ -159,7 +182,44 @@ class SegmentRouteMapTest {
 
         assertEquals(before.getSegmentIds(SegmentWindow.unbounded()),
                 cache.getSegmentIds());
+        assertSame(before, cache.snapshot());
         assertTrue(cache.isAtVersion(before.version()));
+    }
+
+    @Test
+    void directMutationsPublishExactlyOneNewSnapshot() {
+        final PersistentSegmentRouteMap<Integer> cache = newCacheWithEntries(
+                List.of());
+        RouteMapSnapshot<Integer> previous = cache.snapshot();
+
+        cache.insertKeyToSegment(10);
+        RouteMapSnapshot<Integer> current = cache.snapshot();
+        assertNotSame(previous, current);
+        assertEquals(previous.version() + 1, current.version());
+        previous = current;
+
+        cache.insertKeyToSegment(11);
+        assertSame(previous, cache.snapshot());
+
+        cache.insertSegment(20, SegmentId.of(1));
+        current = cache.snapshot();
+        assertNotSame(previous, current);
+        assertEquals(previous.version() + 1, current.version());
+        previous = current;
+
+        cache.updateSegmentMaxKey(SegmentId.of(1), 30);
+        current = cache.snapshot();
+        assertNotSame(previous, current);
+        assertEquals(previous.version() + 1, current.version());
+        previous = current;
+
+        cache.removeSegmentRoute(SegmentId.of(1));
+        current = cache.snapshot();
+        assertNotSame(previous, current);
+        assertEquals(previous.version() + 1, current.version());
+
+        cache.removeSegmentRoute(SegmentId.of(1));
+        assertSame(current, cache.snapshot());
     }
 
     @Test
@@ -232,7 +292,11 @@ class SegmentRouteMapTest {
 
         assertEquals(List.of(SegmentId.of(1), SegmentId.of(2), SegmentId.of(3)),
                 snapshot.getSegmentIds(SegmentWindow.unbounded()));
-        assertTrue(cache.isAtVersion(cache.snapshot().version()));
+        final RouteMapSnapshot<Integer> published = cache.snapshot();
+        assertNotSame(snapshot, published);
+        assertEquals(snapshot.version() + 1, published.version());
+        assertSame(published, cache.snapshot());
+        assertTrue(cache.isAtVersion(published.version()));
         assertFalse(cache.isAtVersion(snapshot.version()));
     }
 

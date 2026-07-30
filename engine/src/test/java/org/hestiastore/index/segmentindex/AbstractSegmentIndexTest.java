@@ -184,7 +184,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             final Map<SegmentId, ?> entries = (Map<SegmentId, ?>) mapField
                     .get(cache);
             final Class<?> entryClass = Class.forName(
-                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
+                    "org.hestiastore.index.segmentregistry.SegmentRegistryEntry");
             final Field valueField = entryClass.getDeclaredField("value");
             valueField.setAccessible(true);
             final Map<SegmentId, Segment<?, ?>> segments = new HashMap<>();

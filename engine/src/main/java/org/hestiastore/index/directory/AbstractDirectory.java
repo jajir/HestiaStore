@@ -16,6 +16,9 @@ import org.hestiastore.index.Vldtn;
 public abstract class AbstractDirectory implements Directory {
 
     protected static final int DEFAULT_BUFFER_SIZE = 1024 * 1 * 4;
+    private static final String DIRECTORY_NAME_ARG = "directoryName";
+    private static final String ERROR_REQUIRED_DIRECTORY_IS_FILE =
+            "There is required directory but '%s' is file.";
 
     private final File directory;
 
@@ -60,6 +63,11 @@ public abstract class AbstractDirectory implements Directory {
     }
 
     @Override
+    public boolean isFileExists(final String fileName) {
+        return getFile(fileName).exists();
+    }
+
+    @Override
     public boolean deleteFile(final String fileName) {
         return getFile(fileName).delete();
     }
@@ -84,6 +92,90 @@ public abstract class AbstractDirectory implements Directory {
             throw new IndexException(
                     String.format("Unable to rename file '%s' to name '%s'.",
                             file.getAbsolutePath(), newFileName));
+        }
+    }
+
+    @Override
+    public Directory openSubDirectory(final String directoryName) {
+        final File subdirectory = requireExistingOrCreatedDirectory(
+                directoryName);
+        return createSubDirectory(subdirectory);
+    }
+
+    @Override
+    public boolean mkdir(final String directoryName) {
+        final File subdirectory = getSubdirectory(directoryName);
+        if (subdirectory.exists()) {
+            assureThatDirectoryIsNotFile(subdirectory);
+            return false;
+        }
+        createDirectory(subdirectory);
+        return true;
+    }
+
+    @Override
+    public boolean rmdir(final String directoryName) {
+        final File subdirectory = getSubdirectory(directoryName);
+        if (!subdirectory.exists()) {
+            return false;
+        }
+        assureThatDirectoryIsNotFile(subdirectory);
+        final String[] entries = subdirectory.list();
+        if (entries == null) {
+            throw new IndexException(String.format(
+                    "Unable to list directory '%s'.",
+                    subdirectory.getAbsolutePath()));
+        }
+        if (entries.length > 0) {
+            throw new IndexException(String.format(
+                    "Directory '%s' is not empty.",
+                    subdirectory.getAbsolutePath()));
+        }
+        if (!subdirectory.delete()) {
+            throw new IndexException(String.format(
+                    "Unable to remove directory '%s'.",
+                    subdirectory.getAbsolutePath()));
+        }
+        return true;
+    }
+
+    /**
+     * Creates a directory implementation of the same storage flavor for a
+     * validated subdirectory.
+     *
+     * @param subdirectory existing backing subdirectory
+     * @return directory implementation for {@code subdirectory}
+     */
+    protected abstract Directory createSubDirectory(File subdirectory);
+
+    private File requireExistingOrCreatedDirectory(final String directoryName) {
+        final File subdirectory = getSubdirectory(directoryName);
+        if (subdirectory.exists()) {
+            assureThatDirectoryIsNotFile(subdirectory);
+        } else {
+            createDirectory(subdirectory);
+        }
+        return subdirectory;
+    }
+
+    private File getSubdirectory(final String directoryName) {
+        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
+        return getFile(directoryName);
+    }
+
+    private void assureThatDirectoryIsNotFile(final File subdirectory) {
+        if (subdirectory.isFile()) {
+            throw new IndexException(String.format(
+                    ERROR_REQUIRED_DIRECTORY_IS_FILE,
+                    subdirectory.getAbsolutePath()));
+        }
+    }
+
+    private void createDirectory(final File subdirectory) {
+        if (!subdirectory.mkdirs()) {
+            throw new IndexException(String.format(
+                    "Unable to create directory '%s'.",
+                    subdirectory.getAbsolutePath()));
         }
     }
 

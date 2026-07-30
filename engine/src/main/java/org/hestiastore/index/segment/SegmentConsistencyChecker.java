@@ -1,11 +1,11 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.OperationResult;
 import java.util.Comparator;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,34 +43,48 @@ class SegmentConsistencyChecker<K, V> {
      * @throws IndexException if keys are not in strictly increasing order
      */
     public K checkAndRepairConsistency() {
-        logger.debug("Checking segment '{}'", segment.getId());
-        K previousKey = null;
-        final OperationResult<EntryIterator<K, V>> iteratorResult = segment
-                .openIterator();
-        if (!iteratorResult.isOk()) {
+        final OperationResult<K> result = tryCheckAndRepairConsistency();
+        if (!result.isOk()) {
             throw new IndexException(String.format(
                     "Segment '%s' is not ready for consistency check: %s",
-                    segment.getId(), iteratorResult.getStatus()));
+                    segment.getId(), result.getStatus()));
+        }
+        return result.getValue();
+    }
+
+    /**
+     * Attempts a complete consistency scan under full segment isolation.
+     *
+     * @return successful result containing the last key, or the segment status
+     *         when exclusive access cannot be acquired
+     */
+    OperationResult<K> tryCheckAndRepairConsistency() {
+        logger.debug("Checking segment '{}'", segment.getId());
+        final OperationResult<EntryIterator<K, V>> iteratorResult = segment
+                .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+        if (!iteratorResult.isOk()) {
+            return OperationResult.fromStatus(iteratorResult.getStatus());
         }
         try (EntryIterator<K, V> iterator = iteratorResult.getValue()) {
-            while (iterator.hasNext()) {
-                final Entry<K, V> entry = iterator.next();
-                if (previousKey == null) {
-                    previousKey = entry.getKey();
-                    continue;
-                }
-                if (keyComparator.compare(previousKey, entry.getKey()) >= 0) {
-                    throw new IndexException(String.format(
-                            "Keys in segment '%s' are not sorted. "
-                                    + "Key '%s' have to higher than key '%s'.",
-                            segment.getId(), entry.getKey(), previousKey));
-                }
-                previousKey = entry.getKey();
+            return OperationResult.ok(checkEntries(iterator));
+        }
+    }
+
+    private K checkEntries(final EntryIterator<K, V> iterator) {
+        K previousKey = null;
+        while (iterator.hasNext()) {
+            final Entry<K, V> entry = iterator.next();
+            if (previousKey != null
+                    && keyComparator.compare(previousKey, entry.getKey()) >= 0) {
+                throw new IndexException(String.format(
+                        "Keys in segment '%s' are not sorted. "
+                                + "Key '%s' have to higher than key '%s'.",
+                        segment.getId(), entry.getKey(), previousKey));
             }
+            previousKey = entry.getKey();
         }
         if (previousKey == null) {
             logger.warn("Segment '{}' is empty.", segment.getId());
-            return null;
         }
         return previousKey;
     }

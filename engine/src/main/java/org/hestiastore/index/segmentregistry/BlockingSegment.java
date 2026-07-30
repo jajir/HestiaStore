@@ -16,6 +16,12 @@ import org.hestiastore.index.segment.SegmentStats;
  * The blocking segment keeps the registry as the source of truth for
  * loading/reloading a segment and converts retryable operation statuses into
  * bounded blocking calls.
+ * <p>
+ * Blocking calls treat {@code WRITE_CACHE_FULL} as retryable when automatic
+ * maintenance is enabled. In that mode, flush or compact work can free segment
+ * write-cache capacity, so the status has the same blocking meaning as
+ * {@code BUSY}. When automatic maintenance is disabled, the same status is a
+ * terminal failure because no background path can free capacity.
  *
  * @param <K> key type
  * @param <V> value type
@@ -80,6 +86,47 @@ public interface BlockingSegment<K, V> {
     void put(K key, V value);
 
     /**
+     * Performs a single-attempt conditional insert without retrying
+     * BUSY/CLOSED.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return raw segment result
+     */
+    OperationResult<Boolean> tryPutIfAbsent(K key, V value);
+
+    /**
+     * Performs a blocking insert only when the key is logically absent.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return true when the value was inserted
+     */
+    boolean putIfAbsent(K key, V value);
+
+    /**
+     * Performs a single-attempt conditional replacement without retrying
+     * BUSY/CLOSED.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return raw segment result
+     */
+    OperationResult<Boolean> tryReplace(K key, V expectedValue, V newValue);
+
+    /**
+     * Performs a blocking replacement when the current value matches the
+     * expected value.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return true when the value was replaced
+     */
+    boolean replace(K key, V expectedValue, V newValue);
+
+    /**
      * Opens an iterator in a single attempt without retrying BUSY/CLOSED.
      *
      * @param isolation iterator isolation
@@ -87,6 +134,22 @@ public interface BlockingSegment<K, V> {
      */
     OperationResult<EntryIterator<K, V>> tryOpenIterator(
             SegmentIteratorIsolation isolation);
+
+    /**
+     * Opens a bounded iterator in a single attempt without retrying
+     * BUSY/CLOSED.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation
+     * @return raw segment result
+     */
+    default OperationResult<EntryIterator<K, V>> tryOpenIterator(
+            final K fromInclusive, final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        throw new UnsupportedOperationException(
+                "Bounded segment iteration is not implemented.");
+    }
 
     /**
      * Opens a blocking iterator using fail-fast isolation.
@@ -102,6 +165,21 @@ public interface BlockingSegment<K, V> {
      * @return iterator over segment entries
      */
     EntryIterator<K, V> openIterator(SegmentIteratorIsolation isolation);
+
+    /**
+     * Opens a blocking bounded iterator with the requested isolation.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation
+     * @return iterator over the requested segment range
+     */
+    default EntryIterator<K, V> openIterator(final K fromInclusive,
+            final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        throw new UnsupportedOperationException(
+                "Bounded segment iteration is not implemented.");
+    }
 
     /**
      * Starts a flush in a single attempt without retrying BUSY/CLOSED.

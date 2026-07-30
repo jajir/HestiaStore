@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
@@ -12,6 +14,7 @@ import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,14 +41,15 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     private final BusyRetryPolicy closeRetryPolicy;
     private final BusyRetryPolicy blockingRetryPolicy;
 
-    private final SegmentIdAllocator segmentIdAllocator;
+    private final Supplier<SegmentId> segmentIdAllocator;
     private final SegmentRegistryFileSystem fileSystem;
     private final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory;
-    private final SegmentRuntimeTuner runtimeTuner;
+    private final Consumer<SegmentRuntimeLimits> runtimeTuner;
     private final BlockingSegmentRegistryAdapter<K, V> blockingFacade;
     private final SegmentRegistry.Materialization<K, V> materialization;
     private final SegmentRegistry.Runtime<K, V> runtime;
-    private final ConcurrentMap<SegmentId, BlockingSegment<K, V>> blockingSegments;
+    private final ConcurrentMap<SegmentId, DefaultBlockingSegment<K, V>> blockingSegments;
+    private final boolean automaticMaintenanceEnabled;
 
     /**
      * Creates a registry using prebuilt dependencies from the builder.
@@ -56,14 +60,15 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
      * @param closeRetryPolicy   retry policy for draining cache on close
      * @param gate               registry gate state machine shared by collaborators
      */
-    SegmentRegistryImpl(final SegmentIdAllocator segmentIdAllocator,
+    SegmentRegistryImpl(final Supplier<SegmentId> segmentIdAllocator,
             final SegmentRegistryFileSystem fileSystem,
             final SegmentRegistryCache<K, V> cache,
             final BusyRetryPolicy closeRetryPolicy,
             final SegmentRegistryStateMachine gate,
             final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory,
-            final SegmentRuntimeTuner runtimeTuner,
-            final BusyRetryPolicy blockingRetryPolicy) {
+            final Consumer<SegmentRuntimeLimits> runtimeTuner,
+            final BusyRetryPolicy blockingRetryPolicy,
+            final boolean automaticMaintenanceEnabled) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
         this.fileSystem = Vldtn.requireNonNull(fileSystem, "fileSystem");
@@ -77,6 +82,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
                 .requireNonNull(preparedSegmentWriterFactory,
                         "preparedSegmentWriterFactory");
         this.runtimeTuner = Vldtn.requireNonNull(runtimeTuner, "runtimeTuner");
+        this.automaticMaintenanceEnabled = automaticMaintenanceEnabled;
         this.blockingFacade = new BlockingSegmentRegistryAdapter<>(this,
                 this.blockingRetryPolicy);
         this.blockingSegments = new ConcurrentHashMap<>();
@@ -94,9 +100,8 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     public BlockingSegment<K, V> loadSegment(final SegmentId segmentId) {
         final SegmentId validatedSegmentId = Vldtn.requireNonNull(segmentId,
                 SEGMENT_ID_PARAMETER);
-        final Segment<K, V> loaded = blockingFacade.loadSegment(
-                validatedSegmentId);
-        return toBlockingSegment(validatedSegmentId, loaded);
+        return toBlockingSegment(validatedSegmentId,
+                blockingFacade.loadSegment(validatedSegmentId));
     }
 
     @Override
@@ -105,7 +110,8 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         final SegmentId validatedSegmentId = Vldtn.requireNonNull(segmentId,
                 SEGMENT_ID_PARAMETER);
         return blockingFacade.tryGetSegment(validatedSegmentId)
-                .map(segment -> toBlockingSegment(validatedSegmentId, segment));
+                .map(segment -> toBlockingSegment(validatedSegmentId,
+                        segment));
     }
 
     @Override
@@ -117,7 +123,8 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
             return Optional.empty();
         }
         return cache.getIfReady(validatedSegmentId)
-                .map(segment -> toBlockingSegment(validatedSegmentId, segment));
+                .map(segment -> toBlockingSegment(validatedSegmentId,
+                        segment));
     }
 
     @Override
@@ -158,7 +165,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
             return OperationResult.fromStatus(resultForState(state));
         }
         try {
-            final SegmentId segmentId = segmentIdAllocator.nextId();
+            final SegmentId segmentId = segmentIdAllocator.get();
             if (segmentId == null) {
                 return OperationResult.error();
             }
@@ -229,8 +236,7 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         final Segment<K, V> segment;
         try {
             segment = cache.get(segmentId);
-        } catch (final SegmentRegistryCache.EntryBusyException
-                | SegmentBusyException ex) {
+        } catch (final SegmentBusyException ex) {
             return OperationResult.busy();
         } catch (final RuntimeException ex) {
             logger.error("Failed to load segment '{}'.", segmentId, ex);
@@ -316,7 +322,8 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     }
 
     private List<BlockingSegment<K, V>> loadedBlockingSegmentsSnapshot() {
-        return loadedSegmentsSnapshot().stream().map(this::toBlockingSegment)
+        return loadedSegmentsSnapshot().stream()
+                .map(segment -> toBlockingSegment(segment.getId(), segment))
                 .toList();
     }
 
@@ -332,17 +339,15 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         return runtime;
     }
 
-    private BlockingSegment<K, V> toBlockingSegment(
-            final Segment<K, V> segment) {
-        return toBlockingSegment(segment.getId(), segment);
-    }
-
     private BlockingSegment<K, V> toBlockingSegment(final SegmentId segmentId,
             final Segment<K, V> segment) {
-        return blockingSegments.computeIfAbsent(segmentId,
-                id -> new DefaultBlockingSegment<>(id,
-                        () -> blockingFacade.loadSegment(id),
-                        blockingRetryPolicy, segment));
+        final DefaultBlockingSegment<K, V> blockingSegment = blockingSegments
+                .computeIfAbsent(segmentId,
+                        id -> new DefaultBlockingSegment<>(id, segment,
+                                blockingFacade, blockingRetryPolicy,
+                                automaticMaintenanceEnabled));
+        blockingSegment.updateSegment(segment);
+        return blockingSegment;
     }
 
     private static OperationStatus resultForState(

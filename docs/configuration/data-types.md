@@ -1,21 +1,111 @@
-# Data types
+# Data Types
 
 HestiaStore supports a variety of data types for storing keys and values in a binary-efficient and consistent manner. Each data type is associated with a `TypeDescriptor`, which handles serialization, deserialization, comparison, and hashing logic.
 
 Below is a list of the supported data types and their characteristics.
 
-| Java Class           | TypeDescriptor Class              | Max Length (Bytes) | Notes |
-|----------------------|-----------------------------------|---------------------|-------|
+| Java Class           | TypeDescriptor Class              | Maximum Payload Bytes | Notes |
+|----------------------|-----------------------------------|-----------------------|-------|
 | `java.lang.Byte`     | `TypeDescriptorByte`              | 1                   | Two's complement representation |
 | `java.lang.Integer`  | `TypeDescriptorInteger`           | 4                   | Big-endian encoding |
 | `java.lang.Long`     | `TypeDescriptorLong`              | 8                   | Big-endian encoding |
 | `java.lang.Float`    | `TypeDescriptorFloat`             | 4                   | IEEE 754 format |
 | `java.lang.Double`   | `TypeDescriptorDouble`            | 8                   | IEEE 754 format |
-| `java.lang.String`   | `TypeDescriptorShortString`       | 128                 | UTF-8 encoding, prefixed with 1-byte length, it's default string type descriptor |
-| `java.lang.String`   | `TypeDescriptorString`            | 2 GB                | UTF-8 encoding, prefixed with 4-byte length |
+| `java.lang.String`   | `TypeDescriptorShortString`       | 127                 | ISO-8859-1, one-byte length; default string descriptor |
+| `java.lang.String`   | `TypeDescriptorString`            | JVM array limit     | ISO-8859-1, four-byte signed length |
+| `java.lang.String`   | `TypeDescriptorTinyUtf8String`    | 255                 | Strict UTF-8, one-byte unsigned length |
+| `java.lang.String`   | `TypeDescriptorUtf8String`        | 2,147,483,642       | Strict UTF-8, canonical unsigned LEB128 length |
 | `org.hestiastore.index.datatype.ByteArray` | `TypeDescriptorByteArray`   | n                   | Raw bytes, length determined by actual data |
-| `org.hestiastore.index.datatype.NullValue` | `TypeDescriptorNullValue`   | 0                   | Usefulll when value is not needed. Doesn't occupy any space. |
+| `org.hestiastore.index.datatype.NullValue` | `TypeDescriptorNull`   | 0                   | Useful when a value is not needed; occupies no payload space |
 | `org.hestiastore.index.datatype.CompositeValue` | `TypeDescriptorCompositeValue`   | n                   | Represents multiple values.  |
+
+## UTF-8 String Descriptors
+
+Both UTF-8 descriptors use standard UTF-8 and store the encoded payload byte
+length. The limit does not count Java UTF-16 code units, Unicode code points,
+or displayed grapheme clusters.
+
+`TypeDescriptorTinyUtf8String` stores:
+
+```text
+[one-byte unsigned payload length][UTF-8 payload]
+```
+
+Its payload can contain 0 through 255 bytes. For example, it can hold 255 ASCII
+characters or 63 four-byte emoji, but not 64 four-byte emoji.
+
+`TypeDescriptorUtf8String` stores:
+
+```text
+[canonical unsigned LEB128 payload length][UTF-8 payload]
+```
+
+The prefix size is:
+
+| Payload Length | Prefix Bytes |
+|----------------|--------------|
+| 0–127 | 1 |
+| 128–16,383 | 2 |
+| 16,384–2,097,151 | 3 |
+| 2,097,152–268,435,455 | 4 |
+| 268,435,456–2,147,483,642 | 5 |
+
+The general descriptor's maximum preserves the `TypeWriter` contract that the
+total prefix and payload byte count fits in a non-negative Java `int`. Actual
+usable values can be lower because a payload must also fit in a JVM byte array
+and available heap.
+
+Both descriptors:
+
+- reject unpaired Java UTF-16 surrogates during encoding
+- reject malformed, truncated, overlong, or surrogate UTF-8 byte sequences
+  during decoding
+- preserve the original string without automatic Unicode normalization
+- use Java `String.compareTo` ordering
+
+Application character limits must account for variable-width encoding:
+
+| Application Limit | Worst-Case UTF-8 Payload | Suitable Descriptor |
+|-------------------|---------------------------|---------------------|
+| 128 encoded bytes | 128 bytes | `TypeDescriptorTinyUtf8String` |
+| 128 Unicode code points | 512 bytes | `TypeDescriptorUtf8String` |
+| 64,000 encoded bytes | 64,000 bytes | `TypeDescriptorUtf8String` |
+| 64,000 Unicode code points | 256,000 bytes | `TypeDescriptorUtf8String` |
+
+Displayed characters can contain multiple code points, so a grapheme-count
+limit alone does not provide a strict serialized byte limit.
+
+### Configuration
+
+Wire UTF-8 descriptors explicitly in the identity configuration:
+
+```java
+IndexConfiguration<String, String> configuration = IndexConfiguration
+    .<String, String>builder()
+    .identity(identity -> identity
+        .name("localized-text")
+        .keyClass(String.class)
+        .valueClass(String.class)
+        .keyTypeDescriptor(new TypeDescriptorTinyUtf8String())
+        .valueTypeDescriptor(new TypeDescriptorUtf8String()))
+    .build();
+```
+
+The default registry mapping for `String` remains
+`TypeDescriptorShortString` for on-disk compatibility. Applications can use
+either UTF-8 descriptor without changing that global default by configuring it
+explicitly as shown above.
+
+### Migration from ISO-8859-1
+
+Do not replace `TypeDescriptorShortString` or `TypeDescriptorString` with a
+UTF-8 descriptor when opening an existing index. The formats use different
+payload encodings and different length framing. Create a new index with the
+UTF-8 descriptor and migrate or rebuild the data.
+
+The legacy ISO-8859-1 encoder replaces unsupported characters with `?`.
+Choose a UTF-8 descriptor before accepting emoji or characters outside
+ISO-8859-1 to prevent that data loss.
 
 ## Custom Data Types
 
@@ -30,9 +120,9 @@ To create a new data type:
 1. Implement the `TypeDescriptor<T>` interface. It groups encoder/decoder/reader/writer/comparator contracts for your type.
 2. Optionallly register it using `org.hestiastore.index.segmentindex.configuration.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)`.
 
-### TypeEncoder Contract (0.0.6+)
+### TypeEncoder Contract
 
-Starting with `0.0.6`, `TypeEncoder` uses a single method:
+`TypeEncoder` uses a single method:
 
 ```java
 EncodedBytes encode(T value, byte[] reusableBuffer)
@@ -64,12 +154,6 @@ public final class TypeDescriptorMyType implements TypeDescriptor<MyType> {
     }
 }
 ```
-
-Migration from older API:
-
-* Remove old `bytesLength(...)`/`toBytes(...)` implementations.
-* Move length validation and write validation directly into `encode(...)`.
-* Return exact written length via `EncodedBytes`.
 
 ### Why Register Your Custom Type Descriptor
 

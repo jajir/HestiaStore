@@ -98,7 +98,7 @@ class RuntimeTuningPatchApplierTest {
 
         assertTrue(result.applied());
         assertNotNull(appliedLimits());
-        verify(splitService).requestFullSplitScan();
+        verify(splitService).run();
         assertEquals(1L, result.after().revision());
     }
 

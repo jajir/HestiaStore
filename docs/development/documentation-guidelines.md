@@ -28,6 +28,9 @@ Use a light Diataxis split:
 - Update docs in the same change when behavior or contracts change.
 - Prefer exact code terminology over vague prose.
 - If code and docs disagree, fix both or clearly mark the page as a proposal.
+- Describe the current code and contracts without version comparisons by
+  default. Keep release history in `CHANGELOG.md`, and add version-specific
+  migration guidance only when the user explicitly requests it.
 - Keep architecture pages as source-of-truth documents, not changelog notes.
 - Do not leave placeholder pages such as "content to be expanded" in published
   navigation.

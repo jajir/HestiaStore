@@ -10,6 +10,12 @@ import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeDecoder;
 import org.hestiastore.index.datatype.TypeEncoder;
 
+/**
+ * Encodes and validates ordered WAL records.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 final class WalRecordCodec<K, V> {
 
     static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
@@ -30,11 +36,20 @@ final class WalRecordCodec<K, V> {
         this.valueDecoder = valueDecoder;
     }
 
+    /**
+     * Encodes one WAL record, including its length prefix and CRC.
+     *
+     * @param operation operation kind
+     * @param lsn assigned log sequence number
+     * @param key record key
+     * @param value record value, or null for deletes
+     * @return encoded WAL record
+     */
     byte[] encodeRecord(final WalRuntime.Operation operation, final long lsn,
             final K key, final V value) {
-        final byte[] keyBytes = encodeKey(key);
+        final byte[] keyBytes = encode(keyEncoder, key, "key");
         final byte[] valueBytes = operation == WalRuntime.Operation.PUT
-                ? encodeValue(value)
+                ? encode(valueEncoder, value, "value")
                 : new byte[0];
         final int bodyLen = MIN_RECORD_BODY_SIZE + keyBytes.length
                 + valueBytes.length;
@@ -42,23 +57,20 @@ final class WalRecordCodec<K, V> {
             throw new IllegalArgumentException(String.format(
                     "WAL record body is too large: %s", bodyLen));
         }
-        final byte[] body = new byte[bodyLen];
-        int offset = 0;
-        offset += 4;
-        putLong(body, offset, lsn);
+        final byte[] encoded = new byte[4 + bodyLen];
+        putInt(encoded, 0, bodyLen);
+        int offset = 8;
+        putLong(encoded, offset, lsn);
         offset += 8;
-        body[offset++] = operation.code();
-        putInt(body, offset, keyBytes.length);
+        encoded[offset++] = operation.code();
+        putInt(encoded, offset, keyBytes.length);
         offset += 4;
-        putInt(body, offset, valueBytes.length);
+        putInt(encoded, offset, valueBytes.length);
         offset += 4;
-        System.arraycopy(keyBytes, 0, body, offset, keyBytes.length);
+        System.arraycopy(keyBytes, 0, encoded, offset, keyBytes.length);
         offset += keyBytes.length;
-        System.arraycopy(valueBytes, 0, body, offset, valueBytes.length);
-        putInt(body, 0, computeCrc32(body, 4, body.length - 4));
-        final byte[] encoded = new byte[4 + body.length];
-        putInt(encoded, 0, body.length);
-        System.arraycopy(body, 0, encoded, 4, body.length);
+        System.arraycopy(valueBytes, 0, encoded, offset, valueBytes.length);
+        putInt(encoded, 4, computeCrc32(encoded, 8, bodyLen - 4));
         return encoded;
     }
 
@@ -107,16 +119,11 @@ final class WalRecordCodec<K, V> {
                 && bodyLength <= MAX_RECORD_BODY_SIZE;
     }
 
-    private byte[] encodeKey(final K key) {
-        final EncodedBytes encoded = keyEncoder.encode(Objects.requireNonNull(key,
-                "key"), new byte[0]);
-        return toExactArray(encoded, "key");
-    }
-
-    private byte[] encodeValue(final V value) {
-        final EncodedBytes encoded = valueEncoder.encode(
-                Objects.requireNonNull(value, "value"), new byte[0]);
-        return toExactArray(encoded, "value");
+    private <T> byte[] encode(final TypeEncoder<T> encoder, final T value,
+            final String fieldName) {
+        final EncodedBytes encoded = encoder.encode(
+                Objects.requireNonNull(value, fieldName), new byte[0]);
+        return toExactArray(encoded, fieldName);
     }
 
     private byte[] toExactArray(final EncodedBytes encoded,

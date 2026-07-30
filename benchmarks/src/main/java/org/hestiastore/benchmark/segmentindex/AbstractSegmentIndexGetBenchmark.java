@@ -23,14 +23,15 @@ public abstract class AbstractSegmentIndexGetBenchmark {
     @Setup(Level.Trial)
     public final void setup() throws IOException {
         tempDir = SegmentIndexBenchmarkSupport.createTempDir(tempDirPrefix());
-        final IndexConfiguration<Integer, String> conf = buildConfiguration();
+        final IndexConfiguration<Integer, String> setupConf = buildSetupConfiguration();
 
         try (SegmentIndex<Integer, String> created = SegmentIndex
-                .create(new FsDirectory(tempDir), conf)) {
+                .create(new FsDirectory(tempDir), setupConf)) {
             populateIndex(created);
             afterCreate(created);
         }
 
+        final IndexConfiguration<Integer, String> conf = buildConfiguration();
         index = SegmentIndex.open(new FsDirectory(tempDir), conf);
         configureReadState(index);
     }
@@ -59,6 +60,17 @@ public abstract class AbstractSegmentIndexGetBenchmark {
     }
 
     protected abstract String tempDirPrefix();
+
+    /**
+     * Builds the configuration used while creating persisted benchmark data.
+     * Subclasses may provide additional setup-only capacity without changing
+     * the measured reopen configuration.
+     *
+     * @return setup configuration
+     */
+    protected IndexConfiguration<Integer, String> buildSetupConfiguration() {
+        return buildConfiguration();
+    }
 
     protected abstract IndexConfiguration<Integer, String> buildConfiguration();
 

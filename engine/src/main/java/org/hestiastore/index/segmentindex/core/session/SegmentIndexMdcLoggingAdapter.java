@@ -61,6 +61,21 @@ final class SegmentIndexMdcLoggingAdapter<K, V>
     }
 
     @Override
+    public boolean putIfAbsent(final K key, final V value) {
+        try (IndexMdcScope ignored = openScope()) {
+            return delegate.putIfAbsent(key, value);
+        }
+    }
+
+    @Override
+    public boolean replace(final K key, final V expectedValue,
+            final V newValue) {
+        try (IndexMdcScope ignored = openScope()) {
+            return delegate.replace(key, expectedValue, newValue);
+        }
+    }
+
+    @Override
     public V get(final K key) {
         try (IndexMdcScope ignored = openScope()) {
             return delegate.get(key);
@@ -71,6 +86,15 @@ final class SegmentIndexMdcLoggingAdapter<K, V>
     public void delete(final K key) {
         try (IndexMdcScope ignored = openScope()) {
             delegate.delete(key);
+        }
+    }
+
+    @Override
+    public Stream<Entry<K, V>> scan(final K fromInclusive,
+            final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        try (IndexMdcScope ignored = openScope()) {
+            return delegate.scan(fromInclusive, toExclusive, isolation);
         }
     }
 

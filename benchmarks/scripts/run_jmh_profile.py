@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import platform
@@ -122,8 +123,32 @@ def host_metadata() -> dict[str, Any]:
     }
 
 
-def normalize_result(result_path: Path) -> dict[str, Any]:
+def profile_fingerprint(profile_path: Path) -> str:
+    return hashlib.sha256(profile_path.read_bytes()).hexdigest()
+
+
+def normalize_result(
+    result_path: Path,
+    expected_benchmarks: list[str] | None = None,
+    expected_result_count: int | None = None,
+) -> dict[str, Any]:
     rows = json.loads(result_path.read_text(encoding="utf-8"))
+    actual_benchmarks = {row["benchmark"] for row in rows}
+    expected = set(expected_benchmarks or [])
+    if not rows:
+        raise ValueError(f"JMH produced no benchmark results in {result_path}.")
+    if expected_result_count is not None and len(rows) != expected_result_count:
+        raise ValueError(
+            f"JMH produced {len(rows)} benchmark results in {result_path}; "
+            f"expected {expected_result_count}."
+        )
+    if expected and actual_benchmarks != expected:
+        missing = sorted(expected - actual_benchmarks)
+        unexpected = sorted(actual_benchmarks - expected)
+        raise ValueError(
+            f"JMH produced incomplete benchmark results in {result_path}; "
+            f"missing={missing}, unexpected={unexpected}."
+        )
     normalized_rows = []
     for row in rows:
         normalized_rows.append({
@@ -170,6 +195,7 @@ def main() -> int:
     run_summary: dict[str, Any] = {
         "profile": profile["profile"],
         "description": profile.get("description", ""),
+        "profileFingerprint": profile_fingerprint(profile_path),
         "timestampUtc": datetime.now(timezone.utc).isoformat(),
         "repoRoot": str(repo_root),
         "jar": str(jar_path),
@@ -184,7 +210,11 @@ def main() -> int:
         log_path = logs_dir / f"{label}.log"
         cmd = ["java", "-jar", str(jar_path), benchmark["include"], *benchmark["args"], "-rf", "json", "-rff", str(raw_path)]
         run_command(cmd, cwd=repo_root, stdout_path=log_path)
-        normalized = normalize_result(raw_path)
+        normalized = normalize_result(
+            raw_path,
+            benchmark.get("expectedBenchmarks"),
+            benchmark.get("expectedResultCount"),
+        )
         run_summary["benchmarks"].append({
             "label": label,
             "include": benchmark["include"],

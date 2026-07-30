@@ -163,40 +163,46 @@ jobs:
 
     - name: Detect fallback baseline compatibility
       id: fallback-compat
-      if: steps.stored-baseline.outputs.baseline_summary == ''
       shell: bash
       run: |
         set -euo pipefail
 
         PROFILE_PATH="benchmarks/profiles/${{ steps.refs.outputs.profile }}.json"
         CAN_RUN="true"
-
-        if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${PROFILE_PATH}" 2>/dev/null; then
-          CAN_RUN="false"
-        fi
-        if [ "${CAN_RUN}" = "true" ]; then
-          while IFS= read -r BENCHMARK_CLASS_PATH; do
-            if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${BENCHMARK_CLASS_PATH}" 2>/dev/null; then
-              CAN_RUN="false"
-              break
-            fi
-          done < <(python3 - <<'PY'
+        mapfile -t BENCHMARK_SOURCE_PATHS < <(python3 - <<'PY'
         import json
         from pathlib import Path
 
         profile_path = Path("benchmarks/profiles/${{ steps.refs.outputs.profile }}.json")
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
-        paths = []
+        paths = list(profile.get("supportSources", []))
         for benchmark in profile.get("benchmarks", []):
             include = benchmark.get("include")
-            if not include:
-                continue
-            relative = "benchmarks/src/main/java/" + include.replace(".", "/") + ".java"
-            paths.append(relative)
+            if include:
+                paths.append(
+                    "benchmarks/src/main/java/" + include.replace(".", "/") + ".java"
+                )
         for path in sorted(set(paths)):
             print(path)
         PY
-          )
+        )
+
+        if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${PROFILE_PATH}" 2>/dev/null; then
+          CAN_RUN="false"
+        fi
+        if [ "${CAN_RUN}" = "true" ]; then
+          for BENCHMARK_CLASS_PATH in "${BENCHMARK_SOURCE_PATHS[@]}"; do
+            if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${BENCHMARK_CLASS_PATH}" 2>/dev/null; then
+              CAN_RUN="false"
+              break
+            fi
+          done
+        fi
+        if [ "${CAN_RUN}" = "true" ] && ! git diff --quiet \
+          "${{ steps.refs.outputs.fallback_baseline_ref }}" \
+          "${{ steps.refs.outputs.candidate_ref }}" -- \
+          "${PROFILE_PATH}" "${BENCHMARK_SOURCE_PATHS[@]}"; then
+          CAN_RUN="false"
         fi
 
         echo "can_run=${CAN_RUN}" >> "${GITHUB_OUTPUT}"
@@ -231,7 +237,8 @@ jobs:
         set -euo pipefail
 
         BASELINE_SUMMARY=""
-        if python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
+        if [ "${{ steps.fallback-compat.outputs.can_run }}" = "true" ] && \
+          python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
           --history-dir "${{ steps.history.outputs.history_dir }}" \
           --profile "${{ steps.refs.outputs.profile }}" \
           --profile-spec "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
@@ -249,7 +256,8 @@ jobs:
         set -euo pipefail
 
         PREVIOUS_PR_SUMMARY=""
-        if python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
+        if [ "${{ steps.fallback-compat.outputs.can_run }}" = "true" ] && \
+          python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
           --history-dir "${{ steps.history.outputs.history_dir }}" \
           --profile "${{ steps.refs.outputs.profile }}" \
           --profile-spec "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \

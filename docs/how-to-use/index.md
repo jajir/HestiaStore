@@ -18,7 +18,7 @@ fewest decisions possible.
 
 - large local key-value datasets inside one Java service
 - point lookups with predictable disk layout
-- ordered scans over persisted keys
+- ordered and bounded range scans over persisted keys
 - test-friendly storage with `MemDirectory`
 
 ## When to choose something simpler

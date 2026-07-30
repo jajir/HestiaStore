@@ -68,6 +68,17 @@ final class SegmentIndexBenchmarkSupport {
         return valuePrefix + Character.toString(fillChar).repeat(suffixLength);
     }
 
+    /**
+     * Inserts fixture data without racing an explicit flush against background
+     * splits. Closing the setup index seals split scheduling before flushing.
+     */
+    static void putSequential(final SegmentIndex<Integer, String> index,
+            final int keyCount, final IntFunction<String> valueBuilder) {
+        for (int key = 0; key < keyCount; key++) {
+            index.put(Integer.valueOf(key), valueBuilder.apply(key));
+        }
+    }
+
     static void populateSequential(final SegmentIndex<Integer, String> index,
             final int keyCount, final int flushBatchSize,
             final IntFunction<String> valueBuilder) {

@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.wal;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
@@ -103,17 +103,7 @@ final class WalStorageMem implements WalStorage {
     }
 
     @Override
-    public Stream<String> listFileNames() {
-        return walDirectory.getFileNames();
-    }
-
-    @Override
-    public void sync(final String fileName) {
-        // No-op for in-memory storage.
-    }
-
-    @Override
-    public void syncMetadata() {
-        // No-op for in-memory storage.
+    public List<String> listFileNames() {
+        return walDirectory.getFileNames().toList();
     }
 }

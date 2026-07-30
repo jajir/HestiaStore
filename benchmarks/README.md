@@ -36,8 +36,11 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryIterat
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SortedDataFileWriterBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Benchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar StringEncodingBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar UniqueCacheSortedKeyIteratorBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexRangeScanBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentMergeSequentialBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotRoutePutBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark
@@ -59,9 +62,22 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "DataBlockByteReaderBe
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SingleChunkEntryIteratorBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SortedDataFileWriterBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "UniqueCacheSortedKeyIteratorBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=live -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark -p workingSetMode=cold -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexRangeScanBenchmark -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentMergeSequentialBenchmark -prof gc
 ```
+
+The measured sorted-key snapshot comparison is documented in
+[`results/unique-cache-sorted-key-iterator-comparison.md`](results/unique-cache-sorted-key-iterator-comparison.md).
+
+The range-scan benchmark compares the bounded API with full-stream filtering
+and also measures a complete sequential read. All measurements use `FAIL_FAST`
+and reject an invocation unless it returns the complete expected result. This
+prevents maintenance, cache-capacity eviction, or index closing from appearing
+as an artificial speedup. The segment-merge benchmark isolates the unbounded
+per-entry hot loop so bounded-scan checks cannot regress it unnoticed.
 
 Mixed partitioned-ingest workloads with concurrent reads:
 
@@ -73,9 +89,14 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrain
 Persisted mutation and lifecycle paths:
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -p walMode=sync -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -t 1 -p walMode=sync -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -t 16 -p walMode=sync -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleBenchmark -p walMode=sync
 ```
+
+Run both persisted-mutation thread counts with otherwise identical parameters.
+The one-writer case protects latency-sensitive behavior; the 16-writer case
+exposes WAL queue admission and sync-batching contention.
 
 Quick smoke run:
 
@@ -119,6 +140,16 @@ python3 benchmarks/scripts/run_jmh_profile.py \
   --repo-root . \
   --profile segment-index-pr-smoke \
   --output-dir /tmp/hestia-bench/current
+```
+
+Measure Logback-backed MDC overhead on otherwise identical live-get and hot-put
+workloads:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile segment-index-context-logging \
+  --output-dir /tmp/hestia-bench/context-logging
 ```
 
 Run the nightly disk I/O profile locally:

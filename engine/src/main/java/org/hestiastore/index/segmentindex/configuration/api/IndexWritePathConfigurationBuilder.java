@@ -2,11 +2,8 @@ package org.hestiastore.index.segmentindex.configuration.api;
 
 /**
  * Builder section for direct-to-segment write-path limits.
- *
- * @param <K> key type
- * @param <V> value type
  */
-public final class IndexWritePathConfigurationBuilder<K, V> {
+public final class IndexWritePathConfigurationBuilder {
 
     private Integer segmentWriteCacheKeyLimit;
     private Integer maintenanceWriteCacheKeyLimit;
@@ -22,7 +19,7 @@ public final class IndexWritePathConfigurationBuilder<K, V> {
      * @param value segment write-cache key limit
      * @return this section builder
      */
-    public IndexWritePathConfigurationBuilder<K, V> segmentWriteCacheKeyLimit(
+    public IndexWritePathConfigurationBuilder segmentWriteCacheKeyLimit(
             final Integer value) {
         this.segmentWriteCacheKeyLimit = value;
         return this;
@@ -34,7 +31,7 @@ public final class IndexWritePathConfigurationBuilder<K, V> {
      * @param value maintenance write-cache key limit
      * @return this section builder
      */
-    public IndexWritePathConfigurationBuilder<K, V> maintenanceWriteCacheKeyLimit(
+    public IndexWritePathConfigurationBuilder maintenanceWriteCacheKeyLimit(
             final Integer value) {
         this.maintenanceWriteCacheKeyLimit = value;
         return this;
@@ -46,7 +43,7 @@ public final class IndexWritePathConfigurationBuilder<K, V> {
      * @param value index-wide buffered key limit
      * @return this section builder
      */
-    public IndexWritePathConfigurationBuilder<K, V> indexBufferedWriteKeyLimit(
+    public IndexWritePathConfigurationBuilder indexBufferedWriteKeyLimit(
             final Integer value) {
         this.indexBufferedWriteKeyLimit = value;
         return this;
@@ -58,7 +55,7 @@ public final class IndexWritePathConfigurationBuilder<K, V> {
      * @param value segment split threshold
      * @return this section builder
      */
-    public IndexWritePathConfigurationBuilder<K, V> segmentSplitKeyThreshold(
+    public IndexWritePathConfigurationBuilder segmentSplitKeyThreshold(
             final Integer value) {
         this.segmentSplitKeyThreshold = value;
         return this;

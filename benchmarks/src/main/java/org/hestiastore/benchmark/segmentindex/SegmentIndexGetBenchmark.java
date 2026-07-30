@@ -20,7 +20,8 @@ import org.openjdk.jmh.annotations.Warmup;
  * <p>
  * The benchmark intentionally closes and reopens the index after populating it.
  * It can then either read only the persisted view or add live updates and
- * measure point lookups that resolve from the segment write cache.
+ * measure point lookups that resolve from the segment write cache. Context
+ * logging can be enabled to measure the production-default MDC adapter.
  * </p>
  */
 @BenchmarkMode(Mode.Throughput)
@@ -49,6 +50,9 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     @Param({ "persisted", "live" })
     private String readPathMode;
 
+    @Param({ "false", "true" })
+    private boolean contextLogging;
+
     @Override
     protected String tempDirPrefix() {
         return "hestia-jmh-get";
@@ -58,6 +62,7 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     protected IndexConfiguration<Integer, String> buildConfiguration() {
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-get-benchmark")//
+                .logging(logging -> logging.contextEnabled(contextLogging))//
                 .segment(segment -> segment.cacheKeyLimit(8)
                         .chunkKeyLimit(maxKeysInChunk).maxKeys(keyCount * 2)
                         .cachedSegmentLimit(3).deltaCacheFileLimit(2))//

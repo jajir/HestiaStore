@@ -259,6 +259,32 @@ class SegmentImplTest {
     }
 
     @Test
+    void conditional_mutations_use_logical_value_across_cache_layers() {
+        assertTrue(subject.putIfAbsent(1, "A").getValue());
+        assertFalse(subject.putIfAbsent(1, "B").getValue());
+        assertEquals(OperationStatus.OK, subject.flush().getStatus());
+
+        assertFalse(subject.replace(1, "other", "B").getValue());
+        assertTrue(subject.replace(1, "A", "B").getValue());
+        assertEquals("B", subject.get(1).getValue());
+
+        assertEquals(OperationStatus.OK,
+                subject.put(1, tds.getTombstone()).getStatus());
+        assertTrue(subject.putIfAbsent(1, "C").getValue());
+        assertEquals("C", subject.get(1).getValue());
+    }
+
+    @Test
+    void conditional_mutations_reject_tombstones() {
+        assertThrows(IllegalArgumentException.class,
+                () -> subject.putIfAbsent(1, tds.getTombstone()));
+        assertThrows(IllegalArgumentException.class,
+                () -> subject.replace(1, tds.getTombstone(), "A"));
+        assertThrows(IllegalArgumentException.class,
+                () -> subject.replace(1, "A", tds.getTombstone()));
+    }
+
+    @Test
     void flush_noop_when_write_cache_empty() {
         assertEquals(OperationStatus.OK, subject.flush().getStatus());
 
@@ -744,6 +770,29 @@ class SegmentImplTest {
     void checkAndRepairConsistency_empty_returns_null() {
         when(indexIterator.hasNext()).thenReturn(false);
         assertNull(subject.checkAndRepairConsistency());
+    }
+
+    @Test
+    void tryCheckAndRepairConsistency_empty_returns_ok() {
+        when(indexIterator.hasNext()).thenReturn(false);
+
+        final OperationResult<Integer> result = subject
+                .tryCheckAndRepairConsistency();
+
+        assertEquals(OperationStatus.OK, result.getStatus());
+        assertNull(result.getValue());
+    }
+
+    @Test
+    void tryCheckAndRepairConsistency_iteratorFailure_returns_error() {
+        when(chunkPairFile.openIterator())
+                .thenThrow(new RuntimeException("boom"));
+
+        final OperationResult<Integer> result = subject
+                .tryCheckAndRepairConsistency();
+
+        assertEquals(OperationStatus.ERROR, result.getStatus());
+        assertEquals(SegmentState.ERROR, subject.getState());
     }
 
     @Test

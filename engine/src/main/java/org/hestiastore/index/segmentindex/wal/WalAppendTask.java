@@ -16,6 +16,8 @@ final class WalAppendTask<K, V> {
     private final CompletableFuture<Long> writtenLsn =
             new CompletableFuture<>();
     private final boolean stop;
+    private long assignedLsn;
+    private boolean written;
 
     WalAppendTask(final WalRuntime.Operation operation, final K key,
             final V value) {
@@ -56,8 +58,25 @@ final class WalAppendTask<K, V> {
         return writtenLsn;
     }
 
-    void complete(final long lsn) {
-        writtenLsn.complete(Long.valueOf(lsn));
+    /**
+     * Records the LSN after the append worker has written the record. Completion
+     * is deliberately deferred until the worker has applied the batch durability
+     * boundary.
+     *
+     * @param lsn assigned WAL sequence number
+     */
+    void markWritten(final long lsn) {
+        assignedLsn = lsn;
+        written = true;
+    }
+
+    /**
+     * Completes a successfully written append after its batch durability work.
+     */
+    void completeWritten() {
+        if (written) {
+            writtenLsn.complete(Long.valueOf(assignedLsn));
+        }
     }
 
     void fail(final RuntimeException failure) {

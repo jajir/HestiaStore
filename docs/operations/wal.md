@@ -28,8 +28,10 @@ WAL is disabled by default through `IndexWalConfiguration.EMPTY`. Use
 ## Choose a durability mode
 
 - `ASYNC`: lowest write latency, weakest durability guarantee
-- `GROUP_SYNC`: batched fsync behavior with a balanced latency/durability trade-off
-- `SYNC`: fsync on each write, strongest durability and highest write overhead
+- `GROUP_SYNC`: time/size-batched fsync behavior with a balanced
+  latency/durability trade-off
+- `SYNC`: one fsync per append-worker queue batch; each write is acknowledged
+  only after its containing batch is durable
 
 Choose the mode from your durability target first, then tune performance around
 that choice.

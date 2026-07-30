@@ -22,7 +22,7 @@ import org.hestiastore.index.Vldtn;
  * @param <K> key type
  * @param <V> value type
  */
-public final class MergedEntryIterator<K, V>
+final class MergedEntryIterator<K, V>
         extends AbstractCloseableResource implements EntryIteratorWithCurrent<K, V> {
 
     private final List<EntryIteratorWithCurrent<K, V>> iterators;
@@ -81,7 +81,7 @@ public final class MergedEntryIterator<K, V>
      *
      * @return iterator with the lowest key, or empty when none are available
      */
-    public Optional<EntryIteratorWithCurrent<K, V>> findIteratorWithLowestKey() {
+    Optional<EntryIteratorWithCurrent<K, V>> findIteratorWithLowestKey() {
         final Comparator<EntryIteratorWithCurrent<K, V>> comparator = new EntryIteratorWithCurrentComparator<>(
                 keyComparator);
         final List<EntryIteratorWithCurrent<K, V>> toRemove = new ArrayList<>();

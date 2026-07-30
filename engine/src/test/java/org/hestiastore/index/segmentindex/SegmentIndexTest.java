@@ -7,14 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Optional;
 
-import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexTest {
@@ -90,6 +92,88 @@ class SegmentIndexTest {
         assertThrows(IndexException.class,
                 () -> SegmentIndex.create(directory,
                         buildConf("segment-index-create-existing-new", 1)));
+    }
+
+    @Test
+    void scanReturnsPersistedRangeWithLiveOverlayAndTombstones() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                buildConf("segment-index-scan-range", 1))) {
+            index.put(5, "five");
+            index.put(10, "ten");
+            index.put(15, "fifteen");
+            index.put(20, "twenty");
+            index.put(25, "twenty-five");
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
+            index.put(15, "updated-fifteen");
+            index.delete(20);
+
+            try (var stream = index.scan(10, 25)) {
+                assertEquals(List.of(Entry.of(10, "ten"),
+                        Entry.of(15, "updated-fifteen")), stream.toList());
+            }
+        }
+    }
+
+    @Test
+    void scanWithNullUpperBoundReturnsTail() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                buildConf("segment-index-scan-unbounded-upper", 1))) {
+            index.put(5, "five");
+            index.put(10, "ten");
+            index.put(15, "fifteen");
+
+            try (var stream = index.scan(10, null)) {
+                assertEquals(List.of(Entry.of(10, "ten"),
+                        Entry.of(15, "fifteen")), stream.toList());
+            }
+        }
+    }
+
+    @Test
+    void scanWithEqualBoundsReturnsEmptyStream() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                buildConf("segment-index-scan-equal", 1));
+                var stream = index.scan(10, 10)) {
+            assertEquals(0L, stream.count());
+        }
+    }
+
+    @Test
+    void scanRejectsReversedRange() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                buildConf("segment-index-scan-reversed", 1))) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> index.scan(20, 10));
+        }
+    }
+
+    @Test
+    void scanRejectsNullLowerBound() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                buildConf("segment-index-scan-null-lower", 1))) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> index.scan(null, 20));
+        }
+    }
+
+    @Test
+    void scanRejectsNullIsolation() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                buildConf("segment-index-scan-null-isolation", 1))) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> index.scan(10, 20, null));
+            try (var stream = index.scan(10, 20,
+                    SegmentIteratorIsolation.FAIL_FAST)) {
+                assertEquals(0L, stream.count());
+            }
+        }
     }
 
     @Test

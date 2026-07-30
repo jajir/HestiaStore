@@ -60,6 +60,54 @@ String value = index.get("hello");
 index.delete("hello");
 ```
 
+Insert only when a key is logically absent:
+
+```java
+boolean inserted = index.putIfAbsent("order-100", "created");
+```
+
+Replace only when the current value matches the expected value:
+
+```java
+boolean replaced = index.replace("order-100", "created", "paid");
+```
+
+`putIfAbsent(...)` and `replace(...)` are currently supported only when WAL is
+disabled. They throw `IndexException` when WAL is enabled.
+
+## Store emoji and multilingual text
+
+HestiaStore supports strict UTF-8 keys and values through explicit string
+descriptors. Select them when creating the index:
+
+```java
+import org.hestiastore.index.datatype.TypeDescriptorTinyUtf8String;
+import org.hestiastore.index.datatype.TypeDescriptorUtf8String;
+
+IndexConfiguration<String, String> conf = IndexConfiguration
+    .<String, String>builder()
+    .identity(identity -> identity
+        .name("localized-text")
+        .keyClass(String.class)
+        .valueClass(String.class)
+        .keyTypeDescriptor(new TypeDescriptorTinyUtf8String())
+        .valueTypeDescriptor(new TypeDescriptorUtf8String()))
+    .build();
+
+try (SegmentIndex<String, String> index = SegmentIndex.create(directory, conf)) {
+    index.put("objednávka-🙂", "Čeština Ελληνικά Кириллица 日本語 👨‍👩‍👧‍👦");
+}
+```
+
+Use `TypeDescriptorTinyUtf8String` for payloads up to 255 encoded bytes and
+`TypeDescriptorUtf8String` for larger strings. The limits apply to UTF-8 bytes,
+not displayed characters.
+
+The default `String` descriptor remains ISO-8859-1 for on-disk compatibility.
+Choose the UTF-8 descriptors before creating an index that will contain emoji
+or characters outside ISO-8859-1. See [Data Types](../configuration/data-types.md#utf-8-string-descriptors)
+for exact size limits and migration guidance.
+
 ## Iterate entries
 
 Read all entries in ascending key order:
@@ -67,6 +115,17 @@ Read all entries in ascending key order:
 ```java
 index.getStream().forEach(entry -> System.out.println(entry));
 ```
+
+Read a half-open key range in ascending key order:
+
+```java
+try (var stream = index.scan("order-100", "order-200")) {
+    stream.forEach(entry -> System.out.println(entry));
+}
+```
+
+The lower bound is inclusive and the upper bound is exclusive. Pass `null` as
+the upper bound to scan from the lower key through the end of the index.
 
 Read only selected segments:
 
@@ -99,5 +158,6 @@ index.maintenance().compact();
 ## Next steps
 
 - [Configuration](../configuration/index.md) for storage and tuning knobs
+- [Data Types](../configuration/data-types.md) for UTF-8 and custom descriptors
 - [WAL](../operations/wal.md) for local crash recovery
 - [Troubleshooting](troubleshooting.md) for common startup and runtime issues

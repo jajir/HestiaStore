@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+import static org.hestiastore.index.segmentregistry.SegmentRegistryCacheTestSupport.putReadyEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -11,7 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -376,7 +377,8 @@ class SegmentIndexAsyncMaintenanceTest {
             final Object registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
         final Object cache = readCache(registry);
-        putCacheEntry(cache, segmentId, segment);
+        putReadyEntry(cache, segmentId, segment);
+        removeBlockingSegment(registry, segmentId);
     }
 
     @SuppressWarnings("unchecked")
@@ -403,50 +405,17 @@ class SegmentIndexAsyncMaintenanceTest {
         }
     }
 
-    private static void putCacheEntry(final Object cache,
-            final SegmentId segmentId, final Segment<?, ?> segment) {
+    private static void removeBlockingSegment(final Object registry,
+            final SegmentId segmentId) {
         try {
-            final Field mapField = cache.getClass().getDeclaredField("map");
-            mapField.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            final ConcurrentHashMap<SegmentId, Object> map =
-                    (ConcurrentHashMap<SegmentId, Object>) mapField
-                            .get(cache);
-            final Class<?> entryClass = Class.forName(
-                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
-            final var ctor = entryClass.getDeclaredConstructor(long.class);
-            ctor.setAccessible(true);
-            final Object entry = ctor.newInstance(0L);
-            final Field stateField = entryClass.getDeclaredField("state");
-            stateField.setAccessible(true);
-            final Class<?> stateClass = Class.forName(
-                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$EntryState");
-            stateField.set(entry, enumConstant(stateClass, "READY"));
-            final Field valueField = entryClass.getDeclaredField("value");
-            valueField.setAccessible(true);
-            valueField.set(entry, segment);
-            if (map.put(segmentId, entry) == null) {
-                final Field sizeField = cache.getClass().getDeclaredField(
-                        "size");
-                sizeField.setAccessible(true);
-                final java.util.concurrent.atomic.AtomicInteger size =
-                        (java.util.concurrent.atomic.AtomicInteger) sizeField
-                                .get(cache);
-                size.incrementAndGet();
-            }
+            final Field field = registry.getClass()
+                    .getDeclaredField("blockingSegments");
+            field.setAccessible(true);
+            ((Map<?, ?>) field.get(registry)).remove(segmentId);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
-                    "Unable to update registry cache for test", ex);
+                    "Unable to update blocking segment cache for test", ex);
         }
     }
 
-    private static Object enumConstant(final Class<?> enumClass,
-            final String name) {
-        for (final Object constant : enumClass.getEnumConstants()) {
-            if (((Enum<?>) constant).name().equals(name)) {
-                return constant;
-            }
-        }
-        throw new IllegalArgumentException("Unknown enum constant: " + name);
-    }
 }

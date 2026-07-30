@@ -7,9 +7,10 @@ commit to integration or tuning work.
 
 - an embeddable Java library instead of a separate database service
 - large local datasets with bounded-memory point lookups
-- ordered iteration or range-like scans over persisted keys
+- ordered iteration and bounded range scans over persisted keys
 - operationally simple storage in a single directory
 - optional WAL-based crash recovery without adding a separate coordinator
+- strict UTF-8 descriptors for emoji or multilingual keys and values
 
 ## Reconsider if you need
 
@@ -23,6 +24,7 @@ commit to integration or tuning work.
 ## Decision checklist
 
 - Workload shape: mostly point reads, scans, ingestion bursts, or mixed traffic
+- Query shape: full ordered iteration, bounded ranges, or mostly point lookups
 - Durability: flush/close boundaries only, or WAL-backed recovery as well
 - Operations: backup windows, recovery expectations, and monitoring maturity
 - Footprint: local disk budget, cache budget, and acceptable compaction work

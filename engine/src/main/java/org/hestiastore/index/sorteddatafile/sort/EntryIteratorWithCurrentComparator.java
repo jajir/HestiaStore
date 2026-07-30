@@ -13,7 +13,7 @@ import org.hestiastore.index.Vldtn;
  * @param <K> key type
  * @param <V> value type
  */
-public class EntryIteratorWithCurrentComparator<K, V>
+class EntryIteratorWithCurrentComparator<K, V>
         implements Comparator<EntryIteratorWithCurrent<K, V>> {
 
     private final Comparator<K> keyComparator;
@@ -23,7 +23,7 @@ public class EntryIteratorWithCurrentComparator<K, V>
      *
      * @param keyComparator comparator for keys
      */
-    public EntryIteratorWithCurrentComparator(
+    EntryIteratorWithCurrentComparator(
             final Comparator<K> keyComparator) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");

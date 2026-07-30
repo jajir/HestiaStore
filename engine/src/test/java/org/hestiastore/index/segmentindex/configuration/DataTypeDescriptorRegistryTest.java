@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.datatype.TypeDescriptorTinyUtf8String;
+import org.hestiastore.index.datatype.TypeDescriptorUtf8String;
 import org.junit.jupiter.api.Test;
 
 class DataTypeDescriptorRegistryTest {
@@ -32,6 +34,26 @@ class DataTypeDescriptorRegistryTest {
 
         assertNotNull(ss);
         assertNotNull(ss.getTypeDecoder());
+    }
+
+    @Test
+    void makeInstanceCreatesUtf8StringDescriptors() {
+        final TypeDescriptor<String> general = DataTypeDescriptorRegistry
+                .makeInstance(TypeDescriptorUtf8String.class.getName());
+        final TypeDescriptor<String> tiny = DataTypeDescriptorRegistry
+                .makeInstance(TypeDescriptorTinyUtf8String.class.getName());
+
+        assertEquals(TypeDescriptorUtf8String.class, general.getClass());
+        assertEquals(TypeDescriptorTinyUtf8String.class, tiny.getClass());
+    }
+
+    @Test
+    void defaultStringDescriptorRemainsIso88591ForCompatibility() {
+        final String descriptorClass = DataTypeDescriptorRegistry
+                .getTypeDescriptor(String.class);
+
+        assertEquals(TypeDescriptorShortString.class.getName(),
+                descriptorClass);
     }
 
     @Test

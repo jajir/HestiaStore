@@ -31,6 +31,7 @@ final class SegmentCache<K, V> {
     private final AtomicInteger maxNumberOfKeysInSegmentWriteCache;
     private final AtomicInteger maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private final AtomicInteger bufferedWriteKeys = new AtomicInteger();
+    private static final double INITIAL_CAPACITY_RATIO = 0.75D;
     private static final int MAX_INITIAL_CAPACITY = 1_000_000;
     private final ReentrantLock capacityLock = new ReentrantLock();
     private final Condition capacityAvailable = capacityLock.newCondition();
@@ -63,13 +64,11 @@ final class SegmentCache<K, V> {
                 Vldtn.requireGreaterThanZero(
                         maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
                         "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
-        final int deltaCapacityHint = Math.min(
-                Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentCache,
-                        "maxNumberOfKeysInSegmentCache"),
-                MAX_INITIAL_CAPACITY);
+        final int deltaCapacityHint = initialCapacityHint(
+                maxNumberOfKeysInSegmentCache, "maxNumberOfKeysInSegmentCache");
         this.deltaCache = UniqueCache.<K, V>builder()
                 .withKeyComparator(keyComparator)
-                .withInitialCapacity(deltaCapacityHint).withThreadSafe(true)
+                .withInitialCapacity(deltaCapacityHint)
                 .buildEmpty();
         this.writeCache = buildWriteCache();
         if (deltaEntries != null) {
@@ -109,6 +108,62 @@ final class SegmentCache<K, V> {
         }
         putReservedEntry(nonNullEntry);
         return true;
+    }
+
+    /**
+     * Returns the raw value from the active write cache.
+     * <p>
+     * The caller must hold a segment write admission while using the returned
+     * value in a following conditional mutation, so maintenance cannot replace
+     * the active cache between those operations.
+     *
+     * @param key key to read
+     * @return active write-cache value or {@code null}
+     */
+    V getFromWriteCache(final K key) {
+        return writeCache.get(Vldtn.requireNonNull(key, "key"));
+    }
+
+    /**
+     * Replaces the active write-cache value only when it still equals the
+     * previously observed value.
+     *
+     * @param key key to replace
+     * @param observedValue exact value observed in the active write cache
+     * @param newValue replacement value
+     * @return true when the value was replaced
+     */
+    boolean replaceInWriteCache(final K key, final V observedValue,
+            final V newValue) {
+        return writeCache.replace(key, observedValue, newValue);
+    }
+
+    /**
+     * Attempts to insert an entry only when its key is absent from the active
+     * write cache.
+     *
+     * @param entry entry to insert
+     * @return true when the entry was inserted
+     */
+    boolean tryPutIfAbsentToWriteCacheWithoutWaiting(
+            final Entry<K, V> entry) {
+        final Entry<K, V> nonNullEntry = validateEntry(entry);
+        final UniqueCache<K, V> write = writeCache;
+        if (write.get(nonNullEntry.getKey()) != null
+                || !tryReserveWriteSlot()) {
+            return false;
+        }
+        final boolean added;
+        try {
+            added = write.putIfAbsent(nonNullEntry);
+        } catch (final RuntimeException e) {
+            releaseWriteSlots(1);
+            throw e;
+        }
+        if (!added) {
+            releaseWriteSlots(1);
+        }
+        return added;
     }
 
     /**
@@ -587,15 +642,23 @@ final class SegmentCache<K, V> {
      * @return empty write cache
      */
     private UniqueCache<K, V> buildWriteCache() {
-        final int capacityHint = Math.min(
-                Math.max(1,
-                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance.get()),
-                MAX_INITIAL_CAPACITY);
+        final int capacityHint = initialCapacityHint(
+                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance.get(),
+                "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
         return UniqueCache.<K, V>builder()//
                 .withKeyComparator(keyComparator)//
                 .withInitialCapacity(capacityHint)//
-                .withThreadSafe(true)//
                 .buildEmpty();
+    }
+
+    private static int initialCapacityHint(final int keyLimit,
+            final String argumentName) {
+        final int validLimit = Vldtn.requireGreaterThanZero(keyLimit,
+                argumentName);
+        return Math.min(
+                Math.max(1,
+                        (int) Math.ceil(validLimit * INITIAL_CAPACITY_RATIO)),
+                MAX_INITIAL_CAPACITY);
     }
 
     private Entry<K, V> validateEntry(final Entry<K, V> entry) {

@@ -1,10 +1,12 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import java.util.function.Consumer;
+
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 interface WalCoordinator<K, V> extends AutoCloseable {
 
-    void recover(WalRuntime.ReplayConsumer<K, V> replayConsumer);
+    void recover(Consumer<WalRuntime.ReplayRecord<K, V>> replayConsumer);
 
     void checkpoint();
 

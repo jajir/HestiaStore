@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 
@@ -40,17 +41,17 @@ public final class LruChunkStoreCache<K, V> implements ChunkStoreCache<K, V> {
     @Override
     public V find(final ChunkStoreCacheKey cacheKey, final K lookupKey,
             final Comparator<K> comparator,
-            final ChunkPageLoader<K, V> loader) {
+            final Supplier<ParsedChunkPage<K, V>> loader) {
         final ChunkStoreCacheKey resolvedKey = Vldtn.requireNonNull(cacheKey,
                 "cacheKey");
         final K resolvedLookupKey = Vldtn.requireNonNull(lookupKey,
                 "lookupKey");
         final Comparator<K> resolvedComparator = Vldtn
                 .requireNonNull(comparator, "comparator");
-        final ChunkPageLoader<K, V> resolvedLoader = Vldtn
+        final Supplier<ParsedChunkPage<K, V>> resolvedLoader = Vldtn
                 .requireNonNull(loader, "loader");
         if (!isEnabled()) {
-            return resolvedLoader.load().find(resolvedLookupKey,
+            return resolvedLoader.get().find(resolvedLookupKey,
                     resolvedComparator);
         }
         final ParsedChunkPage<K, V> cachedPage = getCachedPage(resolvedKey);
@@ -60,7 +61,7 @@ public final class LruChunkStoreCache<K, V> implements ChunkStoreCache<K, V> {
         }
         missCount.incrementAndGet();
         final ParsedChunkPage<K, V> loadedPage = Vldtn.requireNonNull(
-                resolvedLoader.load(), "loadedPage");
+                resolvedLoader.get(), "loadedPage");
         loadCount.incrementAndGet();
         putCachedPage(resolvedKey, loadedPage);
         return loadedPage.find(resolvedLookupKey, resolvedComparator);

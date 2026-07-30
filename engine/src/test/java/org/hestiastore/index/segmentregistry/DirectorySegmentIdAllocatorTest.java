@@ -24,8 +24,8 @@ class DirectorySegmentIdAllocatorTest {
         final DirectorySegmentIdAllocator allocator = new DirectorySegmentIdAllocator(
                 directory);
 
-        assertEquals(SegmentId.of(1), allocator.nextId());
-        assertEquals(SegmentId.of(2), allocator.nextId());
+        assertEquals(SegmentId.of(1), allocator.get());
+        assertEquals(SegmentId.of(2), allocator.get());
     }
 
     @Test
@@ -39,7 +39,7 @@ class DirectorySegmentIdAllocatorTest {
         final DirectorySegmentIdAllocator allocator = new DirectorySegmentIdAllocator(
                 asyncDirectory);
 
-        assertEquals(SegmentId.of(6), allocator.nextId());
+        assertEquals(SegmentId.of(6), allocator.get());
     }
 
     @Test
@@ -64,7 +64,7 @@ class DirectorySegmentIdAllocatorTest {
                     try {
                         start.await();
                         for (int i = 0; i < perThread; i++) {
-                            ids.add(allocator.nextId().getId());
+                            ids.add(allocator.get().getId());
                         }
                     } catch (final InterruptedException e) {
                         Thread.currentThread().interrupt();

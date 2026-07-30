@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,12 +23,11 @@ class OrphanedSegmentCleanerTest {
                 .thenReturn(false, true);
         final OrphanedSegmentCleaner<Integer, String> remover =
                 new OrphanedSegmentCleaner<>(segmentRegistry,
-                        new BusyRetryPolicy(2, 1));
+                        new BusyRetryPolicy(1, 100));
 
         remover.remove(segmentId);
 
-        verify(segmentRegistry).deleteSegmentIfAvailable(segmentId);
-        verify(segmentRegistry).deleteSegmentIfAvailable(segmentId);
+        verify(segmentRegistry, times(2)).deleteSegmentIfAvailable(segmentId);
     }
 
     @Test

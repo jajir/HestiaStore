@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -23,7 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Thread-safe persistent route-map implementation backed by a read/write lock.
+ * Thread-safe persistent route-map implementation that publishes immutable
+ * snapshots to readers and serializes mutations with a read/write lock.
  *
  * @param <K> key type
  */
@@ -43,15 +43,20 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
     private static final SegmentId FIRST_SEGMENT_ID = SegmentId.of(0);
 
     private TreeMap<K, SegmentId> list;
-    private volatile TreeMap<K, SegmentId> snapshot;
+    private volatile RouteMapSnapshot<K> snapshot;
     private final SortedDataFile<K, SegmentId> sdf;
     private final Comparator<K> keyComparator;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
     private boolean isDirty = false;
-    private final AtomicLong version = new AtomicLong(0);
 
+    /**
+     * Opens the persistent route map from the provided directory.
+     *
+     * @param directoryFacade  storage directory
+     * @param keyTypeDescriptor key type descriptor
+     */
     public PersistentSegmentRouteMap(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
@@ -73,7 +78,7 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
                 list.put(entry.getKey(), entry.getValue());
             }
         }
-        this.snapshot = new TreeMap<>(list);
+        this.snapshot = new RouteMapSnapshot<>(new TreeMap<>(list), 0);
         validateUniqueSegmentIds();
     }
 
@@ -85,9 +90,8 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
         readLock.lock();
         try {
             ensureOpen();
-            final TreeMap<K, SegmentId> current = snapshot;
             final HashMap<SegmentId, K> seen = new HashMap<>();
-            for (final Map.Entry<K, SegmentId> entry : current.entrySet()) {
+            for (final Map.Entry<K, SegmentId> entry : list.entrySet()) {
                 final K key = entry.getKey();
                 final SegmentId segmentId = entry.getValue();
                 final K oldKey = seen.putIfAbsent(segmentId, key);
@@ -117,32 +121,32 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
         try {
             ensureOpen();
             Vldtn.requireNonNull(key, "key");
-            final Entry<K, SegmentId> entry = localFindSegmentForKey(key,
-                    snapshot);
-            return entry == null ? null : entry.getValue();
+            return snapshot.findSegmentIdForKey(key);
         } finally {
             readLock.unlock();
         }
     }
 
+    /**
+     * Returns the immutable route-map view currently published to readers.
+     *
+     * @return current route-map snapshot
+     */
     @Override
     public RouteMapSnapshot<K> snapshot() {
-        readLock.lock();
-        try {
-            return new RouteMapSnapshot<>(snapshot, version.get());
-        } finally {
-            readLock.unlock();
-        }
+        return snapshot;
     }
 
+    /**
+     * Returns whether the currently published snapshot has the expected
+     * version.
+     *
+     * @param expectedVersion expected route-map version
+     * @return {@code true} when the published version matches
+     */
     @Override
     public boolean isAtVersion(final long expectedVersion) {
-        readLock.lock();
-        try {
-            return version.get() == expectedVersion;
-        } finally {
-            readLock.unlock();
-        }
+        return snapshot.version() == expectedVersion;
     }
 
     @Override
@@ -500,8 +504,8 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
     }
 
     private void refreshSnapshot() {
-        snapshot = new TreeMap<>(list);
-        version.incrementAndGet();
+        final long nextVersion = snapshot.version() + 1;
+        snapshot = new RouteMapSnapshot<>(new TreeMap<>(list), nextVersion);
     }
 
     private void ensureOpen() {

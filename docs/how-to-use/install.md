@@ -10,6 +10,8 @@ HestiaStore is published to Maven Central as `org.hestiastore:engine`.
 Latest artifact:
 [org.hestiastore:engine](https://central.sonatype.com/artifact/org.hestiastore/engine)
 
+The current release line is `1.1.0`.
+
 ## Maven
 
 ```xml
@@ -17,7 +19,7 @@ Latest artifact:
   <dependency>
     <groupId>org.hestiastore</groupId>
     <artifactId>engine</artifactId>
-    <version><!-- latest version --></version>
+    <version>1.1.0</version>
   </dependency>
 </dependencies>
 ```
@@ -36,7 +38,7 @@ repositories {
 }
 
 dependencies {
-  implementation "org.hestiastore:engine:<latest>"
+  implementation "org.hestiastore:engine:1.1.0"
 }
 ```
 
@@ -54,7 +56,7 @@ repositories {
 }
 
 dependencies {
-  implementation("org.hestiastore:engine:<latest>")
+  implementation("org.hestiastore:engine:1.1.0")
 }
 ```
 

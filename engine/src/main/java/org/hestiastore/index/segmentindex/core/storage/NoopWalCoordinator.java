@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import java.util.function.Consumer;
+
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -12,7 +14,8 @@ final class NoopWalCoordinator<K, V>
         implements WalCoordinator<K, V> {
 
     @Override
-    public void recover(final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
+    public void recover(
+            final Consumer<WalRuntime.ReplayRecord<K, V>> replayConsumer) {
     }
 
     @Override

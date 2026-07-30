@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.OperationResult;
@@ -121,6 +122,16 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      * {@inheritDoc}
      */
     @Override
+    public OperationResult<K> tryCheckAndRepairConsistency() {
+        final SegmentConsistencyChecker<K, V> consistencyChecker = new SegmentConsistencyChecker<>(
+                this, core.getKeyComparator());
+        return consistencyChecker.tryCheckAndRepairConsistency();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void invalidateIterators() {
         core.invalidateIterators();
     }
@@ -139,15 +150,41 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     @Override
     public OperationResult<EntryIterator<K, V>> openIterator(
             final SegmentIteratorIsolation isolation) {
-        Vldtn.requireNonNull(isolation, "isolation");
+        final SegmentIteratorIsolation nonNullIsolation = Vldtn.requireNonNull(
+                isolation, "isolation");
+        return openIteratorWithGate(nonNullIsolation,
+                () -> core.openIterator(nonNullIsolation));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public OperationResult<EntryIterator<K, V>> openIterator(
+            final K fromInclusive, final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        final K lowerBound = Vldtn.requireNonNull(fromInclusive,
+                "fromInclusive");
+        final SegmentIteratorIsolation nonNullIsolation = Vldtn.requireNonNull(
+                isolation, "isolation");
+        if (toExclusive != null
+                && core.getKeyComparator().compare(lowerBound, toExclusive) > 0) {
+            throw new IllegalArgumentException(
+                    "fromInclusive must not sort after toExclusive.");
+        }
+        return openIteratorWithGate(nonNullIsolation,
+                () -> core.openIterator(lowerBound, toExclusive,
+                        nonNullIsolation));
+    }
+
+    private OperationResult<EntryIterator<K, V>> openIteratorWithGate(
+            final SegmentIteratorIsolation isolation,
+            final Supplier<EntryIterator<K, V>> iteratorSupplier) {
         if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
             if (!gate.tryEnterFreezeAndDrain()) {
                 return resultForState(gate.getState());
             }
             try {
                 core.invalidateIterators();
-                final EntryIterator<K, V> iterator = core
-                        .openIterator(isolation);
+                final EntryIterator<K, V> iterator = iteratorSupplier.get();
                 return OperationResult.ok(
                         new ExclusiveAccessIterator<>(iterator, gate));
             } catch (final RuntimeException e) {
@@ -159,7 +196,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             return resultForState(gate.getState());
         }
         try {
-            return OperationResult.ok(core.openIterator(isolation));
+            return OperationResult.ok(iteratorSupplier.get());
         } catch (final RuntimeException e) {
             failUnlessClosed();
             return OperationResult.error();
@@ -199,21 +236,63 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         if (!gate.tryEnterWrite()) {
             return resultForState(gate.getState());
         }
-        final OperationResult<Void> result;
-        final boolean shouldScheduleMaintenance;
+        final boolean writeAccepted;
         try {
-            if (!core.tryPutWithoutWaiting(key, value)) {
-                result = OperationResult.busy();
-                shouldScheduleMaintenance = false;
-            } else {
-                result = OperationResult.ok();
-                shouldScheduleMaintenance = true;
-            }
+            writeAccepted = core.tryPutWithoutWaiting(key, value);
         } finally {
             gate.exitWrite();
         }
-        if (shouldScheduleMaintenance) {
-            scheduleMaintenanceIfNeeded();
+        scheduleMaintenanceIfNeeded();
+        if (writeAccepted) {
+            return OperationResult.ok();
+        }
+        if (gate.getState() == SegmentState.READY) {
+            return OperationResult.writeCacheFull();
+        }
+        return OperationResult.busy();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public OperationResult<Boolean> putIfAbsent(final K key, final V value) {
+        if (!gate.tryEnterWrite()) {
+            return resultForState(gate.getState());
+        }
+        final OperationResult<Boolean> result;
+        try {
+            result = core.tryPutIfAbsentWithoutWaiting(key, value);
+        } finally {
+            gate.exitWrite();
+        }
+        return completeConditionalMutation(result);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public OperationResult<Boolean> replace(final K key,
+            final V expectedValue, final V newValue) {
+        if (!gate.tryEnterWrite()) {
+            return resultForState(gate.getState());
+        }
+        final OperationResult<Boolean> result;
+        try {
+            result = core.tryReplaceWithoutWaiting(key, expectedValue,
+                    newValue);
+        } finally {
+            gate.exitWrite();
+        }
+        return completeConditionalMutation(result);
+    }
+
+    private OperationResult<Boolean> completeConditionalMutation(
+            final OperationResult<Boolean> result) {
+        if (result.isOk() && !Boolean.TRUE.equals(result.getValue())) {
+            return result;
+        }
+        scheduleMaintenanceIfNeeded();
+        if (result.getStatus() == OperationStatus.WRITE_CACHE_FULL
+                && gate.getState() != SegmentState.READY) {
+            return OperationResult.busy();
         }
         return result;
     }

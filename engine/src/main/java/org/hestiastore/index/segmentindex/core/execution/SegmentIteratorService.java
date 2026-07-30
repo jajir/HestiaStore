@@ -126,6 +126,31 @@ public final class SegmentIteratorService<K, V> {
                 nonNullWindow), nonNullIsolation);
     }
 
+    /**
+     * Opens an iterator over routed segments intersecting a half-open key
+     * range.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation mode
+     * @return bounded entry iterator
+     */
+    public EntryIterator<K, V> openRangeIterator(final K fromInclusive,
+            final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        final K lowerBound = Vldtn.requireNonNull(fromInclusive,
+                "fromInclusive");
+        final SegmentIteratorIsolation nonNullIsolation = Vldtn.requireNonNull(
+                isolation, "isolation");
+        if (nonNullIsolation == SegmentIteratorIsolation.FULL_ISOLATION) {
+            return openStableRangeIteratorWithRouteSnapshot(lowerBound,
+                    toExclusive, nonNullIsolation);
+        }
+        return openStableRangeIterator(segmentLeaseService
+                .getSegmentIds(lowerBound, toExclusive), nonNullIsolation,
+                lowerBound, toExclusive);
+    }
+
     private EntryIterator<K, V> openStableIteratorWithRouteSnapshot(
             final SegmentWindow resolvedWindows,
             final SegmentIteratorIsolation isolation) {
@@ -144,11 +169,38 @@ public final class SegmentIteratorService<K, V> {
         }
     }
 
+    private EntryIterator<K, V> openStableRangeIteratorWithRouteSnapshot(
+            final K fromInclusive, final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final RouteWindowSnapshot snapshot = segmentLeaseService
+                    .snapshotSegmentIds(fromInclusive, toExclusive);
+            final EntryIterator<K, V> iterator = openStableRangeIterator(
+                    snapshot.segmentIds(), isolation, fromInclusive,
+                    toExclusive);
+            if (segmentLeaseService.isCurrent(snapshot)) {
+                return iterator;
+            }
+            iterator.close();
+            retryPolicy.backoffOrThrow(startNanos,
+                    OPERATION_OPEN_FULL_ISOLATION_ITERATOR, null);
+        }
+    }
+
     private EntryIterator<K, V> openStableIterator(
             final List<SegmentId> segmentIds,
             final SegmentIteratorIsolation isolation) {
         return new StableSegmentsIterator<>(segmentIds, segmentLeaseService,
                 isolation);
+    }
+
+    private EntryIterator<K, V> openStableRangeIterator(
+            final List<SegmentId> segmentIds,
+            final SegmentIteratorIsolation isolation, final K fromInclusive,
+            final K toExclusive) {
+        return new StableSegmentsIterator<>(segmentIds, segmentLeaseService,
+                isolation, fromInclusive, toExclusive);
     }
 
     /**

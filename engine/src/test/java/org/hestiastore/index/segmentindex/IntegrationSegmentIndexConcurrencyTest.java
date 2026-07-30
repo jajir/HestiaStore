@@ -276,15 +276,14 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private static Stream<ParallelPutsScenario> parallelPutsScenarios() {
         return Stream.of(
-                new ParallelPutsScenario("small-cache-50-keys", 50, 3, 3, 2,
+                new ParallelPutsScenario("small-cache-50-keys", 50, 3, 50, 2,
                         4, 5, 4, 40),
                 new ParallelPutsScenario("active-partition-64-200-keys", 200,
-                        128,
-                        64, 16, 128, 10, 8, 64),
+                        128, 200, 16, 128, 10, 8, 64),
                 new ParallelPutsScenario(
-                        "active-partition-128-small-segment-budget", 300, 128,
-                        128, 16, 32, 5, 8, 64),
-                new ParallelPutsScenario("large-segment-512", 300, 256, 64,
+                        "active-partition-300-small-segment-budget", 300, 128,
+                        300, 16, 32, 5, 8, 64),
+                new ParallelPutsScenario("large-segment-512", 300, 256, 300,
                         32, 512, 10, 8, 40));
     }
 

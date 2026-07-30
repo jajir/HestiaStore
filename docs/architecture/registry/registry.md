@@ -7,7 +7,7 @@ This document describes the segment registry responsibilities and supported oper
     - safe access to segment resources (load/create/delete)
     - in-memory segment cache (LRU)
     - registry-level state gate (`READY`, `CLOSED`, `ERROR`, `FREEZE`)
-    - segment id allocation for new segments via `SegmentIdAllocator`
+    - segment id allocation for new segments via a `Supplier<SegmentId>`
 - The registry does **not** own protection of "segment in use" vs "segment close/delete" races.
   This responsibility belongs to the Segment package. Segment implementations
   must remain safe when one thread uses a segment while another thread closes it.

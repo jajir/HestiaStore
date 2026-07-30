@@ -34,11 +34,24 @@ longer the implementation home for every WAL concern.
 
 ## Concurrency model
 
-- `WalRuntime` owns one monitor that guards stateful WAL operations.
-- Recovery, append, checkpoint, cleanup, and close run while holding that
-  monitor.
-- `WalSyncPolicy` may run a scheduled group-sync task, but it reacquires the
-  same monitor before mutating durability state.
+- Append producers submit through the bounded `ArrayBlockingQueue` using its
+  interruptible timed offer. Producers no longer hold the WAL state monitor or
+  wait in fixed park intervals while queue capacity is unavailable.
+- A fair admission read/write lock lets producers offer concurrently. Close
+  takes the write side before marking the runtime closed and placing the stop
+  marker, so every accepted append stays ahead of that marker.
+- The single append worker remains the ordering authority. It assigns LSNs and
+  mutates WAL writer/catalog state under the WAL monitor. Segment indexes obtain
+  its named daemon thread factory from their per-index `ExecutorRegistry`, while
+  `WalRuntime` retains stop, drain, and join ownership.
+- In `SYNC` mode, records drained into one worker batch share one physical sync.
+  Their futures are completed only after that sync succeeds, so acknowledgements
+  retain synchronous durability.
+- Recovery, checkpoint, cleanup, worker append, and durability-state changes
+  remain serialized by the WAL monitor.
+- In delayed `GROUP_SYNC` mode, the append worker polls the queue only until the
+  pending sync deadline. It also checks that deadline after every worker batch,
+  so continuous append traffic cannot postpone durability indefinitely.
 - `durableLsn()` remains available as a best-effort read without requiring
   callers to hold the monitor.
 
@@ -58,6 +71,7 @@ index-state catalog work tracked in backlog item `84`.
 - Segment file naming remains `<20-digit-base-lsn>.wal`.
 - Checkpoint LSN remains monotonic at runtime.
 - Recovery still validates monotonic LSN ordering across segment boundaries.
+- Close never silently abandons an append accepted before its stop marker.
 - `TRUNCATE_INVALID_TAIL` vs `FAIL_FAST` semantics remain unchanged.
 - Public `WalRuntime` metrics and log event names remain unchanged.
 

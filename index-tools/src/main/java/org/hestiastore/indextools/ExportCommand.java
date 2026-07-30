@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -230,9 +231,8 @@ final class ExportCommand {
         long recordCount = 0L;
         try (OutputStream output = newBufferedFileOutput(dataFile,
                 manifest.getCompression())) {
-            try (BufferedWriter writer = new java.io.BufferedWriter(
-                    new java.io.OutputStreamWriter(output,
-                            StandardCharsets.UTF_8))) {
+            try (BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(output, StandardCharsets.UTF_8))) {
                 try (Stream<Entry<Object, Object>> stream = index
                         .getStream(SegmentWindow.unbounded(),
                                 SegmentIteratorIsolation.FULL_ISOLATION)) {

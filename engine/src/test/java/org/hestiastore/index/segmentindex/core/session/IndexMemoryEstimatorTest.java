@@ -21,9 +21,9 @@ class IndexMemoryEstimatorTest {
 
     @Test
     void estimateCalculatesCompleteReportWithReadableInputs() {
-        final EffectiveIndexConfiguration<Integer, String> configuration =
-                effectiveConfiguration("memory-estimate-complete",
-                        String.class, new TypeDescriptorShortString());
+        final EffectiveIndexConfiguration<Integer, String> configuration = effectiveConfiguration(
+                "memory-estimate-complete",
+                String.class, new TypeDescriptorShortString());
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
@@ -31,181 +31,214 @@ class IndexMemoryEstimatorTest {
         printReport("complete", estimate);
 
         assertTrue(estimate.isComplete());
-        assertEquals(98_460L, estimate.totalEstimatedBytes().orElseThrow());
+        assertEquals(93_330L, estimate.totalEstimatedBytes().orElseThrow());
         final String log = estimate.text();
-        assertTrue(log.contains("Estimated memory use at startup"));
-        assertTrue(log.contains("Estimated active heap: 96.15 KiB"));
-        assertTrue(log.contains(
-                "steady state: 76.92 KiB (memory expected after startup caches are loaded)"));
-        assertTrue(log.contains(
-                "temporary margin: 19.23 KiB (extra headroom for short-lived objects and snapshots)"));
-        assertLineAppearsBefore(log, "Estimated active heap: 96.15 KiB",
-                "Notes:");
-        assertLineAppearsBefore(log, "Estimated active heap: 96.15 KiB",
-                "Per-entry size assumptions:");
-        assertTrue(log.contains(
-                "Rough estimate only; not a JVM cap or measured allocation."));
-        assertTrue(log.contains("Per-entry size assumptions:"));
-        assertTrue(log.contains("entry: about 228 B (key + value + overhead)"));
-        assertTrue(log.contains(
-                "fixed per loaded/cached segment: about 16.00 KiB"));
-        assertTrue(log.contains(
-                "details: docs/operations/memory-estimate.md"));
-        assertTrue(log.contains("Largest steady-state areas:"));
-        assertTrue(log.contains(
-                "loaded segment infrastructure: 48.00 KiB"));
-        assertTrue(log.contains(
-                "scarce indexes if loaded: 15.23 KiB"));
-        assertTrue(log.contains("Configuration used for this estimate:"));
-        assertTrue(log.contains(
-                "cached segments=3, segment cache keys=10, maintenance keys=6"));
-        assertTrue(log.contains("max keys per segment=100"));
-        assertTrue(log.contains("Reported but not included:"));
-        assertTrue(log.contains(
-                "index write-buffer keys: 18"));
-        assertTrue(log.contains(
-                "chunk key limit=2, chunk-store pages=0, Bloom filter=1.00 KiB"));
-        assertTrue(log.contains(
-                "Estimated memory by area:"));
-        assertTrue(log.contains(
-                "inputs: 3 segments, 10 read keys, 6 maintenance keys, entry 228 B"));
-        assertTrue(log.contains("End memory estimate"));
+        assertContains(log, "Estimated memory use at startup");
+        assertContains(log, "Included memory");
+        assertContains(log,
+                "+------------------------+------------+--------------------------------------+");
+        assertContains(log,
+                "| Total index memory     | 91.14 KiB  | segments + page cache + maintenance  |");
+        assertContains(log,
+                "| All segments           | 72.91 KiB  | cached segment slots: 3; cached      |");
+        assertContains(log,
+                "| One cached segment     | 24.30 KiB  | delta cache + bloom filter + scarce  |");
+        assertContains(log,
+                "| Delta cache            | 2.23 KiB   | cache key limit: 10; cache key limit |");
+        assertContains(log,
+                "| Bloom filter           | 1.00 KiB   | configured bloom filter size: 1.00   |");
+        assertContains(log,
+                "| Scarce index           | 5.08 KiB   | max scarce keys: 50; max scarce keys |");
+        assertContains(log,
+                "| Segment runtime        | 16.00 KiB  | fixed overhead per cached segment    |");
+        assertContains(log,
+                "| Maintenance overhead   | 18.23 KiB  | max(25% of memory before maintenance |");
+        assertLineAppearsBefore(log, "| Total index memory",
+                "Entry sizes");
+        assertContains(log,
+                "not a JVM cap or measured allocation");
+        assertContains(log,
+                "| Key/value entry        | 228 B      | key size + value size + overhead;    |");
+        assertLineAppearsBefore(log, "| Key/value entry        | 228 B",
+                "| Key/position entry     | 104 B");
+        assertContains(log,
+                "| Key/position entry     | 104 B      | key size + integer position +        |");
+        assertContains(log, "overhead: 96 B");
+        assertContains(log,
+                "| Entry overhead         | 96 B       | fixed overhead in key/value and      |");
+        assertContains(log,
+                "details: docs/operations/memory-estimate.md");
+        assertContains(log,
+                "| Max scarce keys        | 50         | ceil(max segment keys / chunk keys   |");
+        assertContains(log, "per page)");
+        assertContains(log,
+                "key: TypeDescriptorInteger, about 4");
+        assertContains(log,
+                "integer position:");
+        assertContains(log, "Write-buffer keys");
+        assertContains(log, "reported, not included in total");
+        assertContains(log, "Chunk keys per page");
+        assertContains(log,
+                "configured bloom filter size: 1.00");
+        assertContains(log, "key/value entry 228 B");
+        assertFalse(log.contains(
+                "entry overhead: 96 B inside key/value entry"));
+        assertContains(log, "End memory estimate");
+        assertFalse(log.contains("├─"));
+        assertFalse(log.contains("│"));
         assertFalse(log.contains("based on:"));
         assertFalse(log.contains("reported only"));
     }
 
     @Test
     void estimateIncludesChunkStoreCachePageLimit() {
-        final EffectiveIndexConfiguration<Integer, String> configuration =
-                effectiveConfiguration("memory-estimate-chunk-cache",
-                        String.class, new TypeDescriptorShortString(), 10, 6,
-                        2, 3, 7);
+        final EffectiveIndexConfiguration<Integer, String> configuration = effectiveConfiguration(
+                "memory-estimate-chunk-cache",
+                String.class, new TypeDescriptorShortString(), 10, 6,
+                2, 3, 7);
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), 0);
         printReport("chunk-store-cache", estimate);
 
-        assertEquals(103_010L, estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "chunk-store cache: 3.55 KiB"));
-        assertTrue(estimate.text().contains(
-                "inputs: 7 pages, 2 chunk keys, page overhead 64 B, entry 228 B"));
+        assertEquals(97_880L, estimate.totalEstimatedBytes().orElseThrow());
+        assertContains(estimate.text(),
+                "| Chunk-store page cache | 3.55 KiB   | pages: 7; pages * (page overhead +   |");
+        assertContains(estimate.text(),
+                "| Chunk-store pages      | 7          | configured page cache size           |");
+        assertContains(estimate.text(),
+                "| Chunk keys per page    | 2          | keys stored in one chunk-store page  |");
+        assertContains(estimate.text(),
+                "| Page overhead          | 64 B       | fixed overhead per chunk-store page  |");
+        assertContains(estimate.text(),
+                "| Key/value entry        | 228 B");
     }
 
     @Test
     void estimateScalesCachedSegmentLimit() {
-        final EffectiveIndexConfiguration<Integer, String> configuration =
-                effectiveConfiguration("memory-estimate-segment-limit",
-                        String.class, new TypeDescriptorShortString(), 10, 6,
-                        2, 5, 0);
+        final EffectiveIndexConfiguration<Integer, String> configuration = effectiveConfiguration(
+                "memory-estimate-segment-limit",
+                String.class, new TypeDescriptorShortString(), 10, 6,
+                2, 5, 0);
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), 0);
         printReport("cached-segment-limit", estimate);
 
-        assertEquals(164_100L, estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "loaded segment cache: 17.81 KiB"));
-        assertTrue(estimate.text().contains(
-                "Bloom filters if loaded: 5.00 KiB"));
-        assertTrue(estimate.text().contains(
-                "loaded segment infrastructure: 80.00 KiB"));
+        assertEquals(155_550L, estimate.totalEstimatedBytes().orElseThrow());
+        assertContains(estimate.text(),
+                "| All segments           | 121.52 KiB | cached segment slots: 5; cached      |");
+        assertContains(estimate.text(),
+                "| One cached segment     | 24.30 KiB");
+        assertContains(estimate.text(),
+                "| Cached segment slots   | 5          | multiplier for one cached segment    |");
     }
 
     @Test
     void estimateIncludesRouteCount() {
-        final EffectiveIndexConfiguration<Integer, String> configuration =
-                effectiveConfiguration("memory-estimate-route-count",
-                        String.class, new TypeDescriptorShortString());
+        final EffectiveIndexConfiguration<Integer, String> configuration = effectiveConfiguration(
+                "memory-estimate-route-count",
+                String.class, new TypeDescriptorShortString());
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), 4);
+                new TypeDescriptorShortString(), 10);
         printReport("route-count", estimate);
 
-        assertEquals(99_220L, estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "route map: 608 B"));
-        assertTrue(estimate.text().contains(
-                "inputs: 4 routes, key 4 B, segment id 16 B, tree entry 56 B"));
+        assertEquals(93_430L, estimate.totalEstimatedBytes().orElseThrow());
+        assertContains(estimate.text(),
+                "| Segment routing map    | 80 B       | route count: 10; route count *       |");
+        assertContains(estimate.text(),
+                "| Segment routes         | 10         | route-map entries                    |");
+        assertContains(estimate.text(),
+                "| Key/segment-id entry   | 8 B        | key size + segment id size; key: 4   |");
+        assertContains(estimate.text(), "B; segment id: 4 B");
+        assertFalse(estimate.text().contains("segment id: 16 B"));
+        assertFalse(estimate.text().contains("route-map tree entry"));
     }
 
     @Test
-    void estimateReflectsCacheKeyLimitsInSegmentCacheAndHeadroom() {
-        final EffectiveIndexConfiguration<Integer, String> configuration =
-                effectiveConfiguration("memory-estimate-cache-limits",
-                        String.class, new TypeDescriptorShortString(), 20, 10,
-                        2, 3, 0);
+    void estimateReflectsDeltaCacheKeyLimitAndHeadroom() {
+        final EffectiveIndexConfiguration<Integer, String> configuration = effectiveConfiguration(
+                "memory-estimate-cache-limits",
+                String.class, new TypeDescriptorShortString(), 20, 10,
+                2, 3, 0);
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), 0);
         printReport("cache-key-limits", estimate);
 
-        assertEquals(110_430L, estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "loaded segment cache: 20.04 KiB"));
-        assertTrue(estimate.text().contains(
-                "inputs: 3 segments, 20 read keys, 10 maintenance keys, entry 228 B"));
-        assertTrue(estimate.text().contains(
-                "temporary memory margin: 21.57 KiB"));
-        assertTrue(estimate.text().contains(
-                "inputs: max(25% of steady state = 86.27 KiB, one segment cache = 6.68 KiB)"));
+        assertEquals(101_880L, estimate.totalEstimatedBytes().orElseThrow());
+        assertContains(estimate.text(),
+                "| Delta cache            | 4.45 KiB   | cache key limit: 20; cache key limit |");
+        assertContains(estimate.text(), "key/value entry 228 B");
+        assertContains(estimate.text(),
+                "| Maintenance overhead   | 19.90 KiB  | max(25% of memory before maintenance |");
+        assertContains(estimate.text(),
+                "= 79.59 KiB, one delta cache = 4.45");
     }
 
     @Test
     void estimateFormatsGiBWhenSegmentCacheExceedsOneGiB() {
-        final EffectiveIndexConfiguration<Integer, String> configuration =
-                effectiveConfiguration("memory-estimate-segment-cache-gib",
-                        String.class, new TypeDescriptorShortString(),
-                        500_000, 200_000, 2, 10, 0);
+        final EffectiveIndexConfiguration<Integer, String> configuration = effectiveConfiguration(
+                "memory-estimate-segment-cache-gib",
+                String.class, new TypeDescriptorShortString(),
+                500_000, 200_000, 2, 10, 0);
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), 0);
         printReport("segment-cache-gib", estimate);
 
-        assertEquals(1_995_282_600L,
+        assertEquals(1_425_282_600L,
                 estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "Estimated active heap: 1.86 GiB"));
-        assertTrue(estimate.text().contains(
-                "steady state: 1.49 GiB (memory expected after startup caches are loaded)"));
-        assertTrue(estimate.text().contains(
-                "loaded segment cache: 1.49 GiB"));
-        assertTrue(estimate.text().contains(
-                "inputs: 10 segments, 500000 read keys, 200000 maintenance keys, entry 228 B"));
+        assertContains(estimate.text(),
+                "| Total index memory     | 1.33 GiB");
+        assertContains(estimate.text(),
+                "| All segments           | 1.06 GiB");
+        assertContains(estimate.text(),
+                "| Delta cache            | 108.72 MiB");
+        assertContains(estimate.text(),
+                "cache key limit: 500,000");
+        assertContains(estimate.text(), "key/value entry 228 B");
     }
 
     @Test
     void estimateFormatsGiBWhenChunkStoreCacheExceedsOneGiB() {
-        final EffectiveIndexConfiguration<Integer, String> configuration =
-                effectiveConfiguration("memory-estimate-chunk-store-gib",
-                        String.class, new TypeDescriptorShortString(), 10, 6,
-                        100, 3, 50_000);
+        final EffectiveIndexConfiguration<Integer, String> configuration = effectiveConfiguration(
+                "memory-estimate-chunk-store-gib",
+                String.class, new TypeDescriptorShortString(), 10, 6,
+                100, 3, 50_000);
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), 0);
         printReport("chunk-store-gib", estimate);
 
-        assertEquals(1_429_079_350L,
+        assertEquals(1_429_074_220L,
                 estimate.totalEstimatedBytes().orElseThrow());
-        assertTrue(estimate.text().contains(
-                "Estimated active heap: 1.33 GiB"));
-        assertTrue(estimate.text().contains(
-                "chunk-store cache: 1.06 GiB"));
-        assertTrue(estimate.text().contains(
-                "inputs: 50000 pages, 100 chunk keys, page overhead 64 B, entry 228 B"));
+        assertContains(estimate.text(),
+                "| Total index memory     | 1.33 GiB");
+        assertContains(estimate.text(),
+                "| Chunk-store page cache | 1.06 GiB");
+        assertContains(estimate.text(),
+                "| Chunk-store pages      | 50,000");
+        assertContains(estimate.text(),
+                "| Chunk keys per page    | 100");
+        assertContains(estimate.text(),
+                "| Page overhead          | 64 B");
+        assertContains(estimate.text(),
+                "| Key/value entry        | 228 B");
     }
 
     @Test
     void estimateReportsIncompleteWhenValueDescriptorSizeIsUnknown() {
-        final EffectiveIndexConfiguration<Integer, ByteArray> configuration =
-                effectiveConfiguration("memory-estimate-incomplete",
-                        ByteArray.class, new TypeDescriptorByteArray());
+        final EffectiveIndexConfiguration<Integer, ByteArray> configuration = effectiveConfiguration(
+                "memory-estimate-incomplete",
+                ByteArray.class, new TypeDescriptorByteArray());
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
@@ -215,20 +248,21 @@ class IndexMemoryEstimatorTest {
         assertFalse(estimate.isComplete());
         assertTrue(estimate.totalEstimatedBytes().isEmpty());
         final String log = estimate.text();
-        assertTrue(log.contains("value: TypeDescriptorByteArray, unknown"));
-        assertTrue(log.contains(
-                "loaded segment cache: unavailable"));
-        assertTrue(log.contains(
-                "reason: needs key and value descriptor estimates"));
-        assertTrue(log.contains("Bloom filters if loaded"));
-        assertTrue(log.contains("Estimated active heap: unavailable"));
+        assertContains(log, "value: TypeDescriptorByteArray,");
+        assertContains(log,
+                "| Delta cache            | unknown    | reason: needs key and value          |");
+        assertContains(log,
+                "reason: needs key and value");
+        assertContains(log, "Bloom filter");
+        assertContains(log,
+                "| Total index memory     | unknown    | reason: needs segment, page-cache,   |");
     }
 
     @Test
     void estimateTreatsZeroValueSizeAsRealEstimate() {
-        final EffectiveIndexConfiguration<Integer, NullValue> configuration =
-                effectiveConfiguration("memory-estimate-zero",
-                        NullValue.class, new TypeDescriptorNull());
+        final EffectiveIndexConfiguration<Integer, NullValue> configuration = effectiveConfiguration(
+                "memory-estimate-zero",
+                NullValue.class, new TypeDescriptorNull());
 
         final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
                 configuration, new TypeDescriptorInteger(),
@@ -237,8 +271,31 @@ class IndexMemoryEstimatorTest {
 
         assertTrue(estimate.isComplete());
         assertTrue(estimate.totalEstimatedBytes().isPresent());
-        assertTrue(estimate.text().contains(
-                "entry: about 100 B (key + value + overhead)"));
+        assertContains(estimate.text(),
+                "| Key/value entry        | 100 B");
+        assertContains(estimate.text(), "overhead: 96 B");
+    }
+
+    @Test
+    void estimateUsesKeyDescriptorForKeyPositionEntry() {
+        final EffectiveIndexConfiguration<String, Integer> configuration = effectiveConfiguration(
+                "memory-estimate-string-key",
+                String.class, new TypeDescriptorShortString(),
+                Integer.class, new TypeDescriptorInteger());
+
+        final MemoryEstimateReport estimate = IndexMemoryEstimator.estimate(
+                configuration, new TypeDescriptorShortString(),
+                new TypeDescriptorInteger(), 0);
+        printReport("string-key", estimate);
+
+        final String log = estimate.text();
+        assertTrue(estimate.isComplete());
+        assertContains(log, "| Scarce index           | 11.13 KiB");
+        assertContains(log, "| Key/position entry     | 228 B");
+        assertLineAppearsBefore(log, "| Key/value entry        | 228 B",
+                "| Key/position entry     | 228 B");
+        assertContains(log, "TypeDescriptorShortString, about 128");
+        assertContains(log, "integer position:");
     }
 
     private static <V> EffectiveIndexConfiguration<Integer, V> effectiveConfiguration(
@@ -256,12 +313,37 @@ class IndexMemoryEstimatorTest {
             final int chunkKeyLimit,
             final int cachedSegmentLimit,
             final int chunkStorePageLimit) {
+        return effectiveConfiguration(name, Integer.class,
+                new TypeDescriptorInteger(), valueClass, valueTypeDescriptor,
+                cacheKeyLimit, maintenanceWriteCacheKeyLimit, chunkKeyLimit,
+                cachedSegmentLimit, chunkStorePageLimit);
+    }
+
+    private static <K, V> EffectiveIndexConfiguration<K, V> effectiveConfiguration(
+            final String name, final Class<K> keyClass,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final Class<V> valueClass,
+            final TypeDescriptor<V> valueTypeDescriptor) {
+        return effectiveConfiguration(name, keyClass, keyTypeDescriptor,
+                valueClass, valueTypeDescriptor, 10, 6, 2, 3, 0);
+    }
+
+    private static <K, V> EffectiveIndexConfiguration<K, V> effectiveConfiguration(
+            final String name, final Class<K> keyClass,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final Class<V> valueClass,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int cacheKeyLimit,
+            final int maintenanceWriteCacheKeyLimit,
+            final int chunkKeyLimit,
+            final int cachedSegmentLimit,
+            final int chunkStorePageLimit) {
         return EffectiveIndexConfigurationResolver.resolveForCreate(
-                IndexConfiguration.<Integer, V>builder()
-                        .identity(identity -> identity.keyClass(Integer.class))
+                IndexConfiguration.<K, V>builder()
+                        .identity(identity -> identity.keyClass(keyClass))
                         .identity(identity -> identity.valueClass(valueClass))
-                        .identity(identity -> identity.keyTypeDescriptor(
-                                new TypeDescriptorInteger()))
+                        .identity(identity -> identity
+                                .keyTypeDescriptor(keyTypeDescriptor))
                         .identity(identity -> identity
                                 .valueTypeDescriptor(valueTypeDescriptor))
                         .identity(identity -> identity.name(name))
@@ -302,8 +384,13 @@ class IndexMemoryEstimatorTest {
 
     private static void assertReadableLineLengths(
             final MemoryEstimateReport report) {
-        report.lines().forEach(line -> assertTrue(line.length() <= 100,
+        report.lines().forEach(line -> assertTrue(line.length() <= 80,
                 () -> "Report line is too long: " + line));
+    }
+
+    private static void assertContains(final String log,
+            final String expected) {
+        assertTrue(log.contains(expected), () -> "Missing text: " + expected);
     }
 
     private static void assertLineAppearsBefore(final String log,

@@ -1,11 +1,11 @@
 package org.hestiastore.index.segment;
 
 import java.util.Iterator;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.WriteTransaction.WriterFunction;
 
 /**
  * Encapsulates maintenance operations like flush and full rewrite transactions.
@@ -41,7 +41,8 @@ final class SegmentMaintenancePath<K, V> {
      *
      * @param writeFunction writer logic to execute
      */
-    void executeFullWriteTx(final WriterFunction<K, V> writeFunction) {
+    void executeFullWriteTx(
+            final Consumer<EntryWriter<K, V>> writeFunction) {
         openFullWriteTx().execute(writeFunction);
     }
 

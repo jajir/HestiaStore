@@ -13,6 +13,8 @@ class OperationStatusTest {
                 OperationStatus.valueOf("OK"));
         assertEquals(OperationStatus.BUSY,
                 OperationStatus.valueOf("BUSY"));
+        assertEquals(OperationStatus.WRITE_CACHE_FULL,
+                OperationStatus.valueOf("WRITE_CACHE_FULL"));
         assertEquals(OperationStatus.CLOSED,
                 OperationStatus.valueOf("CLOSED"));
         assertEquals(OperationStatus.ERROR,
@@ -21,6 +23,6 @@ class OperationStatusTest {
 
     @Test
     void values_containsAllStatuses() {
-        assertEquals(4, OperationStatus.values().length);
+        assertEquals(5, OperationStatus.values().length);
     }
 }

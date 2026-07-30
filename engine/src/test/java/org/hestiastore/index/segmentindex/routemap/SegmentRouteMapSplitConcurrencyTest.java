@@ -53,23 +53,41 @@ class SegmentRouteMapSplitConcurrencyTest {
     }
 
     @Test
-    void concurrent_get_put_during_split_never_sees_missing_mapping() {
-        final AtomicBoolean missing = new AtomicBoolean(false);
+    void concurrentSnapshotsDuringSplitKeepRoutesAndVersionTogether() {
+        final RouteMapSnapshot<Integer> initial = adapter.snapshot();
+        final long initialVersion = initial.version();
+        final SegmentId initialSegmentId = SegmentId.of(1);
+        final SegmentId splitSegmentId = SegmentId.of(3);
+        final AtomicBoolean keepReading = new AtomicBoolean(true);
+        final AtomicBoolean inconsistent = new AtomicBoolean(false);
         final AtomicInteger nextKey = new AtomicInteger(31);
         final CountDownLatch ready = new CountDownLatch(2);
         final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch startedOps = new CountDownLatch(2);
+        final CountDownLatch publishedSeen = new CountDownLatch(1);
 
         final Future<?> reader = executor.submit(() -> {
             ready.countDown();
             await(start);
-            for (int i = 0; i < 1_000; i++) {
-                if (adapter.findSegmentIdForKey(5) == null) {
-                    missing.set(true);
+            startedOps.countDown();
+            while (keepReading.get()) {
+                final RouteMapSnapshot<Integer> current = adapter.snapshot();
+                final SegmentId routedSegmentId = current
+                        .findSegmentIdForKey(5);
+                if (current.version() == initialVersion) {
+                    if (!initialSegmentId.equals(routedSegmentId)) {
+                        inconsistent.set(true);
+                        break;
+                    }
+                } else if (current.version() == initialVersion + 1) {
+                    if (!splitSegmentId.equals(routedSegmentId)) {
+                        inconsistent.set(true);
+                        break;
+                    }
+                    publishedSeen.countDown();
+                } else {
+                    inconsistent.set(true);
                     break;
-                }
-                if (i == 0) {
-                    startedOps.countDown();
                 }
             }
         });
@@ -90,18 +108,27 @@ class SegmentRouteMapSplitConcurrencyTest {
         assertTrue(await(startedOps, 5),
                 "Workers did not perform initial ops in time");
 
-        assertTrue(adapter.tryReplaceRouteWithSplit(plan));
-        adapter.flushIfDirty();
+        try {
+            assertTrue(adapter.tryReplaceRouteWithSplit(plan));
+            assertTrue(await(publishedSeen, 5),
+                    "Reader did not observe the published split in time");
+            adapter.flushIfDirty();
+        } finally {
+            keepReading.set(false);
+        }
 
         awaitFuture(reader, "Reader did not finish in time");
         awaitFuture(writer, "Writer did not finish in time");
 
-        assertFalse(missing.get());
+        assertFalse(inconsistent.get());
     }
 
     private void awaitFuture(final Future<?> future, final String message) {
         try {
             future.get(5, TimeUnit.SECONDS);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            fail(message + ": " + e.getMessage());
         } catch (final Exception e) {
             fail(message + ": " + e.getMessage());
         }

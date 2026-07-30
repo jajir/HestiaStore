@@ -5,7 +5,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 /**
  * Data block reader that does not read any data.
  */
-public class DataBlockReaderEmpty extends AbstractCloseableResource
+class DataBlockReaderEmpty extends AbstractCloseableResource
         implements DataBlockReader {
 
     @Override

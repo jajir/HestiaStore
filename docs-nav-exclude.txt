@@ -1,1 +1,2 @@
-# No explicit documentation exclusions.
+# Internal planning context; the published tracker remains in MkDocs navigation.
+refactoring-context.md

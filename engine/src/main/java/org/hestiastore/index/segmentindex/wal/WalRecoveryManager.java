@@ -1,12 +1,19 @@
 package org.hestiastore.index.segmentindex.wal;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Replays valid WAL records and repairs invalid tails according to policy.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 final class WalRecoveryManager<K, V> {
 
     private static final int BUFFER_SIZE = 8 * 1024;
@@ -33,13 +40,19 @@ final class WalRecoveryManager<K, V> {
         this.metrics = metrics;
     }
 
+    /**
+     * Recovers all valid records after the persisted checkpoint.
+     *
+     * @param replayConsumer recovered-record consumer
+     * @return recovery outcome
+     */
     WalRecoveryOutcome recover(
-            final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
-        final WalCatalogView catalogView = metadataCatalog.loadRecoveryCatalog();
-        long checkpointLsn = catalogView.checkpointLsn();
+            final Consumer<WalRuntime.ReplayRecord<K, V>> replayConsumer) {
+        metadataCatalog.ensureFormatMarker();
+        long checkpointLsn = metadataCatalog.readCheckpointLsn();
         segmentCatalog.resetRecoveredSegments();
-        final List<WalSegmentDescriptor> discoveredSegments = catalogView
-                .discoveredSegments();
+        final List<WalSegmentDescriptor> discoveredSegments = metadataCatalog
+                .discoverSegmentsStrict();
         LOGGER.info(
                 "event=wal_recovery_start checkpointLsn={} segmentCount={} corruptionPolicy={}",
                 checkpointLsn, discoveredSegments.size(),
@@ -52,15 +65,10 @@ final class WalRecoveryManager<K, V> {
             final WalSegmentDescriptor current = discoveredSegments.get(i);
             final ScanResult scan = scanAndReplaySegment(current.name(),
                     checkpointLsn, lastSeenLsn, replayConsumer);
-            if (scan.maxLsn() > maxLsn) {
-                maxLsn = scan.maxLsn();
-            }
-            if (scan.lastReplayedLsn() > lastReplayedLsn) {
-                lastReplayedLsn = scan.lastReplayedLsn();
-            }
-            if (scan.lastSeenLsn() > lastSeenLsn) {
-                lastSeenLsn = scan.lastSeenLsn();
-            }
+            maxLsn = Math.max(maxLsn, scan.maxLsn());
+            lastReplayedLsn = Math.max(lastReplayedLsn,
+                    scan.lastReplayedLsn());
+            lastSeenLsn = Math.max(lastSeenLsn, scan.lastSeenLsn());
             if (scan.invalidTail()) {
                 truncatedTail = true;
                 LOGGER.warn(
@@ -75,21 +83,11 @@ final class WalRecoveryManager<K, V> {
                             "event=wal_recovery_drop_newer_segments deletedSegments={} fromSegmentIndex={}",
                             deletedAfterCorruption, i + 1);
                 }
-                if (scan.validBytes() > 0L) {
-                    final long segmentMaxLsn = scan.maxLsn() > 0L
-                            ? scan.maxLsn()
-                            : current.baseLsn();
-                    segmentCatalog.addRecoveredSegment(current.name(),
-                            current.baseLsn(), scan.validBytes(),
-                            segmentMaxLsn);
-                }
+                addRecoveredSegment(current, scan);
                 break;
             }
             if (scan.validBytes() > 0L) {
-                final long segmentMaxLsn = scan.maxLsn() > 0L ? scan.maxLsn()
-                        : current.baseLsn();
-                segmentCatalog.addRecoveredSegment(current.name(),
-                        current.baseLsn(), scan.validBytes(), segmentMaxLsn);
+                addRecoveredSegment(current, scan);
             } else {
                 final String name = current.name();
                 storage.delete(name);
@@ -107,9 +105,7 @@ final class WalRecoveryManager<K, V> {
                     "event=wal_recovery_checkpoint_clamp previousCheckpointLsn={} clampedCheckpointLsn={} maxLsn={}",
                     previousCheckpointLsn, checkpointLsn, maxLsn);
         }
-        if (lastReplayedLsn > maxLsn) {
-            lastReplayedLsn = maxLsn;
-        }
+        lastReplayedLsn = Math.min(lastReplayedLsn, maxLsn);
         LOGGER.info(
                 "event=wal_recovery_complete maxLsn={} checkpointLsn={} lastReplayedLsn={} truncatedTail={} segmentCount={}",
                 maxLsn, checkpointLsn, lastReplayedLsn, truncatedTail,
@@ -120,14 +116,14 @@ final class WalRecoveryManager<K, V> {
 
     private ScanResult scanAndReplaySegment(final String fileName,
             final long replayAfterLsn, final long minimumLsnExclusive,
-            final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
+            final Consumer<WalRuntime.ReplayRecord<K, V>> replayConsumer) {
         long offset = 0L;
         long validOffset = 0L;
         long maxLsn = 0L;
         long lastReplayedLsn = replayAfterLsn;
         long previousLsn = minimumLsnExclusive;
+        final byte[] lenBytes = new byte[4];
         while (true) {
-            final byte[] lenBytes = new byte[4];
             final int lenRead = readFullyAllowEof(fileName, offset, lenBytes, 0,
                     4);
             if (lenRead == -1) {
@@ -143,7 +139,8 @@ final class WalRecoveryManager<K, V> {
                         previousLsn, true);
             }
             final byte[] body = new byte[bodyLen];
-            if (!readFully(fileName, offset + 4L, body, 0, bodyLen)) {
+            if (readFullyAllowEof(fileName, offset + 4L, body, 0,
+                    bodyLen) != bodyLen) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
                         previousLsn, true);
             }
@@ -157,15 +154,11 @@ final class WalRecoveryManager<K, V> {
             offset += 4L + bodyLen;
             validOffset = offset;
             previousLsn = decoded.lsn();
-            if (decoded.lsn() > maxLsn) {
-                maxLsn = decoded.lsn();
-            }
+            maxLsn = Math.max(maxLsn, decoded.lsn());
             if (decoded.lsn() > replayAfterLsn) {
                 replayConsumer.accept(new WalRuntime.ReplayRecord<>(decoded.lsn(),
                         decoded.operation(), decoded.key(), decoded.value()));
-                if (decoded.lsn() > lastReplayedLsn) {
-                    lastReplayedLsn = decoded.lsn();
-                }
+                lastReplayedLsn = decoded.lsn();
             }
         }
         return new ScanResult(validOffset, maxLsn, lastReplayedLsn, previousLsn,
@@ -197,13 +190,24 @@ final class WalRecoveryManager<K, V> {
                 fileName, validBytes);
     }
 
+    private void addRecoveredSegment(final WalSegmentDescriptor segment,
+            final ScanResult scan) {
+        if (scan.validBytes() <= 0L) {
+            return;
+        }
+        final long segmentMaxLsn = scan.maxLsn() > 0L ? scan.maxLsn()
+                : segment.baseLsn();
+        segmentCatalog.addRecoveredSegment(segment.name(), segment.baseLsn(),
+                scan.validBytes(), segmentMaxLsn);
+    }
+
     private int readFullyAllowEof(final String fileName, final long position,
             final byte[] destination, final int offset, final int length) {
         int totalRead = 0;
         long currentPosition = position;
         while (totalRead < length) {
             final int read = storage.read(fileName, currentPosition, destination,
-                    offset + totalRead, length - totalRead);
+                    offset + totalRead, Math.min(length - totalRead, BUFFER_SIZE));
             if (read < 0) {
                 return totalRead == 0 ? -1 : totalRead;
             }
@@ -214,25 +218,6 @@ final class WalRecoveryManager<K, V> {
             currentPosition += read;
         }
         return totalRead;
-    }
-
-    private boolean readFully(final String fileName, final long position,
-            final byte[] destination, final int offset, final int length) {
-        int totalRead = 0;
-        long currentPosition = position;
-        while (totalRead < length) {
-            final int read = storage.read(fileName, currentPosition, destination,
-                    offset + totalRead, Math.min(length - totalRead, BUFFER_SIZE));
-            if (read < 0) {
-                return false;
-            }
-            if (read == 0) {
-                continue;
-            }
-            totalRead += read;
-            currentPosition += read;
-        }
-        return true;
     }
 
     private static final class ScanResult {

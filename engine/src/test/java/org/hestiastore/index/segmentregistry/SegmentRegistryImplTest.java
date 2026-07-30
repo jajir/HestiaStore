@@ -88,6 +88,35 @@ class SegmentRegistryImplTest {
     }
 
     @Test
+    void blockingPointOperationUsesSingleRegistryLookup() {
+        final Segment<Integer, String> created = registry.tryCreateSegment()
+                .getValue();
+        assertSame(OperationStatus.OK, created.put(1, "one").getStatus());
+        final SegmentRegistryCacheStats before = registry.metricsSnapshot();
+
+        final String value = registry.loadSegment(created.getId()).get(1);
+
+        final SegmentRegistryCacheStats after = registry.metricsSnapshot();
+        assertEquals("one", value);
+        assertEquals(before.hitCount() + 1L, after.hitCount());
+    }
+
+    @Test
+    void blockingHandleRefreshesAfterSegmentCloses() {
+        final BlockingSegment<Integer, String> handle = registry
+                .createSegment();
+        final Segment<Integer, String> first = handle.getSegment();
+        closeAndAssertClosed(first);
+
+        final BlockingSegment<Integer, String> reloaded = registry
+                .loadSegment(handle.getId());
+
+        assertSame(handle, reloaded);
+        assertNotSame(first, reloaded.getSegment());
+        assertSame(SegmentState.READY, reloaded.getRuntime().getState());
+    }
+
+    @Test
     void registryStartupTransitionsGateToReady() {
         final SegmentRegistryStateMachine gate = readGate(registry);
         assertSame(SegmentRegistryState.READY, gate.getState());
@@ -410,24 +439,14 @@ class SegmentRegistryImplTest {
     }
 
     private Object createLoadingEntry(final long accessCx) {
-        try {
-            final Class<?> entryClass = Class.forName(
-                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
-            final java.lang.reflect.Constructor<?> constructor = entryClass
-                    .getDeclaredConstructor(long.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance(accessCx);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException("Unable to create loading entry",
-                    ex);
-        }
+        return new SegmentRegistryEntry<Integer, String>(accessCx);
     }
 
     private void finishLoad(final Object entry,
             final Segment<Integer, String> segment) {
         try {
             final java.lang.reflect.Method method = entry.getClass()
-                    .getDeclaredMethod("finishLoad", Object.class);
+                    .getDeclaredMethod("finishLoad", Segment.class);
             method.setAccessible(true);
             method.invoke(entry, segment);
         } catch (final ReflectiveOperationException ex) {
@@ -438,7 +457,7 @@ class SegmentRegistryImplTest {
     private boolean invokeTryStartUnload(final Object entry) {
         try {
             final java.lang.reflect.Method method = entry.getClass()
-                    .getDeclaredMethod("tryStartUnload", Object.class);
+                    .getDeclaredMethod("tryStartUnload", Segment.class);
             method.setAccessible(true);
             return ((Boolean) method.invoke(entry, getReadyValue(entry)))
                     .booleanValue();

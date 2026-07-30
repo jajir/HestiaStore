@@ -47,6 +47,16 @@ public final class OperationResult<T> {
     }
 
     /**
+     * Creates a WRITE_CACHE_FULL result.
+     *
+     * @param <T> value type
+     * @return result with WRITE_CACHE_FULL status
+     */
+    public static <T> OperationResult<T> writeCacheFull() {
+        return new OperationResult<>(OperationStatus.WRITE_CACHE_FULL, null);
+    }
+
+    /**
      * Creates a CLOSED result.
      *
      * @param <T> value type
@@ -82,6 +92,9 @@ public final class OperationResult<T> {
         }
         if (validated == OperationStatus.BUSY) {
             return busy();
+        }
+        if (validated == OperationStatus.WRITE_CACHE_FULL) {
+            return writeCacheFull();
         }
         if (validated == OperationStatus.CLOSED) {
             return closed();

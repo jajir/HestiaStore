@@ -17,7 +17,9 @@ class WalAppendTaskTest {
         final WalAppendTask<String, String> task = new WalAppendTask<>(
                 WalRuntime.Operation.PUT, "key", "value");
 
-        task.complete(11L);
+        task.markWritten(11L);
+        assertFalse(task.writtenLsn().isDone());
+        task.completeWritten();
 
         assertFalse(task.stop());
         assertEquals(WalRuntime.Operation.PUT, task.operation());

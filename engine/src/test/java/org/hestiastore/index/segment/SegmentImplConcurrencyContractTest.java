@@ -1,7 +1,5 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.OperationStatus;
-import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -14,8 +12,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -136,15 +138,107 @@ class SegmentImplConcurrencyContractTest {
     }
 
     @Test
-    void put_returns_busy_when_write_cache_full() {
+    void consistencyCheck_isBusyDuringMaintenanceAndSucceedsAfterward() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final Segment<Integer, String> segment = newSegment(4, executor);
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
+
+            assertEquals(OperationStatus.BUSY,
+                    segment.tryCheckAndRepairConsistency().getStatus());
+
+            executor.runTask();
+
+            final OperationResult<Integer> result = segment
+                    .tryCheckAndRepairConsistency();
+            assertEquals(OperationStatus.OK, result.getStatus());
+            assertEquals(1, result.getValue());
+        } finally {
+            closeAfterMaintenanceIfNeeded(segment, executor);
+        }
+    }
+
+    @Test
+    void put_returns_writeCacheFull_when_write_cache_full_and_no_maintenance_policy() {
         final Segment<Integer, String> segment = newSegment(1);
         try {
             assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
-            assertEquals(OperationStatus.BUSY,
+            assertEquals(OperationStatus.WRITE_CACHE_FULL,
                     segment.put(2, "b").getStatus());
         } finally {
             closeAndAssertClosed(segment);
+        }
+    }
+
+    @Test
+    void conditional_mutation_reuses_active_slot_when_cache_is_full() {
+        final Segment<Integer, String> segment = newSegment(1);
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+            assertEquals(OperationStatus.WRITE_CACHE_FULL,
+                    segment.putIfAbsent(2, "b").getStatus());
+
+            final OperationResult<Boolean> replaced = segment.replace(1, "a",
+                    "c");
+
+            assertEquals(OperationStatus.OK, replaced.getStatus());
+            assertTrue(replaced.getValue());
+            assertEquals("c", segment.get(1).getValue());
+        } finally {
+            closeAndAssertClosed(segment);
+        }
+    }
+
+    @Test
+    void put_returns_busy_when_write_cache_full_during_manual_maintenance() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final Segment<Integer, String> segment = newSegment(2, executor);
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+            assertEquals(OperationStatus.OK,
+                    segment.put(2, "b").getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING,
+                    segment.getState());
+
+            assertEquals(OperationStatus.OK,
+                    segment.put(3, "c").getStatus());
+            assertEquals(OperationStatus.OK,
+                    segment.put(4, "d").getStatus());
+            assertEquals(OperationStatus.BUSY,
+                    segment.put(5, "e").getStatus());
+        } finally {
+            closeAfterMaintenanceIfNeeded(segment, executor);
+        }
+    }
+
+    @Test
+    void put_returns_busy_when_write_cache_full_and_policy_requests_flush() {
+        final CapturingExecutor executor = new CapturingExecutor();
+        final AtomicBoolean flushEnabled = new AtomicBoolean();
+        final Segment<Integer, String> segment = newSegment(1, executor,
+                ignored -> flushEnabled.get()
+                        ? SegmentMaintenanceDecision.flushOnly()
+                        : SegmentMaintenanceDecision.none());
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "a").getStatus());
+
+            flushEnabled.set(true);
+
+            assertEquals(OperationStatus.BUSY,
+                    segment.put(2, "b").getStatus());
+            assertEquals(SegmentState.MAINTENANCE_RUNNING,
+                    segment.getState());
+            assertTrue(executor.hasTask());
+        } finally {
+            closeAfterMaintenanceIfNeeded(segment, executor);
         }
     }
 
@@ -238,12 +332,81 @@ class SegmentImplConcurrencyContractTest {
         }
     }
 
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void concurrent_conditional_mutations_have_one_winner()
+            throws Exception {
+        final Segment<Integer, String> segment = newSegment(32);
+        final int threads = 16;
+        final ExecutorService executor = Executors.newFixedThreadPool(threads);
+        final CountDownLatch ready = new CountDownLatch(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        final AtomicInteger replaced = new AtomicInteger();
+        final AtomicInteger inserted = new AtomicInteger();
+        try {
+            assertEquals(OperationStatus.OK,
+                    segment.put(1, "start").getStatus());
+            final Future<?>[] tasks = new Future<?>[threads];
+            for (int i = 0; i < threads; i++) {
+                final int worker = i;
+                tasks[i] = executor.submit(() -> {
+                    ready.countDown();
+                    try {
+                        start.await();
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(
+                                "Worker interrupted before start", e);
+                    }
+                    final OperationResult<Boolean> result = segment.replace(1,
+                            "start", "value-" + worker);
+                    if (result.getStatus() != OperationStatus.OK) {
+                        throw new IllegalStateException(
+                                "Replace returned " + result.getStatus());
+                    }
+                    if (Boolean.TRUE.equals(result.getValue())) {
+                        replaced.incrementAndGet();
+                    }
+                    final OperationResult<Boolean> insertResult = segment
+                            .putIfAbsent(2, "insert-" + worker);
+                    if (insertResult.getStatus() != OperationStatus.OK) {
+                        throw new IllegalStateException(
+                                "Put-if-absent returned "
+                                        + insertResult.getStatus());
+                    }
+                    if (Boolean.TRUE.equals(insertResult.getValue())) {
+                        inserted.incrementAndGet();
+                    }
+                });
+            }
+            assertTrue(ready.await(2, TimeUnit.SECONDS));
+            start.countDown();
+            for (final Future<?> task : tasks) {
+                task.get(2, TimeUnit.SECONDS);
+            }
+
+            assertEquals(1, replaced.get());
+            assertEquals(1, inserted.get());
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+            closeAndAssertClosed(segment);
+        }
+    }
+
     private Segment<Integer, String> newSegment(final int writeCacheSize) {
         return newSegment(writeCacheSize, null);
     }
 
     private Segment<Integer, String> newSegment(final int writeCacheSize,
             final Executor maintenanceExecutor) {
+        return newSegment(writeCacheSize, maintenanceExecutor,
+                SegmentMaintenancePolicy.none());
+    }
+
+    private Segment<Integer, String> newSegment(final int writeCacheSize,
+            final Executor maintenanceExecutor,
+            final SegmentMaintenancePolicy<Integer, String> maintenancePolicy) {
         final SegmentBuilder<Integer, String> builder = Segment
                 .<Integer, String>builder(
                         new MemDirectory())
@@ -254,7 +417,7 @@ class SegmentImplConcurrencyContractTest {
                 .withMaxNumberOfKeysInSegmentCache(8)
                 .withMaxNumberOfKeysInSegmentChunk(2)
                 .withBloomFilterIndexSizeInBytes(0)
-                .withMaintenancePolicy(SegmentMaintenancePolicy.none())
+                .withMaintenancePolicy(maintenancePolicy)
                 .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()));
         if (maintenanceExecutor != null) {

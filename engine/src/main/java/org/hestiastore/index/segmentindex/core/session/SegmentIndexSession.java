@@ -111,6 +111,29 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public boolean putIfAbsent(final K key, final V value) {
+        beginOperationalOperation();
+        try {
+            return operationAccess.putIfAbsent(key, value);
+        } finally {
+            operationGate.endOperation();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean replace(final K key, final V expectedValue,
+            final V newValue) {
+        beginOperationalOperation();
+        try {
+            return operationAccess.replace(key, expectedValue, newValue);
+        } finally {
+            operationGate.endOperation();
+        }
+    }
+
     /**
      * Opens an iterator for one segment with fail-fast isolation.
      *
@@ -156,6 +179,36 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
 
     /** {@inheritDoc} */
     @Override
+    public Stream<Entry<K, V>> scan(final K fromInclusive,
+            final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        beginOperationalOperation();
+        try {
+            final K lowerBound = Vldtn.requireNonNull(fromInclusive,
+                    "fromInclusive");
+            final SegmentIteratorIsolation nonNullIsolation = requireIsolation(
+                    isolation);
+            final int rangeComparison = toExclusive == null ? -1
+                    : keyTypeDescriptor.getComparator().compare(lowerBound,
+                            toExclusive);
+            if (rangeComparison > 0) {
+                throw new IllegalArgumentException(
+                        "fromInclusive must not sort after toExclusive.");
+            }
+            if (rangeComparison == 0) {
+                return Stream.empty();
+            }
+            final EntryIterator<K, V> iterator = decorateIterator(
+                    streamingService.openRangeIterator(lowerBound, toExclusive,
+                            nonNullIsolation));
+            return stream(iterator);
+        } finally {
+            operationGate.endOperation();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
         return getStream(segmentWindow, SegmentIteratorIsolation.FAIL_FAST);
     }
@@ -167,6 +220,11 @@ class SegmentIndexSession<K, V> extends AbstractCloseableResource
             final SegmentIteratorIsolation isolation) {
         final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow,
                 isolation);
+        return stream(iterator);
+    }
+
+    private Stream<Entry<K, V>> stream(
+            final EntryIterator<K, V> iterator) {
         return StreamSupport.stream(newEntryIteratorSpliterator(iterator), false)
                 .onClose(iterator::close);
     }

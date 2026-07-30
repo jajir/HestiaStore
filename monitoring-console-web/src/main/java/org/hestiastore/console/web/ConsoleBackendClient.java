@@ -79,6 +79,14 @@ public class ConsoleBackendClient {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String FAILED_SEPARATOR = " failed: ";
     private static final int MAX_HISTORY = 200;
+    private static final Locale NUMBER_LOCALE = Locale.US;
+    private static final char THOUSANDS_SEPARATOR = ',';
+    private static final char DECIMAL_SEPARATOR = '.';
+    private static final String NUMBER_SEPARATOR_NOTE = "Numeric separators: thousands '"
+            + THOUSANDS_SEPARATOR + "', decimal '" + DECIMAL_SEPARATOR + "'.";
+    private static final double BYTES_PER_GIB = 1024D * 1024D * 1024D;
+    private static final String[] SIZE_UNITS = { "B", "KB", "MB", "GB", "TB",
+            "PB" };
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final MonitoringConsoleWebProperties properties;
@@ -651,8 +659,8 @@ public class ConsoleBackendClient {
                 return method + " " + path + FAILED_SEPARATOR
                         + response.statusCode() + " " + code + " " + message;
             }
-        } catch (final Exception ignore) {
-            // Fallback to plain body below.
+        } catch (final Exception e) {
+            logger.trace("Response body is not a JSON error payload.", e);
         }
         return method + " " + path + FAILED_SEPARATOR + response.statusCode()
                 + " body=" + body;
@@ -1123,6 +1131,66 @@ public class ConsoleBackendClient {
         }
     }
 
+    private static String formatWholeNumberValue(final long value) {
+        return String.format(NUMBER_LOCALE, "%,d", value);
+    }
+
+    private static String formatBytes(final long bytes) {
+        if (bytes <= 0L) {
+            return "0 B";
+        }
+        double value = bytes;
+        int unitIndex = 0;
+        while (value >= 1024D && unitIndex < SIZE_UNITS.length - 1) {
+            value /= 1024D;
+            unitIndex++;
+        }
+        final int fractionDigits;
+        if (value >= 100D) {
+            fractionDigits = 0;
+        } else if (value >= 10D) {
+            fractionDigits = 1;
+        } else {
+            fractionDigits = 2;
+        }
+        final String compact = formatDecimal(value, 0, fractionDigits);
+        return compact + " " + SIZE_UNITS[unitIndex];
+    }
+
+    private static String formatGigabytes(final long bytes) {
+        if (bytes <= 0L) {
+            return "0 GB";
+        }
+        return formatDecimal(bytes / BYTES_PER_GIB, 0, 2) + " GB";
+    }
+
+    private static String format4Significant(final double value) {
+        if (value <= 0D || Double.isNaN(value) || Double.isInfinite(value)) {
+            return "0";
+        }
+        final BigDecimal rounded = BigDecimal.valueOf(value)
+                .round(new MathContext(4, RoundingMode.HALF_UP))
+                .stripTrailingZeros();
+        final int maxFraction = Math.max(0, Math.min(12, rounded.scale()));
+        return formatDecimal(rounded.doubleValue(), 0, maxFraction);
+    }
+
+    private static String formatDecimal(final double value,
+            final int minFractionDigits, final int maxFractionDigits) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            return "0";
+        }
+        final DecimalFormatSymbols symbols = DecimalFormatSymbols
+                .getInstance(NUMBER_LOCALE);
+        final DecimalFormat format = new DecimalFormat("#,##0.############",
+                symbols);
+        format.setGroupingUsed(true);
+        format.setMinimumFractionDigits(Math.max(0, minFractionDigits));
+        format.setMaximumFractionDigits(
+                Math.max(minFractionDigits, maxFractionDigits));
+        return format.format(value);
+    }
+
     /**
      * Dashboard row model.
      */
@@ -1158,16 +1226,6 @@ public class ConsoleBackendClient {
             long jvmGcTimeMillis, double currentThroughputValue,
             String currentThroughputUnit, long latencyMs, String capturedAt,
             String error) {
-        private static final Locale NUMBER_LOCALE = Locale.US;
-        private static final char THOUSANDS_SEPARATOR = ',';
-        private static final char DECIMAL_SEPARATOR = '.';
-        private static final String NUMBER_SEPARATOR_NOTE = "Numeric separators: thousands '"
-                + THOUSANDS_SEPARATOR + "', decimal '" + DECIMAL_SEPARATOR
-                + "'.";
-        private static final double BYTES_PER_GIB = 1024D * 1024D * 1024D;
-        private static final String[] SIZE_UNITS = { "B", "KB", "MB", "GB",
-                "TB", "PB" };
-
         /**
          * Total operations count.
          *
@@ -1213,7 +1271,7 @@ public class ConsoleBackendClient {
          * @return formatted value (for example 12,345)
          */
         public static String formatWholeNumberValue(final long value) {
-            return String.format(NUMBER_LOCALE, "%,d", value);
+            return ConsoleBackendClient.formatWholeNumberValue(value);
         }
 
         /**
@@ -1301,7 +1359,7 @@ public class ConsoleBackendClient {
             if (jvmHeapCommittedBytes <= 0L) {
                 return 0L;
             }
-            return Math.round((heapFreeBytes() * 100D) / jvmHeapCommittedBytes);
+            return Math.round(heapFreeBytes() * 100D / jvmHeapCommittedBytes);
         }
 
         /**
@@ -1334,7 +1392,7 @@ public class ConsoleBackendClient {
                 return 0L;
             }
             return Math.round(
-                    (Math.max(0L, totalSegmentCacheKeys) * 100D) / limit);
+                    Math.max(0L, totalSegmentCacheKeys) * 100D / limit);
         }
 
         /**
@@ -1346,7 +1404,7 @@ public class ConsoleBackendClient {
             if (cacheLimit <= 0) {
                 return 0L;
             }
-            return Math.round((Math.max(0, cacheSize) * 100D) / cacheLimit);
+            return Math.round(Math.max(0, cacheSize) * 100D / cacheLimit);
         }
 
         /**
@@ -1409,63 +1467,6 @@ public class ConsoleBackendClient {
             return format4Significant(average);
         }
 
-        private static String formatBytes(final long bytes) {
-            if (bytes <= 0L) {
-                return "0 B";
-            }
-            double value = bytes;
-            int unitIndex = 0;
-            while (value >= 1024D && unitIndex < SIZE_UNITS.length - 1) {
-                value /= 1024D;
-                unitIndex++;
-            }
-            final int fractionDigits;
-            if (value >= 100D) {
-                fractionDigits = 0;
-            } else if (value >= 10D) {
-                fractionDigits = 1;
-            } else {
-                fractionDigits = 2;
-            }
-            final String compact = formatDecimal(value, 0, fractionDigits);
-            return compact + " " + SIZE_UNITS[unitIndex];
-        }
-
-        private static String formatGigabytes(final long bytes) {
-            if (bytes <= 0L) {
-                return "0 GB";
-            }
-            return formatDecimal(bytes / BYTES_PER_GIB, 0, 2) + " GB";
-        }
-
-        private static String format4Significant(final double value) {
-            if (value <= 0D || Double.isNaN(value)
-                    || Double.isInfinite(value)) {
-                return "0";
-            }
-            final BigDecimal rounded = BigDecimal.valueOf(value)
-                    .round(new MathContext(4, RoundingMode.HALF_UP))
-                    .stripTrailingZeros();
-            final int maxFraction = Math.max(0, Math.min(12, rounded.scale()));
-            return formatDecimal(rounded.doubleValue(), 0, maxFraction);
-        }
-
-        private static String formatDecimal(final double value,
-                final int minFractionDigits, final int maxFractionDigits) {
-            if (Double.isNaN(value) || Double.isInfinite(value)) {
-                return "0";
-            }
-            final DecimalFormatSymbols symbols = DecimalFormatSymbols
-                    .getInstance(NUMBER_LOCALE);
-            final DecimalFormat format = new DecimalFormat("#,##0.############",
-                    symbols);
-            format.setGroupingUsed(true);
-            format.setMinimumFractionDigits(Math.max(0, minFractionDigits));
-            format.setMaximumFractionDigits(
-                    Math.max(minFractionDigits, maxFractionDigits));
-            return format.format(value);
-        }
-
     }
 
     private record RemoteMonitoredIndex(String indexName,
@@ -1489,7 +1490,7 @@ public class ConsoleBackendClient {
         if (deltaOps <= 0L || deltaNanos <= 0L) {
             return new Throughput(0D, OPS_PER_SECOND);
         }
-        double value = (deltaOps * 1_000_000_000D) / deltaNanos;
+        double value = deltaOps * 1_000_000_000D / deltaNanos;
         String unit = OPS_PER_SECOND;
         if (value >= 10_000D) {
             value /= 1_000D;
@@ -1527,7 +1528,7 @@ public class ConsoleBackendClient {
         if (deltaCount <= 0L || deltaNanos <= 0L) {
             return new CounterRate(0D, "/s");
         }
-        final double perSecond = (deltaCount * 1_000_000_000D) / deltaNanos;
+        final double perSecond = deltaCount * 1_000_000_000D / deltaNanos;
         if (perSecond >= 1D) {
             return new CounterRate(perSecond, "/s");
         }
@@ -1611,7 +1612,7 @@ public class ConsoleBackendClient {
                 return 0L;
             }
             return Math.round(
-                    (Math.max(0L, totalSegmentCacheKeys) * 100D) / limit);
+                    Math.max(0L, totalSegmentCacheKeys) * 100D / limit);
         }
 
         /**
@@ -1638,7 +1639,7 @@ public class ConsoleBackendClient {
             if (total <= 0L) {
                 return 0L;
             }
-            return Math.round((cacheHitCount * 100D) / total);
+            return Math.round(cacheHitCount * 100D / total);
         }
 
         /**
@@ -1650,7 +1651,7 @@ public class ConsoleBackendClient {
             if (cacheLimit <= 0) {
                 return 0L;
             }
-            return Math.round((Math.max(0, cacheSize) * 100D) / cacheLimit);
+            return Math.round(Math.max(0, cacheSize) * 100D / cacheLimit);
         }
 
         /**
@@ -1719,33 +1720,6 @@ public class ConsoleBackendClient {
             return formatDecimal(probability * 100D, 2, 2) + "%";
         }
 
-        private static String format4Significant(final double value) {
-            if (value <= 0D || Double.isNaN(value)
-                    || Double.isInfinite(value)) {
-                return "0";
-            }
-            final BigDecimal rounded = BigDecimal.valueOf(value)
-                    .round(new MathContext(4, RoundingMode.HALF_UP))
-                    .stripTrailingZeros();
-            final int maxFraction = Math.max(0, Math.min(12, rounded.scale()));
-            return formatDecimal(rounded.doubleValue(), 0, maxFraction);
-        }
-
-        private static String formatDecimal(final double value,
-                final int minFractionDigits, final int maxFractionDigits) {
-            if (Double.isNaN(value) || Double.isInfinite(value)) {
-                return "0";
-            }
-            final DecimalFormatSymbols symbols = DecimalFormatSymbols
-                    .getInstance(Locale.US);
-            final DecimalFormat format = new DecimalFormat("#,##0.############",
-                    symbols);
-            format.setGroupingUsed(true);
-            format.setMinimumFractionDigits(Math.max(0, minFractionDigits));
-            format.setMaximumFractionDigits(
-                    Math.max(minFractionDigits, maxFractionDigits));
-            return format.format(value);
-        }
     }
 
     /**

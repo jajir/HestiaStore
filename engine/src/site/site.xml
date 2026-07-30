@@ -10,8 +10,6 @@
     </skin>
     <body>
         <menu name="Dependency Reports">
-            <item name="External Dependencies" href="external-dependencies.html" />
-            <item name="JDeps Summary" href="jdeps-report.html" />
             <item name="JDepend" href="jdepend-report.html" />
         </menu>
         <menu ref="reports" />

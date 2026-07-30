@@ -7,12 +7,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Owns WAL metadata persistence, validation, and segment discovery.
+ */
 final class WalMetadataCatalog {
 
     static final String WAL_DIRECTORY = "wal";
@@ -36,6 +38,9 @@ final class WalMetadataCatalog {
         this.storage = storage;
     }
 
+    /**
+     * Creates or validates the WAL format marker before WAL access.
+     */
     void ensureFormatMarker() {
         final byte[] payload = formatPayload();
         reconcileFormatMetadataTempFile(payload);
@@ -44,21 +49,7 @@ final class WalMetadataCatalog {
             return;
         }
         final byte[] existing = storage.readAll(FORMAT_FILE);
-        final FormatMeta meta = parseFormatMeta(existing);
-        final int expectedChecksum = WalRecordCodec.computeCrc32(payload, 0,
-                payload.length);
-        if (meta.version() != FORMAT_VERSION
-                || meta.checksum() != expectedChecksum) {
-            throw new IndexException(String.format(
-                    "Unsupported or corrupted WAL format metadata: version=%s checksum=%s expectedVersion=%s expectedChecksum=%s",
-                    meta.version(), meta.checksum(), FORMAT_VERSION,
-                    expectedChecksum));
-        }
-    }
-
-    WalCatalogView loadRecoveryCatalog() {
-        ensureFormatMarker();
-        return new WalCatalogView(readCheckpointLsn(), discoverSegmentsStrict());
+        validateFormatMetadata(existing);
     }
 
     void writeCheckpointLsnAtomic(final long checkpointLsn) {
@@ -78,12 +69,14 @@ final class WalMetadataCatalog {
         return String.format(Locale.ROOT, SEGMENT_FILE_FORMAT, baseLsn);
     }
 
-    private List<WalSegmentDescriptor> discoverSegmentsStrict() {
-        final List<String> segmentNames;
-        try (Stream<String> names = storage.listFileNames()) {
-            segmentNames = names
-                    .filter(name -> name.endsWith(SEGMENT_SUFFIX)).toList();
-        }
+    /**
+     * Discovers and validates WAL segment entries for recovery.
+     *
+     * @return ordered segment descriptors
+     */
+    List<WalSegmentDescriptor> discoverSegmentsStrict() {
+        final List<String> segmentNames = storage.listFileNames().stream()
+                .filter(name -> name.endsWith(SEGMENT_SUFFIX)).toList();
         final List<WalSegmentDescriptor> discovered = new ArrayList<>(
                 segmentNames.size());
         final Set<Long> uniqueBaseLsns = new HashSet<>();
@@ -130,7 +123,12 @@ final class WalMetadataCatalog {
         }
     }
 
-    private long readCheckpointLsn() {
+    /**
+     * Reconciles checkpoint metadata and returns the persisted checkpoint LSN.
+     *
+     * @return persisted checkpoint LSN, or zero when absent
+     */
+    long readCheckpointLsn() {
         reconcileCheckpointMetadataTempFile();
         if (!storage.exists(CHECKPOINT_FILE)) {
             return 0L;
@@ -186,19 +184,18 @@ final class WalMetadataCatalog {
     }
 
     private static long parseLegacyCheckpointMetadata(final String text) {
+        final long parsed;
         try {
-            final long parsed = Long.parseLong(text);
-            if (parsed < 0L) {
-                throw new IndexException(String.format(
-                        "Invalid WAL checkpoint metadata: negative LSN '%s'.",
-                        parsed));
-            }
-            return parsed;
-        } catch (IndexException ex) {
-            throw ex;
+            parsed = Long.parseLong(text);
         } catch (RuntimeException ex) {
             throw new IndexException("Invalid WAL checkpoint metadata.", ex);
         }
+        if (parsed < 0L) {
+            throw new IndexException(String.format(
+                    "Invalid WAL checkpoint metadata: negative LSN '%s'.",
+                    parsed));
+        }
+        return parsed;
     }
 
     private static long parseChecksummedCheckpointMetadata(final String text) {

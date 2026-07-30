@@ -69,8 +69,9 @@ These structures are shared across threads and require synchronization:
   `hestia-<indexName>-split-policy-*` scheduler.
 - Split materialization runs on the shared `hestia-split-maintenance-*`
   executor.
-- WAL group sync runs on `hestia-<indexName>-wal-group-sync-*` when GROUP_SYNC
-  durability is enabled with a positive delay.
+- WAL append ordering and delayed group sync both run on the single
+  `hestia-<indexName>-wal-append-*` worker. `ExecutorRegistry` supplies its
+  index-scoped daemon thread factory; `WalRuntime` drains and joins it.
 
 ## Implications
 

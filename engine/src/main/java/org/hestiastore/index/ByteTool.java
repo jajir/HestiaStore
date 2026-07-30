@@ -2,7 +2,11 @@ package org.hestiastore.index;
 
 /**
  * Utility helpers for working with byte arrays.
+ *
+ * @deprecated Prefer {@link org.hestiastore.index.bytes.ByteTool} for indexed
+ *             byte access, or JDK array helpers for direct byte-array work.
  */
+@Deprecated(since = "1.0.1", forRemoval = true)
 public final class ByteTool {
 
     private ByteTool() {
@@ -15,7 +19,10 @@ public final class ByteTool {
      * @param first  the first byte array
      * @param second the second byte array
      * @return number of matching bytes from the beginning of the arrays
+     * @deprecated Prefer
+     *             {@link org.hestiastore.index.bytes.ByteTool#countMatchingPrefixBytes(org.hestiastore.index.bytes.ByteSequence, org.hestiastore.index.bytes.ByteSequence)}.
      */
+    @Deprecated(since = "1.0.1", forRemoval = true)
     public static int countMatchingPrefixBytes(final byte[] first,
             final byte[] second) {
         Vldtn.requireNonNull(first, "first");
@@ -36,7 +43,11 @@ public final class ByteTool {
      * @param full  source byte array
      * @return remaining bytes from {@code index} to the end of {@code full}
      * @throws IllegalArgumentException if {@code index} is out of range
+     * @deprecated Prefer
+     *             {@link org.hestiastore.index.bytes.ByteTool#getRemainingBytesAfterIndex(int, org.hestiastore.index.bytes.ByteSequence)}
+     *             or {@code Arrays.copyOfRange(full, index, full.length)}.
      */
+    @Deprecated(since = "1.0.1", forRemoval = true)
     public static byte[] getRemainingBytesAfterIndex(final int index,
             final byte[] full) {
         Vldtn.requireNonNull(full, "full");
@@ -57,7 +68,11 @@ public final class ByteTool {
      * @param second non-null second array
      * @return new array comprising both inputs
      * @throws IllegalArgumentException if any argument is {@code null}
+     * @deprecated Prefer
+     *             {@link org.hestiastore.index.bytes.ByteTool#concatenate(org.hestiastore.index.bytes.ByteSequence, org.hestiastore.index.bytes.ByteSequence)}
+     *             when working with indexed byte data.
      */
+    @Deprecated(since = "1.0.1", forRemoval = true)
     public static byte[] concatenate(final byte[] first,
             final byte[] second) {
         Vldtn.requireNonNull(first, "first");

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.function.Supplier;
+
 import org.hestiastore.index.segment.SegmentFullWriterTx;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentRegistryMaterializationViewTest {
 
     @Mock
-    private SegmentIdAllocator segmentIdAllocator;
+    private Supplier<SegmentId> segmentIdAllocator;
 
     @Mock
     private PreparedSegmentWriterFactory<Integer, String> preparedSegmentWriterFactory;
@@ -27,7 +29,7 @@ class SegmentRegistryMaterializationViewTest {
     @Test
     void nextSegmentId_delegatesToAllocator() {
         final SegmentId expected = SegmentId.of(17);
-        when(segmentIdAllocator.nextId()).thenReturn(expected);
+        when(segmentIdAllocator.get()).thenReturn(expected);
         final SegmentRegistryMaterializationView<Integer, String> view = new SegmentRegistryMaterializationView<>(
                 segmentIdAllocator, preparedSegmentWriterFactory);
 
@@ -36,7 +38,7 @@ class SegmentRegistryMaterializationViewTest {
 
     @Test
     void nextSegmentId_rejectsNullAllocatorResult() {
-        when(segmentIdAllocator.nextId()).thenReturn(null);
+        when(segmentIdAllocator.get()).thenReturn(null);
         final SegmentRegistryMaterializationView<Integer, String> view = new SegmentRegistryMaterializationView<>(
                 segmentIdAllocator, preparedSegmentWriterFactory);
 

@@ -105,6 +105,22 @@ public interface Segment<K, V> {
     K checkAndRepairConsistency();
 
     /**
+     * Attempts one consistency check without waiting for transient segment
+     * states.
+     * <p>
+     * Implementations that coordinate concurrent maintenance should override
+     * this method and return the corresponding non-OK status when exclusive
+     * access cannot be acquired. The default preserves compatibility with
+     * implementations whose existing consistency check is already synchronous.
+     *
+     * @return consistency result containing the last key, or {@code null} when
+     *         the segment is empty
+     */
+    default OperationResult<K> tryCheckAndRepairConsistency() {
+        return OperationResult.ok(checkAndRepairConsistency());
+    }
+
+    /**
      * Invalidates any active iterators by bumping the internal version counter.
      * Readers using optimistic locks should stop on the next check.
      *
@@ -147,13 +163,61 @@ public interface Segment<K, V> {
             SegmentIteratorIsolation isolation);
 
     /**
+     * Opens a read iterator over a half-open key range.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation level
+     * @return result with an ordered iterator over the requested range
+     * @throws UnsupportedOperationException when the implementation does not
+     *         support bounded iteration
+     */
+    default OperationResult<EntryIterator<K, V>> openIterator(
+            final K fromInclusive, final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        throw new UnsupportedOperationException(
+                "Bounded segment iteration is not implemented.");
+    }
+
+    /**
      * Writes directly into the in-memory segment cache without persisting to
      * disk. This is intended for specialized use cases.
      *
      * @param key   key to write (non-null)
      * @param value value to write (non-null)
+     * @return write result, including {@link OperationStatus#WRITE_CACHE_FULL}
+     *         when the segment write cache has no immediate capacity. Blocking
+     *         registry callers may treat that status as retryable when
+     *         automatic maintenance is enabled.
      */
     OperationResult<Void> put(K key, V value);
+
+    /**
+     * Writes directly into the in-memory segment cache only when the key is
+     * logically absent. Tombstones are treated as absence.
+     *
+     * @param key key to write
+     * @param value value to write
+     * @return result containing {@code true} when the value was inserted,
+     *         {@code false} when the key was already present, or
+     *         {@link OperationStatus#WRITE_CACHE_FULL} when no immediate write
+     *         capacity is available
+     */
+    OperationResult<Boolean> putIfAbsent(K key, V value);
+
+    /**
+     * Replaces a value only when the current logical value matches the expected
+     * value according to the configured value comparator.
+     *
+     * @param key key to replace
+     * @param expectedValue expected current value
+     * @param newValue replacement value
+     * @return result containing {@code true} when the value was replaced,
+     *         {@code false} on absence or mismatch, or
+     *         {@link OperationStatus#WRITE_CACHE_FULL} when no immediate write
+     *         capacity is available
+     */
+    OperationResult<Boolean> replace(K key, V expectedValue, V newValue);
 
     /**
      * Starts a flush of the in-memory write cache into the delta cache. The

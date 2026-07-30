@@ -12,8 +12,8 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.routing.RouteTopology.RouteDrain;
 import org.hestiastore.index.segmentindex.core.routing.RouteTopology.RouteLease;
 import org.hestiastore.index.segmentindex.core.routing.RouteTopology.RouteLeaseResult;
-import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
 import org.hestiastore.index.segmentindex.routemap.RouteMapSnapshot;
+import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -122,6 +122,20 @@ public final class MappedSegmentLeaseService<K, V> {
     }
 
     /**
+     * Returns routed segment ids intersecting the requested key range.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @return routed segment ids in key order
+     */
+    public List<SegmentId> getSegmentIds(final K fromInclusive,
+            final K toExclusive) {
+        return keyToSegmentMap.getSegmentIds(
+                Vldtn.requireNonNull(fromInclusive, "fromInclusive"),
+                toExclusive);
+    }
+
+    /**
      * Returns a versioned snapshot of routed segment ids for the selected
      * window.
      *
@@ -135,6 +149,21 @@ public final class MappedSegmentLeaseService<K, V> {
                 snapshot.getSegmentIds(
                         Vldtn.requireNonNull(segmentWindow, "segmentWindow")),
                 snapshot.version());
+    }
+
+    /**
+     * Returns a versioned snapshot of segment ids intersecting a key range.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @return versioned routed range snapshot
+     */
+    public RouteWindowSnapshot snapshotSegmentIds(final K fromInclusive,
+            final K toExclusive) {
+        final RouteMapSnapshot<K> snapshot = keyToSegmentMap.snapshot();
+        return new RouteWindowSnapshot(snapshot.getSegmentIds(
+                Vldtn.requireNonNull(fromInclusive, "fromInclusive"),
+                toExclusive), snapshot.version());
     }
 
     /**
@@ -419,7 +448,6 @@ public final class MappedSegmentLeaseService<K, V> {
 
     private boolean isRoutedSegment(final RouteMapSnapshot<K> snapshot,
             final SegmentId segmentId) {
-        return snapshot.getSegmentIds(SegmentWindow.unbounded())
-                .contains(segmentId);
+        return snapshot.containsSegmentId(segmentId);
     }
 }

@@ -1,130 +1,166 @@
 package org.hestiastore.index.cache;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 
 import org.hestiastore.index.Vldtn;
 
 /**
- * Simple in-memory LRU cache that keeps track of the last access counter for
- * each entry and removes the least recently used element whenever the size
- * limit is reached. A {@link BiConsumer} can be supplied to observe evictions,
- * which is useful for releasing external resources when a cached value falls
- * out of the window.
- * This implementation is thread-safe; eviction is serialized while access
- * updates are lock-free, so LRU ordering is approximate under contention.
+ * Simple in-memory LRU cache backed by an access-ordered {@link LinkedHashMap}.
+ * A {@link BiConsumer} can be supplied to observe evictions, which is useful
+ * for releasing external resources when a cached value falls out of the
+ * window.
+ * This implementation is thread-safe; cache access is serialized so the LRU
+ * order stays exact.
  *
  * @param <K> key type
  * @param <V> value type
  */
 public final class CacheLruImpl<K, V> implements CacheLru<K, V> {
 
+    private static final Object NULL_MARKER = new Object();
+
     private final int limit;
 
-    private final Map<K, CacheElement<V>> cache;
+    private final LinkedHashMap<K, Object> cache;
 
     private final BiConsumer<K, V> evictedElementConsumer;
 
-    private final Object evictionLock = new Object();
-    private final AtomicLong accessCx = new AtomicLong();
-
+    /**
+     * Creates an LRU cache with the supplied entry limit.
+     *
+     * @param limit                  maximum cached entry count
+     * @param evictedElementConsumer consumer notified for evicted value entries
+     */
     public CacheLruImpl(final int limit,
             final BiConsumer<K, V> evictedElementConsumer) {
         this.evictedElementConsumer = Vldtn.requireNonNull(
                 evictedElementConsumer, "evictedElementConsumer");
         Vldtn.requireGreaterThanZero(limit, "limit");
         this.limit = limit;
-        this.cache = new ConcurrentHashMap<>(limit);
+        this.cache = new LinkedHashMap<>(limit, 0.75F, true);
     }
 
     @Override
     public void put(final K key, final V value) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(value, "value");
-        cache.put(key,
-                new CacheValueElement<V>(value, accessCx.getAndIncrement()));
-        evictIfNeeded();
+        final EvictedEntry<K, V> evictedEntry;
+        synchronized (cache) {
+            cache.put(key, value);
+            evictedEntry = evictIfNeededLocked();
+        }
+        notifyEvicted(evictedEntry);
     }
 
     @Override
     public void putNull(final K key) {
         Vldtn.requireNonNull(key, "key");
-        cache.put(key, new CacheNullElement<V>(accessCx.getAndIncrement()));
-        evictIfNeeded();
+        final EvictedEntry<K, V> evictedEntry;
+        synchronized (cache) {
+            cache.put(key, NULL_MARKER);
+            evictedEntry = evictIfNeededLocked();
+        }
+        notifyEvicted(evictedEntry);
     }
 
     @Override
     public Optional<V> get(final K key) {
-        final CacheElement<V> element = cache.get(key);
-        if (element == null) {
+        Vldtn.requireNonNull(key, "key");
+        final Object value;
+        synchronized (cache) {
+            value = cache.get(key);
+        }
+        if (value == null) {
             return Optional.empty();
         }
-        element.setCx(accessCx.getAndIncrement());
-        return Optional.of(element.getValue());
+        return Optional.of(cachedValue(value));
     }
 
-    private void evictIfNeeded() {
+    private EvictedEntry<K, V> evictIfNeededLocked() {
         if (cache.size() <= limit) {
-            return;
+            return null;
         }
-        K keyToRemove = null;
-        CacheElement<V> removedElement = null;
-        synchronized (evictionLock) {
-            if (cache.size() <= limit) {
-                return;
-            }
-            final Map.Entry<K, CacheElement<V>> oldest = findOldestEntry();
-            if (oldest == null) {
-                return;
-            }
-            final K candidateKey = oldest.getKey();
-            final CacheElement<V> candidateElement = oldest.getValue();
-            if (cache.remove(candidateKey, candidateElement)) {
-                keyToRemove = candidateKey;
-                removedElement = candidateElement;
-            }
+        final Iterator<Map.Entry<K, Object>> iterator =
+                cache.entrySet().iterator();
+        if (!iterator.hasNext()) {
+            return null;
         }
-        if (removedElement != null && !removedElement.isNull()) {
-            evictedElementConsumer.accept(keyToRemove,
-                    removedElement.getValue());
+        final Map.Entry<K, Object> eldest = iterator.next();
+        final Object eldestValue = eldest.getValue();
+        iterator.remove();
+        if (isNullMarker(eldestValue)) {
+            return null;
         }
-    }
-
-    private Map.Entry<K, CacheElement<V>> findOldestEntry() {
-        long minCx = Long.MAX_VALUE;
-        Map.Entry<K, CacheElement<V>> oldest = null;
-        for (final Map.Entry<K, CacheElement<V>> entry : cache.entrySet()) {
-            final CacheElement<V> element = entry.getValue();
-            final long cx = element.getCx();
-            if (cx < minCx) {
-                minCx = cx;
-                oldest = entry;
-            }
-        }
-        return oldest;
+        return new EvictedEntry<>(eldest.getKey(), cachedValue(eldestValue));
     }
 
     @Override
     public void ivalidate(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final CacheElement<V> value = cache.remove(key);
-        if (value != null && !value.isNull()) {
-            evictedElementConsumer.accept(key, value.getValue());
+        final Object value;
+        synchronized (cache) {
+            value = cache.remove(key);
         }
+        notifyEvicted(key, value);
     }
 
     @Override
     public void invalidateAll() {
-        cache.forEach((k, v) -> {
-            if (v.isNull()) {
-                return;
-            }
-            evictedElementConsumer.accept(k, v.getValue());
-        });
-        cache.clear();
+        final List<EvictedEntry<K, V>> evictedEntries = new ArrayList<>();
+        synchronized (cache) {
+            cache.forEach((key, value) -> addEvictedEntry(evictedEntries, key,
+                    value));
+            cache.clear();
+        }
+        evictedEntries.forEach(
+                entry -> evictedElementConsumer.accept(entry.key, entry.value));
+    }
+
+    private void addEvictedEntry(final List<EvictedEntry<K, V>> evictedEntries,
+            final K key, final Object value) {
+        if (!isNullMarker(value)) {
+            evictedEntries.add(new EvictedEntry<>(key, cachedValue(value)));
+        }
+    }
+
+    private void notifyEvicted(final K key, final Object value) {
+        if (!isNullMarker(value)) {
+            evictedElementConsumer.accept(key, cachedValue(value));
+        }
+    }
+
+    private void notifyEvicted(final EvictedEntry<K, V> evictedEntry) {
+        if (evictedEntry != null) {
+            evictedElementConsumer.accept(evictedEntry.key, evictedEntry.value);
+        }
+    }
+
+    private boolean isNullMarker(final Object value) {
+        return value == null || value == NULL_MARKER;
+    }
+
+    @SuppressWarnings("unchecked")
+    private V cachedValue(final Object value) {
+        if (value == NULL_MARKER) {
+            throw new IllegalStateException("Null element does not have a value");
+        }
+        return (V) value;
+    }
+
+    private static final class EvictedEntry<K, V> {
+        private final K key;
+        private final V value;
+
+        private EvictedEntry(final K key, final V value) {
+            this.key = key;
+            this.value = value;
+        }
     }
 
 }

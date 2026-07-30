@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
@@ -21,15 +22,27 @@ public final class ExecutorRegistry extends AbstractCloseableResource {
     private static final String POOL_NAME_INDEX_MAINTENANCE = "index-maintenance";
     private static final String POOL_NAME_SPLIT_POLICY = "split-policy";
     private static final String POOL_NAME_REGISTRY_MAINTENANCE = "registry-maintenance";
+    private static final String POOL_NAME_WAL_APPEND = "wal-append";
 
     private final ExecutorTopology topology;
     private final ExecutorRuntimeMonitor runtimeMonitor;
+    private final ThreadFactory walAppendThreadFactory;
 
+    /**
+     * Creates one index-scoped registry and its WAL worker factory.
+     *
+     * @param topology executor topology owned or borrowed by this registry
+     * @param runtimeMonitor executor metrics source
+     * @param walAppendThreadFactory named daemon factory for the WAL worker
+     */
     ExecutorRegistry(final ExecutorTopology topology,
-            final ExecutorRuntimeMonitor runtimeMonitor) {
+            final ExecutorRuntimeMonitor runtimeMonitor,
+            final ThreadFactory walAppendThreadFactory) {
         this.topology = Vldtn.requireNonNull(topology, "topology");
         this.runtimeMonitor = Vldtn.requireNonNull(runtimeMonitor,
                 "runtimeMonitor");
+        this.walAppendThreadFactory = Vldtn.requireNonNull(
+                walAppendThreadFactory, "walAppendThreadFactory");
     }
 
     /**
@@ -95,7 +108,11 @@ public final class ExecutorRegistry extends AbstractCloseableResource {
                                 ARG_SHUTDOWN_TIMEOUT_MILLIS)),
                 new ExecutorRuntimeMonitor(indexMaintenanceThreadPool,
                         splitMaintenanceThreadPool,
-                        stableSegmentMaintenanceThreadPool));
+                        stableSegmentMaintenanceThreadPool),
+                threadPoolFactory.daemonThreadFactory(
+                        poolThreadNamePrefix(threadNamePrefix,
+                                validatedIndexName,
+                                POOL_NAME_WAL_APPEND)));
     }
 
     /**
@@ -151,6 +168,22 @@ public final class ExecutorRegistry extends AbstractCloseableResource {
     public ExecutorService getRegistryMaintenanceExecutor() {
         ensureOpen();
         return topology.registryMaintenanceExecutor();
+    }
+
+    /**
+     * Returns the factory for the index-owned WAL append worker.
+     *
+     * <p>
+     * The WAL runtime owns the resulting thread lifecycle so it can drain its
+     * queue and join the worker before closing WAL storage.
+     * </p>
+     *
+     * @return named daemon thread factory for the WAL append worker
+     * @throws IllegalStateException when registry has already been closed
+     */
+    public ThreadFactory getWalAppendThreadFactory() {
+        ensureOpen();
+        return walAppendThreadFactory;
     }
 
     /**

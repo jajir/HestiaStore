@@ -7,7 +7,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Versioned key for one parsed persisted chunk page.
  */
-public final class ChunkStoreCacheKey {
+final class ChunkStoreCacheKey {
 
     private final String ownerId;
     private final long activeVersion;
@@ -30,20 +30,20 @@ public final class ChunkStoreCacheKey {
      * @param chunkPosition chunk start position
      * @return cache key
      */
-    public static ChunkStoreCacheKey of(final String ownerId,
+    static ChunkStoreCacheKey of(final String ownerId,
             final long activeVersion, final long chunkPosition) {
         return new ChunkStoreCacheKey(ownerId, activeVersion, chunkPosition);
     }
 
-    public String ownerId() {
+    String ownerId() {
         return ownerId;
     }
 
-    public long activeVersion() {
+    long activeVersion() {
         return activeVersion;
     }
 
-    public long chunkPosition() {
+    long chunkPosition() {
         return chunkPosition;
     }
 

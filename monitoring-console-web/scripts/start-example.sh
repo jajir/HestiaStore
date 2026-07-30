@@ -7,17 +7,30 @@ cd "${ROOT_DIR}"
 AGENT_BASE_PORT="${AGENT_BASE_PORT:-9001}"
 WEB_PORT="${WEB_PORT:-8090}"
 AGENT_REPORT_PATH="${AGENT_REPORT_PATH:-/api/v1/report}"
+readonly NODE_COUNT=3
 
-if lsof -iTCP:"${WEB_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Port ${WEB_PORT} is already in use. Set WEB_PORT to another value."
-  exit 1
-fi
-
-for port in "${AGENT_BASE_PORT}" "$((AGENT_BASE_PORT + 1))" "$((AGENT_BASE_PORT + 2))"; do
-  if lsof -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1; then
-    echo "Port ${port} is already in use. Set AGENT_BASE_PORT to another value."
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Required command not found: $1"
     exit 1
   fi
+}
+
+check_port_available() {
+  local port="$1"
+  if lsof -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Port ${port} is already in use. Set AGENT_BASE_PORT or WEB_PORT to another value."
+    exit 1
+  fi
+}
+
+for command in curl lsof mvn; do
+  require_command "${command}"
+done
+
+check_port_available "${WEB_PORT}"
+for ((node_index = 0; node_index < NODE_COUNT; node_index += 1)); do
+  check_port_available "$((AGENT_BASE_PORT + node_index))"
 done
 
 echo "Starting HestiaStore example (3 agents + direct web UI)..."
@@ -56,7 +69,18 @@ fi
 echo "Node ready: http://127.0.0.1:${AGENT_BASE_PORT}${AGENT_REPORT_PATH}"
 echo "Starting direct web UI on http://127.0.0.1:${WEB_PORT}/ ..."
 
+spring_jvm_args=("-Dserver.port=${WEB_PORT}")
+for ((node_index = 0; node_index < NODE_COUNT; node_index += 1)); do
+  node_number=$((node_index + 1))
+  node_port=$((AGENT_BASE_PORT + node_index))
+  spring_jvm_args+=(
+    "-Dhestia.console.web.nodes[${node_index}].node-id=node-${node_number}"
+    "-Dhestia.console.web.nodes[${node_index}].node-name=index-${node_number}"
+    "-Dhestia.console.web.nodes[${node_index}].base-url=http://127.0.0.1:${node_port}"
+  )
+done
+
 mvn -q \
   -pl monitoring-console-web \
-  -Dspring-boot.run.jvmArguments="-Dserver.port=${WEB_PORT} -Dhestia.console.web.nodes[0].node-id=node-1 -Dhestia.console.web.nodes[0].node-name=index-1 -Dhestia.console.web.nodes[0].base-url=http://127.0.0.1:${AGENT_BASE_PORT} -Dhestia.console.web.nodes[1].node-id=node-2 -Dhestia.console.web.nodes[1].node-name=index-2 -Dhestia.console.web.nodes[1].base-url=http://127.0.0.1:$((AGENT_BASE_PORT + 1)) -Dhestia.console.web.nodes[2].node-id=node-3 -Dhestia.console.web.nodes[2].node-name=index-3 -Dhestia.console.web.nodes[2].base-url=http://127.0.0.1:$((AGENT_BASE_PORT + 2))" \
+  -Dspring-boot.run.jvmArguments="${spring_jvm_args[*]}" \
   spring-boot:run

@@ -8,6 +8,9 @@ import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguratio
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Tracks active and retained WAL segments.
+ */
 final class WalSegmentCatalog {
 
     private static final long CHECKPOINT_CLEANUP_LOG_INTERVAL_NANOS = TimeUnit.SECONDS
@@ -65,13 +68,18 @@ final class WalSegmentCatalog {
         retainedBytes += bytes;
     }
 
+    /**
+     * Deletes discovered segments after an invalid recovery segment.
+     *
+     * @param discoveredSegments ordered discovered segments
+     * @param startIndex first segment to delete
+     * @return number of deleted segments
+     */
     int deleteSegmentsAfter(final List<WalSegmentDescriptor> discoveredSegments,
             final int startIndex) {
-        int deletedCount = 0;
-        for (int i = startIndex; i < discoveredSegments.size(); i++) {
-            storage.delete(discoveredSegments.get(i).name());
-            deletedCount++;
-        }
+        final int deletedCount = discoveredSegments.size() - startIndex;
+        discoveredSegments.subList(startIndex, discoveredSegments.size())
+                .forEach(segment -> storage.delete(segment.name()));
         if (deletedCount > 0) {
             storage.syncMetadata();
             markMetadataSynced();
@@ -112,10 +120,8 @@ final class WalSegmentCatalog {
     }
 
     boolean isRetentionPressure() {
-        if (retainedBytes <= wal.getMaxBytesBeforeForcedCheckpoint()) {
-            return false;
-        }
-        return segments.size() > 1;
+        return retainedBytes > wal.getMaxBytesBeforeForcedCheckpoint()
+                && segments.size() > 1;
     }
 
     long retainedBytes() {

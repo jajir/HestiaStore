@@ -38,5 +38,17 @@ public interface SegmentRouteMap<K> extends CloseableResource {
 
     List<SegmentId> getSegmentIds(SegmentWindow segmentWindow);
 
+    /**
+     * Returns segment ids whose routed intervals intersect a key range.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @return ordered intersecting segment ids
+     */
+    default List<SegmentId> getSegmentIds(final K fromInclusive,
+            final K toExclusive) {
+        return snapshot().getSegmentIds(fromInclusive, toExclusive);
+    }
+
     void flushIfDirty();
 }

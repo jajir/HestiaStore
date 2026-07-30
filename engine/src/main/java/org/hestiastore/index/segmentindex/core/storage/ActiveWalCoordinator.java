@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
@@ -46,7 +47,8 @@ final class ActiveWalCoordinator<K, V>
     }
 
     @Override
-    public void recover(final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
+    public void recover(
+            final Consumer<WalRuntime.ReplayRecord<K, V>> replayConsumer) {
         final WalRuntime.RecoveryResult recoveryResult = walRuntime.recover(
                 replayConsumer);
         if (recoveryResult.maxLsn() > 0L) {

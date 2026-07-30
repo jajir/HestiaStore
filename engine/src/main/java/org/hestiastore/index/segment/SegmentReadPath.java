@@ -8,6 +8,7 @@ import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
+import org.hestiastore.index.sorteddatafile.EmptyEntryIteratorWithCurrent;
 
 /**
  * Encapsulates segment read operations and read-time state.
@@ -91,6 +92,50 @@ final class SegmentReadPath<K, V> {
                 segmentFiles.getKeyTypeDescriptor(),
                 segmentFiles.getValueTypeDescriptor(),
                 segmentCache.mergedIterator());
+        return applyIsolation(mergedEntryIterator, isolation);
+    }
+
+    /**
+     * Opens a merged iterator over a half-open key range. Persisted reads begin
+     * at the scarce-index page selected for the lower bound.
+     *
+     * @param fromInclusive required inclusive lower key bound
+     * @param toExclusive optional exclusive upper key bound
+     * @param isolation iterator isolation mode
+     * @return bounded merged iterator
+     */
+    EntryIterator<K, V> openIterator(final K fromInclusive,
+            final K toExclusive,
+            final SegmentIteratorIsolation isolation) {
+        final K lowerBound = Vldtn.requireNonNull(fromInclusive,
+                "fromInclusive");
+        Vldtn.requireNonNull(isolation, "isolation");
+        final EntryIterator<K, V> mergedEntryIterator = new MergeDeltaCacheWithIndexIterator<>(
+                openPersistedIterator(lowerBound),
+                segmentFiles.getKeyTypeDescriptor(),
+                segmentFiles.getValueTypeDescriptor(),
+                segmentCache.mergedIterator());
+        final EntryIterator<K, V> rangeIterator = new KeyRangeEntryIterator<>(
+                mergedEntryIterator,
+                segmentFiles.getKeyTypeDescriptor().getComparator(), lowerBound,
+                toExclusive);
+        return applyIsolation(rangeIterator, isolation);
+    }
+
+    private EntryIterator<K, V> openPersistedIterator(
+            final K fromInclusive) {
+        final Integer position = segmentResources.getScarceIndex()
+                .get(fromInclusive);
+        if (position == null) {
+            return new EmptyEntryIteratorWithCurrent<>();
+        }
+        return segmentFiles.getIndexFile()
+                .openIteratorAtPosition(position.longValue());
+    }
+
+    private EntryIterator<K, V> applyIsolation(
+            final EntryIterator<K, V> mergedEntryIterator,
+            final SegmentIteratorIsolation isolation) {
         if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
             return mergedEntryIterator;
         }
@@ -119,6 +164,8 @@ final class SegmentReadPath<K, V> {
 
     /**
      * Returns (and caches) the index searcher for point lookups.
+     * Concurrent callers may construct redundant searchers; only the CAS
+     * winner is cached and every losing instance is closed immediately.
      *
      * @return cached index searcher
      */
@@ -138,6 +185,7 @@ final class SegmentReadPath<K, V> {
         if (segmentIndexSearcher.compareAndSet(null, created)) {
             return created;
         }
+        created.close();
         return segmentIndexSearcher.get();
     }
 

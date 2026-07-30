@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.hestiastore.index.BusyRetryPolicy;
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -25,10 +25,11 @@ public final class RouteTopology<K> {
 
     private static final String OPERATION_DRAIN = "drainRouteLeases";
 
-    private final Object monitor = new Object();
-    private final Map<SegmentId, RouteEntry> routes = new HashMap<>();
+    private final Object reconciliationMonitor = new Object();
+    private final Set<RouteEntry> pendingRetiredEntries = ConcurrentHashMap
+            .newKeySet();
     private final BusyRetryPolicy retryPolicy;
-    private long version;
+    private volatile RouteView routeView = new RouteView(Map.of(), 0L);
 
     RouteTopology(final RouteMapSnapshot<K> snapshot,
             final BusyRetryPolicy retryPolicy) {
@@ -65,18 +66,20 @@ public final class RouteTopology<K> {
     public RouteLeaseResult tryAcquire(final SegmentId segmentId,
             final long expectedVersion) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        synchronized (monitor) {
-            if (version != expectedVersion) {
-                return RouteLeaseAttempt.staleTopology();
-            }
-            final RouteEntry entry = routes.get(segmentId);
-            if (entry == null || !entry.isActive()) {
-                return RouteLeaseAttempt.routeUnavailable();
-            }
-            entry.acquireLease();
-            return RouteLeaseAttempt
-                    .acquired(new RouteLeaseHandle(this, segmentId));
+        final RouteView currentView = routeView;
+        if (currentView.version() != expectedVersion) {
+            return RouteLeaseAttempt.staleTopology();
         }
+        final RouteEntry entry = currentView.routes().get(segmentId);
+        if (entry == null || !entry.tryAcquireLease()) {
+            return RouteLeaseAttempt.routeUnavailable();
+        }
+        if (routeView != currentView) {
+            releaseLease(entry, segmentId);
+            return RouteLeaseAttempt.staleTopology();
+        }
+        return RouteLeaseAttempt
+                .acquired(new RouteLeaseHandle(this, entry, segmentId));
     }
 
     /**
@@ -87,15 +90,11 @@ public final class RouteTopology<K> {
      */
     public Optional<RouteDrain> tryBeginDrain(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
-        synchronized (monitor) {
-            final RouteEntry entry = routes.get(segmentId);
-            if (entry == null || !entry.isActive()) {
-                return Optional.empty();
-            }
-            entry.markDraining();
-            monitor.notifyAll();
-            return Optional.of(new RouteDrainHandle(this, segmentId));
+        final RouteEntry entry = routeView.routes().get(segmentId);
+        if (entry == null || !entry.tryMarkDraining()) {
+            return Optional.empty();
         }
+        return Optional.of(new RouteDrainHandle(entry, segmentId));
     }
 
     /**
@@ -103,7 +102,7 @@ public final class RouteTopology<K> {
      */
     public void drain() {
         final long startNanos = retryPolicy.startNanos();
-        while (hasInFlightLeasesSnapshot()) {
+        while (hasInFlightLeases()) {
             retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN, null);
         }
     }
@@ -118,15 +117,23 @@ public final class RouteTopology<K> {
                 "snapshot");
         final List<SegmentId> activeSegmentIds = nonNullSnapshot
                 .getSegmentIds(SegmentWindow.unbounded());
-        synchronized (monitor) {
-            if (nonNullSnapshot.version() < version) {
+        synchronized (reconciliationMonitor) {
+            final RouteView currentView = routeView;
+            if (nonNullSnapshot.version() < currentView.version()) {
                 return;
             }
             final Set<SegmentId> activeIds = new HashSet<>(activeSegmentIds);
-            activeIds.forEach(this::ensureActiveRoute);
-            retireRoutesMissingFrom(activeIds);
-            version = nonNullSnapshot.version();
-            monitor.notifyAll();
+            if (nonNullSnapshot.version() == currentView.version()
+                    && currentView.routes().keySet().equals(activeIds)) {
+                return;
+            }
+            final Map<SegmentId, RouteEntry> updatedRoutes = new HashMap<>(
+                    currentView.routes());
+            activeIds.forEach(
+                    segmentId -> ensureActiveRoute(updatedRoutes, segmentId));
+            retireRoutesMissingFrom(updatedRoutes, activeIds);
+            routeView = new RouteView(Map.copyOf(updatedRoutes),
+                    nonNullSnapshot.version());
         }
     }
 
@@ -136,60 +143,35 @@ public final class RouteTopology<K> {
      * @return topology version
      */
     public long version() {
-        synchronized (monitor) {
-            return version;
+        return routeView.version();
+    }
+
+    /**
+     * Releases the directly referenced route entry without another route-map
+     * lookup.
+     *
+     * @param entry leased route entry
+     * @param segmentId leased segment id
+     */
+    void releaseLease(final RouteEntry entry, final SegmentId segmentId) {
+        if (entry.releaseLease(segmentId)) {
+            pendingRetiredEntries.remove(entry);
         }
     }
 
-    void releaseLease(final SegmentId segmentId) {
-        synchronized (monitor) {
-            final RouteEntry entry = routes.get(segmentId);
-            if (entry == null) {
-                return;
-            }
-            entry.releaseLease(segmentId);
-            if (!entry.hasInFlight() && entry.isRetired()) {
-                routes.remove(segmentId);
-            }
-            monitor.notifyAll();
-        }
-    }
-
-    void awaitDrained(final SegmentId segmentId) {
-        synchronized (monitor) {
-            while (inFlightCount(segmentId) > 0) {
-                try {
-                    monitor.wait();
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IndexException(String.format(
-                            "Interrupted while waiting for route '%s' to drain.",
-                            segmentId),
-                            e);
-                }
-            }
-        }
-    }
-
-    void abortDrain(final SegmentId segmentId) {
-        synchronized (monitor) {
-            final RouteEntry entry = routes.get(segmentId);
-            if (entry != null && entry.state() == RouteState.DRAINING) {
-                entry.markActive();
-            }
-            monitor.notifyAll();
-        }
-    }
-
-    private void ensureActiveRoute(final SegmentId segmentId) {
-        final RouteEntry entry = routes.get(segmentId);
+    private void ensureActiveRoute(
+            final Map<SegmentId, RouteEntry> updatedRoutes,
+            final SegmentId segmentId) {
+        final RouteEntry entry = updatedRoutes.get(segmentId);
         if (entry == null || entry.isRetired()) {
-            routes.put(segmentId, new RouteEntry(RouteState.ACTIVE));
+            updatedRoutes.put(segmentId, new RouteEntry(RouteState.ACTIVE));
         }
     }
 
-    private void retireRoutesMissingFrom(final Set<SegmentId> activeIds) {
-        final Iterator<Map.Entry<SegmentId, RouteEntry>> iterator = routes
+    private void retireRoutesMissingFrom(
+            final Map<SegmentId, RouteEntry> updatedRoutes,
+            final Set<SegmentId> activeIds) {
+        final Iterator<Map.Entry<SegmentId, RouteEntry>> iterator = updatedRoutes
                 .entrySet().iterator();
         while (iterator.hasNext()) {
             final Map.Entry<SegmentId, RouteEntry> route = iterator.next();
@@ -197,26 +179,39 @@ public final class RouteTopology<K> {
                 continue;
             }
             final RouteEntry entry = route.getValue();
-            if (!entry.hasInFlight()) {
-                iterator.remove();
-            } else {
-                entry.markRetired();
+            pendingRetiredEntries.add(entry);
+            final boolean retiredWithoutLeases = entry.markRetired();
+            iterator.remove();
+            if (retiredWithoutLeases) {
+                pendingRetiredEntries.remove(entry);
             }
         }
     }
 
-    private long inFlightCount(final SegmentId segmentId) {
-        final RouteEntry entry = routes.get(segmentId);
-        return entry == null ? 0L : entry.inFlight();
-    }
-
     private boolean hasInFlightLeases() {
-        return routes.values().stream().anyMatch(RouteEntry::hasInFlight);
+        return routeView.routes().values().stream()
+                .anyMatch(RouteEntry::hasInFlight)
+                || pendingRetiredEntries.stream()
+                        .anyMatch(RouteEntry::hasInFlight);
     }
 
-    private boolean hasInFlightLeasesSnapshot() {
-        synchronized (monitor) {
-            return hasInFlightLeases();
+    private static final class RouteView {
+
+        private final Map<SegmentId, RouteEntry> routes;
+        private final long version;
+
+        private RouteView(final Map<SegmentId, RouteEntry> routes,
+                final long version) {
+            this.routes = routes;
+            this.version = version;
+        }
+
+        private Map<SegmentId, RouteEntry> routes() {
+            return routes;
+        }
+
+        private long version() {
+            return version;
         }
     }
 

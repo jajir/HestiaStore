@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -20,6 +21,10 @@ def parse_args() -> argparse.Namespace:
 
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def profile_fingerprint(profile_spec_path: Path) -> str:
+    return hashlib.sha256(profile_spec_path.read_bytes()).hexdigest()
 
 
 def load_expected_benchmark_labels(profile_spec_path: Path) -> list[str] | None:
@@ -72,6 +77,10 @@ def main() -> int:
         if expected_labels is None:
             return 1
         summary = load_json(summary_path)
+        if summary.get("profileFingerprint") != profile_fingerprint(
+            profile_spec_path
+        ):
+            return 1
         if not has_complete_profile_coverage(summary, expected_labels):
             return 1
     print(summary_path)

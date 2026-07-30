@@ -1,9 +1,11 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -99,6 +101,44 @@ class SegmentIndexMdcLoggingAdapterTest {
 
         adapter.close();
         assertEquals("idx", mdcAtClose.get());
+        assertNull(MDC.get("index.name"));
+    }
+
+    @Test
+    void wrapsFailFastRangeScanWithMdc() {
+        final AtomicReference<String> mdcAtScan = new AtomicReference<>();
+        when(delegate.scan("a", "z", SegmentIteratorIsolation.FAIL_FAST))
+                .thenAnswer(invocation -> {
+                    mdcAtScan.set(MDC.get("index.name"));
+                    return Stream.empty();
+                });
+
+        try (Stream<Entry<String, String>> ignored = adapter.scan("a", "z")) {
+            assertEquals("idx", mdcAtScan.get());
+        }
+
+        assertNull(MDC.get("index.name"));
+    }
+
+    @Test
+    void wraps_conditional_mutations_with_mdc() {
+        final AtomicReference<String> mdcAtPutIfAbsent = new AtomicReference<>();
+        final AtomicReference<String> mdcAtReplace = new AtomicReference<>();
+        when(delegate.putIfAbsent("key", "value")).thenAnswer(invocation -> {
+            mdcAtPutIfAbsent.set(MDC.get("index.name"));
+            return true;
+        });
+        when(delegate.replace("key", "value", "new"))
+                .thenAnswer(invocation -> {
+                    mdcAtReplace.set(MDC.get("index.name"));
+                    return false;
+                });
+
+        assertTrue(adapter.putIfAbsent("key", "value"));
+        assertFalse(adapter.replace("key", "value", "new"));
+
+        assertEquals("idx", mdcAtPutIfAbsent.get());
+        assertEquals("idx", mdcAtReplace.get());
         assertNull(MDC.get("index.name"));
     }
 

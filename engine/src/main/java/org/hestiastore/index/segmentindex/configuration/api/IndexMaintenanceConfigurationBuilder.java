@@ -2,11 +2,8 @@ package org.hestiastore.index.segmentindex.configuration.api;
 
 /**
  * Builder section for maintenance, lifecycle, and retry settings.
- *
- * @param <K> key type
- * @param <V> value type
  */
-public final class IndexMaintenanceConfigurationBuilder<K, V> {
+public final class IndexMaintenanceConfigurationBuilder {
 
     private Integer indexThreads;
     private Integer registryLifecycleThreads;
@@ -23,7 +20,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      * @param value index maintenance threads
      * @return this section builder
      */
-    public IndexMaintenanceConfigurationBuilder<K, V> indexThreads(
+    public IndexMaintenanceConfigurationBuilder indexThreads(
             final Integer value) {
         this.indexThreads = value;
         return this;
@@ -35,7 +32,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      * @param value registry lifecycle threads
      * @return this section builder
      */
-    public IndexMaintenanceConfigurationBuilder<K, V> registryLifecycleThreads(
+    public IndexMaintenanceConfigurationBuilder registryLifecycleThreads(
             final Integer value) {
         this.registryLifecycleThreads = value;
         return this;
@@ -47,7 +44,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      * @param value busy backoff delay
      * @return this section builder
      */
-    public IndexMaintenanceConfigurationBuilder<K, V> busyBackoffMillis(
+    public IndexMaintenanceConfigurationBuilder busyBackoffMillis(
             final Integer value) {
         this.busyBackoffMillis = value;
         return this;
@@ -59,7 +56,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      * @param value busy timeout
      * @return this section builder
      */
-    public IndexMaintenanceConfigurationBuilder<K, V> busyTimeoutMillis(
+    public IndexMaintenanceConfigurationBuilder busyTimeoutMillis(
             final Integer value) {
         this.busyTimeoutMillis = value;
         return this;
@@ -71,7 +68,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      * @param value true when auto maintenance is enabled
      * @return this section builder
      */
-    public IndexMaintenanceConfigurationBuilder<K, V> backgroundAutoEnabled(
+    public IndexMaintenanceConfigurationBuilder backgroundAutoEnabled(
             final Boolean value) {
         this.backgroundAutoEnabled = value;
         return this;

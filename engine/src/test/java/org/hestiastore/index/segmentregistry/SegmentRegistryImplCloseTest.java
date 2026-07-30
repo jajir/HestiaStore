@@ -12,6 +12,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
@@ -19,6 +20,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -35,7 +37,7 @@ class SegmentRegistryImplCloseTest {
                 gate, 1, 2_000);
 
         final SegmentId segmentId = SegmentId.of(11);
-        final SegmentRegistryCache.Entry<Segment<Integer, String>> entry = new SegmentRegistryCache.Entry<>(
+        final SegmentRegistryEntry<Integer, String> entry = new SegmentRegistryEntry<>(
                 1L);
         readCacheMap(cache).put(segmentId, entry);
 
@@ -70,7 +72,7 @@ class SegmentRegistryImplCloseTest {
                 gate, 1, 40);
 
         final SegmentId segmentId = SegmentId.of(12);
-        final SegmentRegistryCache.Entry<Segment<Integer, String>> loadingEntry = new SegmentRegistryCache.Entry<>(
+        final SegmentRegistryEntry<Integer, String> loadingEntry = new SegmentRegistryEntry<>(
                 1L);
         readCacheMap(cache).put(segmentId, loadingEntry);
 
@@ -94,19 +96,20 @@ class SegmentRegistryImplCloseTest {
         final SegmentRegistryFileSystem fs = new SegmentRegistryFileSystem(
                 directory);
         final AtomicInteger counter = new AtomicInteger();
-        final SegmentIdAllocator allocator = () -> SegmentId
+        final Supplier<SegmentId> allocator = () -> SegmentId
                 .of(counter.getAndIncrement());
         final BusyRetryPolicy closeRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         @SuppressWarnings("unchecked")
         final PreparedSegmentWriterFactory<Integer, String> writerFactory = Mockito
                 .mock(PreparedSegmentWriterFactory.class);
-        final SegmentRuntimeTuner runtimeTuner = Mockito
-                .mock(SegmentRuntimeTuner.class);
+        @SuppressWarnings("unchecked")
+        final Consumer<SegmentRuntimeLimits> runtimeTuner = Mockito
+                .mock(Consumer.class);
         final BusyRetryPolicy blockingRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
-                gate, writerFactory, runtimeTuner, blockingRetryPolicy);
+                gate, writerFactory, runtimeTuner, blockingRetryPolicy, false);
     }
 
     private static SegmentRegistryCache<Integer, String> newCache(
@@ -132,13 +135,13 @@ class SegmentRegistryImplCloseTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<SegmentId, SegmentRegistryCache.Entry<Segment<Integer, String>>> readCacheMap(
+    private static Map<SegmentId, SegmentRegistryEntry<Integer, String>> readCacheMap(
             final SegmentRegistryCache<Integer, String> cache) {
         try {
             final Field mapField = SegmentRegistryCache.class
                     .getDeclaredField("map");
             mapField.setAccessible(true);
-            return (Map<SegmentId, SegmentRegistryCache.Entry<Segment<Integer, String>>>) mapField
+            return (Map<SegmentId, SegmentRegistryEntry<Integer, String>>) mapField
                     .get(cache);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException("Unable to access cache map", ex);
