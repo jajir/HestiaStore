@@ -60,6 +60,21 @@ String value = index.get("hello");
 index.delete("hello");
 ```
 
+Insert only when a key is logically absent:
+
+```java
+boolean inserted = index.putIfAbsent("order-100", "created");
+```
+
+Replace only when the current value matches the expected value:
+
+```java
+boolean replaced = index.replace("order-100", "created", "paid");
+```
+
+`putIfAbsent(...)` and `replace(...)` are currently supported only when WAL is
+disabled. They throw `IndexException` when WAL is enabled.
+
 ## Store emoji and multilingual text
 
 HestiaStore supports strict UTF-8 keys and values through explicit string
@@ -100,6 +115,17 @@ Read all entries in ascending key order:
 ```java
 index.getStream().forEach(entry -> System.out.println(entry));
 ```
+
+Read a half-open key range in ascending key order:
+
+```java
+try (var stream = index.scan("order-100", "order-200")) {
+    stream.forEach(entry -> System.out.println(entry));
+}
+```
+
+The lower bound is inclusive and the upper bound is exclusive. Pass `null` as
+the upper bound to scan from the lower key through the end of the index.
 
 Read only selected segments:
 

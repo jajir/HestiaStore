@@ -295,7 +295,7 @@ mvn versions:display-dependency-updates
 Set a version manually without backup POMs:
 
 ```bash
-mvn versions:set -DnewVersion=1.0.1-SNAPSHOT -DgenerateBackupPoms=false -DprocessAllModules=true
+mvn versions:set -DnewVersion=X.Y.Z-SNAPSHOT -DgenerateBackupPoms=false -DprocessAllModules=true
 ```
 
 ## Related Files

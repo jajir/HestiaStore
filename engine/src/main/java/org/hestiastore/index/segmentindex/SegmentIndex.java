@@ -376,9 +376,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * visited.
      * </p>
      * <p>
-     * <strong>Experimental API:</strong> this contract may change before
-     * becoming stable. The default implementation is a compatibility
-     * placeholder.
+     * The default implementation is a compatibility placeholder for external
+     * implementations that have not added bounded scan support yet.
      * </p>
      *
      * @param fromInclusive required inclusive lower key bound
@@ -405,10 +404,6 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * Consequently, maintenance, segment eviction or unloading, and index
      * closing may terminate the stream normally with only a prefix of the
      * requested range.
-     * <p>
-     * <strong>Experimental API:</strong> this contract may change before
-     * becoming stable.
-     * </p>
      *
      * @param fromInclusive required inclusive lower key bound
      * @param toExclusive optional exclusive upper key bound; {@code null} means
