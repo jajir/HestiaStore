@@ -10,31 +10,27 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/documentation-guidelines/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/refactoring-context/">
       
       
-        <link rel="prev" href="../quality-reporting/">
-      
-      
-        <link rel="next" href="../segment-api/">
       
       
         
       
       
-      <link rel="icon" href="../../favicon.ico">
+      <link rel="icon" href="../favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Documentation Guide - HestiaStore</title>
+        <title>Refactoring Context - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +49,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#documentation-guide" class="md-skip">
+        <a href="#refactoring-context" class="md-skip">
           Skip to content
         </a>
       
@@ -94,9 +90,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href=".." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../../images/logo-square.png" alt="logo">
+  <img src="../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -113,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Documentation Guide
+              Refactoring Context
             
           </span>
         </div>
@@ -235,7 +231,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href=".." class="md-tabs__link">
         
   
   
@@ -256,7 +252,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../why-hestiastore/" class="md-tabs__link">
+        <a href="../why-hestiastore/" class="md-tabs__link">
           
   
   
@@ -278,7 +274,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../how-to-use/" class="md-tabs__link">
+        <a href="../how-to-use/" class="md-tabs__link">
           
   
   
@@ -300,7 +296,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../configuration/" class="md-tabs__link">
+        <a href="../configuration/" class="md-tabs__link">
           
   
   
@@ -322,7 +318,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../operations/" class="md-tabs__link">
+        <a href="../operations/" class="md-tabs__link">
           
   
   
@@ -344,7 +340,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
+        <a href="../architecture/" class="md-tabs__link">
           
   
   
@@ -366,7 +362,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../code/" class="md-tabs__link">
+        <a href="../development/code/" class="md-tabs__link">
           
   
   
@@ -384,13 +380,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../development/" class="md-tabs__link">
           
   
   
@@ -432,9 +426,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href=".." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../../images/logo-square.png" alt="logo">
+  <img src="../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -461,7 +455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -521,7 +515,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../why-hestiastore/" class="md-nav__link ">
+            <a href="../why-hestiastore/" class="md-nav__link ">
               
   
   
@@ -565,7 +559,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/alternatives/" class="md-nav__link">
+      <a href="../why-hestiastore/alternatives/" class="md-nav__link">
         
   
   
@@ -593,7 +587,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/quality/" class="md-nav__link">
+      <a href="../why-hestiastore/quality/" class="md-nav__link">
         
   
   
@@ -621,7 +615,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY/" class="md-nav__link">
+      <a href="../SECURITY/" class="md-nav__link">
         
   
   
@@ -717,7 +711,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/benchmarks/" class="md-nav__link">
+      <a href="../why-hestiastore/benchmarks/" class="md-nav__link">
         
   
   
@@ -745,7 +739,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/out-write/" class="md-nav__link">
+      <a href="../why-hestiastore/out-write/" class="md-nav__link">
         
   
   
@@ -773,7 +767,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/out-read/" class="md-nav__link">
+      <a href="../why-hestiastore/out-read/" class="md-nav__link">
         
   
   
@@ -801,7 +795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/out-multithread-write/" class="md-nav__link">
+      <a href="../why-hestiastore/out-multithread-write/" class="md-nav__link">
         
   
   
@@ -829,7 +823,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/out-multithread-read/" class="md-nav__link">
+      <a href="../why-hestiastore/out-multithread-read/" class="md-nav__link">
         
   
   
@@ -857,7 +851,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/out-sequential/" class="md-nav__link">
+      <a href="../why-hestiastore/out-sequential/" class="md-nav__link">
         
   
   
@@ -933,7 +927,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../how-to-use/" class="md-nav__link ">
+            <a href="../how-to-use/" class="md-nav__link ">
               
   
   
@@ -977,7 +971,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/install/" class="md-nav__link">
+      <a href="../how-to-use/install/" class="md-nav__link">
         
   
   
@@ -1005,7 +999,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/quick-start/" class="md-nav__link">
+      <a href="../how-to-use/quick-start/" class="md-nav__link">
         
   
   
@@ -1033,7 +1027,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/troubleshooting/" class="md-nav__link">
+      <a href="../how-to-use/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1129,7 +1123,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../configuration/" class="md-nav__link ">
+            <a href="../configuration/" class="md-nav__link ">
               
   
   
@@ -1173,7 +1167,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/filters/" class="md-nav__link">
+      <a href="../configuration/filters/" class="md-nav__link">
         
   
   
@@ -1201,7 +1195,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/data-types/" class="md-nav__link">
+      <a href="../configuration/data-types/" class="md-nav__link">
         
   
   
@@ -1229,7 +1223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/logging/" class="md-nav__link">
+      <a href="../configuration/logging/" class="md-nav__link">
         
   
   
@@ -1257,7 +1251,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/monitoring-console/" class="md-nav__link">
+      <a href="../configuration/monitoring-console/" class="md-nav__link">
         
   
   
@@ -1331,7 +1325,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../operations/" class="md-nav__link ">
+            <a href="../operations/" class="md-nav__link ">
               
   
   
@@ -1375,7 +1369,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/wal/" class="md-nav__link">
+      <a href="../operations/wal/" class="md-nav__link">
         
   
   
@@ -1403,7 +1397,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/monitoring/" class="md-nav__link">
+      <a href="../operations/monitoring/" class="md-nav__link">
         
   
   
@@ -1431,7 +1425,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/memory-estimate/" class="md-nav__link">
+      <a href="../operations/memory-estimate/" class="md-nav__link">
         
   
   
@@ -1459,7 +1453,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/tuning/" class="md-nav__link">
+      <a href="../operations/tuning/" class="md-nav__link">
         
   
   
@@ -1487,7 +1481,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/backup-restore/" class="md-nav__link">
+      <a href="../operations/backup-restore/" class="md-nav__link">
         
   
   
@@ -1515,7 +1509,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/export-import/" class="md-nav__link">
+      <a href="../operations/export-import/" class="md-nav__link">
         
   
   
@@ -1543,7 +1537,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../operations/wal-canary-runbook/" class="md-nav__link">
+      <a href="../operations/wal-canary-runbook/" class="md-nav__link">
         
   
   
@@ -1627,7 +1621,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/" class="md-nav__link ">
+            <a href="../architecture/" class="md-nav__link ">
               
   
   
@@ -1671,7 +1665,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/datablock/" class="md-nav__link">
+      <a href="../architecture/datablock/" class="md-nav__link">
         
   
   
@@ -1699,7 +1693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/filters/" class="md-nav__link">
+      <a href="../architecture/filters/" class="md-nav__link">
         
   
   
@@ -1727,7 +1721,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/chunk-filter-provider-model/" class="md-nav__link">
+      <a href="../architecture/chunk-filter-provider-model/" class="md-nav__link">
         
   
   
@@ -1755,7 +1749,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/chain-of-filters/" class="md-nav__link">
+      <a href="../architecture/chain-of-filters/" class="md-nav__link">
         
   
   
@@ -1783,7 +1777,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/concurrency/" class="md-nav__link">
+      <a href="../architecture/concurrency/" class="md-nav__link">
         
   
   
@@ -1811,7 +1805,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/recovery/" class="md-nav__link">
+      <a href="../architecture/recovery/" class="md-nav__link">
         
   
   
@@ -1839,7 +1833,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/limits/" class="md-nav__link">
+      <a href="../architecture/limits/" class="md-nav__link">
         
   
   
@@ -1867,7 +1861,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/glossary/" class="md-nav__link">
+      <a href="../architecture/glossary/" class="md-nav__link">
         
   
   
@@ -1924,7 +1918,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/monitoring/" class="md-nav__link ">
+            <a href="../architecture/monitoring/" class="md-nav__link ">
               
   
   
@@ -1968,7 +1962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/monitoring/monitoring-bridge/" class="md-nav__link">
+      <a href="../architecture/monitoring/monitoring-bridge/" class="md-nav__link">
         
   
   
@@ -1996,7 +1990,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/monitoring/monitoring-api/" class="md-nav__link">
+      <a href="../architecture/monitoring/monitoring-api/" class="md-nav__link">
         
   
   
@@ -2077,7 +2071,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/segmentindex/" class="md-nav__link ">
+            <a href="../architecture/segmentindex/" class="md-nav__link ">
               
   
   
@@ -2121,7 +2115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/write-path/" class="md-nav__link">
+      <a href="../architecture/segmentindex/write-path/" class="md-nav__link">
         
   
   
@@ -2149,7 +2143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/read-path/" class="md-nav__link">
+      <a href="../architecture/segmentindex/read-path/" class="md-nav__link">
         
   
   
@@ -2177,7 +2171,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/wal-runtime/" class="md-nav__link">
+      <a href="../architecture/segmentindex/wal-runtime/" class="md-nav__link">
         
   
   
@@ -2205,7 +2199,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+      <a href="../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
         
   
   
@@ -2233,7 +2227,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+      <a href="../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
         
   
   
@@ -2261,7 +2255,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/caching/" class="md-nav__link">
+      <a href="../architecture/segmentindex/caching/" class="md-nav__link">
         
   
   
@@ -2289,7 +2283,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/cache-lru/" class="md-nav__link">
+      <a href="../architecture/segmentindex/cache-lru/" class="md-nav__link">
         
   
   
@@ -2317,7 +2311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/performance/" class="md-nav__link">
+      <a href="../architecture/segmentindex/performance/" class="md-nav__link">
         
   
   
@@ -2345,7 +2339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/metrics-snapshot/" class="md-nav__link">
+      <a href="../architecture/segmentindex/metrics-snapshot/" class="md-nav__link">
         
   
   
@@ -2373,7 +2367,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/segment-index-concurrency/" class="md-nav__link">
+      <a href="../architecture/segmentindex/segment-index-concurrency/" class="md-nav__link">
         
   
   
@@ -2442,7 +2436,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/segment/" class="md-nav__link ">
+            <a href="../architecture/segment/" class="md-nav__link ">
               
   
   
@@ -2486,7 +2480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/segment/" class="md-nav__link">
+      <a href="../architecture/segment/segment/" class="md-nav__link">
         
   
   
@@ -2514,7 +2508,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/on-disk-layout/" class="md-nav__link">
+      <a href="../architecture/segment/on-disk-layout/" class="md-nav__link">
         
   
   
@@ -2542,7 +2536,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/arch-index/" class="md-nav__link">
+      <a href="../architecture/segment/arch-index/" class="md-nav__link">
         
   
   
@@ -2570,7 +2564,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/segment-concurrency/" class="md-nav__link">
+      <a href="../architecture/segment/segment-concurrency/" class="md-nav__link">
         
   
   
@@ -2633,7 +2627,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/registry/" class="md-nav__link ">
+            <a href="../architecture/registry/" class="md-nav__link ">
               
   
   
@@ -2677,7 +2671,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/registry/registry/" class="md-nav__link">
+      <a href="../architecture/registry/registry/" class="md-nav__link">
         
   
   
@@ -2790,7 +2784,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code/" class="md-nav__link">
+      <a href="../development/code/" class="md-nav__link">
         
   
   
@@ -2818,7 +2812,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/package-boundaries/" class="md-nav__link">
+      <a href="../architecture/package-boundaries/" class="md-nav__link">
         
   
   
@@ -2846,7 +2840,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration-flow/" class="md-nav__link">
+      <a href="../development/configuration-flow/" class="md-nav__link">
         
   
   
@@ -2874,7 +2868,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code-quality-charter/" class="md-nav__link">
+      <a href="../development/code-quality-charter/" class="md-nav__link">
         
   
   
@@ -2902,7 +2896,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/implementation/" class="md-nav__link">
+      <a href="../architecture/segmentindex/implementation/" class="md-nav__link">
         
   
   
@@ -2930,7 +2924,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/" class="md-nav__link">
+      <a href="../development/guides/" class="md-nav__link">
         
   
   
@@ -2958,7 +2952,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
+      <a href="../development/profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -2990,8 +2984,6 @@
       
   
   
-    
-  
   
   
     
@@ -3031,23 +3023,22 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../development/" class="md-nav__link ">
               
   
   
@@ -3065,13 +3056,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3091,7 +3082,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CONTRIBUTING/" class="md-nav__link">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
         
   
   
@@ -3119,7 +3110,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
   
@@ -3147,7 +3138,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CHANGELOG/" class="md-nav__link">
+      <a href="../CHANGELOG/" class="md-nav__link">
         
   
   
@@ -3175,7 +3166,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../development/release/" class="md-nav__link">
         
   
   
@@ -3203,7 +3194,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quality-reporting/" class="md-nav__link">
+      <a href="../development/quality-reporting/" class="md-nav__link">
         
   
   
@@ -3228,37 +3219,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Documentation Guide
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../development/documentation-guidelines/" class="md-nav__link">
         
   
   
@@ -3274,136 +3238,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#documentation-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Documentation model
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#required-content-rules" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Required content rules
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#file-placement" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        File placement
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#navigation-and-exclusions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Navigation and exclusions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#local-preview-and-publishing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Local preview and publishing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#writing-style" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Writing style
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#diagrams" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Diagrams
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#page-template" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Page template
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#review-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Review checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recurring-maintenance-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recurring maintenance checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3416,7 +3250,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segment-api/" class="md-nav__link">
+      <a href="../development/segment-api/" class="md-nav__link">
         
   
   
@@ -3444,7 +3278,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../compatibility-matrix/" class="md-nav__link">
+      <a href="../development/compatibility-matrix/" class="md-nav__link">
         
   
   
@@ -3472,7 +3306,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrade-notes-multimodule/" class="md-nav__link">
+      <a href="../development/upgrade-notes-multimodule/" class="md-nav__link">
         
   
   
@@ -3500,7 +3334,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rollout-quality-gates/" class="md-nav__link">
+      <a href="../development/rollout-quality-gates/" class="md-nav__link">
         
   
   
@@ -3528,7 +3362,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rollout-rollback-runbook/" class="md-nav__link">
+      <a href="../development/rollout-rollback-runbook/" class="md-nav__link">
         
   
   
@@ -3556,7 +3390,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wal-replication-fencing-design/" class="md-nav__link">
+      <a href="../development/wal-replication-fencing-design/" class="md-nav__link">
         
   
   
@@ -3584,7 +3418,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../refactor-backlog/" class="md-nav__link">
+      <a href="../refactor-backlog/" class="md-nav__link">
         
   
   
@@ -3639,10 +3473,82 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#documentation-model" class="md-nav__link">
+  <a href="#current-target" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Documentation model
+        Current Target
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current Target">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#planning-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planning Evidence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-logging-measurement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context-Logging Measurement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#route-map-snapshot-publication-measurement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Route-Map Snapshot Publication Measurement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#segment-id-membership-measurement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Segment-ID Membership Measurement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#final-re-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final Re-profile
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-of-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source Of Truth
       
     </span>
   </a>
@@ -3650,10 +3556,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#required-content-rules" class="md-nav__link">
+  <a href="#guardrails" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Required content rules
+        Guardrails
       
     </span>
   </a>
@@ -3661,87 +3567,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#file-placement" class="md-nav__link">
+  <a href="#validation-gates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        File placement
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#navigation-and-exclusions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Navigation and exclusions
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#local-preview-and-publishing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Local preview and publishing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#writing-style" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Writing style
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#diagrams" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Diagrams
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#page-template" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Page template
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#review-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Review checklist
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recurring-maintenance-checklist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recurring maintenance checklist
+        Validation Gates
       
     </span>
   </a>
@@ -3766,46 +3595,6 @@
   
 
 
-  <nav class="md-path" aria-label="Navigation" >
-    <ol class="md-path__list">
-      
-        
-  
-  
-    <li class="md-path__item">
-      <a href="../.." class="md-path__link">
-        
-  <span class="md-ellipsis">
-    Home
-  </span>
-
-      </a>
-    </li>
-  
-
-      
-      
-        
-  
-  
-    
-    
-      <li class="md-path__item">
-        <a href="../" class="md-path__link">
-          
-  <span class="md-ellipsis">
-    Contribute & Community
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-      
-    </ol>
-  </nav>
-
               
               <article class="md-content__inner md-typeset">
                 
@@ -3816,143 +3605,256 @@
   
 
 
-<h1 id="documentation-guide">Documentation Guide</h1>
-<p>This is the canonical maintainer guide for documentation work in <code>docs/</code>.
-Agent-specific instructions should reference this page instead of duplicating
-its rules.</p>
-<h2 id="documentation-model">Documentation model</h2>
-<p>The published docs are organized around the external journey first:</p>
+<h1 id="refactoring-context">Refactoring Context</h1>
+<p>This page defines the current boundary and evidence requirements for the
+point-operation hot-path cleanup sequence. It is durable planning context, not
+an additional task ledger.</p>
+<h2 id="current-target">Current Target</h2>
 <ul>
-<li><code>Evaluate</code> for fit, quality, security, and benchmark context</li>
-<li><code>Getting Started</code> for installation and first integration</li>
-<li><code>Configuration</code> for builder-level settings</li>
-<li><code>Operations</code> for WAL, monitoring, backup, and tuning</li>
-<li><code>Architecture</code> for source-of-truth explanations</li>
-<li><code>Contribute &amp; Community</code> for maintainer and contributor workflows</li>
+<li>Target boundary: resource ownership and measured per-operation overhead in
+  <code>engine</code> routing, latency tracking, segment reads, and context logging, plus
+  the focused JMH coverage needed to evaluate those paths.</li>
+<li>Desired end state: fix the confirmed concurrent searcher resource leak, then
+  retain only small hot-path changes that show a repeatable allocation,
+  throughput, or latency improvement without changing public behavior.</li>
+<li>Current status: items <code>100.1</code> through <code>100.3</code> and <code>100.5</code> are complete and
+  archived in <code>docs/refactor-backlog.md</code>. Item <code>100.4</code> is intentionally
+  deferred. Item <code>100.6</code> has run, but remains open because the canonical
+  one-fork regression screen reported contradictory <code>worse</code> and <code>better</code>
+  results and the focused throughput repeats did not clear the performance
+  gate.</li>
+<li>Stop condition: when the next candidate is no longer visible in a
+  representative profile, or its focused A/B result is neutral, inconclusive,
+  or worse, do not retain that optimization. Record the evidence and proceed to
+  the final profiling item instead of broadening the design.</li>
 </ul>
-<p>Use a light Diataxis split:</p>
+<h3 id="planning-evidence">Planning Evidence</h3>
+<p>The following results are exploratory evidence from the rebuilt benchmark
+runner at commit <code>ab14e0f69</code>; they are not completion evidence because no
+canonical baseline/candidate report was captured:</p>
 <ul>
-<li>tutorial: guided learning path</li>
-<li>how-to: task-oriented operational or integration steps</li>
-<li>reference: API, configuration, or command facts</li>
-<li>explanation: architecture, trade-offs, and rationale</li>
+<li>One-fork JMH with three warmup and five measurement iterations reported about
+  <code>186.780 B/op</code> for four-thread live gets and <code>216.496 B/op</code> for
+  twenty-thread hot puts.</li>
+<li>JFR allocation samples included <code>RouteMapSnapshot</code> on both paths.
+  <code>OperationLatencyTracker.recordNanos(...)</code> also appeared in execution samples.</li>
+<li>A persisted, cache-enabled profile showed <code>LruChunkStoreCache.getCachedPage</code>
+  in CPU samples but no cache contention events.</li>
+<li><code>OperationResult</code> and <code>RouteLeaseAttempt</code> did not appear as material
+  allocation sources in the sampled runs.</li>
+<li>Existing SegmentIndex benchmarks explicitly disable context logging, while
+  the production configuration default enables it.</li>
 </ul>
-<h2 id="required-content-rules">Required content rules</h2>
+<h3 id="context-logging-measurement">Context-Logging Measurement</h3>
+<p>Item <code>100.2</code> added a focused Logback-backed profile without changing production
+logging behavior. On the same dirty worktree at commit <code>ab14e0f69</code>, JDK 25 on
+arm64 macOS, three forks with three warmup and five one-second measurement
+iterations produced:</p>
 <ul>
-<li>Keep one page focused on one responsibility.</li>
-<li>Update docs in the same change when behavior or contracts change.</li>
-<li>Prefer exact code terminology over vague prose.</li>
-<li>If code and docs disagree, fix both or clearly mark the page as a proposal.</li>
-<li>Describe the current code and contracts without version comparisons by
-  default. Keep release history in <code>CHANGELOG.md</code>, and add version-specific
-  migration guidance only when the user explicitly requests it.</li>
-<li>Keep architecture pages as source-of-truth documents, not changelog notes.</li>
-<li>Do not leave placeholder pages such as "content to be expanded" in published
-  navigation.</li>
+<li>Live get: <code>3.487 M ops/s</code>, <code>171.884 B/op</code> with context logging disabled and
+  <code>3.122 M ops/s</code>, <code>204.007 B/op</code> enabled.</li>
+<li>Hot put: <code>2.527 M ops/s</code>, <code>201.239 B/op</code> with context logging disabled and
+  <code>2.800 M ops/s</code>, <code>237.404 B/op</code> enabled.</li>
 </ul>
-<h2 id="file-placement">File placement</h2>
+<p>The enabled-mode means were about <code>32.123 B/op</code> higher for live gets and
+<code>36.165 B/op</code> higher for hot puts. The reported confidence intervals overlapped
+for throughput and allocation in both workloads, so this run alone does not
+establish either effect. Keep the enabled/disabled coverage for future
+measurement, but make no performance claim from this result.</p>
+<h3 id="route-map-snapshot-publication-measurement">Route-Map Snapshot Publication Measurement</h3>
+<p>Item <code>100.3</code> changed route snapshot publication from a per-call wrapper under a
+read lock to one immutable snapshot per map version, published through a
+volatile reference. On the same dirty worktree, JDK 25 on arm64 macOS, five
+forks with three warmup and five one-second measurement iterations produced:</p>
 <ul>
-<li><code>docs/architecture</code>: explanation and source-of-truth design material</li>
-<li><code>docs/configuration</code>: builder settings and runtime configuration reference</li>
-<li><code>docs/operations</code>: runbooks, monitoring, tuning, and backup guidance</li>
-<li><code>docs/how-to-use</code>: installation and early integration path</li>
-<li><code>docs/development</code>: contributor and maintainer material</li>
+<li>Live get: baseline <code>3.493 M ops/s</code>, <code>168.175 B/op</code>; candidate
+  <code>3.427 M ops/s</code>, <code>148.507 B/op</code>.</li>
+<li>Hot put: baseline <code>2.853 M ops/s</code>, <code>216.617 B/op</code>; first candidate
+  <code>3.170 M ops/s</code>, <code>200.068 B/op</code>.</li>
 </ul>
-<p>Architecture placement rules:</p>
+<p>Live-get throughput changed by <code>-1.87%</code>, within overlapping reported confidence
+intervals. Live-get allocation fell by <code>19.668 B/op</code> (<code>-11.70%</code>), and the
+reported allocation confidence intervals did not overlap. Hot-put throughput
+confidence intervals overlapped, while candidate and repeat allocation forks
+were bimodal from about <code>136</code> to <code>216 B/op</code>; no hot-put improvement is claimed.
+The retained benefit is the repeatable live-get allocation reduction and the
+lock-free snapshot publication itself.</p>
+<p>The affected live-get and hot-put throughput summaries passed the canonical
+comparison script without a regression. A broader <code>segment-index-pr-smoke</code>
+baseline attempt stopped at an unrelated multisegment benchmark setup timeout
+and produced an empty result, so that full-profile comparison remains explicit
+unfinished audit evidence for item <code>100.6</code>.</p>
+<h3 id="segment-id-membership-measurement">Segment-ID Membership Measurement</h3>
+<p>Item <code>100.5</code> replaced list materialization followed by <code>contains(...)</code> with a
+direct immutable map-value scan. A focused JMH benchmark measured a successful
+middle-position lookup at the requested route counts. Both variants ran on the
+same dirty worktree, JDK 25 on arm64 macOS, with one thread, five forks, three
+warmup iterations, five one-second measurement iterations, and the GC profiler.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Routes</th>
+<th style="text-align: right;">List + contains</th>
+<th style="text-align: right;">Direct scan</th>
+<th style="text-align: right;">Speedup</th>
+<th style="text-align: right;">Allocation before</th>
+<th style="text-align: right;">Allocation after</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">63.807 ns</td>
+<td style="text-align: right;">5.627 ns</td>
+<td style="text-align: right;">11.34x</td>
+<td style="text-align: right;">384 B/op</td>
+<td style="text-align: right;">~0 B/op</td>
+</tr>
+<tr>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">5.647 us</td>
+<td style="text-align: right;">1.649 us</td>
+<td style="text-align: right;">3.42x</td>
+<td style="text-align: right;">4,344 B/op</td>
+<td style="text-align: right;">~0 B/op</td>
+</tr>
+<tr>
+<td style="text-align: right;">10,000</td>
+<td style="text-align: right;">64.027 us</td>
+<td style="text-align: right;">22.364 us</td>
+<td style="text-align: right;">2.86x</td>
+<td style="text-align: right;">40,361 B/op</td>
+<td style="text-align: right;">~0 B/op</td>
+</tr>
+<tr>
+<td style="text-align: right;">50,000</td>
+<td style="text-align: right;">323.428 us</td>
+<td style="text-align: right;">115.267 us</td>
+<td style="text-align: right;">2.81x</td>
+<td style="text-align: right;">200,346 B/op</td>
+<td style="text-align: right;">~0 B/op</td>
+</tr>
+<tr>
+<td style="text-align: right;">100,000</td>
+<td style="text-align: right;">660.687 us</td>
+<td style="text-align: right;">228.547 us</td>
+<td style="text-align: right;">2.89x</td>
+<td style="text-align: right;">400,355 B/op</td>
+<td style="text-align: right;">~0 B/op</td>
+</tr>
+</tbody>
+</table>
+<p>Reported confidence intervals did not overlap at any tested size, so the
+improvement is measurable from 10 routes, the smallest tested value. The
+production ceiling of 50,000 routes receives a <code>64.36%</code> latency reduction and
+removes about <code>200 kB</code> of temporary allocation per membership check. The
+remaining direct scan is linear, but an immutable segment-ID set is deferred
+until an end-to-end profile proves that its extra snapshot memory and
+publication cost are justified.</p>
+<h3 id="final-re-profile">Final Re-profile</h3>
+<p>Item <code>100.6</code> rebuilt commit <code>ab14e0f69</code> as the production baseline and used the
+staged tree as the candidate on the same JDK 25 arm64 macOS host.</p>
 <ul>
-<li><code>docs/architecture</code> root for cross-cutting topics shared across the engine</li>
-<li><code>docs/architecture/segmentindex</code> for routing, buffering, concurrency, and
-  orchestration</li>
-<li><code>docs/architecture/segment</code> for stable segment internals and on-disk behavior</li>
-<li><code>docs/architecture/registry</code> for registry state and cache lifecycle</li>
-<li><code>docs/architecture/monitoring</code> for monitoring and management API design</li>
+<li>The original canonical setup failure was reproduced. Repeated full
+  <code>flushAndWait()</code> calls during multi-segment population could time out while
+  reloading a segment as background splits progressed. Raising the segment
+  cache limit from <code>3</code> through <code>64</code>, <code>128</code>, and <code>256</code> did not fix the failure.
+  The read benchmark fixture now populates first and performs one final settled
+  flush. With that benchmark-only change applied to both trees, the complete
+  <code>segment-index-pr-smoke</code> profile ran successfully.</li>
+<li>The canonical one-fork comparison was not credible as a performance claim.
+  It reported all get variants <code>22.07%</code> to <code>45.53%</code> worse while reporting hot
+  puts and split-heavy work about <code>47%</code> to <code>57%</code> better. The reported JMH
+  confidence intervals were extremely wide, so these opposing results are
+  retained only as a failed regression screen.</li>
+<li>A five-fork live-get A/B with three warmup and five measurement iterations
+  reported <code>3.081 M ops/s</code>, <code>179.293 B/op</code> for the baseline and
+  <code>2.694 M ops/s</code>, <code>151.735 B/op</code> for the candidate. Throughput intervals
+  overlapped. A reverse-order repeat reported <code>2.437 M ops/s</code>,
+  <code>154.943 B/op</code> for the candidate and <code>2.633 M ops/s</code>, <code>154.445 B/op</code> for the
+  baseline. The repeat made allocation bimodality visible on both sides, so
+  item <code>100.6</code> does not add a new whole-live-get allocation or throughput
+  claim.</li>
+<li>A five-fork hot-put A/B reported <code>1.572 M ops/s</code>, <code>211.983 B/op</code> for the
+  baseline and <code>1.818 M ops/s</code>, <code>211.319 B/op</code> for the candidate. Throughput
+  confidence intervals overlapped and allocation was effectively unchanged,
+  so no hot-put improvement is claimed.</li>
+<li>Candidate JFR recorded no live-get monitor contention. It did not identify
+  <code>OperationResult</code>, <code>RouteLeaseAttempt</code>, the remaining segment-ID scan, or
+  <code>LruChunkStoreCache</code> as material hot-path candidates. In the artificial
+  twenty-thread single-route hot-put workload, <code>RouteEntry</code> lease acquisition
+  and release produced 14 monitor-blocked events totaling <code>143 ms</code>; production
+  evidence is required before changing its drain-sensitive state model.</li>
 </ul>
-<h2 id="navigation-and-exclusions">Navigation and exclusions</h2>
-<p>Every Markdown page under <code>docs/</code> must be one of:</p>
+<p>The measured boundary is therefore unchanged: retain the already demonstrated
+snapshot-publication and exact membership improvements, accept no additional
+cleanup candidate, and make no whole-application throughput claim. Item <code>100.6</code>
+cannot be archived until a stable same-host comparison clears the canonical
+regression gate.</p>
+<h2 id="source-of-truth">Source Of Truth</h2>
 <ul>
-<li>published in <code>mkdocs.yml</code></li>
-<li>intentionally excluded in <code>docs-nav-exclude.txt</code></li>
+<li><code>AGENTS.md</code> defines repository rules. In particular,
+  <code>docs/refactor-backlog.md</code> is the authoritative and only active refactoring
+  tracker. This file supplies the context role from the refactoring-plan
+  workflow; do not create a competing <code>docs/refactoring-tracker.md</code>.</li>
+<li><code>docs/development/code-quality-charter.md</code> defines the small-slice workflow
+  and performance gates.</li>
+<li><code>benchmarks/README.md</code>, <code>benchmarks/profiles/segment-index-pr-smoke.json</code>, and
+  focused benchmark profiles define the comparison flow.</li>
+<li><code>docs/development/rollout-quality-gates.md</code> defines the maximum accepted
+  point-operation overhead for monitoring-related changes.</li>
+<li><code>docs/architecture/segmentindex/performance.md</code>,
+  <code>docs/architecture/segmentindex/read-path.md</code>, and
+  <code>docs/architecture/segmentindex/caching.md</code> define current hot-path and cache
+  behavior.</li>
+<li><code>docs/configuration/logging.md</code> and <code>docs/operations/monitoring.md</code> define
+  logging and latency-metric behavior that must remain externally consistent.</li>
+<li>Primary implementation owners are <code>PersistentSegmentRouteMap</code>,
+  <code>RouteMapSnapshot</code>, <code>MappedSegmentLeaseService</code>, <code>OperationLatencyTracker</code>,
+  <code>SegmentReadPath</code>, <code>SegmentIndexMdcLoggingAdapter</code>, and
+  <code>LruChunkStoreCache</code>, with their matching tests.</li>
 </ul>
-<p>Pages excluded from nav should be rare and should usually be one of:</p>
+<h2 id="guardrails">Guardrails</h2>
 <ul>
-<li>redirects or moved-page stubs</li>
-<li>internal agent instructions</li>
-<li>archived benchmark snapshots not intended for the main user journey</li>
+<li>Preserve route-map ordering, map-version semantics, split publication,
+  persistence behavior, retry behavior, public APIs, and exact get/put/delete
+  counts.</li>
+<li>Publish route data and its version as one immutable state. Do not expose or
+  mutate a published <code>TreeMap</code>.</li>
+<li>Treat the <code>SegmentReadPath</code> CAS-loser cleanup as a correctness fix. Verify
+  exactly-once cleanup with deterministic concurrent first access.</li>
+<li>Sampling experiments may reduce latency observations, not operation counts.
+  Do not add public sampling configuration before an internal experiment shows
+  useful improvement and acceptable percentile behavior.</li>
+<li>Measure context logging in both production-default enabled mode and disabled
+  mode. The disabled bootstrap path already avoids the MDC adapter; do not add
+  another disabled-path mechanism without evidence.</li>
+<li>Limit segment-ID membership work to exact-segment routing paths. Retain the
+  direct snapshot scan; add a maintained immutable ID set only if an end-to-end
+  profile shows that the remaining scan justifies duplicate snapshot state.</li>
+<li>Do not implement singleton <code>OperationResult</code> or <code>RouteLeaseAttempt</code> values,
+  cache sharding, cache replacement, or per-key single-flight loading without
+  new profile evidence showing that exact allocation or contention source is
+  material.</li>
+<li>Keep each accepted production change in its own focused commit. Do not turn
+  this sequence into an architectural rewrite.</li>
 </ul>
-<p>Run the navigation check before finishing a docs change:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python3<span class="w"> </span>scripts/check_docs_nav.py
-</code></pre></div>
-<h2 id="local-preview-and-publishing">Local preview and publishing</h2>
-<p>Preview docs locally:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>mkdocs<span class="w"> </span>serve
-</code></pre></div>
-<p>Build the site exactly as CI does:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mkdocs<span class="w"> </span>build<span class="w"> </span>--strict
-</code></pre></div>
-<p>Deployment to <code>gh-pages</code> is handled by GitHub Actions. Do not rely on manual
-deploy steps as the primary path.</p>
-<h2 id="writing-style">Writing style</h2>
+<h2 id="validation-gates">Validation Gates</h2>
 <ul>
-<li>Start with the purpose of the page.</li>
-<li>Put invariants and contracts before implementation detail.</li>
-<li>Prefer short lists for flows, rules, and responsibilities.</li>
-<li>Use consistent title casing and avoid decorative emoji in headings.</li>
-<li>Prefer exact class and package names when mapping docs to code.</li>
-<li>For redesign pages, explicitly separate what stays, what changes, and what is
-  newly introduced.</li>
-</ul>
-<h2 id="diagrams">Diagrams</h2>
-<p>When a page uses PlantUML:</p>
-<ol>
-<li>keep the <code>.plantuml</code> source checked in</li>
-<li>keep the generated <code>.png</code> checked in next to it</li>
-<li>embed the <code>.png</code> inline in the page</li>
-</ol>
-<p>Preferred pattern:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>![<span class="nt">Short diagram description</span>](<span class="na">images/example-diagram.png</span>)
-</code></pre></div>
-<p>On this workstation, use <code>rp</code> to render PlantUML sources to PNG files.</p>
-<h2 id="page-template">Page template</h2>
-<p>Use this lightweight starting shape when adding or rewriting a page:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>---
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>title: Page Title
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>audience: user | operator | contributor | evaluator
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>doc_type: tutorial | how-to | reference | explanation
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="gu">owner: docs | engine | ops</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="gu">---</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="gh"># Page Title</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>One paragraph describing the page purpose.
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="gu">## Main content</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="gu">## Related docs</span>
-</code></pre></div>
-<p>The front matter is optional for old pages, but new pages should include it
-when practical.</p>
-<h2 id="review-checklist">Review checklist</h2>
-<p>Before finishing a docs change:</p>
-<ul>
-<li>the page is in the right section</li>
-<li>links are relative and render in MkDocs</li>
-<li>images render inline</li>
-<li>PlantUML source and PNG both exist when diagrams are used</li>
-<li><code>mkdocs.yml</code> includes published pages</li>
-<li><code>docs-nav-exclude.txt</code> includes intentional exclusions</li>
-<li>the local section index links to the page when needed</li>
-<li><code>python3 scripts/check_docs_nav.py</code> passes</li>
-<li><code>mkdocs build --strict</code> passes</li>
-</ul>
-<h2 id="recurring-maintenance-checklist">Recurring maintenance checklist</h2>
-<p>Run this review when the docs structure changes significantly:</p>
-<ul>
-<li>remove stale examples and old package names</li>
-<li>remove placeholder pages or archive them</li>
-<li>check for orphaned docs pages</li>
-<li>check for broken links and missing images</li>
-<li>split oversized pages that mix multiple responsibilities</li>
-<li>confirm benchmark artifact pages are not used as primary docs</li>
+<li>Documentation-only planning changes:
+  <code>python3 scripts/check_docs_nav.py</code>, <code>mkdocs build --strict</code>, and
+  <code>git diff --check</code>.</li>
+<li>Every production slice: matching focused tests, deterministic concurrency or
+  resource-lifecycle coverage where applicable, then <code>mvn clean verify</code>.</li>
+<li>Benchmark coverage changes: the profile contract and benchmark history script
+  smoke tests documented in <code>benchmarks/README.md</code>.</li>
+<li>Every retained hot-path optimization: a same-environment baseline/candidate
+  comparison using the canonical compare flow, plus a focused three-fork JMH
+  run with the GC profiler for the affected path.</li>
+<li>Acceptance: no <code>worse</code> canonical result, no point-operation regression beyond
+  the documented three-percent budget, and a repeatable improvement in the
+  metric targeted by the slice. Neutral or inconclusive code-only
+  optimizations are not retained.</li>
 </ul>
 
 
@@ -3960,6 +3862,9 @@ when practical.</p>
 
 
 
+
+  
+  
 
 
 
@@ -4003,10 +3908,10 @@ when practical.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

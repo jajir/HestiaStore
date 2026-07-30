@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3795,8 +3795,10 @@ longer-term replication design work, see
 <h2 id="choose-a-durability-mode">Choose a durability mode</h2>
 <ul>
 <li><code>ASYNC</code>: lowest write latency, weakest durability guarantee</li>
-<li><code>GROUP_SYNC</code>: batched fsync behavior with a balanced latency/durability trade-off</li>
-<li><code>SYNC</code>: fsync on each write, strongest durability and highest write overhead</li>
+<li><code>GROUP_SYNC</code>: time/size-batched fsync behavior with a balanced
+  latency/durability trade-off</li>
+<li><code>SYNC</code>: one fsync per append-worker queue batch; each write is acknowledged
+  only after its containing batch is durable</li>
 </ul>
 <p>Choose the mode from your durability target first, then tune performance around
 that choice.</p>
@@ -3963,7 +3965,7 @@ applies forced checkpoint behavior and backpressure until retained WAL drops.</p
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

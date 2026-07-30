@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3819,6 +3819,12 @@ the persisted index configuration:</p>
 <p>Supported built-in types are the common compact types such as <code>Integer</code>,
 <code>Long</code>, <code>String</code>, and <code>Byte</code>. Custom types must provide a
 <code>TypeDescriptor</code> with stable serialization and comparison behavior.</p>
+<p>For emoji and multilingual strings, configure
+<code>TypeDescriptorTinyUtf8String</code> for payloads up to 255 encoded bytes or
+<code>TypeDescriptorUtf8String</code> for larger payloads. The default <code>String</code> mapping is
+the legacy ISO-8859-1 descriptor for on-disk compatibility. See
+<a href="data-types/#utf-8-string-descriptors">Data Types</a> for configuration, byte
+limits, and migration guidance.</p>
 <h3 id="segment-sizing-and-cache-behavior">Segment sizing and cache behavior</h3>
 <ul>
 <li><code>segment(...).maxKeys()</code> controls when segments split.</li>
@@ -3911,7 +3917,8 @@ recovery for acknowledged writes.</p>
 <ul>
 <li><a href="filters/">Filters</a> for chunk filter setup, provider-backed custom filters,
   and registry wiring</li>
-<li><a href="data-types/">Data Types</a> for custom serialization and comparator contracts</li>
+<li><a href="data-types/">Data Types</a> for UTF-8 strings, custom serialization, and
+  comparator contracts</li>
 <li><a href="logging/">Logging</a> for logger configuration</li>
 <li><a href="monitoring-console/">Monitoring Console</a> for monitoring-side configuration</li>
 </ul>
@@ -4280,7 +4287,7 @@ builder. See <a href="data-types/">Data Types</a> for the contract details.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

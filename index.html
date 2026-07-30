@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3852,7 +3852,8 @@
 <h1 id="_1"><img alt="HestiaStore logo" src="images/logo.png" /></h1>
 <p>HestiaStore is an embeddable Java key-value storage engine for large local
 datasets. It is optimized for predictable file I/O, bounded-memory lookups,
-range scans, and operational simplicity inside a single application process.</p>
+bounded range scans, and operational simplicity inside a single application
+process.</p>
 <p><a href="https://github.com/jajir/HestiaStore/actions/workflows/maven.yml?query=branch%3Amain"><img alt="Build (main)" src="https://github.com/jajir/HestiaStore/actions/workflows/maven.yml/badge.svg?branch=main" /></a>
 <img alt="test results" src="https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-main.svg" />
 <img alt="line coverage" src="https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-main.svg" />
@@ -3868,7 +3869,8 @@ range scans, and operational simplicity inside a single application process.</p>
 <li>embedded storage inside a Java service or application</li>
 <li>datasets that do not fit comfortably in memory</li>
 <li>predictable local persistence with optional WAL-based crash recovery</li>
-<li>point lookups plus ordered iteration over large key ranges</li>
+<li>point lookups plus ordered and bounded range scans over large key ranges</li>
+<li>local uniqueness or compare-and-replace checks when WAL is disabled</li>
 <li>teams that want a pure-Java dependency without native libraries</li>
 </ul>
 <h2 id="what-it-is-not-trying-to-be">What it is not trying to be</h2>
@@ -3899,9 +3901,11 @@ range scans, and operational simplicity inside a single application process.</p>
 <ul>
 <li>Pure Java embedding with no native dependency requirement</li>
 <li>In-memory or filesystem-backed directories</li>
+<li>Strict UTF-8 keys and values for emoji and multilingual text</li>
 <li>Custom key and value type descriptors</li>
 <li>Bloom-filter assisted negative lookups</li>
-<li>Segment-based storage with ordered scans</li>
+<li>Segment-based storage with ordered and bounded range scans</li>
+<li>Conditional <code>putIfAbsent</code> and <code>replace</code> mutations for WAL-disabled indexes</li>
 <li>Optional write-ahead logging for local crash recovery</li>
 <li>Monitoring snapshots and optional monitoring modules</li>
 </ul>
@@ -3941,6 +3945,10 @@ on the <a href="why-hestiastore/benchmarks/">Benchmarks</a> page.</p>
 <a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">index</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">));</span>
 <a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="p">}</span>
 </code></pre></div>
+<p>String indexes use the compact ISO-8859-1 descriptor by default for on-disk
+compatibility. To store emoji or multilingual text, explicitly select one of
+the <a href="configuration/data-types/#utf-8-string-descriptors">UTF-8 string descriptors</a>
+when creating the index.</p>
 <p>For the next step after this example, go to <a href="how-to-use/quick-start/">Quick Start</a>.</p>
 <h2 id="documentation-paths">Documentation paths</h2>
 <ul>
@@ -4009,7 +4017,7 @@ on the <a href="why-hestiastore/benchmarks/">Benchmarks</a> page.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

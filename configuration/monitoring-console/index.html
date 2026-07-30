@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1357,6 +1357,17 @@
     <span class="md-ellipsis">
       
         Start web application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-against-running-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start against running nodes
       
     </span>
   </a>
@@ -3639,6 +3650,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#start-against-running-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start against running nodes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#one-command-local-demo-direct-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3782,6 +3804,20 @@ that node's <code>ManagementAgentServer</code>.</p>
 <ul>
 <li><a href="http://127.0.0.1:8090/">http://127.0.0.1:8090/</a></li>
 </ul>
+<h2 id="start-against-running-nodes">Start against running nodes</h2>
+<p>Use <code>monitoring-console-web/scripts/start.sh</code> when the monitored stores are
+already running and each store exposes <code>monitoring-rest-json</code>.</p>
+<p>Pass one or more monitoring API base URLs. Use the base URL of each node, not
+the <code>/api/v1/report</code> path:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./monitoring-console-web/scripts/start.sh<span class="w"> </span>http://localhost:8091
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./monitoring-console-web/scripts/start.sh<span class="w"> </span>http://localhost:8091<span class="w"> </span>http://localhost:8092
+</code></pre></div>
+<p>The script assigns the nodes as <code>node-1</code>, <code>node-2</code>, and so on, builds
+<code>monitoring-console-web</code>, and starts the web UI on
+<a href="http://127.0.0.1:8090/">http://127.0.0.1:8090/</a>.</p>
+<p>Override the web UI port with <code>WEB_PORT</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">WEB_PORT</span><span class="o">=</span><span class="m">18090</span><span class="w"> </span>./monitoring-console-web/scripts/start.sh<span class="w"> </span>http://localhost:8091
+</code></pre></div>
 <h2 id="one-command-local-demo-direct-mode">One-command local demo (direct mode)</h2>
 <p>This command starts:</p>
 <ul>
@@ -3789,10 +3825,10 @@ that node's <code>ManagementAgentServer</code>.</p>
 <li>synthetic load generator</li>
 <li><code>monitoring-console-web</code> connected directly to those nodes</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./monitoring-console-web/scripts/start-example.sh
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./monitoring-console-web/scripts/start-example.sh
 </code></pre></div>
 <p>Optional ports:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">AGENT_BASE_PORT</span><span class="o">=</span><span class="m">19001</span><span class="w"> </span><span class="nv">WEB_PORT</span><span class="o">=</span><span class="m">18090</span><span class="w"> </span>./monitoring-console-web/scripts/start-example.sh
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">AGENT_BASE_PORT</span><span class="o">=</span><span class="m">19001</span><span class="w"> </span><span class="nv">WEB_PORT</span><span class="o">=</span><span class="m">18090</span><span class="w"> </span>./monitoring-console-web/scripts/start-example.sh
 </code></pre></div>
 <p>Then open:</p>
 <ul>
@@ -3854,7 +3890,7 @@ that node's <code>ManagementAgentServer</code>.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3505,6 +3505,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="To Solve">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#point-operation-hot-path-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Point-operation hot-path cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -3520,6 +3537,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unfinished-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unfinished Audit
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3597,6 +3625,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="To Solve">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#point-operation-hot-path-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Point-operation hot-path cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -3612,6 +3657,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unfinished-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unfinished Audit
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3697,6 +3753,25 @@
 <h1 id="refactor-backlog">Refactor backlog</h1>
 <h2 id="open-items">Open Items</h2>
 <h3 id="to-solve">To Solve</h3>
+<h4 id="point-operation-hot-path-cleanup">Point-operation hot-path cleanup</h4>
+<p>Items <code>100.1</code> through <code>100.3</code> and <code>100.5</code> are complete. Item <code>100.4</code> is
+intentionally deferred from this sequence; item <code>100.6</code> is the final active
+step.</p>
+<ul>
+<li>[ ] 100.6 Re-profile the accepted sequence and stop at the measured boundary
+  (Risk: LOW). Owner: <code>benchmarks</code> and refactoring docs. Outcome: run the
+  canonical SegmentIndex comparison and focused JFR profiles, record accepted,
+  rejected, and still-deferred candidates, and update architecture docs only
+  for behavior that actually changed. Validation: benchmark comparison reports,
+  <code>python3 scripts/check_docs_nav.py</code>, <code>mkdocs build --strict</code>, and
+  <code>git diff --check</code>.
+  Status: blocked by the performance gate. The complete canonical profile now
+  runs, but its one-fork comparison produced contradictory large deltas and
+  several <code>worse</code> results. Two focused five-fork live-get A/B cycles retained
+  overlapping throughput intervals and did not reproduce a stable whole-path
+  allocation mean. Next safe action: rerun the same artifacts on a quiet,
+  dedicated host before archiving this item.</li>
+</ul>
 <p>[ ] 80. Make WAL durability explicit for non-fsync storage adapters so <code>SYNC</code> and <code>GROUP_SYNC</code> never claim guarantees that the active storage backend cannot provide.
 [ ] 81. Split <code>WalRuntime</code> into focused writer, recovery, segment-catalog, and sync-policy responsibilities instead of keeping all lifecycle paths behind one shared monitor.
 [ ] 82. Replace the slow generic <code>WalStorageDirectory</code> fallback with an explicit seekable/capability-aware storage path, or reject unsupported backends early.
@@ -3715,8 +3790,148 @@
 [ ] M41 Audit <code>segmentregistry</code> package for unused or test-only code (Risk: LOW)
 [ ] M42 Review <code>segmentregistry</code> package for test and Javadoc coverage (Risk: LOW)
 [ ] M43 Avoid pattern-name abstractions unless they own lifecycle, resource opening, or rollback-sensitive cleanup (Risk: LOW)</p>
+<h2 id="unfinished-audit">Unfinished Audit</h2>
+<ul>
+<li>Deferred status-value reuse. Boundary: <code>engine</code> point-operation and route
+  leasing results. Reason: exploratory JFR did not identify <code>OperationResult</code>
+  or <code>RouteLeaseAttempt</code> as material allocation sources, and generic singleton
+  reuse adds type-safety and semantic risk. Evidence still needed: a
+  representative allocation profile with these constructors on a material hot
+  stack. Item <code>100.6</code> JFR still did not show that evidence. Next safe action:
+  revisit only after a new production-equivalent profile does.</li>
+<li>Deferred 100.4 sampled point-operation latency recording. Boundary: <code>engine</code>
+  operation monitoring. Reason: explicitly excluded from the current
+  refactoring sequence; operation counts and latency observations remain
+  unchanged. Item <code>100.6</code> sampled latency recording in execution stacks but
+  recorded no live-get monitor contention. Next safe action: reconsider only
+  after a production profile identifies material contention.</li>
+<li>Deferred chunk-store cache redesign. Boundary:
+  <code>engine</code> <code>LruChunkStoreCache</code>. Reason: the implementation has one synchronized
+  access-ordered map, but the persisted cache-enabled profile recorded no
+  contention events, and item <code>100.6</code> JFR did not make it material. Evidence
+  still needed: representative blocked-time or duplicate same-page load
+  measurements. Next safe action: shard or add minimal per-key single-flight
+  only for the demonstrated failure mode.</li>
+<li>Canonical comparison gate remains blocked. Boundary: <code>benchmarks</code>
+  <code>segment-index-pr-smoke</code>. The benchmark now completes for both baseline and
+  candidate, but the one-fork report simultaneously marked all get paths
+  <code>22.07%</code> to <code>45.53%</code> worse and hot-put/split-heavy paths roughly <code>47%</code> to
+  <code>57%</code> better. Focused five-fork throughput intervals overlapped, and a
+  reverse-order live-get repeat remained inconclusive. Evidence still needed:
+  the same A/B artifacts on a quiet, dedicated host. Next safe action: rerun;
+  do not tune code to these contradictory point estimates.</li>
+<li>Repeated explicit maintenance during background split population can time
+  out. Boundary: multi-segment benchmark setup and the production
+  <code>flushAndWait()</code>/split interaction. The failure reproduced at 8,192 and
+  32,768 keys and with segment-cache limits from <code>3</code> through <code>256</code>; the stack
+  timed out in <code>MappedSegmentMaintenanceService.awaitSegmentReady(...)</code> while
+  reloading a closed segment. The read benchmark now performs one final settled
+  flush so it can measure reads, but that does not fix the underlying
+  maintenance interaction. Next safe action: investigate it as a dedicated
+  lifecycle/concurrency issue outside item <code>100.6</code>.</li>
+<li>Route-lease monitor contention needs production confirmation. Boundary:
+  <code>RouteEntry</code> lease acquisition/release. The item <code>100.6</code> JFR hot-put stress
+  profile recorded 14 blocked monitor events totaling <code>143 ms</code> with twenty
+  threads targeting one route; live get recorded none. Next safe action:
+  redesign only if a production JFR shows the same monitor as material.</li>
+<li>Deferred immutable segment-ID set. Boundary: <code>RouteMapSnapshot</code>. Reason:
+  direct map-value scanning removed the temporary list and improved the
+  50,000-route lookup from <code>323.428 us/op</code> to <code>115.267 us/op</code> with effectively
+  zero per-call allocation. Item <code>100.6</code> JFR did not show the remaining scan as
+  material. Evidence still needed: an end-to-end exact-segment acquisition
+  profile showing that it justifies duplicate snapshot state and extra
+  publication cost.</li>
+</ul>
 <h2 id="done-archive">Done (Archive)</h2>
-<p>[x] 97. Clarify <code>core.session</code> responsibility boundaries by moving topology runtime composition to route/topology internals, giving core storage its own open spec and observer types, and preserving lifecycle behavior.
+<ul>
+<li>[x] 100.5 Replace list-building segment membership checks with direct
+  snapshot lookup (Risk: MEDIUM).<ul>
+<li><code>RouteMapSnapshot.containsSegmentId(...)</code> now scans immutable map values
+  directly, and <code>MappedSegmentLeaseService</code> uses it for exact mapped-segment
+  checks without constructing an unbounded list.</li>
+<li>A focused one-thread JMH benchmark measured a successful middle-position
+  lookup with five forks, three warmup iterations, five measurement
+  iterations, and GC profiling on the same JDK 25 arm64 macOS environment.</li>
+<li>Results were <code>63.807 -&gt; 5.627 ns/op</code> at 10 routes,
+  <code>5.647 -&gt; 1.649 us/op</code> at 1,000, <code>64.027 -&gt; 22.364 us/op</code> at 10,000,
+  <code>323.428 -&gt; 115.267 us/op</code> at 50,000, and
+  <code>660.687 -&gt; 228.547 us/op</code> at 100,000. Reported confidence intervals did
+  not overlap at any tested size.</li>
+<li>Allocation changed from <code>384 B/op</code>, <code>4,344 B/op</code>, <code>40,361 B/op</code>,
+  <code>200,346 B/op</code>, and <code>400,355 B/op</code>, respectively, to effectively
+  zero. The improvement is measurable from 10 routes, the smallest tested
+  size; no claim is made below 10.</li>
+<li>Focused engine tests passed with 23 tests, benchmark contract/tooling tests
+  passed with 12 tests, and <code>mvn clean verify</code> passed across all 10 reactor
+  modules.</li>
+</ul>
+</li>
+<li>[x] 100.3 Publish and reuse one immutable <code>RouteMapSnapshot</code> per route-map
+  version (Risk: MEDIUM).<ul>
+<li><code>PersistentSegmentRouteMap</code> now publishes copied routes and their version
+  together through one volatile <code>RouteMapSnapshot</code> reference. Repeated
+  <code>snapshot()</code> calls perform no locking or wrapper allocation, and only real
+  mutations publish the next instance.</li>
+<li>Focused identity, no-op mutation, version-transition, and concurrent split
+  publication coverage passed: 17 route-map tests. <code>mvn clean verify</code>
+  passed across all 10 reactor modules.</li>
+<li>Five-fork live-get JMH with GC data moved from
+  <code>3.493 M ops/s</code>, <code>168.175 B/op</code> to
+  <code>3.427 M ops/s</code>, <code>148.507 B/op</code>. Throughput changed by <code>-1.87%</code> with
+  overlapping confidence intervals; allocation fell by <code>19.668 B/op</code>
+  (<code>-11.70%</code>) with non-overlapping reported confidence intervals.</li>
+<li>Five-fork hot-put throughput moved from <code>2.853 M ops/s</code> to
+  <code>3.170 M ops/s</code>, but its confidence intervals overlapped. Allocation was
+  bimodal across the candidate and repeat runs (<code>136</code> to <code>216 B/op</code>), so no
+  hot-put allocation or throughput improvement is claimed.</li>
+<li>The focused throughput summaries passed the canonical comparison tool
+  with no regression: live get was <code>neutral</code> and hot put was <code>better</code> under
+  its percentage thresholds. The broader canonical-profile setup failure is
+  retained in the unfinished audit rather than hidden.</li>
+</ul>
+</li>
+<li>[x] 100.2 Add production-equivalent context-logging benchmark coverage
+  (Risk: LOW).<ul>
+<li><code>SegmentIndexGetBenchmark</code> and <code>SegmentIndexHotRoutePutBenchmark</code> now
+  expose the same enabled/disabled context-logging parameter. Existing
+  canonical profiles pin it off, while
+  <code>segment-index-context-logging.json</code> runs the focused comparison with a
+  Logback MDC backend and log emission disabled.</li>
+<li>The profile runner now rejects empty JMH result files instead of
+  publishing a successful summary after all forks fail.</li>
+<li>Benchmark profile contract and script smoke coverage passed with 11
+  tests; the packaged runner also passed a direct enabled-MDC smoke run.
+  <code>mvn clean verify</code> passed across all 10 reactor modules.</li>
+<li>Three forks with three warmup and five measurement iterations reported
+  live-get means of <code>3.487 M ops/s</code>, <code>171.884 B/op</code> disabled and
+  <code>3.122 M ops/s</code>, <code>204.007 B/op</code> enabled. Hot-put means were
+  <code>2.527 M ops/s</code>, <code>201.239 B/op</code> disabled and <code>2.800 M ops/s</code>,
+  <code>237.404 B/op</code> enabled.</li>
+<li>Enabled-MDC allocation means were about <code>32.123 B/op</code> higher for live
+  gets and <code>36.165 B/op</code> higher for hot puts. Throughput and allocation
+  confidence intervals overlapped in both comparisons, so this run alone
+  does not establish either effect. Production logging behavior was
+  unchanged.</li>
+</ul>
+</li>
+<li>[x] 100.1 Close the losing <code>SegmentReadPath</code> searcher after concurrent first
+  access (Risk: MEDIUM).<ul>
+<li><code>SegmentReadPath</code> now closes a redundantly constructed searcher
+  immediately after losing the cache CAS; the winner remains cached.</li>
+<li>A deterministic two-thread <code>SegmentReadPathTest</code> verifies that exactly
+  one supplier closes after the race and the winner closes with the read
+  path.</li>
+<li><code>mvn -pl engine -Dtest=SegmentReadPathTest test</code> passed with 7 tests.</li>
+<li><code>mvn clean verify</code> passed across all 10 reactor modules.
+[x] 99. Replace <code>SessionOperationGate</code> per-operation monitor contention with atomic in-flight tracking and bounded close-side drain polling (Risk: MEDIUM)</li>
+<li>Focused session concurrency tests, benchmark module tests, and the full
+  Maven verification pipeline pass.</li>
+<li>Targeted JMH stack sampling removed all <code>SessionOperationGate</code> blocked
+  frames and the per-operation <code>Object.notifyAll()</code> frame.</li>
+<li>The targeted throughput result moved by -3.3%, with heavily overlapping
+  confidence intervals; the canonical smoke profile was also too noisy to
+  establish a throughput regression or improvement.
+[x] 97. Clarify <code>core.session</code> responsibility boundaries by moving topology runtime composition to route/topology internals, giving core storage its own open spec and observer types, and preserving lifecycle behavior.
 [x] 98. Simplify SegmentIndex initialization after the broad assembly refactor by keeping explicit opening points for bootstrap, session startup, and runtime resources while removing pattern-only assembler/request/components layers.
 [x] 89. Rework split routing around a runtime <code>RouteTopology</code> so route handoff, draining, and split publish are owned by topology code while <code>SegmentRegistry</code> remains responsible only for physical segment instances and <code>SegmentRouteMap</code> remains responsible only for persisted routing.
 [x] 90. Define the <code>RouteTopology</code> contract with route states such as <code>ACTIVE</code>, <code>DRAINING</code>, and <code>RETIRED</code>, plus <code>RouteLease</code> acquisition/release semantics and deterministic drain behavior for in-flight routed operations.
@@ -3732,15 +3947,15 @@
 [x] 86. Split policy evaluation from split execution so policy workers only validate mapping and threshold eligibility, then hand off accepted candidates to the dedicated split executor.
 [x] 87. Rebuild periodic reconciliation around the new candidate registry so the 250 ms scanner only offers over-threshold mapped segments that are not already queued or in process.
 [x] 88. Rework split runtime tests around lifecycle, deduplicated candidate scheduling, blocking worker wakeup, quiescence, and close-drain behavior before removing the remaining legacy split-policy orchestration.
-[x] 87 Decompose WAL into smaller durable-log subsystems (Risk: HIGH)
-    - End-game achieved: <code>WalRuntime</code> now reads as a compatibility-facing
-      orchestration facade instead of a monolithic durable-log implementation.
-    - End-game achieved: WAL metadata/catalog, segment inventory, recovery,
-      append-path writing, durability policy, and metrics ownership now live in
-      dedicated collaborators under <code>segmentindex.wal</code>.
-    - End-game achieved: public <code>WalRuntime</code> operations, metrics, and WAL
-      on-disk compatibility remain stable while internal ownership boundaries
-      are explicit and test-covered.
+[x] 87 Decompose WAL into smaller durable-log subsystems (Risk: HIGH)</li>
+<li>End-game achieved: <code>WalRuntime</code> now reads as a compatibility-facing
+  orchestration facade instead of a monolithic durable-log implementation.</li>
+<li>End-game achieved: WAL metadata/catalog, segment inventory, recovery,
+  append-path writing, durability policy, and metrics ownership now live in
+  dedicated collaborators under <code>segmentindex.wal</code>.</li>
+<li>End-game achieved: public <code>WalRuntime</code> operations, metrics, and WAL
+  on-disk compatibility remain stable while internal ownership boundaries
+  are explicit and test-covered.
 [x] 87.1 Freeze <code>WalRuntime</code> contract, state model, and migration invariants (Risk: HIGH)
 [x] 87.2 Add characterization coverage for the current WAL orchestration seams (Risk: HIGH)
 [x] 87.3 Extract WAL metadata/catalog state behind one internal model (Risk: HIGH)
@@ -3748,7 +3963,10 @@
 [x] 87.5 Extract recovery scan and corruption-repair ownership (Risk: HIGH)
 [x] 87.6 Extract append writer and sync policy execution (Risk: HIGH)
 [x] 87.7 Reduce <code>WalRuntime</code> to orchestration and lifecycle assembly (Risk: HIGH)
-[x] 87.8 Refresh docs, benchmarks, and follow-on cleanup after extraction (Risk: HIGH)</p>
+[x] 87.8 Refresh docs, benchmarks, and follow-on cleanup after extraction (Risk: HIGH)</li>
+</ul>
+</li>
+</ul>
 <p>[x] 83 Replace compatibility-shaped public model with domain-shaped public API (Risk: HIGH)
     - End-game achieved: canonical public configuration now exposes
       direct-to-segment write-path vocabulary via <code>IndexWritePathConfiguration</code>
@@ -3847,7 +4065,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

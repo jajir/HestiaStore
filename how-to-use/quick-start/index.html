@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1105,6 +1105,17 @@
     <span class="md-ellipsis">
       
         Basic operations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#store-emoji-and-multilingual-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Store emoji and multilingual text
       
     </span>
   </a>
@@ -3661,6 +3672,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#store-emoji-and-multilingual-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Store emoji and multilingual text
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#iterate-entries" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3818,15 +3840,57 @@ prevent multiple writers from opening the same directory unsafely.</p>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">String</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">index</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">);</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">index</span><span class="p">.</span><span class="na">delete</span><span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">);</span>
 </code></pre></div>
+<p>Insert only when a key is logically absent:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kt">boolean</span><span class="w"> </span><span class="n">inserted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">index</span><span class="p">.</span><span class="na">putIfAbsent</span><span class="p">(</span><span class="s">&quot;order-100&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;created&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p>Replace only when the current value matches the expected value:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kt">boolean</span><span class="w"> </span><span class="n">replaced</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">index</span><span class="p">.</span><span class="na">replace</span><span class="p">(</span><span class="s">&quot;order-100&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;created&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;paid&quot;</span><span class="p">);</span>
+</code></pre></div>
+<p><code>putIfAbsent(...)</code> and <code>replace(...)</code> are currently supported only when WAL is
+disabled. They throw <code>IndexException</code> when WAL is enabled.</p>
+<h2 id="store-emoji-and-multilingual-text">Store emoji and multilingual text</h2>
+<p>HestiaStore supports strict UTF-8 keys and values through explicit string
+descriptors. Select them when creating the index:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.hestiastore.index.datatype.TypeDescriptorTinyUtf8String</span><span class="p">;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.hestiastore.index.datatype.TypeDescriptorUtf8String</span><span class="p">;</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="p">.</span><span class="na">identity</span><span class="p">(</span><span class="n">identity</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">identity</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="p">.</span><span class="na">name</span><span class="p">(</span><span class="s">&quot;localized-text&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">        </span><span class="p">.</span><span class="na">keyClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="p">.</span><span class="na">valueClass</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">        </span><span class="p">.</span><span class="na">keyTypeDescriptor</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">TypeDescriptorTinyUtf8String</span><span class="p">())</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">        </span><span class="p">.</span><span class="na">valueTypeDescriptor</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">TypeDescriptorUtf8String</span><span class="p">()))</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">    </span><span class="n">index</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;objednávka-🙂&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Čeština Ελληνικά Кириллица 日本語 👨‍👩‍👧‍👦&quot;</span><span class="p">);</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="p">}</span>
+</code></pre></div>
+<p>Use <code>TypeDescriptorTinyUtf8String</code> for payloads up to 255 encoded bytes and
+<code>TypeDescriptorUtf8String</code> for larger strings. The limits apply to UTF-8 bytes,
+not displayed characters.</p>
+<p>The default <code>String</code> descriptor remains ISO-8859-1 for on-disk compatibility.
+Choose the UTF-8 descriptors before creating an index that will contain emoji
+or characters outside ISO-8859-1. See <a href="../../configuration/data-types/#utf-8-string-descriptors">Data Types</a>
+for exact size limits and migration guidance.</p>
 <h2 id="iterate-entries">Iterate entries</h2>
 <p>Read all entries in ascending key order:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">index</span><span class="p">.</span><span class="na">getStream</span><span class="p">().</span><span class="na">forEach</span><span class="p">(</span><span class="n">entry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">entry</span><span class="p">));</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">index</span><span class="p">.</span><span class="na">getStream</span><span class="p">().</span><span class="na">forEach</span><span class="p">(</span><span class="n">entry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">entry</span><span class="p">));</span>
 </code></pre></div>
+<p>Read a half-open key range in ascending key order:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">try</span><span class="w"> </span><span class="p">(</span><span class="kd">var</span><span class="w"> </span><span class="n">stream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">index</span><span class="p">.</span><span class="na">scan</span><span class="p">(</span><span class="s">&quot;order-100&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;order-200&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="n">stream</span><span class="p">.</span><span class="na">forEach</span><span class="p">(</span><span class="n">entry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">entry</span><span class="p">));</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="p">}</span>
+</code></pre></div>
+<p>The lower bound is inclusive and the upper bound is exclusive. Pass <code>null</code> as
+the upper bound to scan from the lower key through the end of the index.</p>
 <p>Read only selected segments:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.hestiastore.index.segmentindex.SegmentWindow</span><span class="p">;</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">SegmentWindow</span><span class="w"> </span><span class="n">window</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentWindow</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">);</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">index</span><span class="p">.</span><span class="na">getStream</span><span class="p">(</span><span class="n">window</span><span class="p">).</span><span class="na">forEach</span><span class="p">(</span><span class="n">entry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">entry</span><span class="p">));</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">org.hestiastore.index.segmentindex.SegmentWindow</span><span class="p">;</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">SegmentWindow</span><span class="w"> </span><span class="n">window</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentWindow</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">);</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">index</span><span class="p">.</span><span class="na">getStream</span><span class="p">(</span><span class="n">window</span><span class="p">).</span><span class="na">forEach</span><span class="p">(</span><span class="n">entry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">entry</span><span class="p">));</span>
 </code></pre></div>
 <h2 id="maintenance-operations">Maintenance operations</h2>
 <ul>
@@ -3834,9 +3898,9 @@ prevent multiple writers from opening the same directory unsafely.</p>
 <li><code>checkAndRepairConsistency()</code> validates and repairs recoverable issues.</li>
 <li><code>compact()</code> rewrites fragmented data into a cleaner layout.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">index</span><span class="p">.</span><span class="na">maintenance</span><span class="p">().</span><span class="na">flush</span><span class="p">();</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">index</span><span class="p">.</span><span class="na">maintenance</span><span class="p">().</span><span class="na">checkAndRepairConsistency</span><span class="p">();</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">index</span><span class="p">.</span><span class="na">maintenance</span><span class="p">().</span><span class="na">compact</span><span class="p">();</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">index</span><span class="p">.</span><span class="na">maintenance</span><span class="p">().</span><span class="na">flush</span><span class="p">();</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">index</span><span class="p">.</span><span class="na">maintenance</span><span class="p">().</span><span class="na">checkAndRepairConsistency</span><span class="p">();</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">index</span><span class="p">.</span><span class="na">maintenance</span><span class="p">().</span><span class="na">compact</span><span class="p">();</span>
 </code></pre></div>
 <h2 id="practical-limits-to-know-early">Practical limits to know early</h2>
 <ul>
@@ -3848,6 +3912,7 @@ prevent multiple writers from opening the same directory unsafely.</p>
 <h2 id="next-steps">Next steps</h2>
 <ul>
 <li><a href="../../configuration/">Configuration</a> for storage and tuning knobs</li>
+<li><a href="../../configuration/data-types/">Data Types</a> for UTF-8 and custom descriptors</li>
 <li><a href="../../operations/wal/">WAL</a> for local crash recovery</li>
 <li><a href="../troubleshooting/">Troubleshooting</a> for common startup and runtime issues</li>
 </ul>
@@ -3903,7 +3968,7 @@ prevent multiple writers from opening the same directory unsafely.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

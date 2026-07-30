@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -4090,7 +4090,7 @@
 <li>safe access to segment resources (load/create/delete)</li>
 <li>in-memory segment cache (LRU)</li>
 <li>registry-level state gate (<code>READY</code>, <code>CLOSED</code>, <code>ERROR</code>, <code>FREEZE</code>)</li>
-<li>segment id allocation for new segments via <code>SegmentIdAllocator</code></li>
+<li>segment id allocation for new segments via a <code>Supplier&lt;SegmentId&gt;</code></li>
 </ul>
 </li>
 <li>The registry does <strong>not</strong> own protection of "segment in use" vs "segment close/delete" races.
@@ -4430,7 +4430,7 @@ Only threads touching the same key can block each other.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

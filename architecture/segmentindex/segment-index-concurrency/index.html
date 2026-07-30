@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3889,8 +3889,10 @@
   a global executor.</li>
 <li>SegmentRegistrySynchronized serializes access to the segment instance map and
   registry mutations.</li>
-<li>SegmentRouteMap uses snapshot reads plus a mapping version; updates take a
-  write lock and increment the version.</li>
+<li>SegmentRouteMap publishes the immutable routes and mapping version together
+  through one volatile snapshot. Foreground snapshot and version reads do not
+  take the route-map lock; updates take the write lock and publish the next
+  snapshot after the mutation.</li>
 <li>RouteTopology is rebuilt from the persisted map on startup and reconciled
   after route-map changes. It does not own segment instances or persistence.</li>
 <li>Foreground <code>put</code>, <code>delete</code>, and <code>get</code> use <code>MappedSegmentLeaseService</code> to resolve a
@@ -4053,8 +4055,9 @@
   ExecutorRegistry.</li>
 <li>Registry maintenance pool: <code>hestia-&lt;indexName&gt;-registry-maintenance-*</code> from
   ExecutorRegistry.</li>
-<li>WAL group-sync scheduler: <code>hestia-&lt;indexName&gt;-wal-group-sync-*</code> when
-  GROUP_SYNC WAL durability is enabled with a positive delay.</li>
+<li>WAL append and delayed group sync worker:
+  <code>hestia-&lt;indexName&gt;-wal-append-*</code>, created by <code>ExecutorRegistry</code> and drained
+  by <code>WalRuntime</code> before executor shutdown.</li>
 <li>Shared segment maintenance pool: <code>hestia-segment-maintenance-*</code> from
   HestiaStoreRuntime.</li>
 <li>Shared split worker pool: <code>hestia-split-maintenance-*</code> from
@@ -4115,7 +4118,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

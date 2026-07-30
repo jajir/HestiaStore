@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3762,11 +3762,24 @@ longer the implementation home for every WAL concern.</p>
 </ul>
 <h2 id="concurrency-model">Concurrency model</h2>
 <ul>
-<li><code>WalRuntime</code> owns one monitor that guards stateful WAL operations.</li>
-<li>Recovery, append, checkpoint, cleanup, and close run while holding that
-  monitor.</li>
-<li><code>WalSyncPolicy</code> may run a scheduled group-sync task, but it reacquires the
-  same monitor before mutating durability state.</li>
+<li>Append producers submit through the bounded <code>ArrayBlockingQueue</code> using its
+  interruptible timed offer. Producers no longer hold the WAL state monitor or
+  wait in fixed park intervals while queue capacity is unavailable.</li>
+<li>A fair admission read/write lock lets producers offer concurrently. Close
+  takes the write side before marking the runtime closed and placing the stop
+  marker, so every accepted append stays ahead of that marker.</li>
+<li>The single append worker remains the ordering authority. It assigns LSNs and
+  mutates WAL writer/catalog state under the WAL monitor. Segment indexes obtain
+  its named daemon thread factory from their per-index <code>ExecutorRegistry</code>, while
+  <code>WalRuntime</code> retains stop, drain, and join ownership.</li>
+<li>In <code>SYNC</code> mode, records drained into one worker batch share one physical sync.
+  Their futures are completed only after that sync succeeds, so acknowledgements
+  retain synchronous durability.</li>
+<li>Recovery, checkpoint, cleanup, worker append, and durability-state changes
+  remain serialized by the WAL monitor.</li>
+<li>In delayed <code>GROUP_SYNC</code> mode, the append worker polls the queue only until the
+  pending sync deadline. It also checks that deadline after every worker batch,
+  so continuous append traffic cannot postpone durability indefinitely.</li>
 <li><code>durableLsn()</code> remains available as a best-effort read without requiring
   callers to hold the monitor.</li>
 </ul>
@@ -3784,6 +3797,7 @@ index-state catalog work tracked in backlog item <code>84</code>.</p>
 <li>Segment file naming remains <code>&lt;20-digit-base-lsn&gt;.wal</code>.</li>
 <li>Checkpoint LSN remains monotonic at runtime.</li>
 <li>Recovery still validates monotonic LSN ordering across segment boundaries.</li>
+<li>Close never silently abandons an append accepted before its stop marker.</li>
 <li><code>TRUNCATE_INVALID_TAIL</code> vs <code>FAIL_FAST</code> semantics remain unchanged.</li>
 <li>Public <code>WalRuntime</code> metrics and log event names remain unchanged.</li>
 </ul>
@@ -3848,7 +3862,7 @@ index-state catalog work tracked in backlog item <code>84</code>.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

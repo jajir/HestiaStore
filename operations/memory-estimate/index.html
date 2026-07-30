@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3686,38 +3686,62 @@
 
 <h1 id="startup-memory-estimate">Startup Memory Estimate</h1>
 <p>HestiaStore logs a rough startup memory estimate after the effective
-<code>SegmentIndex</code> configuration is resolved. The report estimates active heap
-pressure from configuration values; it is not a JVM heap cap and it is not a
-measurement of allocated objects.</p>
+<code>SegmentIndex</code> configuration is resolved. The report estimates memory pressure
+from configuration values; it is not a memory cap and it is not a measurement
+of allocated objects.</p>
 <p>The estimate is meant to explain why the configured index may need memory. Use
 it as a sizing hint, then verify real usage with JVM and application monitoring.</p>
 <h2 id="how-to-read-the-report">How to read the report</h2>
-<p>The report puts the final estimate first:</p>
+<p>The report uses fixed-width text tables with three columns:</p>
 <ul>
-<li><code>Estimated active heap</code>: steady-state memory plus the temporary margin.</li>
-<li><code>steady state</code>: memory expected after startup caches are loaded.</li>
-<li><code>temporary margin</code>: extra headroom for short-lived objects and snapshots.</li>
+<li><code>Component</code>: short name for the calculated area, input, or constant.</li>
+<li><code>Estimate</code>: estimated memory or configured value.</li>
+<li><code>Description</code>: formula, input context, or reason why an estimate is unknown.</li>
 </ul>
-<p>The <code>Largest steady-state areas</code> section shows the biggest calculated areas in
-descending order. The <code>Estimated memory by area</code> section keeps the detailed
-inputs for each area.</p>
-<p>Configuration values that are useful context but do not change the estimate are
-listed under <code>Reported but not included</code>. Conditional areas use <code>if loaded</code> in
-their labels because those structures are loaded lazily; the estimate shows
-their active-heap cost when loaded.</p>
+<p>Long descriptions wrap onto continuation rows so each report line stays within
+the fixed report width. The final estimate appears first, followed by the
+calculated memory areas:</p>
+<ul>
+<li><code>Total index memory</code>: all segments, chunk-store page cache, and maintenance
+  overhead.</li>
+<li><code>All segments</code>: cached segment memory plus the segment routing map.</li>
+<li><code>One cached segment</code>: per-segment memory blocks that are multiplied by the
+  configured segment cache slots.</li>
+<li><code>Delta cache</code>: configured maximum number of keys in the cache multiplied by
+  the estimated key/value entry.</li>
+<li><code>Chunk-store page cache</code>: cached chunk-store pages and their key/value
+  entries.</li>
+<li><code>Maintenance overhead</code>: temporary headroom for short-lived objects,
+  maintenance work, and snapshots.</li>
+<li><code>Key/value entry</code>: key size, value size, and fixed per-entry overhead
+  used by key/value cache estimates.</li>
+<li><code>Key/position entry</code>: key size, integer position size, and fixed per-entry
+  overhead used by scarce-index estimates.</li>
+<li><code>Key/segment-id entry</code>: key size and segment id size used by the segment
+  routing map.</li>
+<li><code>Inputs and constants</code>: configuration values and fixed assumptions used by
+  the estimator. Values such as <code>Write-buffer keys</code> are reported for context
+  and are not added to the total.</li>
+</ul>
+<p>Area rows such as <code>Delta cache</code>, <code>Chunk-store page cache</code>, and <code>Maintenance
+overhead</code> summarize the formula in the description column. Supporting rows in
+<code>Entry sizes</code> and <code>Inputs and constants</code> show the entry-size assumptions and
+configuration values used by those formulas.</p>
 <h2 id="what-the-report-uses">What the report uses</h2>
 <p>The estimator combines resolved configuration, descriptor size estimates, and a
 small set of fixed assumptions:</p>
 <ul>
-<li><code>entry overhead</code>: applied per cached key/value entry.</li>
-<li><code>page overhead</code>: applied per chunk-store cache page.</li>
-<li><code>tree map entry</code>: applied per route-map tree entry.</li>
-<li><code>segment id</code>: applied when estimating route-map entries.</li>
-<li><code>scarce index position</code>: applied per scarce-index entry.</li>
+<li><code>fixed per-entry overhead</code>: applied when estimating key/value entries and
+  key/position entries.</li>
+<li><code>page overhead</code>: applied per chunk-store page-cache page.</li>
+<li><code>segment id</code>: applied with key size when estimating key/segment-id route-map
+  entries.</li>
+<li><code>scarce index position</code>: integer position stored with each scarce-index key.</li>
 <li><code>fixed per loaded/cached segment</code>: applied once for each loaded or cached
   segment.</li>
-<li><code>temporary margin</code>: extra space above steady state, calculated as the
-  larger of a percentage of steady state or one loaded segment cache.</li>
+<li><code>maintenance overhead</code>: extra space above memory before maintenance,
+  calculated as the larger of a percentage of memory before maintenance or one
+  delta cache.</li>
 </ul>
 <p>These assumptions are deliberately visible because they are not exact JVM
 object-layout measurements. They are stable estimator constants used to make
@@ -3725,7 +3749,7 @@ the report understandable and repeatable.</p>
 <h2 id="incomplete-estimates">Incomplete estimates</h2>
 <p>If a key or value <code>TypeDescriptor</code> cannot provide
 <code>getEstimatedAverageSizeInBytes()</code>, HestiaStore still starts normally. The
-report marks dependent line items as unavailable and still shows independent
+report marks dependent line items as <code>unknown</code> and still shows independent
 items such as Bloom filters and fixed segment infrastructure.</p>
 <h2 id="related-docs">Related docs</h2>
 <ul>
@@ -3787,7 +3811,7 @@ items such as Bloom filters and fixed segment infrastructure.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

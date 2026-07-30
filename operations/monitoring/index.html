@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3808,24 +3808,27 @@ maintenance indicators:</p>
 <li><code>wal().appendCount()</code></li>
 <li><code>wal().appendBytes()</code></li>
 <li>Sync health:</li>
-<li><code>wal().syncCount()</code></li>
+<li><code>wal().syncCount()</code> (successful physical sync batches, not appended records)</li>
 <li><code>wal().syncFailureCount()</code></li>
 <li><code>wal().syncAverageNanos()</code></li>
 <li><code>wal().syncMaxNanos()</code></li>
 <li><code>wal().syncAverageBatchBytes()</code></li>
 <li><code>wal().syncBatchBytesMax()</code></li>
-<li>Recovery/corruption:</li>
-<li><code>getWalCorruptionCount()</code></li>
-<li><code>getWalTruncationCount()</code></li>
-<li>Retention/checkpoint:</li>
-<li><code>getWalRetainedBytes()</code></li>
-<li><code>getWalSegmentCount()</code></li>
-<li><code>getWalCheckpointLsn()</code></li>
-<li><code>getWalAppliedLsn()</code></li>
-<li><code>getWalCheckpointLagLsn()</code></li>
-<li>Backlog:</li>
-<li><code>getWalPendingSyncBytes()</code></li>
 </ul>
+<p>For concurrent <code>SYNC</code> writers, a healthy batching effect appears as append
+count growing faster than sync count and a larger average sync batch. A batch
+still acknowledges no member until its physical sync succeeds.
+- Recovery/corruption:
+  - <code>getWalCorruptionCount()</code>
+  - <code>getWalTruncationCount()</code>
+- Retention/checkpoint:
+  - <code>getWalRetainedBytes()</code>
+  - <code>getWalSegmentCount()</code>
+  - <code>getWalCheckpointLsn()</code>
+  - <code>getWalAppliedLsn()</code>
+  - <code>getWalCheckpointLagLsn()</code>
+- Backlog:
+  - <code>getWalPendingSyncBytes()</code></p>
 <h2 id="suggested-alerts">Suggested Alerts</h2>
 <p>Start with these baseline alerts and tune per workload:</p>
 <ul>
@@ -3943,7 +3946,7 @@ maintenance indicators:</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

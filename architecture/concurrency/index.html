@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -3805,8 +3805,9 @@ enforces its own admission gate and iterator/version rules; see
   <code>hestia-&lt;indexName&gt;-split-policy-*</code> scheduler.</li>
 <li>Split materialization runs on the shared <code>hestia-split-maintenance-*</code>
   executor.</li>
-<li>WAL group sync runs on <code>hestia-&lt;indexName&gt;-wal-group-sync-*</code> when GROUP_SYNC
-  durability is enabled with a positive delay.</li>
+<li>WAL append ordering and delayed group sync both run on the single
+  <code>hestia-&lt;indexName&gt;-wal-append-*</code> worker. <code>ExecutorRegistry</code> supplies its
+  index-scoped daemon thread factory; <code>WalRuntime</code> drains and joins it.</li>
 </ul>
 <h2 id="implications">Implications</h2>
 <ul>
@@ -3869,7 +3870,7 @@ enforces its own admission gate and iterator/version rules; see
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
