@@ -57,7 +57,13 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     private final List<TypeDescriptor<?>> elementTypes;
     private final CompositeValue tombstoneValue;
 
-    TypeDescriptorComposite(final List<TypeDescriptor<?>> elementTypes) {
+    /**
+     * Creates a descriptor for the supplied ordered element types.
+     *
+     * @param elementTypes element descriptors in composite-key order
+     */
+    public TypeDescriptorComposite(
+            final List<TypeDescriptor<?>> elementTypes) {
         this.elementTypes = List
                 .copyOf(Vldtn.requireNotEmpty(elementTypes, "elementTypes"));
         final Object[] tmp = new Object[elementTypes.size()];
