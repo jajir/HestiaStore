@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings({ "deprecation", "removal" })
+@SuppressWarnings({ "removal" })
 class ByteToolTest {
 
     private static final byte[] BYTES_EMPTY_STR = "".getBytes();

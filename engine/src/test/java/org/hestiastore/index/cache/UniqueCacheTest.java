@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -83,6 +85,29 @@ class UniqueCacheTest {
         assertEquals(Entry.of(13, "my"), out.get(2));
         assertEquals(Entry.of(15, "dear"), out.get(3));
         assertEquals(4, cache.size());
+    }
+
+    @Test
+    void getSortedKeyIterator_returns_sorted_shallow_snapshot() {
+        cache.put(Entry.of(15, "dear"));
+        cache.put(Entry.of(13, "my"));
+        cache.put(Entry.of(-199, "hello"));
+
+        final Iterator<Integer> iterator = cache.getSortedKeyIterator();
+        cache.clear();
+        final List<Integer> keys = new ArrayList<>();
+        iterator.forEachRemaining(keys::add);
+
+        assertEquals(List.of(-199, 13, 15), keys);
+    }
+
+    @Test
+    void getSortedKeyIterator_does_not_support_removal() {
+        cache.put(Entry.of(10, "hello"));
+        final Iterator<Integer> iterator = cache.getSortedKeyIterator();
+        iterator.next();
+
+        assertThrows(UnsupportedOperationException.class, iterator::remove);
     }
 
     @Test
