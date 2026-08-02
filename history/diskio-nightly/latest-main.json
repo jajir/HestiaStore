@@ -1,12 +1,12 @@
 {
   "branch": "HEAD",
   "channel": "main",
-  "comparisonJsonPath": "history/diskio-nightly/2026/08/2026-08-01T06-01-04.873508+00-00_99f6033423f9_30686583670/comparison-vs-previous.json",
-  "comparisonMarkdownPath": "history/diskio-nightly/2026/08/2026-08-01T06-01-04.873508+00-00_99f6033423f9_30686583670/comparison-vs-previous.md",
+  "comparisonJsonPath": "history/diskio-nightly/2026/08/2026-08-02T06-08-07.783222+00-00_99f6033423f9_30734836351/comparison-vs-previous.json",
+  "comparisonMarkdownPath": "history/diskio-nightly/2026/08/2026-08-02T06-08-07.783222+00-00_99f6033423f9_30734836351/comparison-vs-previous.md",
   "prNumber": null,
   "profile": "diskio-nightly",
-  "runPath": "history/diskio-nightly/2026/08/2026-08-01T06-01-04.873508+00-00_99f6033423f9_30686583670",
+  "runPath": "history/diskio-nightly/2026/08/2026-08-02T06-08-07.783222+00-00_99f6033423f9_30734836351",
   "sha": "99f6033423f943fa22655f00429ed039230292dc",
-  "summaryPath": "history/diskio-nightly/2026/08/2026-08-01T06-01-04.873508+00-00_99f6033423f9_30686583670/summary.json",
-  "timestampUtc": "2026-08-01T06:01:04.873508+00:00"
+  "summaryPath": "history/diskio-nightly/2026/08/2026-08-02T06-08-07.783222+00-00_99f6033423f9_30734836351/summary.json",
+  "timestampUtc": "2026-08-02T06:08:07.783222+00:00"
 }
