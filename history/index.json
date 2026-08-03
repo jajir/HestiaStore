@@ -5,13 +5,13 @@
         "main": {
           "latestPointerPath": "history/diskio-nightly/latest-main.json",
           "sha": "99f6033423f943fa22655f00429ed039230292dc",
-          "timestampUtc": "2026-08-02T06:08:07.783222+00:00"
+          "timestampUtc": "2026-08-03T06:26:41.994485+00:00"
         }
       },
       "latestChannel": "main",
       "latestPointerPath": "history/diskio-nightly/latest-main.json",
       "sha": "99f6033423f943fa22655f00429ed039230292dc",
-      "timestampUtc": "2026-08-02T06:08:07.783222+00:00"
+      "timestampUtc": "2026-08-03T06:26:41.994485+00:00"
     },
     "segment-index-nightly": {
       "channels": {
