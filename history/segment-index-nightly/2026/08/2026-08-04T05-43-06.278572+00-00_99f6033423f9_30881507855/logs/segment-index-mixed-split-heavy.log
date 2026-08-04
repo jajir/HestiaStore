@@ -1,0 +1,75 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads (1 group; 4x "getWorkload", 16x "putWorkload" in each group), will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed
+# Parameters: (hotKeySpace = 256, workloadMode = splitHeavy)
+
+# Run progress: 0.00% complete, ETA 00:00:14
+# Fork: 1 of 1
+# Warmup Iteration   1: 311687.532 ops/s
+# Warmup Iteration   2: 737783.181 ops/s
+Iteration   1: 980613.173 ops/s
+                 getWorkload: 965213.915 ops/s
+                 putWorkload: 15399.258 ops/s
+
+Iteration   2: 1111571.382 ops/s
+                 getWorkload: 1096068.650 ops/s
+                 putWorkload: 15502.732 ops/s
+
+Iteration   3: 1176089.949 ops/s
+                 getWorkload: 1160012.295 ops/s
+                 putWorkload: 16077.654 ops/s
+
+Iteration   4: 1297471.003 ops/s
+                 getWorkload: 1281707.754 ops/s
+                 putWorkload: 15763.249 ops/s
+
+Iteration   5: 1267162.888 ops/s
+                 getWorkload: 1252135.054 ops/s
+                 putWorkload: 15027.834 ops/s
+
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed":
+  1166581.679 ±(99.9%) 490671.692 ops/s [Average]
+  (min, avg, max) = (980613.173, 1166581.679, 1297471.003), stdev = 127425.880
+  CI (99.9%): [675909.987, 1657253.371] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:getWorkload":
+  1151027.534 ±(99.9%) 490590.610 ops/s [Average]
+  (min, avg, max) = (965213.915, 1151027.534, 1281707.754), stdev = 127404.824
+  CI (99.9%): [660436.923, 1641618.144] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:putWorkload":
+  15554.146 ±(99.9%) 1517.738 ops/s [Average]
+  (min, avg, max) = (15027.834, 15554.146, 16077.654), stdev = 394.152
+  CI (99.9%): [14036.408, 17071.883] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:19
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                           (hotKeySpace)  (workloadMode)   Mode  Cnt        Score        Error  Units
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed                        256      splitHeavy  thrpt    5  1166581.679 ± 490671.692  ops/s
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:getWorkload            256      splitHeavy  thrpt    5  1151027.534 ± 490590.610  ops/s
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:putWorkload            256      splitHeavy  thrpt    5    15554.146 ±   1517.738  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-mixed-split-heavy.json
