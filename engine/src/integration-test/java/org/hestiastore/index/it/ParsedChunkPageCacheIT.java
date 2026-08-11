@@ -119,7 +119,6 @@ class ParsedChunkPageCacheIT {
                         .deltaCacheFileLimit(2))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(16)
                         .maintenanceWriteCacheKeyLimit(32)
-                        .indexBufferedWriteKeyLimit(64)
                         .segmentSplitKeyThreshold(128))
                 .bloomFilter(bloom -> bloom.indexSizeBytes(1024)
                         .hashFunctions(3).falsePositiveProbability(0.01D))

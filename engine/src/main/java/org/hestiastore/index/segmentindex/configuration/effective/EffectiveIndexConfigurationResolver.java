@@ -118,11 +118,6 @@ public final class EffectiveIndexConfigurationResolver {
                 .segmentWriteCacheKeyLimitDuringMaintenance(),
                 Math.max(segmentWriteCacheKeyLimit + 1,
                         (int) Math.ceil(segmentWriteCacheKeyLimit * 1.4d)));
-        final int indexBufferedWriteKeyLimit = intOr(
-                request.writePath().indexBufferedWriteKeyLimit(),
-                Math.max(maintenanceWriteCacheKeyLimit,
-                        maintenanceWriteCacheKeyLimit
-                                * Math.max(1, cachedSegmentLimit)));
         final int chunkKeyLimit = intOr(request.segment().chunkKeyLimit(),
                 Math.min(defaultSegment.chunkKeyLimit(), maxKeys));
         final int chunkStoreCachePageLimit = intOr(request.chunkStoreCache()
@@ -136,7 +131,7 @@ public final class EffectiveIndexConfigurationResolver {
                                 defaultSegment.deltaCacheFileLimit())),
                 new EffectiveIndexWritePathConfiguration(
                         segmentWriteCacheKeyLimit, maintenanceWriteCacheKeyLimit,
-                        indexBufferedWriteKeyLimit, segmentSplitKeyThreshold),
+                        segmentSplitKeyThreshold),
                 effectiveBloomFilter(request, defaults),
                 effectiveMaintenance(request, defaults),
                 new EffectiveIndexIoConfiguration(
@@ -254,7 +249,6 @@ public final class EffectiveIndexConfigurationResolver {
                         .segmentWriteCacheKeyLimitDuringMaintenance(),
                         stored.writePath()
                                 .segmentWriteCacheKeyLimitDuringMaintenance()),
-                stored.writePath().indexBufferedWriteKeyLimit(),
                 stored.writePath().segmentSplitKeyThreshold());
     }
 

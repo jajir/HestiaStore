@@ -39,7 +39,6 @@ class RuntimeTuningConfigurationMapperTest {
         assertEquals(70, mapped.writePath().segmentWriteCacheKeyLimit());
         assertEquals(90, mapped.writePath()
                 .segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(120, mapped.writePath().indexBufferedWriteKeyLimit());
         assertEquals(150, mapped.writePath().segmentSplitKeyThreshold());
         assertEquals(12, mapped.chunkStoreCache().pageLimit());
     }
@@ -87,7 +86,7 @@ class RuntimeTuningConfigurationMapperTest {
                         "org.hestiastore.index.datatype.TypeDescriptorInteger",
                         "org.hestiastore.index.datatype.TypeDescriptorString"),
                 new EffectiveIndexSegmentConfiguration(1_000, 25, 30, 5, 3),
-                new EffectiveIndexWritePathConfiguration(10, 15, 60, 500),
+                new EffectiveIndexWritePathConfiguration(10, 15, 500),
                 new EffectiveIndexBloomFilterConfiguration(2, 2_048, 0.01d),
                 new EffectiveIndexMaintenanceConfiguration(3, 4, 5, 30,
                         true),
@@ -101,7 +100,7 @@ class RuntimeTuningConfigurationMapperTest {
     private RuntimeTuningSnapshot runtimeTuningSnapshot() {
         return new RuntimeTuningSnapshot("runtime-tuning-mapper-test", 7L,
                 Instant.now(), new RuntimeSegmentTuningSnapshot(40, 8),
-                new RuntimeWritePathTuningSnapshot(70, 90, 120, 150),
+                new RuntimeWritePathTuningSnapshot(70, 90, 150),
                 new RuntimeChunkStoreCacheTuningSnapshot(12));
     }
 }

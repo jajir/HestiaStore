@@ -24,7 +24,6 @@ final class HestiaStoreMetricNames {
     static final String CHUNK_STORE_CACHE_INVALIDATION_TOTAL = "hestiastore_chunk_store_cache_invalidation_total";
     static final String SEGMENT_WRITE_CACHE_KEY_LIMIT = "hestiastore_segment_write_cache_key_limit";
     static final String SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE = "hestiastore_segment_write_cache_key_limit_during_maintenance";
-    static final String INDEX_BUFFERED_WRITE_KEY_LIMIT = "hestiastore_index_buffered_write_key_limit";
     static final String SPLIT_TASK_START_DELAY_P95_MICROS = "hestiastore_split_task_start_delay_p95_micros";
     static final String SPLIT_TASK_RUN_LATENCY_P95_MICROS = "hestiastore_split_task_run_latency_p95_micros";
     static final String FLUSH_ACCEPTED_TO_READY_P95_MICROS = "hestiastore_flush_accepted_to_ready_p95_micros";

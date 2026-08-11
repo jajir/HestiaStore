@@ -14,7 +14,6 @@ public record MetricsResponse(String indexName, String state,
         int registryCacheLimit, int segmentCacheKeyLimitPerSegment,
         int segmentWriteCacheKeyLimit,
         int segmentWriteCacheKeyLimitDuringMaintenance,
-        int indexBufferedWriteKeyLimit,
         int segmentCount, int segmentReadyCount,
         int segmentMaintenanceCount, int segmentErrorCount,
         int segmentClosedCount, int unloadedMappedSegmentCount,
@@ -57,8 +56,6 @@ public record MetricsResponse(String indexName, String state,
                 "segmentWriteCacheKeyLimit");
         requireNotNegative(segmentWriteCacheKeyLimitDuringMaintenance,
                 "segmentWriteCacheKeyLimitDuringMaintenance");
-        requireNotNegative(indexBufferedWriteKeyLimit,
-                "indexBufferedWriteKeyLimit");
         requireNotNegative(segmentCount, "segmentCount");
         requireNotNegative(segmentReadyCount, "segmentReadyCount");
         requireNotNegative(segmentMaintenanceCount, "segmentMaintenanceCount");

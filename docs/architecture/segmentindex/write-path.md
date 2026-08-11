@@ -165,8 +165,6 @@ Key classes:
   threshold
 - `writePath().maintenanceWriteCacheKeyLimit()` — per-segment
   maintenance/write-buffer ceiling
-- `writePath().indexBufferedWriteKeyLimit()` — index-wide buffered-write budget
-  exposed in metrics and runtime tuning
 - `writePath().segmentSplitKeyThreshold()` — split threshold per routed range
 - `segment().cacheKeyLimit()` — bounds total in-segment cache size before
   compaction and split decisions

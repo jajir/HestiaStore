@@ -99,18 +99,10 @@ final class RuntimeTuningPatchValidator {
         final int maintenanceWriteCacheLimit = effective.get(
                 RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE)
                 .asInt();
-        final int indexBuffer = effective
-                .get(RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT)
-                .asInt();
         if (maintenanceWriteCacheLimit <= segmentWriteCacheLimit) {
             issues.add(new RuntimeTuningValidationIssue(
                     RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                     "value must be greater than segmentWriteCacheKeyLimit"));
-        }
-        if (indexBuffer < maintenanceWriteCacheLimit) {
-            issues.add(new RuntimeTuningValidationIssue(
-                    RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                    "value must be >= segmentWriteCacheKeyLimitDuringMaintenance"));
         }
     }
 }

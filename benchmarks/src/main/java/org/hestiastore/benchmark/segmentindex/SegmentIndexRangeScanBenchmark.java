@@ -176,7 +176,6 @@ public class SegmentIndexRangeScanBenchmark {
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(256)
                         .maintenanceWriteCacheKeyLimit(512)
-                        .indexBufferedWriteKeyLimit(8_192)
                         .segmentSplitKeyThreshold(maxKeysInSegment))//
                 .bloomFilter(bloomFilter -> bloomFilter
                         .indexSizeBytes(Math.max(16_384, keyCount))

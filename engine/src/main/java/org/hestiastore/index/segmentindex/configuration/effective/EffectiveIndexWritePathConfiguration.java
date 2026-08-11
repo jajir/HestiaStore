@@ -9,13 +9,11 @@ public final class EffectiveIndexWritePathConfiguration {
 
     private final int segmentWriteCacheKeyLimit;
     private final int segmentWriteCacheKeyLimitDuringMaintenance;
-    private final int indexBufferedWriteKeyLimit;
     private final int segmentSplitKeyThreshold;
 
     public EffectiveIndexWritePathConfiguration(
             final int segmentWriteCacheKeyLimit,
             final int segmentWriteCacheKeyLimitDuringMaintenance,
-            final int indexBufferedWriteKeyLimit,
             final int segmentSplitKeyThreshold) {
         this.segmentWriteCacheKeyLimit = Vldtn.requireGreaterThanZero(
                 segmentWriteCacheKeyLimit, "segmentWriteCacheKeyLimit");
@@ -23,16 +21,11 @@ public final class EffectiveIndexWritePathConfiguration {
                 .requireGreaterThanZero(
                         segmentWriteCacheKeyLimitDuringMaintenance,
                         "segmentWriteCacheKeyLimitDuringMaintenance");
-        this.indexBufferedWriteKeyLimit = Vldtn.requireGreaterThanZero(
-                indexBufferedWriteKeyLimit, "indexBufferedWriteKeyLimit");
         this.segmentSplitKeyThreshold = Vldtn.requireGreaterThanZero(
                 segmentSplitKeyThreshold, "segmentSplitKeyThreshold");
         Vldtn.requireTrue(segmentWriteCacheKeyLimitDuringMaintenance
                 > segmentWriteCacheKeyLimit,
                 "segmentWriteCacheKeyLimitDuringMaintenance must be greater than segmentWriteCacheKeyLimit");
-        Vldtn.requireTrue(indexBufferedWriteKeyLimit
-                >= segmentWriteCacheKeyLimitDuringMaintenance,
-                "indexBufferedWriteKeyLimit must be greater than or equal to segmentWriteCacheKeyLimitDuringMaintenance");
     }
 
     public int segmentWriteCacheKeyLimit() {
@@ -41,10 +34,6 @@ public final class EffectiveIndexWritePathConfiguration {
 
     public int segmentWriteCacheKeyLimitDuringMaintenance() {
         return segmentWriteCacheKeyLimitDuringMaintenance;
-    }
-
-    public int indexBufferedWriteKeyLimit() {
-        return indexBufferedWriteKeyLimit;
     }
 
     public int segmentSplitKeyThreshold() {

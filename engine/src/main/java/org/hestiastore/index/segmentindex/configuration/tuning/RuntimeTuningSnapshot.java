@@ -62,9 +62,6 @@ public final class RuntimeTuningSnapshot {
                                 RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE)
                                 .asInt(),
                         value(input,
-                                RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT)
-                                .asInt(),
-                        value(input,
                                 RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD)
                                 .asInt()),
                 new RuntimeChunkStoreCacheTuningSnapshot(value(input,
@@ -107,8 +104,6 @@ public final class RuntimeTuningSnapshot {
             case SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> RuntimeTuningValue
                     .ofInt(writePath
                             .segmentWriteCacheKeyLimitDuringMaintenance());
-            case INDEX_BUFFERED_WRITE_KEY_LIMIT -> RuntimeTuningValue
-                    .ofInt(writePath.indexBufferedWriteKeyLimit());
             case SEGMENT_SPLIT_KEY_THRESHOLD -> RuntimeTuningValue
                     .ofInt(writePath.segmentSplitKeyThreshold());
             case CHUNK_STORE_CACHE_PAGE_LIMIT -> RuntimeTuningValue

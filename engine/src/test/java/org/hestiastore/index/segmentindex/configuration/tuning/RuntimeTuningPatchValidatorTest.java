@@ -53,7 +53,6 @@ class RuntimeTuningPatchValidatorTest {
                 .validate(RuntimeTuningPatch.builder()
                         .segmentWriteCacheKeyLimit(4)
                         .segmentWriteCacheKeyLimitDuringMaintenance(6)
-                        .indexBufferedWriteKeyLimit(8)
                         .build());
 
         assertTrue(validation.valid());
@@ -101,7 +100,6 @@ class RuntimeTuningPatchValidatorTest {
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(7))
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))
                 .segment(segment -> segment.chunkKeyLimit(2))
                 .segment(segment -> segment.maxKeys(100))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(50))

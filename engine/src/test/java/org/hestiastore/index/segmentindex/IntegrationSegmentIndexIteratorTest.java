@@ -296,7 +296,6 @@ class IntegrationSegmentIndexIteratorTest {
                 .segment(segment -> segment.cacheKeyLimit(3)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(128)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(256)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
                 .segment(segment -> segment.maxKeys(4)) //
                 .segment(segment -> segment.chunkKeyLimit(1)) //
@@ -319,7 +318,6 @@ class IntegrationSegmentIndexIteratorTest {
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
                 .segment(segment -> segment.maxKeys(128)) //
                 .segment(segment -> segment.chunkKeyLimit(4)) //

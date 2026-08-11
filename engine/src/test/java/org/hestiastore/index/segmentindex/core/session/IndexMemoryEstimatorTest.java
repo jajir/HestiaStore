@@ -75,8 +75,6 @@ class IndexMemoryEstimatorTest {
                 "key: TypeDescriptorInteger, about 4");
         assertContains(log,
                 "integer position:");
-        assertContains(log, "Write-buffer keys");
-        assertContains(log, "reported, not included in total");
         assertContains(log, "Chunk keys per page");
         assertContains(log,
                 "configured bloom filter size: 1.00");
