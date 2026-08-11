@@ -1,0 +1,110 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.boundedScan
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, rangeSize = 128, snappy = true, valueLength = 64)
+
+# Run progress: 0.00% complete, ETA 00:00:42
+# Fork: 1 of 1
+# Warmup Iteration   1: 44.182 us/op
+# Warmup Iteration   2: 34.601 us/op
+Iteration   1: 34.128 us/op
+Iteration   2: 34.270 us/op
+Iteration   3: 34.606 us/op
+Iteration   4: 34.555 us/op
+Iteration   5: 34.489 us/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.boundedScan":
+  34.410 ±(99.9%) 0.781 us/op [Average]
+  (min, avg, max) = (34.128, 34.410, 34.606), stdev = 0.203
+  CI (99.9%): [33.629, 35.191] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.fullStreamRangeFallback
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, rangeSize = 128, snappy = true, valueLength = 64)
+
+# Run progress: 33.33% complete, ETA 00:00:32
+# Fork: 1 of 1
+# Warmup Iteration   1: 2398.009 us/op
+# Warmup Iteration   2: 2121.898 us/op
+Iteration   1: 2055.777 us/op
+Iteration   2: 2050.284 us/op
+Iteration   3: 2051.125 us/op
+Iteration   4: 2060.094 us/op
+Iteration   5: 2048.706 us/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.fullStreamRangeFallback":
+  2053.197 ±(99.9%) 17.976 us/op [Average]
+  (min, avg, max) = (2048.706, 2053.197, 2060.094), stdev = 4.668
+  CI (99.9%): [2035.221, 2071.174] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.sequentialRead
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, rangeSize = 128, snappy = true, valueLength = 64)
+
+# Run progress: 66.67% complete, ETA 00:00:16
+# Fork: 1 of 1
+# Warmup Iteration   1: 4418.242 us/op
+# Warmup Iteration   2: 4072.093 us/op
+Iteration   1: 3995.030 us/op
+Iteration   2: 3987.004 us/op
+Iteration   3: 3983.130 us/op
+Iteration   4: 3987.418 us/op
+Iteration   5: 4007.738 us/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexRangeScanBenchmark.sequentialRead":
+  3992.064 ±(99.9%) 37.604 us/op [Average]
+  (min, avg, max) = (3983.130, 3992.064, 4007.738), stdev = 9.766
+  CI (99.9%): [3954.460, 4029.669] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:48
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                               (keyCount)  (maxKeysInSegment)  (rangeSize)  (snappy)  (valueLength)  Mode  Cnt     Score    Error  Units
+SegmentIndexRangeScanBenchmark.boundedScan                   32768                1024          128      true             64  avgt    5    34.410 ±  0.781  us/op
+SegmentIndexRangeScanBenchmark.fullStreamRangeFallback       32768                1024          128      true             64  avgt    5  2053.197 ± 17.976  us/op
+SegmentIndexRangeScanBenchmark.sequentialRead                32768                1024          128      true             64  avgt    5  3992.064 ± 37.604  us/op
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-range-scan.json
