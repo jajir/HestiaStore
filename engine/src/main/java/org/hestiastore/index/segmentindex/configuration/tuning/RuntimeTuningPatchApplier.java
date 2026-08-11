@@ -61,8 +61,6 @@ final class RuntimeTuningPatchApplier<K, V> {
         addChange(changes, before, after,
                 RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE);
         addChange(changes, before, after,
-                RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT);
-        addChange(changes, before, after,
                 RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD);
         addChange(changes, before, after,
                 RuntimeTuningKey.CHUNK_STORE_CACHE_PAGE_LIMIT);

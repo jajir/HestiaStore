@@ -147,8 +147,6 @@ class ManagementAgentServerTest {
                     .has("segmentWriteCacheKeyLimit"));
             assertTrue(indexNode.path("writePath")
                     .has("segmentWriteCacheKeyLimitDuringMaintenance"));
-            assertTrue(indexNode.path("writePath")
-                    .has("indexBufferedWriteKeyLimit"));
             assertTrue(!indexNode.has("maxNumberOfKeysInActivePartition"));
             assertTrue(!indexNode.has("maxNumberOfImmutableRunsPerPartition"));
             assertFalse(indexNode.toString().contains("drain"));
@@ -473,9 +471,6 @@ class ManagementAgentServerTest {
                 indexNode.path("writePath")
                         .path("segmentWriteCacheKeyLimitDuringMaintenance")
                         .asInt());
-        assertEquals(snapshot.writePath().indexBufferedWriteKeyLimit(),
-                indexNode.path("writePath").path("indexBufferedWriteKeyLimit")
-                        .asInt());
     }
 
     @Test
@@ -552,7 +547,6 @@ class ManagementAgentServerTest {
                         .chunkKeyLimit(4)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)
                         .maintenanceWriteCacheKeyLimit(96)
-                        .indexBufferedWriteKeyLimit(192)
                         .segmentSplitKeyThreshold(512)) //
                 .bloomFilter(bloomFilter -> bloomFilter
                         .indexSizeBytes(1024 * 128).hashFunctions(3)) //
@@ -607,7 +601,7 @@ class ManagementAgentServerTest {
                         0L, 0L),
                 new SegmentIndexSegmentMetrics(0, 0, 0, 0, 0, 0, 0, 0L, 0L,
                         0L, List.of()),
-                new SegmentIndexWritePathMetrics(0, 0, 0, 0L),
+                new SegmentIndexWritePathMetrics(0, 0, 0L),
                 new SegmentIndexMaintenanceMetrics(0L, 0L, 0L, 0L, 0L, 0L,
                         executor, executor),
                 new SegmentIndexSplitMetrics(0L, 0, 0, 0L, 0L, executor),

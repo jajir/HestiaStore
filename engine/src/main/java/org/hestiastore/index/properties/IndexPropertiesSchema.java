@@ -70,7 +70,6 @@ public final class IndexPropertiesSchema {
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = "maxNumberOfKeysInSegmentCache";
         public static final String PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT = "segmentWriteCacheKeyLimit";
         public static final String PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE = "segmentWriteCacheKeyLimitDuringMaintenance";
-        public static final String PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT = "indexBufferedWriteKeyLimit";
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = "maxNumberOfKeysInSegmentChunk";
         public static final String PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES = "maxNumberOfDeltaCacheFiles";
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
@@ -361,9 +360,6 @@ public final class IndexPropertiesSchema {
                 IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                 IndexPropertiesSchema::defaultSegmentWriteCacheKeyLimitDuringMaintenance);
         defaults.put(
-                IndexConfigurationKeys.PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                IndexPropertiesSchema::defaultIndexBuffer);
-        defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 view -> String.valueOf(
                         IndexConfigurationDefaults.DEFAULT_SEGMENT_CHUNK_KEY_LIMIT));
@@ -467,18 +463,6 @@ public final class IndexPropertiesSchema {
         final long defaultValue = Math.max(activePartitionKeyLimit * 2,
                 activePartitionKeyLimit + 1);
         return String.valueOf(defaultValue);
-    }
-
-    private static String defaultIndexBuffer(final PropertyView view) {
-        final long partitionBuffer =
-                resolveSegmentWriteCacheKeyLimitDuringMaintenance(view);
-        final String segments = view.getString(
-                IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE);
-        final long segmentCount = segments == null || segments.isBlank()
-                ? IndexConfigurationDefaults.DEFAULT_CACHED_SEGMENT_LIMIT
-                : Long.parseLong(segments);
-        return String.valueOf(Math.max(partitionBuffer,
-                partitionBuffer * Math.max(1L, segmentCount)));
     }
 
     private static String defaultSegmentSplitKeyThreshold(

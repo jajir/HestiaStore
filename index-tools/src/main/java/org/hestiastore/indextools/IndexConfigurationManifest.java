@@ -13,7 +13,6 @@ class IndexConfigurationManifest {
     private Integer maxNumberOfKeysInSegmentCache;
     private Integer segmentWriteCacheKeyLimit;
     private Integer segmentWriteCacheKeyLimitDuringMaintenance;
-    private Integer indexBufferedWriteKeyLimit;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfDeltaCacheFiles;
     private Integer segmentSplitKeyThreshold;
@@ -99,15 +98,6 @@ class IndexConfigurationManifest {
             final Integer segmentWriteCacheKeyLimitDuringMaintenance) {
         this.segmentWriteCacheKeyLimitDuringMaintenance =
                 segmentWriteCacheKeyLimitDuringMaintenance;
-    }
-
-    public Integer getIndexBufferedWriteKeyLimit() {
-        return indexBufferedWriteKeyLimit;
-    }
-
-    public void setIndexBufferedWriteKeyLimit(
-            final Integer indexBufferedWriteKeyLimit) {
-        this.indexBufferedWriteKeyLimit = indexBufferedWriteKeyLimit;
     }
 
     public Integer getMaxNumberOfKeysInSegmentChunk() {

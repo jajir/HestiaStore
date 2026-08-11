@@ -442,10 +442,6 @@ final class IndexMemoryEstimator {
         appendValueRow(out, "Maintenance threads",
                 formatCount(resolved.maintenance().indexThreads()),
                 "used by maintenance memory estimate");
-        appendValueRow(out, "Write-buffer keys",
-                formatCount(resolved.writePath()
-                        .indexBufferedWriteKeyLimit()),
-                "reported, not included in total");
         appendTableFooter(out);
     }
 

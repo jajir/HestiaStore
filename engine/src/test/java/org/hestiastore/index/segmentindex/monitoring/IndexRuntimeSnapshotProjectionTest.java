@@ -66,7 +66,7 @@ class IndexRuntimeSnapshotProjectionTest {
                         executorRegistry.executorRegistry().statsSnapshot(),
                         new SplitStats(3L, 2, 0, 0L, 0L), WalMonitoring.empty(),
                         new MaintenanceStatsSnapshot(0L, 0L, 0L, 0L, 0L, 0L), 5L, 7L,
-                        17L, 10, 5, 6, 7, SegmentIndexState.READY);
+                        17L, 10, 5, 6, SegmentIndexState.READY);
 
         final SegmentIndexRuntimeSnapshot snapshot = projection.project(collected);
 
@@ -107,7 +107,6 @@ class IndexRuntimeSnapshotProjectionTest {
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(7))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(8))
                 .segment(segment -> segment.chunkKeyLimit(2))
                 .segment(segment -> segment.maxKeys(100))

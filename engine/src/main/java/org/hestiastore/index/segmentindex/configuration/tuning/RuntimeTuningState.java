@@ -46,10 +46,6 @@ public final class RuntimeTuningState {
                 RuntimeTuningValue.ofInt(writePath
                         .segmentWriteCacheKeyLimitDuringMaintenance()));
         baselineValues.put(
-                RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                RuntimeTuningValue
-                        .ofInt(writePath.indexBufferedWriteKeyLimit()));
-        baselineValues.put(
                 RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD,
                 RuntimeTuningValue.ofInt(writePath.segmentSplitKeyThreshold()));
         baselineValues.put(RuntimeTuningKey.CHUNK_STORE_CACHE_PAGE_LIMIT,
@@ -142,16 +138,6 @@ public final class RuntimeTuningState {
     public int segmentWriteCacheKeyLimitDuringMaintenance() {
         return effectiveValue(
                 RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE)
-                .asInt();
-    }
-
-    /**
-     * Returns the effective index buffered write key limit.
-     *
-     * @return effective index buffered write key limit
-     */
-    public int indexBufferedWriteKeyLimit() {
-        return effectiveValue(RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT)
                 .asInt();
     }
 

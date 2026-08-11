@@ -64,7 +64,6 @@ compatibility, while Java configuration uses grouped section names:
 
 - `segmentWriteCacheKeyLimit` -> `writePath().segmentWriteCacheKeyLimit()`
 - `segmentWriteCacheKeyLimitDuringMaintenance` -> `writePath().maintenanceWriteCacheKeyLimit()`
-- `indexBufferedWriteKeyLimit` -> `writePath().indexBufferedWriteKeyLimit()`
 - `segmentSplitKeyThreshold` -> `writePath().segmentSplitKeyThreshold()`
 
 They now act as compatibility names for routed write and split limits rather

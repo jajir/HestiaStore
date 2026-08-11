@@ -184,7 +184,6 @@ class IntegrationSegmentIndexRuntimeSnapshotTest {
                 .segment(segment -> segment.cacheKeyLimit(5)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(16)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(64)) //
                 .segment(segment -> segment.maxKeys(512)) //
                 .segment(segment -> segment.chunkKeyLimit(4)) //
                 .segment(segment -> segment.deltaCacheFileLimit(1)) //
@@ -229,7 +228,6 @@ class IntegrationSegmentIndexRuntimeSnapshotTest {
                 .segment(segment -> segment.cacheKeyLimit(5)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(128)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(192)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(256)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
                 .segment(segment -> segment.maxKeys(128)) //
                 .segment(segment -> segment.chunkKeyLimit(4)) //
@@ -274,7 +272,6 @@ class IntegrationSegmentIndexRuntimeSnapshotTest {
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
                 .segment(segment -> segment.maxKeys(128)) //
                 .segment(segment -> segment.chunkKeyLimit(4)) //
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
@@ -328,7 +325,6 @@ class IntegrationSegmentIndexRuntimeSnapshotTest {
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
                 .segment(segment -> segment.maxKeys(16)) //
                 .segment(segment -> segment.chunkKeyLimit(4)) //
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
@@ -403,7 +399,6 @@ class IntegrationSegmentIndexRuntimeSnapshotTest {
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
                 .segment(segment -> segment.maxKeys(128)) //
                 .segment(segment -> segment.chunkKeyLimit(4)) //
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //

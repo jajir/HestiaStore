@@ -49,7 +49,6 @@ public class IndexConfigurationStore<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
     private static final String PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT;
     private static final String PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE;
-    private static final String PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private static final String PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
@@ -122,13 +121,6 @@ public class IndexConfigurationStore<K, V> {
         final long segmentWriteCacheKeyLimitDuringMaintenance = getOrDefaultLong(propsView,
                 PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                 defaultSegmentWriteCacheKeyLimitDuringMaintenance);
-        final long indexBufferedWriteKeyLimit = getOrDefaultLong(propsView,
-                PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                Math.max(segmentWriteCacheKeyLimitDuringMaintenance,
-                        segmentWriteCacheKeyLimitDuringMaintenance
-                                * Math.max(1L,
-                                        propsView.getInt(
-                                                PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE))));
         final int maxNumberOfDeltaCacheFiles = getOrDefault(propsView,
                 PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 IndexConfigurationDefaults.DEFAULT_DELTA_CACHE_FILE_LIMIT);
@@ -172,7 +164,6 @@ public class IndexConfigurationStore<K, V> {
                 new EffectiveIndexWritePathConfiguration(
                         (int) segmentWriteCacheKeyLimit,
                         (int) segmentWriteCacheKeyLimitDuringMaintenance,
-                        (int) indexBufferedWriteKeyLimit,
                         segmentSplitKeyThreshold),
                 new EffectiveIndexBloomFilterConfiguration(
                         propsView.getInt(
@@ -250,8 +241,6 @@ public class IndexConfigurationStore<K, V> {
                 writePath.segmentWriteCacheKeyLimit());
         writer.setLong(PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                 writePath.segmentWriteCacheKeyLimitDuringMaintenance());
-        writer.setLong(PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                writePath.indexBufferedWriteKeyLimit());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 segment.chunkKeyLimit());
         writer.setInt(PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,

@@ -113,8 +113,6 @@ public class SegmentIndexMixedDrainBenchmark {
                         .cachedSegmentLimit(8).deltaCacheFileLimit(2))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)
                         .maintenanceWriteCacheKeyLimit(192)
-                        .indexBufferedWriteKeyLimit(
-                                isSplitHeavy() ? 16_384 : 4_096)
                         .segmentSplitKeyThreshold(resolveSplitThreshold()))//
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(4096)
                         .hashFunctions(2).falsePositiveProbability(0.01D))//

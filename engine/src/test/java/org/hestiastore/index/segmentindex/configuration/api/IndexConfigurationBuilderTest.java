@@ -43,7 +43,6 @@ class IndexConfigurationBuilderTest {
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(7)
                         .maintenanceWriteCacheKeyLimit(9)
-                        .indexBufferedWriteKeyLimit(40)
                         .segmentSplitKeyThreshold(80))
                 .bloomFilter(bloom -> bloom.hashFunctions(2)
                         .indexSizeBytes(1024)
@@ -76,8 +75,6 @@ class IndexConfigurationBuilderTest {
                 .segmentWriteCacheKeyLimit());
         assertEquals(Integer.valueOf(9), grouped.writePath()
                 .segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(Integer.valueOf(40),
-                grouped.writePath().indexBufferedWriteKeyLimit());
         assertEquals(Integer.valueOf(80),
                 grouped.writePath().segmentSplitKeyThreshold());
         assertEquals(Integer.valueOf(2),
@@ -137,7 +134,6 @@ class IndexConfigurationBuilderTest {
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(10)
                         .maintenanceWriteCacheKeyLimit(14)
-                        .indexBufferedWriteKeyLimit(42)
                         .segmentSplitKeyThreshold(99))
                 .build();
 
@@ -145,8 +141,6 @@ class IndexConfigurationBuilderTest {
                 config.writePath().segmentWriteCacheKeyLimit());
         assertEquals(14, config.writePath()
                 .segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(42,
-                config.writePath().indexBufferedWriteKeyLimit());
         assertEquals(99, config.writePath().segmentSplitKeyThreshold());
     }
 

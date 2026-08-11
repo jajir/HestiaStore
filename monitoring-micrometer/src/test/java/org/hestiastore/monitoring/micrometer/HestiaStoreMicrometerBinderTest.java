@@ -35,7 +35,7 @@ class HestiaStoreMicrometerBinderTest {
         final SegmentIndexRuntimeMonitoring runtimeMonitoring = mock(
                 SegmentIndexRuntimeMonitoring.class);
         final AtomicReference<SegmentIndexRuntimeSnapshot> snapshotRef = new AtomicReference<>(
-                snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 11, 29,
+                snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 11,
                         37L, 2, 50));
         when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
         when(runtimeMonitoring.snapshot()).thenAnswer(inv -> snapshotRef.get());
@@ -45,19 +45,18 @@ class HestiaStoreMicrometerBinderTest {
                 new MicrometerSegmentIndexSource("orders", index))
                         .bindTo(registry);
 
-        assertMetrics(registry, 1D, 2D, 3D, 7D, 11D, 29D, 37D, 2D, 1D, 50);
+        assertMetrics(registry, 1D, 2D, 3D, 7D, 11D, 37D, 2D, 1D, 50);
 
         snapshotRef.set(snapshot(5L, 8L, 13L, SegmentIndexState.CLOSED, 9, 13,
-                15, 41L, 0, 70));
+                41L, 0, 70));
 
-        assertMetrics(registry, 5D, 8D, 13D, 9D, 13D, 15D, 41D, 0D, 0D, 70);
+        assertMetrics(registry, 5D, 8D, 13D, 9D, 13D, 41D, 0D, 0D, 70);
     }
 
     private SegmentIndexRuntimeSnapshot snapshot(final long getCount,
             final long putCount, final long deleteCount,
             final SegmentIndexState state, final int segmentWriteCacheKeyLimit,
             final int segmentWriteCacheKeyLimitDuringMaintenance,
-            final int indexBufferedWriteKeyLimit,
             final long splitScheduleCount, final int splitInFlightCount,
             final int executorBase) {
         final SegmentIndexExecutorMetrics indexExecutor =
@@ -85,7 +84,7 @@ class HestiaStoreMicrometerBinderTest {
                         0L, java.util.List.of()),
                 new SegmentIndexWritePathMetrics(segmentWriteCacheKeyLimit,
                         segmentWriteCacheKeyLimitDuringMaintenance,
-                        indexBufferedWriteKeyLimit, 0L),
+                        0L),
                 new SegmentIndexMaintenanceMetrics(0L, 0L, executorBase + 22L,
                         executorBase + 23L, executorBase + 24L,
                         executorBase + 25L, indexExecutor, stableExecutor),
@@ -103,7 +102,6 @@ class HestiaStoreMicrometerBinderTest {
             final double deleteCount,
             final double segmentWriteCacheKeyLimit,
             final double segmentWriteCacheKeyLimitDuringMaintenance,
-            final double indexBufferedWriteKeyLimit,
             final double splitScheduleCount, final double splitInFlightCount,
             final double indexUp, final int executorBase) {
         assertFunctionCounter(registry, "hestiastore_ops_get_total", getCount);
@@ -115,8 +113,6 @@ class HestiaStoreMicrometerBinderTest {
         assertGauge(registry,
                 "hestiastore_segment_write_cache_key_limit_during_maintenance",
                 segmentWriteCacheKeyLimitDuringMaintenance);
-        assertGauge(registry, "hestiastore_index_buffered_write_key_limit",
-                indexBufferedWriteKeyLimit);
         assertGauge(registry, "hestiastore_split_task_start_delay_p95_micros",
                 executorBase + 15D);
         assertGauge(registry, "hestiastore_split_task_run_latency_p95_micros",

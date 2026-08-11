@@ -111,7 +111,6 @@ class RuntimeTuningPatchApplierTest {
                 .cacheKeyLimit(12)
                 .segmentWriteCacheKeyLimit(6)
                 .segmentWriteCacheKeyLimitDuringMaintenance(8)
-                .indexBufferedWriteKeyLimit(16)
                 .segmentSplitKeyThreshold(60)
                 .chunkStoreCachePageLimit(2)
                 .build());
@@ -123,7 +122,6 @@ class RuntimeTuningPatchApplierTest {
         assertEquals(6, runtimeTuningState.segmentWriteCacheKeyLimit());
         assertEquals(8,
                 runtimeTuningState.segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(16, runtimeTuningState.indexBufferedWriteKeyLimit());
         assertEquals(60, runtimeTuningState.segmentSplitKeyThreshold());
         assertEquals(2, runtimeTuningState.chunkStoreCachePageLimit());
     }
@@ -170,7 +168,6 @@ class RuntimeTuningPatchApplierTest {
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(7))
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))
                 .segment(segment -> segment.chunkKeyLimit(2))
                 .segment(segment -> segment.maxKeys(100))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(50))

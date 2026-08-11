@@ -165,7 +165,6 @@ class SegmentIndexSessionConcurrencyTest {
                 .segment(segment -> segment.cacheKeyLimit(8))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32))//
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96))//
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192))//
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(512))//
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true))//
                 .segment(segment -> segment.chunkKeyLimit(4))//

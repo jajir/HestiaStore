@@ -145,7 +145,6 @@ class IndexToolTest {
                         .writePath(writePath -> writePath
                                 .segmentWriteCacheKeyLimit(7)
                                 .maintenanceWriteCacheKeyLimit(9)
-                                .indexBufferedWriteKeyLimit(40)
                                 .segmentSplitKeyThreshold(80))
                         .bloomFilter(bloom -> bloom.hashFunctions(2)
                                 .indexSizeBytes(1024)

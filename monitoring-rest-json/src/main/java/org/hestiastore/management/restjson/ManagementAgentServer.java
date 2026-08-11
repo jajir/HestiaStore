@@ -113,8 +113,6 @@ public final class ManagementAgentServer
                     "segmentWriteCacheKeyLimit",
                     RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                     "segmentWriteCacheKeyLimitDuringMaintenance",
-                    RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                    "indexBufferedWriteKeyLimit",
                     RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD,
                     "segmentSplitKeyThreshold",
                     RuntimeTuningKey.CHUNK_STORE_CACHE_PAGE_LIMIT,
@@ -977,7 +975,6 @@ public final class ManagementAgentServer
                 snapshot.writePath().segmentWriteCacheKeyLimit(),
                 snapshot.writePath()
                         .segmentWriteCacheKeyLimitDuringMaintenance(),
-                snapshot.writePath().indexBufferedWriteKeyLimit(),
                 snapshot.writePath().totalBufferedWriteKeys());
     }
 
@@ -1139,8 +1136,6 @@ public final class ManagementAgentServer
                     .segmentWriteCacheKeyLimit(value);
             case SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> builder
                     .segmentWriteCacheKeyLimitDuringMaintenance(value);
-            case INDEX_BUFFERED_WRITE_KEY_LIMIT -> builder
-                    .indexBufferedWriteKeyLimit(value);
             case SEGMENT_SPLIT_KEY_THRESHOLD -> builder
                     .segmentSplitKeyThreshold(value);
             case CHUNK_STORE_CACHE_PAGE_LIMIT -> builder
@@ -1219,8 +1214,6 @@ public final class ManagementAgentServer
             case SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> snapshot
                     .writePath()
                     .segmentWriteCacheKeyLimitDuringMaintenance();
-            case INDEX_BUFFERED_WRITE_KEY_LIMIT -> snapshot
-                    .writePath().indexBufferedWriteKeyLimit();
             case SEGMENT_SPLIT_KEY_THRESHOLD -> snapshot.writePath()
                     .segmentSplitKeyThreshold();
             case CHUNK_STORE_CACHE_PAGE_LIMIT -> snapshot.chunkStoreCache()

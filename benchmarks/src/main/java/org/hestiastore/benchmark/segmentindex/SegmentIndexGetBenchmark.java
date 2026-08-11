@@ -69,7 +69,6 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(2048)
                         .maintenanceWriteCacheKeyLimit(4096)
-                        .indexBufferedWriteKeyLimit(12_288)
                         .segmentSplitKeyThreshold(keyCount * 2))//
                 .bloomFilter(bloomFilter -> bloomFilter
                         .indexSizeBytes(Math.max(8192, keyCount / 2))

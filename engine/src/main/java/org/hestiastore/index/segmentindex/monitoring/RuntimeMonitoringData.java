@@ -34,7 +34,6 @@ final class RuntimeMonitoringData {
     private final int segmentCacheKeyLimit;
     private final int segmentWriteCacheKeyLimit;
     private final int segmentWriteCacheKeyLimitDuringMaintenance;
-    private final int indexBufferedWriteKeyLimit;
     private final SegmentIndexState state;
 
     RuntimeMonitoringData(final Instant capturedAt,
@@ -49,7 +48,6 @@ final class RuntimeMonitoringData {
             final long appliedWalLsn, final int segmentCacheKeyLimit,
             final int segmentWriteCacheKeyLimit,
             final int segmentWriteCacheKeyLimitDuringMaintenance,
-            final int indexBufferedWriteKeyLimit,
             final SegmentIndexState state) {
         this.capturedAt = Vldtn.requireNonNull(capturedAt, "capturedAt");
         this.operationStats = Vldtn.requireNonNull(operationStats,
@@ -80,10 +78,6 @@ final class RuntimeMonitoringData {
                 Vldtn.requireGreaterThanOrEqualToZero(
                         segmentWriteCacheKeyLimitDuringMaintenance,
                         "segmentWriteCacheKeyLimitDuringMaintenance");
-        this.indexBufferedWriteKeyLimit =
-                Vldtn.requireGreaterThanOrEqualToZero(
-                        indexBufferedWriteKeyLimit,
-                        "indexBufferedWriteKeyLimit");
         this.state = Vldtn.requireNonNull(state, "state");
     }
 
@@ -145,10 +139,6 @@ final class RuntimeMonitoringData {
 
     int segmentWriteCacheKeyLimitDuringMaintenance() {
         return segmentWriteCacheKeyLimitDuringMaintenance;
-    }
-
-    int indexBufferedWriteKeyLimit() {
-        return indexBufferedWriteKeyLimit;
     }
 
     SegmentIndexState state() {

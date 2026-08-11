@@ -207,7 +207,6 @@ public final class SegmentIndexRuntimeSnapshotCollector<K, V>
                         runtimeTuningState.segmentWriteCacheKeyLimit(),
                         runtimeTuningState
                                 .segmentWriteCacheKeyLimitDuringMaintenance(),
-                        runtimeTuningState.indexBufferedWriteKeyLimit(),
                         stateView.currentState());
         return snapshotProjection.project(collected);
     }
