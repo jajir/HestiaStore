@@ -6,7 +6,7 @@ import org.hestiastore.index.Vldtn;
  * Abstract base class for byte sequences that cache their byte array
  * representation.
  */
-public abstract class ByteSequenceCaching implements ByteSequence {
+public abstract class ByteSequenceCaching extends AbstractByteSequence {
 
     private byte[] cachedArray = null;
 

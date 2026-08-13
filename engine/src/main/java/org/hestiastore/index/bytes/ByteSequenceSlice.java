@@ -80,8 +80,12 @@ public final class ByteSequenceSlice extends ByteSequenceCaching {
         return Arrays.copyOfRange(data, offset, offset + length);
     }
 
-    void copyTo(final int sourceOffset, final byte[] target,
-            final int targetOffset, final int length) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void copyToWithValidatedInputs(final int sourceOffset,
+            final byte[] target, final int targetOffset, final int length) {
         System.arraycopy(data, offset + sourceOffset, target, targetOffset,
                 length);
     }
