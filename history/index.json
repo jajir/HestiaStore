@@ -1197,8 +1197,8 @@
         "340": {
           "channel": "pr-340",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-340/latest.json",
-          "sha": "c322e17af7f719d468d1999108ea13ae506ee9e8",
-          "timestampUtc": "2026-08-12T14:45:01.088704+00:00"
+          "sha": "7e009de88ac63762ae2d6889b74e2079a5639b47",
+          "timestampUtc": "2026-08-13T16:41:22.762133+00:00"
         },
         "341": {
           "channel": "pr-341",
