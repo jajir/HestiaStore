@@ -6,7 +6,7 @@ import org.hestiastore.index.Vldtn;
  * Read-only {@link ByteSequence} view over a byte array. Supports lightweight
  * slicing without copying by keeping offset and length metadata.
  */
-public final class ByteSequenceView implements ByteSequence {
+public final class ByteSequenceView extends AbstractByteSequence {
 
     private static final byte[] EMPTY_ARRAY = new byte[0];
     private static final ByteSequenceView EMPTY_INSTANCE = new ByteSequenceView(
@@ -77,8 +77,12 @@ public final class ByteSequenceView implements ByteSequence {
         return new ByteSequenceSlice(data, fromInclusive, sliceLength);
     }
 
-    void copyTo(final int sourceOffset, final byte[] target,
-            final int targetOffset, final int length) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void copyToWithValidatedInputs(final int sourceOffset,
+            final byte[] target, final int targetOffset, final int length) {
         System.arraycopy(data, sourceOffset, target, targetOffset, length);
     }
 

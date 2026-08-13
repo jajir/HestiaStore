@@ -65,6 +65,7 @@ class ByteSequencesTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void test_copy_with_offsets() {
         final ByteSequence source = ByteSequences.viewOf(new byte[] { 9, 8, 7, 6 },
                 1, 4);
@@ -76,6 +77,7 @@ class ByteSequencesTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void test_copy_validates_ranges() {
         final ByteSequence source = ByteSequences.wrap(new byte[] { 1, 2, 3 });
         final byte[] target = new byte[] { 0, 0 };
@@ -88,6 +90,27 @@ class ByteSequencesTest {
                 () -> ByteSequences.copy(source, 2, target, 0, 2));
         assertThrows(IllegalArgumentException.class,
                 () -> ByteSequences.copy(source, 0, target, 1, 2));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void test_copy_delegates_to_source_implementation() {
+        final TrackingCopySequence source = new TrackingCopySequence();
+        final byte[] target = new byte[] { 0 };
+
+        ByteSequences.copy(source, 0, target, 0, 1);
+
+        assertTrue(source.copyCalled);
+        assertArrayEquals(new byte[] { 7 }, target);
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void test_copy_rejects_null_source() {
+        final byte[] target = new byte[0];
+
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.copy(null, 0, target, 0, 0));
     }
 
     @Test
@@ -159,5 +182,38 @@ class ByteSequencesTest {
                         ByteSequences.wrap(new byte[] { 4, 5 })));
         assertArrayEquals(new byte[] { 1, 2, 3, 4, 5 },
                 multi.toByteArrayCopy());
+    }
+
+    private static final class TrackingCopySequence implements ByteSequence {
+
+        private boolean copyCalled;
+
+        @Override
+        public int length() {
+            return 1;
+        }
+
+        @Override
+        public byte getByte(final int index) {
+            return 7;
+        }
+
+        @Override
+        public void copyTo(final int sourceOffset, final byte[] target,
+                final int targetOffset, final int length) {
+            copyCalled = true;
+            target[targetOffset] = getByte(sourceOffset);
+        }
+
+        @Override
+        public ByteSequence slice(final int fromInclusive,
+                final int toExclusive) {
+            return this;
+        }
+
+        @Override
+        public byte[] toByteArray() {
+            return new byte[] { 7 };
+        }
     }
 }

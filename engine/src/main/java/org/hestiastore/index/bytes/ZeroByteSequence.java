@@ -1,5 +1,7 @@
 package org.hestiastore.index.bytes;
 
+import java.util.Arrays;
+
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -7,7 +9,7 @@ import org.hestiastore.index.Vldtn;
  * bytes. Useful for padding without allocating new arrays for each request.
  */
 @SuppressWarnings("java:S6206")
-public final class ZeroByteSequence implements ByteSequence {
+public final class ZeroByteSequence extends AbstractByteSequence {
 
     private final int length;
 
@@ -41,6 +43,15 @@ public final class ZeroByteSequence implements ByteSequence {
             return new byte[0];
         }
         return new byte[length];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void copyToWithValidatedInputs(final int sourceOffset,
+            final byte[] target, final int targetOffset, final int copyLength) {
+        Arrays.fill(target, targetOffset, targetOffset + copyLength, (byte) 0);
     }
 
     @Override

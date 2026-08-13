@@ -31,4 +31,15 @@ class ByteSequenceTest {
 
         assertEquals(1, sequence.getByte(0));
     }
+
+    @Test
+    void test_empty_sequence_accepts_zero_length_copy() {
+        final byte[] target = new byte[] { 7 };
+
+        ByteSequence.EMPTY.copyTo(0, target, 1, 0);
+
+        assertArrayEquals(new byte[] { 7 }, target);
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequence.EMPTY.copyTo(0, target, 0, 1));
+    }
 }

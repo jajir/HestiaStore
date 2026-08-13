@@ -17,9 +17,9 @@ class ChunkTest {
                 VERSION, 9, TestData.CHUNK_PAYLOAD_9.calculateCrc());
         final byte[] chunkBytes = new byte[ChunkHeader.HEADER_SIZE
                 + TestData.BYTES_9.length()];
-        ByteSequences.copy(chunkHeader.getBytesSequence(), 0, chunkBytes, 0,
+        chunkHeader.getBytesSequence().copyTo(0, chunkBytes, 0,
                 ChunkHeader.HEADER_SIZE);
-        ByteSequences.copy(TestData.BYTES_9, 0, chunkBytes,
+        TestData.BYTES_9.copyTo(0, chunkBytes,
                 ChunkHeader.HEADER_SIZE, TestData.BYTES_9.length());
 
         final Chunk chunk = Chunk.ofSequence(ByteSequences.wrap(chunkBytes));

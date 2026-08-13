@@ -91,7 +91,7 @@ public final class ByteSequences {
             return ByteSequence.EMPTY;
         }
         final byte[] copy = new byte[validated.length()];
-        copy(validated, 0, copy, 0, copy.length);
+        validated.copyTo(0, copy, 0, copy.length);
         return ByteSequenceView.of(copy);
     }
 
@@ -117,7 +117,7 @@ public final class ByteSequences {
             return validated;
         }
         final byte[] data = new byte[targetLength];
-        copy(validated, 0, data, 0, currentLength);
+        validated.copyTo(0, data, 0, currentLength);
         return ByteSequenceView.of(data);
     }
 
@@ -227,61 +227,24 @@ public final class ByteSequences {
 
     /**
      * Copies bytes from {@code source} into {@code target}.
+     *
+     * @param source       source sequence
+     * @param sourceOffset zero-based offset in {@code source}
+     * @param target       destination array
+     * @param targetOffset zero-based offset in {@code target}
+     * @param length       number of bytes to copy
+     * @throws IllegalArgumentException when {@code source} or {@code target} is
+     *                                  {@code null}, an offset or {@code length}
+     *                                  is negative, or either range exceeds its
+     *                                  capacity
+     * @deprecated use {@link ByteSequence#copyTo(int, byte[], int, int)}
      */
+    @Deprecated(forRemoval = false)
     public static void copy(final ByteSequence source, final int sourceOffset,
             final byte[] target, final int targetOffset, final int length) {
         final ByteSequence validatedSource = Vldtn.requireNonNull(source,
                 "source");
-        final byte[] validatedTarget = Vldtn.requireNonNull(target, "target");
-        validateCopyRange(sourceOffset, length, validatedSource.length(),
-                "sourceOffset");
-        validateCopyRange(targetOffset, length, validatedTarget.length,
-                "targetOffset");
-        if (length == 0) {
-            return;
-        }
-        if (validatedSource instanceof ByteSequenceView byteSequenceView) {
-            byteSequenceView.copyTo(sourceOffset,
-                    validatedTarget, targetOffset, length);
-            return;
-        }
-        if (validatedSource instanceof ByteSequenceSlice byteSequenceSlice) {
-            byteSequenceSlice.copyTo(sourceOffset,
-                    validatedTarget, targetOffset, length);
-            return;
-        }
-        if (validatedSource instanceof MutableBytes mutableBytes) {
-            mutableBytes.copyTo(sourceOffset, validatedTarget, targetOffset,
-                    length);
-            return;
-        }
-        for (int index = 0; index < length; index++) {
-            validatedTarget[targetOffset + index] = validatedSource
-                    .getByte(sourceOffset + index);
-        }
-    }
-
-    private static void validateCopyRange(final int offset, final int len,
-            final int capacity, final String propertyName) {
-        if (offset < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "Property '%s' must not be negative.", propertyName));
-        }
-        if (len < 0) {
-            throw new IllegalArgumentException(
-                    "Property 'length' must not be negative.");
-        }
-        if (offset > capacity) {
-            throw new IllegalArgumentException(String.format(
-                    "Property '%s' with length %d exceeds capacity %d",
-                    propertyName, len, capacity));
-        }
-        final long end = (long) offset + (long) len;
-        if (end > capacity) {
-            throw new IllegalArgumentException(String.format(
-                    "Property '%s' with length %d exceeds capacity %d",
-                    propertyName, len, capacity));
-        }
+        validatedSource.copyTo(sourceOffset, target, targetOffset, length);
     }
 
     /**

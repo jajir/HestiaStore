@@ -45,6 +45,17 @@ class MutableBytesTest {
     }
 
     @Test
+    void test_copy_to_copies_partial_range() {
+        final MutableBytes source = MutableBytes
+                .wrap(new byte[] { 1, 2, 3, 4 });
+        final byte[] target = new byte[] { 9, 9, 9, 9 };
+
+        source.copyTo(1, target, 1, 2);
+
+        assertArrayEquals(new byte[] { 9, 2, 3, 9 }, target);
+    }
+
+    @Test
     void test_equals_hash_code_and_to_byte_array() {
         final MutableBytes first = MutableBytes.wrap(new byte[] { 1, 2, 3 });
         final ByteSequence second = ByteSequences.wrap(new byte[] { 1, 2, 3 });

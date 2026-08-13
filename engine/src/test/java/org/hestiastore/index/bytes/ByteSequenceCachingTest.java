@@ -1,5 +1,6 @@
 package org.hestiastore.index.bytes;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,6 +28,18 @@ class ByteSequenceCachingTest {
         final ByteSequenceCaching sequence = new NullSequence();
 
         assertThrows(IllegalArgumentException.class, sequence::toByteArray);
+    }
+
+    @Test
+    void test_copy_to_uses_generic_fallback_without_materializing() {
+        final AtomicInteger counter = new AtomicInteger();
+        final ByteSequence sequence = new CountingSequence(counter);
+        final byte[] target = new byte[] { 0, 0, 0 };
+
+        sequence.copyTo(0, target, 1, 1);
+
+        assertArrayEquals(new byte[] { 0, 7, 0 }, target);
+        assertEquals(0, counter.get());
     }
 
     private static final class CountingSequence extends ByteSequenceCaching {

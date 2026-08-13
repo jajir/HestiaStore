@@ -28,7 +28,8 @@ class MutableByteSequenceTest {
         assertThrows(IllegalArgumentException.class, () -> sequence.setBytes(0, null));
     }
 
-    private static final class TrackingMutableSequence implements MutableByteSequence {
+    private static final class TrackingMutableSequence
+            extends AbstractByteSequence implements MutableByteSequence {
         private int targetOffset;
         private ByteSequence source;
         private int sourceOffset;

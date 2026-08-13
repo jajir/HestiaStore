@@ -50,7 +50,7 @@ class ByteSequenceSliceTest {
                 new byte[] { 9, 8, 7, 6 }, 1, 2);
         final byte[] target = new byte[] { 0, 0, 0, 0 };
 
-        ByteSequences.copy(sequence, 0, target, 1, 2);
+        sequence.copyTo(0, target, 1, 2);
 
         assertArrayEquals(new byte[] { 0, 8, 7, 0 }, target);
     }
