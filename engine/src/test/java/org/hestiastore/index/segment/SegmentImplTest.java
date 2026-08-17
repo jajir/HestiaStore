@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
@@ -52,6 +53,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -105,6 +107,8 @@ class SegmentImplTest {
     private ChunkEntryFileWriter<Integer, String> chunkEntryWriter;
     @Mock
     private EntryIteratorWithCurrent<Integer, String> indexIterator;
+    @Mock
+    private SegmentDirectoryLocking directoryLocking;
 
     private SegmentConf conf;
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -731,12 +735,83 @@ class SegmentImplTest {
                 conf.getMaxNumberOfKeysInSegmentWriteCache(),
                 conf.getMaxNumberOfDeltaCacheFiles());
         final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
-                failingCore, compacter, Runnable::run, maintenancePolicy);
+                failingCore, compacter, Runnable::run, maintenancePolicy,
+                directoryLocking);
 
         final OperationResult<Void> result = segment.close();
 
         assertEquals(OperationStatus.ERROR, result.getStatus());
         assertEquals(SegmentState.ERROR, segment.getState());
+        verify(directoryLocking).unlock();
+    }
+
+    @Test
+    void close_persistsThenClearsCachesAndRepeatedCloseIsSafe() {
+        assertEquals(OperationStatus.OK, subject.put(1, "one").getStatus());
+        assertEquals(1, core.getNumberOfKeysInSegmentCache());
+
+        final OperationResult<Void> firstClose = subject.close();
+
+        assertEquals(OperationStatus.OK, firstClose.getStatus());
+        assertEquals(0, core.getNumberOfKeysInSegmentCache());
+        assertEquals(SegmentState.CLOSED, subject.getState());
+        assertEquals(OperationStatus.CLOSED, subject.close().getStatus());
+    }
+
+    @Test
+    void close_persistsBeforeCacheAndLockRelease() {
+        final SegmentCore<Integer, String> closingCore = spy(
+                createCore(versionController));
+        final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
+                versionController);
+        final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentCache(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfDeltaCacheFiles());
+        final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
+                closingCore, compacter, Runnable::run, maintenancePolicy,
+                directoryLocking);
+        assertEquals(OperationStatus.OK, segment.put(1, "one").getStatus());
+
+        assertEquals(OperationStatus.OK, segment.close().getStatus());
+
+        final InOrder closeOrder = inOrder(closingCore, directoryLocking);
+        closeOrder.verify(closingCore).freezeWriteCacheForFlush();
+        closeOrder.verify(closingCore).flushFrozenWriteCacheToDeltaFile();
+        closeOrder.verify(closingCore).close();
+        closeOrder.verify(directoryLocking).unlock();
+        verify(closingCore, never()).applyFrozenWriteCacheAfterFlush();
+    }
+
+    @Test
+    void close_persistenceFailureRetainsDirtyCacheAndDirectoryLock() {
+        final SegmentCore<Integer, String> failingCore = spy(
+                createCore(versionController));
+        final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
+                versionController);
+        final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentCache(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfDeltaCacheFiles());
+        final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
+                failingCore, compacter, Runnable::run, maintenancePolicy,
+                directoryLocking);
+        assertEquals(OperationStatus.OK, segment.put(1, "one").getStatus());
+        doThrow(new RuntimeException("persistence failed")).when(failingCore)
+                .flushFrozenWriteCacheToDeltaFile();
+
+        final OperationResult<Void> result = segment.close();
+
+        assertEquals(OperationStatus.ERROR, result.getStatus());
+        assertEquals(SegmentState.ERROR, segment.getState());
+        assertEquals(1, failingCore.getNumberOfKeysInSegmentCache());
+        verify(failingCore).closeReadResources();
+        verify(failingCore, never()).close();
+        verify(directoryLocking, never()).unlock();
+
+        assertEquals(OperationStatus.ERROR, segment.close().getStatus());
+        assertEquals(1, failingCore.getNumberOfKeysInSegmentCache());
+        verify(failingCore).flushFrozenWriteCacheToDeltaFile();
     }
 
     @Test

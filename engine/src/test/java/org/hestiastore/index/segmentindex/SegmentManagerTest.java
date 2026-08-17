@@ -43,12 +43,10 @@ class SegmentManagerTest {
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(effective(conf))
                 .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
-                .withRegistryMaintenanceExecutor(
-                        Executors.newSingleThreadExecutor())
                 .build();
 
         final BlockingSegment<Integer, String> s1 = segmentRegistry
-                .createSegment();
+                .loadSegment(SegmentId.of(0));
         assertNotNull(s1);
         final SegmentId segmentId = s1.getId();
 
@@ -79,8 +77,6 @@ class SegmentManagerTest {
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(effective(conf))
                 .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
-                .withRegistryMaintenanceExecutor(
-                        Executors.newSingleThreadExecutor())
                 .build();
         assertDoesNotThrow(() -> segmentRegistry.close());
         stableSegmentMaintenancePool.shutdownNow();

@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex.core.split;
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,11 +17,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -36,7 +35,10 @@ import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.routemap.RouteSplitPlan;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class PreparedSegmentMaterializerTest {
 
     @Test
@@ -44,14 +46,11 @@ class PreparedSegmentMaterializerTest {
         final Directory directory = new MemDirectory();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
-        final ExecutorService registryMaintenancePool = Executors
-                .newSingleThreadExecutor();
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final SegmentRegistry<Integer, String> registry = openRegistry(
-                directory, conf, stableSegmentMaintenancePool,
-                registryMaintenancePool);
+                directory, conf, stableSegmentMaintenancePool);
         final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
-                directory, registry.materialization());
+                directory, registry);
 
         try {
             final RouteSplitPreparation<Integer> prepared = service
@@ -83,7 +82,6 @@ class PreparedSegmentMaterializerTest {
                 registry.close();
             }
         } finally {
-            registryMaintenancePool.shutdownNow();
             stableSegmentMaintenancePool.shutdownNow();
         }
     }
@@ -93,14 +91,11 @@ class PreparedSegmentMaterializerTest {
         final Directory directory = new MemDirectory();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
-        final ExecutorService registryMaintenancePool = Executors
-                .newSingleThreadExecutor();
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final SegmentRegistry<Integer, String> registry = openRegistry(
-                directory, conf, stableSegmentMaintenancePool,
-                registryMaintenancePool);
+                directory, conf, stableSegmentMaintenancePool);
         final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
-                directory, registry.materialization());
+                directory, registry);
 
         try {
             final RouteSplitPreparation<Integer> prepared = service
@@ -132,7 +127,6 @@ class PreparedSegmentMaterializerTest {
                 registry.close();
             }
         } finally {
-            registryMaintenancePool.shutdownNow();
             stableSegmentMaintenancePool.shutdownNow();
         }
     }
@@ -142,14 +136,11 @@ class PreparedSegmentMaterializerTest {
         final Directory directory = new MemDirectory();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
-        final ExecutorService registryMaintenancePool = Executors
-                .newSingleThreadExecutor();
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final SegmentRegistry<Integer, String> registry = openRegistry(
-                directory, conf, stableSegmentMaintenancePool,
-                registryMaintenancePool);
+                directory, conf, stableSegmentMaintenancePool);
         final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
-                directory, registry.materialization());
+                directory, registry);
 
         try {
             final RouteSplitPlan<Integer> splitPlan = service
@@ -164,15 +155,17 @@ class PreparedSegmentMaterializerTest {
 
             assertTrue(directory.isFileExists(lowerSegmentId.getName()));
             assertTrue(directory.isFileExists(upperSegmentId.getName()));
+            registry.loadSegment(lowerSegmentId);
+            assertTrue(registry.tryGetLoadedSegment(lowerSegmentId).isPresent());
 
             service.deletePreparedSegment(lowerSegmentId);
             service.deletePreparedSegment(upperSegmentId);
 
             assertFalse(directory.isFileExists(lowerSegmentId.getName()));
             assertFalse(directory.isFileExists(upperSegmentId.getName()));
+            assertTrue(registry.tryGetLoadedSegment(lowerSegmentId).isEmpty());
         } finally {
             registry.close();
-            registryMaintenancePool.shutdownNow();
             stableSegmentMaintenancePool.shutdownNow();
         }
     }
@@ -182,14 +175,11 @@ class PreparedSegmentMaterializerTest {
         final Directory directory = new MemDirectory();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
-        final ExecutorService registryMaintenancePool = Executors
-                .newSingleThreadExecutor();
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final SegmentRegistry<Integer, String> registry = openRegistry(
-                directory, conf, stableSegmentMaintenancePool,
-                registryMaintenancePool);
+                directory, conf, stableSegmentMaintenancePool);
         final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
-                directory, registry.materialization());
+                directory, registry);
 
         try {
             final SegmentId sourceSegmentId = openSourceSegment(registry,
@@ -205,7 +195,6 @@ class PreparedSegmentMaterializerTest {
             assertPreparedChildrenDeleted(directory, sourceSegmentId);
         } finally {
             registry.close();
-            registryMaintenancePool.shutdownNow();
             stableSegmentMaintenancePool.shutdownNow();
         }
     }
@@ -215,14 +204,11 @@ class PreparedSegmentMaterializerTest {
         final Directory directory = new MemDirectory();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
-        final ExecutorService registryMaintenancePool = Executors
-                .newSingleThreadExecutor();
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final SegmentRegistry<Integer, String> registry = openRegistry(
-                directory, conf, stableSegmentMaintenancePool,
-                registryMaintenancePool);
+                directory, conf, stableSegmentMaintenancePool);
         final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
-                directory, registry.materialization());
+                directory, registry);
 
         try {
             final SegmentId sourceSegmentId = openSourceSegment(registry,
@@ -238,7 +224,6 @@ class PreparedSegmentMaterializerTest {
             assertPreparedChildrenDeleted(directory, sourceSegmentId);
         } finally {
             registry.close();
-            registryMaintenancePool.shutdownNow();
             stableSegmentMaintenancePool.shutdownNow();
         }
     }
@@ -258,14 +243,16 @@ class PreparedSegmentMaterializerTest {
         when(lowerTx.open()).thenReturn(lowerWriter);
         doThrow(new IllegalStateException("write failed"))
                 .when(lowerWriter).write(any());
-        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(directory,
+        final SegmentRegistry<Integer, String> registry = mockRegistry(
                 materialization);
+        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
+                directory, registry);
 
         assertThrows(IllegalStateException.class,
                 () -> service.materializeRouteSplit(mockSegment(),
                         3L, 3L, EntryIterator.make(entries(6).iterator())));
 
-        assertFalse(directory.isFileExists(SegmentId.of(2).getName()));
+        verify(registry).deleteSegment(SegmentId.of(2));
         verify(lowerWriter).close();
     }
 
@@ -280,14 +267,16 @@ class PreparedSegmentMaterializerTest {
         when(materialization.openWriterTx(SegmentId.of(2)))
                 .thenReturn(lowerTx);
         when(lowerTx.open()).thenThrow(new IllegalStateException("open failed"));
-        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(directory,
+        final SegmentRegistry<Integer, String> registry = mockRegistry(
                 materialization);
+        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
+                directory, registry);
 
         assertThrows(IllegalStateException.class,
                 () -> service.materializeRouteSplit(mockSegment(),
                         3L, 3L, EntryIterator.make(entries(6).iterator())));
 
-        assertFalse(directory.isFileExists(SegmentId.of(2).getName()));
+        verify(registry, atLeastOnce()).deleteSegment(SegmentId.of(2));
     }
 
     @Test
@@ -310,43 +299,46 @@ class PreparedSegmentMaterializerTest {
         when(upperTx.open()).thenReturn(upperWriter);
         doThrow(new IllegalStateException("commit failed"))
                 .when(upperTx).commit();
-        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(directory,
+        final SegmentRegistry<Integer, String> registry = mockRegistry(
                 materialization);
+        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
+                directory, registry);
 
         assertThrows(IllegalStateException.class,
                 () -> service.materializeRouteSplit(mockSegment(),
                         3L, 3L, EntryIterator.make(entries(6).iterator())));
 
-        assertFalse(directory.isFileExists(SegmentId.of(2).getName()));
-        assertFalse(directory.isFileExists(SegmentId.of(3).getName()));
+        verify(registry).deleteSegment(SegmentId.of(2));
+        verify(registry).deleteSegment(SegmentId.of(3));
         verify(lowerWriter, atLeastOnce()).close();
         verify(upperWriter, atLeastOnce()).close();
     }
 
     @Test
-    void deletePreparedSegmentFailsWhenDirectoryRemainsOnDisk() {
-        final Directory directory = mock(Directory.class);
-        final Directory segmentDirectory = mock(Directory.class);
+    void deletePreparedSegmentPropagatesRegistryFailure() {
+        final Directory directory = new MemDirectory();
         @SuppressWarnings("unchecked")
-        final SegmentRegistry.Materialization<Integer, String> materialization = mock(
-                SegmentRegistry.Materialization.class);
+        final SegmentRegistry<Integer, String> registry = mock(
+                SegmentRegistry.class);
         final SegmentId segmentId = SegmentId.of(17);
-        when(directory.isFileExists(segmentId.getName()))
-                .thenReturn(true, true);
-        when(directory.openSubDirectory(segmentId.getName()))
-                .thenReturn(segmentDirectory);
-        when(segmentDirectory.getFileNames()).thenReturn(Stream.empty());
-        when(directory.rmdir(segmentId.getName()))
-                .thenThrow(new IllegalStateException("root busy"));
-        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(directory,
-                materialization);
+        doThrow(new IndexException("delete failed")).when(registry)
+                .deleteSegment(segmentId);
+        final PreparedSegmentMaterializer<Integer, String> service = new PreparedSegmentMaterializer<>(
+                directory, registry);
 
-        final IllegalStateException thrown = assertThrows(
-                IllegalStateException.class,
+        assertThrows(IndexException.class,
                 () -> service.deletePreparedSegment(segmentId));
 
-        assertNotNull(thrown.getSuppressed());
-        assertTrue(thrown.getSuppressed().length > 0);
+        verify(registry).deleteSegment(segmentId);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentRegistry<Integer, String> mockRegistry(
+            final SegmentRegistry.Materialization<Integer, String> materialization) {
+        final SegmentRegistry<Integer, String> registry = mock(
+                SegmentRegistry.class);
+        when(registry.materialization()).thenReturn(materialization);
+        return registry;
     }
 
     private static SegmentId openSourceSegment(
@@ -411,8 +403,7 @@ class PreparedSegmentMaterializerTest {
     private static SegmentRegistry<Integer, String> openRegistry(
             final Directory directory,
             final IndexConfiguration<Integer, String> conf,
-            final ExecutorService stableSegmentMaintenancePool,
-            final ExecutorService registryMaintenancePool) {
+            final ExecutorService stableSegmentMaintenancePool) {
         return SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(directory)
@@ -420,7 +411,6 @@ class PreparedSegmentMaterializerTest {
                 .withValueTypeDescriptor(new TypeDescriptorShortString())
                 .withConfiguration(effective(conf))
                 .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
-                .withRegistryMaintenanceExecutor(registryMaintenancePool)
                 .build();
     }
 
