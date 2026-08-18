@@ -57,6 +57,29 @@ public final class ConcatenatedByteSequence extends ByteSequenceCaching {
         return second.getByte(index - firstLength);
     }
 
+    /**
+     * Copies a validated range into the target, splitting boundary-crossing
+     * ranges between the underlying sequences. {@inheritDoc}
+     */
+    @Override
+    protected void copyToWithValidatedInputs(final int sourceOffset,
+            final byte[] target, final int targetOffset, final int length) {
+        final int sourceEnd = sourceOffset + length;
+        if (sourceEnd <= firstLength) {
+            first.copyTo(sourceOffset, target, targetOffset, length);
+            return;
+        }
+        if (sourceOffset >= firstLength) {
+            second.copyTo(sourceOffset - firstLength, target,
+                    targetOffset, length);
+            return;
+        }
+        final int firstCopyLength = firstLength - sourceOffset;
+        first.copyTo(sourceOffset, target, targetOffset, firstCopyLength);
+        second.copyTo(0, target,
+                targetOffset + firstCopyLength, length - firstCopyLength);
+    }
+
     @Override
     protected byte[] computeByteArray() {
         final byte[] firstBytes = first.toByteArray();

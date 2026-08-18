@@ -94,7 +94,6 @@ public class SegmentIndexHotRoutePutBenchmark {
                         .segmentWriteCacheKeyLimit(
                                 ROUTED_WRITE_CACHE_CAPACITY)
                         .maintenanceWriteCacheKeyLimit(2048)
-                        .indexBufferedWriteKeyLimit(8192)
                         .segmentSplitKeyThreshold(1_000_000))//
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(4096)
                         .hashFunctions(2).falsePositiveProbability(0.01D))//

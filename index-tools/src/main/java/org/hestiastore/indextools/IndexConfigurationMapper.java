@@ -41,8 +41,6 @@ final class IndexConfigurationMapper {
                 writePath.segmentWriteCacheKeyLimit());
         manifest.setSegmentWriteCacheKeyLimitDuringMaintenance(
                 writePath.segmentWriteCacheKeyLimitDuringMaintenance());
-        manifest.setIndexBufferedWriteKeyLimit(
-                writePath.indexBufferedWriteKeyLimit());
         manifest.setMaxNumberOfKeysInSegmentChunk(
                 segment.chunkKeyLimit());
         manifest.setMaxNumberOfDeltaCacheFiles(
@@ -111,8 +109,6 @@ final class IndexConfigurationMapper {
                         .maintenanceWriteCacheKeyLimit(
                                 manifest
                                         .getSegmentWriteCacheKeyLimitDuringMaintenance())
-                        .indexBufferedWriteKeyLimit(
-                                manifest.getIndexBufferedWriteKeyLimit())
                         .segmentSplitKeyThreshold(manifest
                                 .getSegmentSplitKeyThreshold()))
                 .maintenance(maintenance -> maintenance

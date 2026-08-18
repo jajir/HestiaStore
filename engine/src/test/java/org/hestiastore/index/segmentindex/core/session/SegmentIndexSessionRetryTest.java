@@ -172,7 +172,6 @@ class SegmentIndexSessionRetryTest {
                 .segment(segmentConfig -> segmentConfig.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(1))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(2))
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(2))
                 .maintenance(maintenance -> maintenance.busyBackoffMillis(1))
                 .maintenance(maintenance -> maintenance.busyTimeoutMillis(
                         busyTimeoutMillis))

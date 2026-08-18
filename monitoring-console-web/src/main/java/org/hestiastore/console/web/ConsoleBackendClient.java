@@ -387,10 +387,6 @@ public class ConsoleBackendClient {
                                     .writePath().segmentWriteCacheKeyLimitDuringMaintenance())
                             .sum(),
                     monitoredIndexes.stream()
-                            .mapToInt(i -> i.runtimeSnapshot()
-                                    .writePath().indexBufferedWriteKeyLimit())
-                            .sum(),
-                    monitoredIndexes.stream()
                             .mapToInt(
                                     i -> i.runtimeSnapshot().segments().count())
                             .sum(),
@@ -546,7 +542,7 @@ public class ConsoleBackendClient {
         return new NodeRow(node.nodeId(), node.nodeName(), "", "UNAVAILABLE",
                 false, false, node.baseUrl(),
                 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0,
                 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                 0D, "/s", 0D, "/s", 0D, "/s",
@@ -733,7 +729,6 @@ public class ConsoleBackendClient {
                     snapshot.segments().cacheKeyLimitPerSegment(),
                     snapshot.writePath().segmentWriteCacheKeyLimit(),
                     snapshot.writePath().segmentWriteCacheKeyLimitDuringMaintenance(),
-                    snapshot.writePath().indexBufferedWriteKeyLimit(),
                     snapshot.segments().count(), snapshot.segments().readyCount(),
                     snapshot.segments().maintenanceCount(),
                     snapshot.segments().errorCount(),
@@ -869,8 +864,6 @@ public class ConsoleBackendClient {
                         nonNegativeInt(writePath
                                 .path("segmentWriteCacheKeyLimitDuringMaintenance")
                                 .asInt(0)),
-                        nonNegativeInt(writePath
-                                .path("indexBufferedWriteKeyLimit").asInt(0)),
                         nonNegativeLong(writePath
                                 .path("totalBufferedWriteKeys").asLong(0L))),
                 new SegmentIndexMaintenanceMetrics(
@@ -1201,7 +1194,6 @@ public class ConsoleBackendClient {
             int cacheSize, int cacheLimit, int segmentCacheKeyLimitPerSegment,
             int segmentWriteCacheKeyLimit,
             int segmentWriteCacheKeyLimitDuringMaintenance,
-            int indexBufferedWriteKeyLimit,
             int segmentCount, int segmentReadyCount,
             int segmentMaintenanceCount, int segmentErrorCount,
             int segmentClosedCount, int unloadedMappedSegmentCount,
@@ -1557,7 +1549,6 @@ public class ConsoleBackendClient {
             int cacheSize, int cacheLimit, int segmentCacheKeyLimitPerSegment,
             int segmentWriteCacheKeyLimit,
             int segmentWriteCacheKeyLimitDuringMaintenance,
-            int indexBufferedWriteKeyLimit,
             int segmentCount, int segmentReadyCount,
             int segmentMaintenanceCount, int segmentErrorCount,
             int segmentClosedCount, int unloadedMappedSegmentCount,

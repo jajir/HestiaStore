@@ -59,7 +59,6 @@ class IndexConfigurationStoreTest {
         assertEquals("index-config-storage-test", loaded.identity().name());
         assertEquals(2, loaded.writePath().segmentWriteCacheKeyLimit());
         assertEquals(3, loaded.writePath().segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(9, loaded.writePath().indexBufferedWriteKeyLimit());
         assertEquals(11, loaded.segment().maxKeys());
         assertEquals(10, loaded.writePath().segmentSplitKeyThreshold());
         assertFalse(loaded.maintenance().backgroundAutoEnabled());
@@ -86,7 +85,6 @@ class IndexConfigurationStoreTest {
                         .writePath(writePath -> writePath
                                 .segmentWriteCacheKeyLimit(7)
                                 .maintenanceWriteCacheKeyLimit(9)
-                                .indexBufferedWriteKeyLimit(40)
                                 .segmentSplitKeyThreshold(80))
                         .bloomFilter(bloom -> bloom.hashFunctions(2)
                                 .indexSizeBytes(1024)
@@ -422,7 +420,6 @@ class IndexConfigurationStoreTest {
                 .segment(segment -> segment.cacheKeyLimit(4))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(2))//
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(3))//
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))//
                 .segment(segment -> segment.chunkKeyLimit(2))//
                 .segment(segment -> segment.maxKeys(11))//
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(10))//
@@ -483,7 +480,6 @@ class IndexConfigurationStoreTest {
                 .segment(segment -> segment.cacheKeyLimit(4))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(2))//
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(3))//
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))//
                 .segment(segment -> segment.chunkKeyLimit(2))//
                 .segment(segment -> segment.maxKeys(11))//
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(10))//
@@ -531,7 +527,6 @@ class IndexConfigurationStoreTest {
                 .segment(segment -> segment.cacheKeyLimit(4))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(2))//
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(3))//
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))//
                 .segment(segment -> segment.chunkKeyLimit(2))//
                 .segment(segment -> segment.maxKeys(11))//
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(10))//

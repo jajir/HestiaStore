@@ -45,8 +45,7 @@ calculated memory areas:
 - `Key/segment-id entry`: key size and segment id size used by the segment
   routing map.
 - `Inputs and constants`: configuration values and fixed assumptions used by
-  the estimator. Values such as `Write-buffer keys` are reported for context
-  and are not added to the total.
+  the estimator.
 
 Area rows such as `Delta cache`, `Chunk-store page cache`, and `Maintenance
 overhead` summarize the formula in the description column. Supporting rows in

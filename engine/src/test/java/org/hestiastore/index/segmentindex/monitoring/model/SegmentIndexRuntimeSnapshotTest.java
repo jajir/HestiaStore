@@ -30,7 +30,7 @@ class SegmentIndexRuntimeSnapshotTest {
                 new SegmentIndexSegmentMetrics(30, 31, 32, 33, 34, 35, 36,
                         37L, 38L, 39L, List.of(runtimeMetrics));
         final SegmentIndexWritePathMetrics writePath =
-                new SegmentIndexWritePathMetrics(40, 41, 42, 43L);
+                new SegmentIndexWritePathMetrics(40, 41, 43L);
         final SegmentIndexExecutorMetrics indexExecutor =
                 new SegmentIndexExecutorMetrics(47, 48, 49, 50L, 51L, 52L);
         final SegmentIndexExecutorMetrics stableExecutor =
@@ -94,7 +94,7 @@ class SegmentIndexRuntimeSnapshotTest {
                 new SegmentIndexSegmentMetrics(0, 0, 0, 0, 0, 0, 0, 0L, 0L,
                         0L, List.of());
         final SegmentIndexWritePathMetrics writePath =
-                new SegmentIndexWritePathMetrics(0, 0, 0, 0L);
+                new SegmentIndexWritePathMetrics(0, 0, 0L);
         final SegmentIndexExecutorMetrics executor =
                 new SegmentIndexExecutorMetrics(0, 0, 0, 0L, 0L, 0L);
         final SegmentIndexMaintenanceMetrics maintenance =

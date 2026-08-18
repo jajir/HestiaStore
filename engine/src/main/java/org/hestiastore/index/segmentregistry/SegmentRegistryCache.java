@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
@@ -48,7 +46,6 @@ final class SegmentRegistryCache<K, V> {
     private final AtomicInteger limit;
     private final SegmentLoadCloseOperations<K, V> segmentOperations;
     private final SegmentUnloadEligibility unloadEligibility;
-    private final Executor unloadExecutor;
     private final LongAdder hitCount = new LongAdder();
     private final LongAdder missCount = new LongAdder();
     private final LongAdder loadCount = new LongAdder();
@@ -60,20 +57,16 @@ final class SegmentRegistryCache<K, V> {
      * @param limit             maximum number of cached entries
      * @param segmentOperations segment load/close operations
      * @param unloadEligibility unload eligibility policy
-     * @param unloadExecutor    executor used for asynchronous eviction
      */
     SegmentRegistryCache(final int limit,
             final SegmentLoadCloseOperations<K, V> segmentOperations,
-            final SegmentUnloadEligibility unloadEligibility,
-            final Executor unloadExecutor) {
+            final SegmentUnloadEligibility unloadEligibility) {
         this.limit = new AtomicInteger(
                 Vldtn.requireGreaterThanZero(limit, "limit"));
         this.segmentOperations = Vldtn.requireNonNull(segmentOperations,
                 "segmentOperations");
         this.unloadEligibility = Vldtn.requireNonNull(unloadEligibility,
                 "unloadEligibility");
-        this.unloadExecutor = Vldtn.requireNonNull(unloadExecutor,
-                "unloadExecutor");
     }
 
     /**
@@ -158,17 +151,30 @@ final class SegmentRegistryCache<K, V> {
             entry.cancelUnload();
             return InvalidateStatus.BUSY;
         }
-        if (!unloadValue(value)) {
-            entry.cancelUnload();
-            return InvalidateStatus.BUSY;
-        }
+        closeOrCancelUnload(entry, value);
         return finalizeRemoval(key, entry, false) ? InvalidateStatus.REMOVED
                 : InvalidateStatus.BUSY;
     }
 
+    /**
+     * Attempts to unload every cached entry and reports close failures after
+     * the remaining entries have also been attempted.
+     */
     void clear() {
+        RuntimeException failure = null;
         for (final SegmentId key : map.keySet()) {
-            invalidate(key);
+            try {
+                invalidate(key);
+            } catch (final RuntimeException ex) {
+                if (failure == null) {
+                    failure = ex;
+                } else if (failure != ex) {
+                    failure.addSuppressed(ex);
+                }
+            }
+        }
+        if (failure != null) {
+            throw failure;
         }
     }
 
@@ -207,14 +213,13 @@ final class SegmentRegistryCache<K, V> {
 
     private Segment<K, V> loadValue(final SegmentId key,
             final SegmentRegistryEntry<K, V> entry) {
-        if (!reserveSlotForLoad(key)) {
-            final SegmentBusyException failure = new SegmentBusyException();
-            entry.fail(failure);
-            map.remove(key, entry);
-            throw failure;
-        }
         boolean loaded = false;
+        boolean slotReserved = false;
         try {
+            if (!reserveSlotForLoad(key)) {
+                throw new SegmentBusyException();
+            }
+            slotReserved = true;
             final Segment<K, V> value = Vldtn.requireNonNull(
                     segmentOperations.loadSegment(key), "loadedValue");
             entry.finishLoad(value);
@@ -231,14 +236,15 @@ final class SegmentRegistryCache<K, V> {
             throw failure;
         } finally {
             if (!loaded) {
-                cleanupFailedLoad(key, entry);
+                cleanupFailedLoad(key, entry, slotReserved);
             }
         }
     }
 
     private void cleanupFailedLoad(final SegmentId key,
-            final SegmentRegistryEntry<K, V> entry) {
-        if (map.remove(key, entry)) {
+            final SegmentRegistryEntry<K, V> entry,
+            final boolean slotReserved) {
+        if (map.remove(key, entry) && slotReserved) {
             size.decrementAndGet();
         }
         entry.cancelLoadIfNeeded();
@@ -269,15 +275,6 @@ final class SegmentRegistryCache<K, V> {
             return cleanCandidate;
         }
         return selectLeastRecentlyUsedCandidate(exceptKey, true);
-    }
-
-    boolean removeLastRecentUsedSegment(final SegmentId exceptKey) {
-        final EvictionCandidate<K, V> candidate = selectEvictionCandidate(
-                exceptKey);
-        if (candidate == null) {
-            return false;
-        }
-        return startUnloadAsync(candidate);
     }
 
     private boolean evictSynchronouslyAboveLimit(final SegmentId exceptKey) {
@@ -348,31 +345,20 @@ final class SegmentRegistryCache<K, V> {
                 : unloadEligibility.canUnload(value);
     }
 
-    private boolean unloadValue(final Segment<K, V> value) {
+    private void closeOrCancelUnload(
+            final SegmentRegistryEntry<K, V> entry,
+            final Segment<K, V> value) {
         try {
             segmentOperations.closeSegmentIfNeeded(value);
-            return true;
         } catch (final RuntimeException ex) {
-            return false;
-        }
-    }
-
-    private boolean startUnloadAsync(final EvictionCandidate<K, V> candidate) {
-        try {
-            unloadExecutor.execute(() -> unloadAndFinalize(candidate, true));
-            return true;
-        } catch (final RejectedExecutionException ex) {
-            candidate.entry.cancelUnload();
-            return false;
+            entry.cancelUnload();
+            throw ex;
         }
     }
 
     private boolean unloadAndFinalize(final EvictionCandidate<K, V> candidate,
             final boolean eviction) {
-        if (!unloadValue(candidate.value)) {
-            candidate.entry.cancelUnload();
-            return false;
-        }
+        closeOrCancelUnload(candidate.entry, candidate.value);
         return finalizeRemoval(candidate.key, candidate.entry, eviction);
     }
 

@@ -28,6 +28,26 @@ public interface ByteSequence {
     byte getByte(int index);
 
     /**
+     * Copies a range of this sequence into {@code target}.
+     * <p>
+     * The source and target ranges must fit their respective capacities. A
+     * zero-length copy is valid when each offset is equal to its capacity.
+     * Implementations must validate all arguments before modifying
+     * {@code target}. Behavior is unspecified when the copied source range and
+     * target range overlap in the same backing storage.
+     * </p>
+     *
+     * @param sourceOffset zero-based offset in this sequence
+     * @param target       destination array
+     * @param targetOffset zero-based offset in {@code target}
+     * @param length       number of bytes to copy
+     * @throws IllegalArgumentException when {@code target} is {@code null}, an
+     *                                  offset or {@code length} is negative, or
+     *                                  either range exceeds its capacity
+     */
+    void copyTo(int sourceOffset, byte[] target, int targetOffset, int length);
+
+    /**
      * Returns a slice of this sequence between the given offsets.
      * Implementations may return a lightweight view backed by the original
      * storage, so callers must not mutate the underlying data while retaining

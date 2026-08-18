@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Added
+
+- Added `ByteSequence.copyTo(...)` and `AbstractByteSequence` for validated,
+  representation-specific bulk copying.
+
+### Changed
+
+- Concatenated byte sequences now copy component ranges in bulk instead of
+  falling back to per-byte dispatch.
+
+### Deprecated
+
+- Deprecated `ByteSequences.copy(...)` in favor of
+  `ByteSequence.copyTo(...)`. The compatibility wrapper is not planned for
+  removal.
+
+### Breaking
+
+- Direct implementations of `ByteSequence` and `MutableByteSequence` must now
+  implement `copyTo(...)` or extend `AbstractByteSequence`. Existing subclasses
+  of `ByteSequenceCaching` inherit the validated fallback automatically.
+
 ## 1.1.0 (2026-07-30)
 
 ### Added

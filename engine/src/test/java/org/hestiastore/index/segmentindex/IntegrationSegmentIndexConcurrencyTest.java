@@ -156,7 +156,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .segment(segment -> segment.cacheKeyLimit(3)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(activePartitionSize)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(64)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(128)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(10_000_000)) //
                 .segment(segment -> segment.maxKeys(64)) //
                 .segment(segment -> segment.chunkKeyLimit(8)) //
@@ -176,8 +175,6 @@ class IntegrationSegmentIndexConcurrencyTest {
         final int segmentWriteCacheKeyLimit = scenario.segmentWriteCacheKeyLimit();
         final int maintenanceWriteCacheKeyLimit = Math.max(segmentWriteCacheKeyLimit + 1,
                 scenario.keyCount());
-        final int indexBufferedWriteKeyLimit = Math.max(maintenanceWriteCacheKeyLimit,
-                maintenanceWriteCacheKeyLimit * 2);
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .identity(identity -> identity.keyClass(Integer.class))//
@@ -188,7 +185,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                         scenario.maxNumberOfKeysInSegmentCache())) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(segmentWriteCacheKeyLimit)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(maintenanceWriteCacheKeyLimit)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(indexBufferedWriteKeyLimit)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(10_000_000)) //
                 .segment(segment -> segment.chunkKeyLimit(
                         scenario.maxNumberOfKeysInSegmentChunk())) //

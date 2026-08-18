@@ -52,12 +52,8 @@ public interface IndexConfigurationDefaults {
         final int maintenanceWriteCacheKeyLimit =
                 Math.max(segmentWriteCacheKeyLimit + 1,
                         (int) Math.ceil(segmentWriteCacheKeyLimit * 1.4));
-        final int indexBufferedWriteKeyLimit = Math.max(
-                maintenanceWriteCacheKeyLimit,
-                maintenanceWriteCacheKeyLimit
-                        * segment.cachedSegmentLimit().intValue());
         return new IndexWritePathConfiguration(segmentWriteCacheKeyLimit,
-                maintenanceWriteCacheKeyLimit, indexBufferedWriteKeyLimit,
+                maintenanceWriteCacheKeyLimit,
                 DEFAULT_SEGMENT_SPLIT_KEY_THRESHOLD);
     }
 

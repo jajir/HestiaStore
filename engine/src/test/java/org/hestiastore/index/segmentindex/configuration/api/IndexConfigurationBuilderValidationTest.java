@@ -287,7 +287,6 @@ class IndexConfigurationBuilderValidationTest {
         assertEquals(10, config.writePath().segmentWriteCacheKeyLimit());
         assertNull(config.writePath()
                 .segmentWriteCacheKeyLimitDuringMaintenance());
-        assertNull(config.writePath().indexBufferedWriteKeyLimit());
     }
 
     @Test
@@ -343,40 +342,6 @@ class IndexConfigurationBuilderValidationTest {
         assertEquals(
                 "segmentWriteCacheKeyLimitDuringMaintenance must be greater "
                         + "than segmentWriteCacheKeyLimit",
-                exception.getMessage());
-    }
-
-    @Test
-    void test_indexBufferedWriteKeyLimit_setsValue() {
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .writePath(writePath -> writePath
-                        .indexBufferedWriteKeyLimit(42))
-                .build();
-
-        assertEquals(42, config.writePath().indexBufferedWriteKeyLimit());
-    }
-
-    @Test
-    void test_indexBufferedWriteKeyLimit_rejectsZero() {
-        final IllegalArgumentException exception = assertBuildThrows(
-                newBuilder().writePath(writePath -> writePath
-                        .indexBufferedWriteKeyLimit(0)));
-
-        assertEquals("indexBufferedWriteKeyLimit must be >= 1",
-                exception.getMessage());
-    }
-
-    @Test
-    void test_indexBufferedWriteKeyLimit_rejectsBelowMaintenanceLimit() {
-        final IllegalArgumentException exception = assertBuildThrows(
-                newBuilder().writePath(writePath -> writePath
-                        .segmentWriteCacheKeyLimit(10)
-                        .maintenanceWriteCacheKeyLimit(15)
-                        .indexBufferedWriteKeyLimit(14)));
-
-        assertEquals(
-                "indexBufferedWriteKeyLimit must be greater than "
-                        + "or equal to segmentWriteCacheKeyLimitDuringMaintenance",
                 exception.getMessage());
     }
 

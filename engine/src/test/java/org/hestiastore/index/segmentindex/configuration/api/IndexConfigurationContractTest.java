@@ -29,10 +29,6 @@ class IndexConfigurationContractTest {
         assertEquals(expectedPartitionBufferLimit,
                 contract.writePath()
                         .segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(Math.max(expectedPartitionBufferLimit,
-                expectedPartitionBufferLimit
-                        * contract.segment().cachedSegmentLimit()),
-                contract.writePath().indexBufferedWriteKeyLimit());
     }
 
     @Test

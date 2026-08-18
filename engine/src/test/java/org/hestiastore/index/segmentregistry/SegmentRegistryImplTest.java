@@ -49,7 +49,6 @@ class SegmentRegistryImplTest {
 
     private SegmentRegistryImpl<Integer, String> registry;
     private ExecutorService stableSegmentMaintenancePool;
-    private ExecutorService registryMaintenancePool;
 
     @BeforeEach
     void setUp() {
@@ -70,8 +69,7 @@ class SegmentRegistryImplTest {
 
     @Test
     void getSegment_reusesInstanceUntilClosed() {
-        final Segment<Integer, String> created = registry.tryCreateSegment()
-                .getValue();
+        final Segment<Integer, String> created = createLoadedSegment();
         final SegmentId segmentId = created.getId();
 
         final Segment<Integer, String> first = registry.tryLoadSegment(segmentId)
@@ -89,8 +87,7 @@ class SegmentRegistryImplTest {
 
     @Test
     void blockingPointOperationUsesSingleRegistryLookup() {
-        final Segment<Integer, String> created = registry.tryCreateSegment()
-                .getValue();
+        final Segment<Integer, String> created = createLoadedSegment();
         assertSame(OperationStatus.OK, created.put(1, "one").getStatus());
         final SegmentRegistryCacheStats before = registry.metricsSnapshot();
 
@@ -104,7 +101,7 @@ class SegmentRegistryImplTest {
     @Test
     void blockingHandleRefreshesAfterSegmentCloses() {
         final BlockingSegment<Integer, String> handle = registry
-                .createSegment();
+                .loadSegment(SegmentId.of(0));
         final Segment<Integer, String> first = handle.getSegment();
         closeAndAssertClosed(first);
 
@@ -158,12 +155,9 @@ class SegmentRegistryImplTest {
     void getSegment_evicts_least_recently_used_when_limit_exceeded() {
         conf = newConfiguration(2);
         rebuildRegistry();
-        final Segment<Integer, String> first = registry.tryCreateSegment()
-                .getValue();
-        final Segment<Integer, String> second = registry.tryCreateSegment()
-                .getValue();
-        final Segment<Integer, String> third = registry.tryCreateSegment()
-                .getValue();
+        final Segment<Integer, String> first = createLoadedSegment();
+        final Segment<Integer, String> second = createLoadedSegment();
+        final Segment<Integer, String> third = createLoadedSegment();
 
         final long closedCount = List.of(first, second, third).stream()
                 .filter(segment -> segment.getState() == SegmentState.CLOSED)
@@ -180,9 +174,7 @@ class SegmentRegistryImplTest {
 
     @Test
     void getSegment_returnsBusyWhenSegmentMissing() {
-        final Segment<Integer, String> existing = registry.tryCreateSegment()
-                .getValue();
-        final SegmentId missingId = SegmentId.of(existing.getId().getId() + 1);
+        final SegmentId missingId = registry.materialization().nextSegmentId();
 
         final OperationResult<Segment<Integer, String>> result = registry
                 .tryLoadSegment(missingId);
@@ -223,8 +215,7 @@ class SegmentRegistryImplTest {
 
     @Test
     void getSegment_returnsBusyWhenEntryIsUnloading() {
-        final Segment<Integer, String> created = registry.tryCreateSegment()
-                .getValue();
+        final Segment<Integer, String> created = createLoadedSegment();
         final SegmentId segmentId = created.getId();
         final Segment<Integer, String> segment = registry.tryLoadSegment(segmentId)
                 .getValue();
@@ -243,8 +234,7 @@ class SegmentRegistryImplTest {
 
     @Test
     void tryGetLoadedSegmentReturnsDefaultBlockingSegmentForLoadedEntry() {
-        final Segment<Integer, String> created = registry.tryCreateSegment()
-                .getValue();
+        final Segment<Integer, String> created = createLoadedSegment();
 
         final Optional<BlockingSegment<Integer, String>> loaded = registry
                 .tryGetLoadedSegment(created.getId());
@@ -271,8 +261,7 @@ class SegmentRegistryImplTest {
 
     @Test
     void tryGetLoadedSegmentReturnsEmptyWhenEntryIsUnloading() {
-        final Segment<Integer, String> created = registry.tryCreateSegment()
-                .getValue();
+        final Segment<Integer, String> created = createLoadedSegment();
         final SegmentId segmentId = created.getId();
         final Object entry = getCacheEntry(segmentId);
         assertTrue(invokeTryStartUnload(entry));
@@ -287,8 +276,7 @@ class SegmentRegistryImplTest {
 
     @Test
     void deleteRetiredSegmentClosesAndDeletesDirtyReadySegment() {
-        final Segment<Integer, String> created = registry.tryCreateSegment()
-                .getValue();
+        final Segment<Integer, String> created = createLoadedSegment();
         final SegmentId segmentId = created.getId();
 
         assertSame(OperationStatus.OK, created.put(1, "one").getStatus());
@@ -317,8 +305,7 @@ class SegmentRegistryImplTest {
 
     @Test
     void tryDeleteRetiredSegmentReturnsBusyWhenEntryIsUnloading() {
-        final Segment<Integer, String> created = registry.tryCreateSegment()
-                .getValue();
+        final Segment<Integer, String> created = createLoadedSegment();
         final SegmentId segmentId = created.getId();
         final Object entry = getCacheEntry(segmentId);
         assertTrue(invokeTryStartUnload(entry));
@@ -361,15 +348,22 @@ class SegmentRegistryImplTest {
 
     private void rebuildRegistry() {
         closeRegistry();
-        registryMaintenancePool = Executors.newSingleThreadExecutor();
         registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directoryFacade)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(effective(conf))
                 .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
-                .withRegistryMaintenanceExecutor(registryMaintenancePool)
                 .build();
+    }
+
+    private Segment<Integer, String> createLoadedSegment() {
+        final SegmentId segmentId = registry.materialization().nextSegmentId();
+        directoryFacade.openSubDirectory(segmentId.getName());
+        final OperationResult<Segment<Integer, String>> loaded = registry
+                .tryLoadSegment(segmentId);
+        assertSame(OperationStatus.OK, loaded.getStatus());
+        return loaded.getValue();
     }
 
     private void closeRegistry() {
@@ -380,10 +374,6 @@ class SegmentRegistryImplTest {
                 // Tests may intentionally leave the registry in ERROR state.
             }
             registry = null;
-        }
-        if (registryMaintenancePool != null) {
-            registryMaintenancePool.shutdownNow();
-            registryMaintenancePool = null;
         }
     }
 

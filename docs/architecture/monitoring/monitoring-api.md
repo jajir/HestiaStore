@@ -27,7 +27,6 @@ canonical write-path names as Java configuration and runtime tuning.
 - `maxNumberOfKeysInSegmentCache`
 - `segmentWriteCacheKeyLimit`
 - `segmentWriteCacheKeyLimitDuringMaintenance`
-- `indexBufferedWriteKeyLimit`
 - `segmentSplitKeyThreshold`
 
 These overrides are runtime-only:
@@ -67,7 +66,6 @@ These overrides are runtime-only:
       "segmentCacheKeyLimitPerSegment": 260000,
       "segmentWriteCacheKeyLimit": 120000,
       "segmentWriteCacheKeyLimitDuringMaintenance": 180000,
-      "indexBufferedWriteKeyLimit": 720000,
       "segmentCount": 24,
       "segmentReadyCount": 24,
       "segmentMaintenanceCount": 0,
@@ -115,7 +113,6 @@ These overrides are runtime-only:
     "maxNumberOfKeysInSegmentCache": 200000,
     "segmentWriteCacheKeyLimit": 100000,
     "segmentWriteCacheKeyLimitDuringMaintenance": 140000,
-    "indexBufferedWriteKeyLimit": 560000,
     "segmentSplitKeyThreshold": 500000
   },
   "current": {
@@ -123,14 +120,12 @@ These overrides are runtime-only:
     "maxNumberOfKeysInSegmentCache": 260000,
     "segmentWriteCacheKeyLimit": 120000,
     "segmentWriteCacheKeyLimitDuringMaintenance": 180000,
-    "indexBufferedWriteKeyLimit": 720000,
     "segmentSplitKeyThreshold": 500000
   },
   "supportedKeys": [
     "maxNumberOfKeysInSegmentCache",
     "segmentWriteCacheKeyLimit",
     "segmentWriteCacheKeyLimitDuringMaintenance",
-    "indexBufferedWriteKeyLimit",
     "segmentSplitKeyThreshold",
     "maxNumberOfSegmentsInCache"
   ],
@@ -148,7 +143,6 @@ These overrides are runtime-only:
     "maxNumberOfKeysInSegmentCache": "260000",
     "segmentWriteCacheKeyLimit": "120000",
     "segmentWriteCacheKeyLimitDuringMaintenance": "180000",
-    "indexBufferedWriteKeyLimit": "720000",
     "segmentSplitKeyThreshold": "500000"
   },
   "dryRun": false
@@ -166,6 +160,5 @@ These overrides are runtime-only:
 - `maxNumberOfKeysInSegmentCache >= 1`
 - `segmentWriteCacheKeyLimit >= 1`
 - `segmentWriteCacheKeyLimitDuringMaintenance > segmentWriteCacheKeyLimit`
-- `indexBufferedWriteKeyLimit >= segmentWriteCacheKeyLimitDuringMaintenance`
 - `segmentSplitKeyThreshold >= segmentWriteCacheKeyLimitDuringMaintenance`
 - Unknown key error code: `CONFIG_KEY_NOT_SUPPORTED`

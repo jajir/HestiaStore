@@ -7,7 +7,6 @@ public final class IndexWritePathConfigurationBuilder {
 
     private Integer segmentWriteCacheKeyLimit;
     private Integer maintenanceWriteCacheKeyLimit;
-    private Integer indexBufferedWriteKeyLimit;
     private Integer segmentSplitKeyThreshold;
 
     IndexWritePathConfigurationBuilder() {
@@ -38,18 +37,6 @@ public final class IndexWritePathConfigurationBuilder {
     }
 
     /**
-     * Sets index-wide buffered write key limit.
-     *
-     * @param value index-wide buffered key limit
-     * @return this section builder
-     */
-    public IndexWritePathConfigurationBuilder indexBufferedWriteKeyLimit(
-            final Integer value) {
-        this.indexBufferedWriteKeyLimit = value;
-        return this;
-    }
-
-    /**
      * Sets segment split key threshold.
      *
      * @param value segment split threshold
@@ -63,8 +50,7 @@ public final class IndexWritePathConfigurationBuilder {
 
     IndexWritePathConfiguration build() {
         return new IndexWritePathConfiguration(segmentWriteCacheKeyLimit,
-                maintenanceWriteCacheKeyLimit, indexBufferedWriteKeyLimit,
-                segmentSplitKeyThreshold);
+                maintenanceWriteCacheKeyLimit, segmentSplitKeyThreshold);
     }
 
 }

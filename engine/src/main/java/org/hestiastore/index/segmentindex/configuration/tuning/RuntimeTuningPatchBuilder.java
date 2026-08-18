@@ -66,19 +66,6 @@ public final class RuntimeTuningPatchBuilder {
     }
 
     /**
-     * Sets the index-level buffered write key limit.
-     *
-     * @param value buffered write key limit
-     * @return this builder
-     */
-    public RuntimeTuningPatchBuilder indexBufferedWriteKeyLimit(
-            final int value) {
-        values.put(RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                RuntimeTuningValue.ofInt(value));
-        return this;
-    }
-
-    /**
      * Sets the segment split key threshold.
      *
      * @param value split key threshold

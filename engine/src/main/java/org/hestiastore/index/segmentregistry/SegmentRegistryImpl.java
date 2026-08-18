@@ -87,9 +87,10 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
                 this.blockingRetryPolicy);
         this.blockingSegments = new ConcurrentHashMap<>();
         this.materialization = new SegmentRegistryMaterializationView<>(
-                this.segmentIdAllocator, this.preparedSegmentWriterFactory);
+                this.segmentIdAllocator, this.preparedSegmentWriterFactory,
+                this.gate::getState);
         this.runtime = new SegmentRegistryRuntimeView<>(this.runtimeTuner,
-                this::loadedBlockingSegmentsSnapshot);
+                this::loadedBlockingSegmentsSnapshot, this.gate::getState);
         if (!gate.finishFreezeToReady()) {
             throw new IllegalStateException(
                     "Failed to transition registry from FREEZE to READY");
@@ -128,12 +129,6 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     }
 
     @Override
-    public BlockingSegment<K, V> createSegment() {
-        final Segment<K, V> created = blockingFacade.createSegment();
-        return toBlockingSegment(created.getId(), created);
-    }
-
-    @Override
     public void deleteSegment(final SegmentId segmentId) {
         blockingFacade.deleteSegment(segmentId);
         blockingSegments.remove(segmentId);
@@ -156,26 +151,6 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    OperationResult<SegmentId> allocateSegmentId() {
-        final SegmentRegistryState state = gate.getState();
-        if (state != SegmentRegistryState.READY) {
-            return OperationResult.fromStatus(resultForState(state));
-        }
-        try {
-            final SegmentId segmentId = segmentIdAllocator.get();
-            if (segmentId == null) {
-                return OperationResult.error();
-            }
-            return OperationResult.ok(segmentId);
-        } catch (final RuntimeException e) {
-            return OperationResult.error();
-        }
-    }
-
-    /**
      * Returns the segment for the provided id, loading it if needed.
      * <p>
      * When gate is not READY this method maps state to BUSY/CLOSED/ERROR
@@ -187,25 +162,6 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
     @Override
     OperationResult<Segment<K, V>> tryLoadSegment(
             final SegmentId segmentId) {
-        return loadSegmentInternal(segmentId);
-    }
-
-    /**
-     * Creates and registers a new segment using a freshly allocated id.
-     *
-     * @return registry result containing the new segment or a status
-     */
-    @Override
-    OperationResult<Segment<K, V>> tryCreateSegment() {
-        final OperationResult<SegmentId> allocated = allocateSegmentId();
-        if (!allocated.isOk()) {
-            return OperationResult.fromStatus(allocated.getStatus());
-        }
-        if (allocated.getValue() == null) {
-            return OperationResult.error();
-        }
-        final SegmentId segmentId = allocated.getValue();
-        fileSystem.ensureSegmentDirectory(segmentId);
         return loadSegmentInternal(segmentId);
     }
 
@@ -267,19 +223,27 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         if (state != SegmentRegistryState.READY) {
             return OperationResult.fromStatus(resultForState(state));
         }
-        final SegmentRegistryCache.InvalidateStatus status = cache
-                .invalidate(segmentId);
-        if (status == SegmentRegistryCache.InvalidateStatus.BUSY) {
-            return OperationResult.busy();
-        }
         try {
+            final SegmentRegistryCache.InvalidateStatus status = cache
+                    .invalidate(segmentId);
+            if (status == SegmentRegistryCache.InvalidateStatus.BUSY) {
+                return OperationResult.busy();
+            }
             fileSystem.deleteSegmentFiles(segmentId);
         } catch (final RuntimeException ex) {
+            logger.error("Failed to delete segment '{}'.", segmentId, ex);
             return OperationResult.error();
         }
         return OperationResult.ok();
     }
 
+    /**
+     * Removes a retired segment even when normal unload eligibility rejects
+     * it.
+     *
+     * @param segmentId retired segment id to remove
+     * @return operation status
+     */
     @Override
     OperationResult<Void> tryDeleteRetiredSegment(
             final SegmentId segmentId) {
@@ -288,14 +252,16 @@ final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
         if (state != SegmentRegistryState.READY) {
             return OperationResult.fromStatus(resultForState(state));
         }
-        final SegmentRegistryCache.InvalidateStatus status = cache
-                .forceInvalidate(segmentId);
-        if (status == SegmentRegistryCache.InvalidateStatus.BUSY) {
-            return OperationResult.busy();
-        }
         try {
+            final SegmentRegistryCache.InvalidateStatus status = cache
+                    .forceInvalidate(segmentId);
+            if (status == SegmentRegistryCache.InvalidateStatus.BUSY) {
+                return OperationResult.busy();
+            }
             fileSystem.deleteSegmentFiles(segmentId);
         } catch (final RuntimeException ex) {
+            logger.error("Failed to delete retired segment '{}'.", segmentId,
+                    ex);
             return OperationResult.error();
         }
         return OperationResult.ok();

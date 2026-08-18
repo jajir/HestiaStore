@@ -55,7 +55,6 @@ class SegmentIndexManualMaintenanceIT {
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(WRITE_CACHE_LIMIT)
                         .maintenanceWriteCacheKeyLimit(WRITE_CACHE_LIMIT * 2)
-                        .indexBufferedWriteKeyLimit(WRITE_CACHE_LIMIT * 4)
                         .segmentSplitKeyThreshold(128))
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024)
                         .hashFunctions(3).falsePositiveProbability(0.01D))

@@ -289,9 +289,6 @@ public final class SegmentIndexBootstrapOperation<K, V> {
                 .withSegmentMaintenanceExecutor(
                         state.getExecutorRegistry()
                                 .getStableSegmentMaintenanceExecutor())
-                .withRegistryMaintenanceExecutor(
-                        state.getExecutorRegistry()
-                                .getRegistryMaintenanceExecutor())
                 .withChunkStoreCache(state.getChunkStoreCache())
                 .build());
     }

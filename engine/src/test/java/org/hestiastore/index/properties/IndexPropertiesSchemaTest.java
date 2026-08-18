@@ -100,10 +100,6 @@ class IndexPropertiesSchemaTest {
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT));
         assertEquals(expectedMaintenanceLimit, view.getInt(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
-        assertEquals(expectedMaintenanceLimit
-                * IndexConfigurationDefaults.DEFAULT_CACHED_SEGMENT_LIMIT,
-                view.getInt(
-                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT));
         assertEquals(IndexConfigurationDefaults.DEFAULT_DELTA_CACHE_FILE_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));

@@ -49,7 +49,6 @@ class HestiaStorePrometheusExporterTest {
         assertTrue(scrape.contains("hestiastore_segment_write_cache_key_limit"));
         assertTrue(
                 scrape.contains("hestiastore_segment_write_cache_key_limit_during_maintenance"));
-        assertTrue(scrape.contains("hestiastore_index_buffered_write_key_limit"));
         assertTrue(scrape.contains("hestiastore_split_schedule_total"));
         assertTrue(scrape.contains("hestiastore_split_in_flight"));
         assertTrue(scrape.contains("hestiastore_index_up"));
@@ -64,7 +63,7 @@ class HestiaStorePrometheusExporterTest {
         final SegmentIndexRuntimeMonitoring runtimeMonitoring = Mockito.mock(
                 SegmentIndexRuntimeMonitoring.class);
         final AtomicReference<SegmentIndexRuntimeSnapshot> snapshotRef = new AtomicReference<>(
-                snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 11, 29, 37L,
+                snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 11, 37L,
                         2));
         Mockito.when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
         Mockito.when(runtimeMonitoring.snapshot()).thenAnswer(
@@ -73,15 +72,15 @@ class HestiaStorePrometheusExporterTest {
         String scrape = HestiaStorePrometheusExporter.scrape(
                 new PrometheusSegmentIndexSource("orders", index));
 
-        assertSamples(scrape, 1D, 2D, 3D, 7D, 11D, 29D, 37D, 2D, 1D);
+        assertSamples(scrape, 1D, 2D, 3D, 7D, 11D, 37D, 2D, 1D);
 
         snapshotRef.set(snapshot(5L, 8L, 13L, SegmentIndexState.CLOSED, 9, 13,
-                15, 41L, 0));
+                41L, 0));
 
         scrape = HestiaStorePrometheusExporter.scrape(
                 new PrometheusSegmentIndexSource("orders", index));
 
-        assertSamples(scrape, 5D, 8D, 13D, 9D, 13D, 15D, 41D, 0D, 0D);
+        assertSamples(scrape, 5D, 8D, 13D, 9D, 13D, 41D, 0D, 0D);
     }
 
     private void assertSampleValue(final String scrape, final String metricName,
@@ -109,7 +108,7 @@ class HestiaStorePrometheusExporterTest {
     private SegmentIndexRuntimeSnapshot snapshot(final long getCount,
             final long putCount, final long deleteCount,
             final SegmentIndexState state) {
-        return snapshot(getCount, putCount, deleteCount, state, 0, 0, 0, 0L,
+        return snapshot(getCount, putCount, deleteCount, state, 0, 0, 0L,
                 0);
     }
 
@@ -117,7 +116,6 @@ class HestiaStorePrometheusExporterTest {
             final long putCount, final long deleteCount,
             final SegmentIndexState state, final int segmentWriteCacheKeyLimit,
             final int segmentWriteCacheKeyLimitDuringMaintenance,
-            final int indexBufferedWriteKeyLimit,
             final long splitScheduleCount, final int splitInFlightCount) {
         final SegmentIndexExecutorMetrics emptyExecutor =
                 new SegmentIndexExecutorMetrics(0, 0, 0, 0L, 0L, 0L);
@@ -134,7 +132,7 @@ class HestiaStorePrometheusExporterTest {
                         0L, java.util.List.of()),
                 new SegmentIndexWritePathMetrics(segmentWriteCacheKeyLimit,
                         segmentWriteCacheKeyLimitDuringMaintenance,
-                        indexBufferedWriteKeyLimit, 0L),
+                        0L),
                 new SegmentIndexMaintenanceMetrics(0L, 0L, 0L, 0L, 0L, 0L,
                         emptyExecutor, emptyExecutor),
                 new SegmentIndexSplitMetrics(splitScheduleCount,
@@ -149,7 +147,6 @@ class HestiaStorePrometheusExporterTest {
             final double putCount, final double deleteCount,
             final double segmentWriteCacheKeyLimit,
             final double segmentWriteCacheKeyLimitDuringMaintenance,
-            final double indexBufferedWriteKeyLimit,
             final double splitScheduleCount, final double splitInFlightCount,
             final double indexUp) {
         assertSampleValue(scrape, "hestiastore_ops_get_total", "orders",
@@ -163,8 +160,6 @@ class HestiaStorePrometheusExporterTest {
         assertSampleValue(scrape,
                 "hestiastore_segment_write_cache_key_limit_during_maintenance",
                 "orders", segmentWriteCacheKeyLimitDuringMaintenance);
-        assertSampleValue(scrape, "hestiastore_index_buffered_write_key_limit",
-                "orders", indexBufferedWriteKeyLimit);
         assertSampleValue(scrape, "hestiastore_split_schedule_total", "orders",
                 splitScheduleCount);
         assertSampleValue(scrape, "hestiastore_split_in_flight", "orders",
