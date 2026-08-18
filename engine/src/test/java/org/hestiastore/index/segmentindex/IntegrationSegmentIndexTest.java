@@ -139,7 +139,6 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .segment(segment -> segment.cacheKeyLimit(16)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(128)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(256)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(512)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(256)) //
                 // Keep CRUD integrations focused on index semantics, not on
                 // stable-segment split pressure introduced by direct writes.

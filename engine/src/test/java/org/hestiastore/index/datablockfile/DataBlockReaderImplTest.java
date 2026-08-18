@@ -12,7 +12,6 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.directory.FileReaderSeekable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,7 +101,7 @@ class DataBlockReaderImplTest {
         System.arraycopy(TestData.BYTE_ARRAY_1024, 0, bufferBytes, 0, 1024);
         DataBlockHeader header = DataBlockHeader
                 .of(DataBlockHeader.MAGIC_NUMBER, 2131L);
-        ByteSequences.copy(header.toBytesSequence(), 0, bufferBytes, 0, 16);
+        header.toBytesSequence().copyTo(0, bufferBytes, 0, 16);
 
         when(fileReader.read(any(byte[].class), anyInt(), anyInt()))
                 .thenAnswer(invocation -> {
@@ -126,7 +125,7 @@ class DataBlockReaderImplTest {
         System.arraycopy(TestData.BYTE_ARRAY_1024, 0, bufferBytes, 0, 1024);
         DataBlockHeader header = DataBlockHeader
                 .of(DataBlockHeader.MAGIC_NUMBER, 2131L);
-        ByteSequences.copy(header.toBytesSequence(), 0, bufferBytes, 0, 16);
+        header.toBytesSequence().copyTo(0, bufferBytes, 0, 16);
 
         when(fileReader.read(any(byte[].class), anyInt(), anyInt()))
                 .thenAnswer(invocation -> {
@@ -227,9 +226,9 @@ class DataBlockReaderImplTest {
             final ByteSequence payload) {
         final byte[] blockBytes = new byte[DataBlockHeader.HEADER_SIZE
                 + payload.length()];
-        ByteSequences.copy(header.toBytesSequence(), 0, blockBytes, 0,
+        header.toBytesSequence().copyTo(0, blockBytes, 0,
                 DataBlockHeader.HEADER_SIZE);
-        ByteSequences.copy(payload, 0, blockBytes, DataBlockHeader.HEADER_SIZE,
+        payload.copyTo(0, blockBytes, DataBlockHeader.HEADER_SIZE,
                 payload.length());
         return blockBytes;
     }

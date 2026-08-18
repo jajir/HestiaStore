@@ -142,7 +142,6 @@ class ConsoleBackendClientTest {
                       "writePath": {
                         "segmentWriteCacheKeyLimit": 7,
                         "segmentWriteCacheKeyLimitDuringMaintenance": 11,
-                        "indexBufferedWriteKeyLimit": 29,
                         "totalBufferedWriteKeys": 23
                       },
                       "maintenance": {
@@ -245,7 +244,6 @@ class ConsoleBackendClientTest {
         assertTrue(row.ready());
         assertEquals(7, row.segmentWriteCacheKeyLimit());
         assertEquals(11, row.segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(29, row.indexBufferedWriteKeyLimit());
         assertEquals(3, row.segmentCount());
         assertEquals(2, row.segmentReadyCount());
         assertEquals(1, row.segmentMaintenanceCount());

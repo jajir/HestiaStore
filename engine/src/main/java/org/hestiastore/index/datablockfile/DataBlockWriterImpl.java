@@ -4,7 +4,6 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteSequenceCrc32;
-import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
@@ -50,7 +49,7 @@ public class DataBlockWriterImpl extends AbstractCloseableResource
         writeLong(blockDataBuffer, 0, DataBlockHeader.MAGIC_NUMBER);
         writeLong(blockDataBuffer, 8, crc);
         // Copy payload data after the fixed-size header.
-        ByteSequences.copy(payload, 0, blockDataBuffer,
+        payload.copyTo(0, blockDataBuffer,
                 DataBlockHeader.HEADER_SIZE,
                 payload.length());
     }

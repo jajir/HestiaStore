@@ -90,7 +90,7 @@ public final class SplitRuntime<K, V>
                 new PreparedSegmentMaterializer<>(
                         Vldtn.requireNonNull(directoryFacade,
                                 "directoryFacade"),
-                        validatedSegmentRegistry.materialization());
+                        validatedSegmentRegistry);
         final BusyRetryPolicy retryPolicy = new BusyRetryPolicy(
                 validatedConf.maintenance().busyBackoffMillis(),
                 validatedConf.maintenance().busyTimeoutMillis(),

@@ -59,7 +59,7 @@ class RuntimeSegmentLimitApplierTest {
         final RuntimeTuningSnapshot effective = new RuntimeTuningSnapshot(
                 "segment-runtime-limit-applier-test", 0L, Instant.now(),
                 new RuntimeSegmentTuningSnapshot(10, 3),
-                new RuntimeWritePathTuningSnapshot(5, 7, 9, 50));
+                new RuntimeWritePathTuningSnapshot(5, 7, 50));
 
         applier.apply(effective);
 
@@ -87,7 +87,7 @@ class RuntimeSegmentLimitApplierTest {
         final RuntimeTuningSnapshot effective = new RuntimeTuningSnapshot(
                 "segment-runtime-limit-applier-cache-test", 0L, Instant.now(),
                 new RuntimeSegmentTuningSnapshot(10, 3),
-                new RuntimeWritePathTuningSnapshot(5, 7, 9, 50),
+                new RuntimeWritePathTuningSnapshot(5, 7, 50),
                 new RuntimeChunkStoreCacheTuningSnapshot(6));
 
         cacheApplier.apply(effective);

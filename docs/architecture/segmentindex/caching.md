@@ -124,8 +124,6 @@ Per‑segment (via `SegmentConf`, derived from index configuration):
   write-cache threshold
 - `IndexConfiguration.writePath().maintenanceWriteCacheKeyLimit()` —
   per-segment maintenance/write ceiling
-- `IndexConfiguration.writePath().indexBufferedWriteKeyLimit()` — index-wide
-  budget exposed in runtime tuning and metrics
 - `IndexConfiguration.segment().chunkKeyLimit()` — sparse index sampling cadence (affects read
   scan window)
 
@@ -159,8 +157,7 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
 - Throughput-oriented writes: tune the segment write-cache and maintenance
   limits (`writePath().segmentWriteCacheKeyLimit()`,
-  `writePath().maintenanceWriteCacheKeyLimit()`,
-  `writePath().indexBufferedWriteKeyLimit()`);
+  `writePath().maintenanceWriteCacheKeyLimit()`);
   monitor memory and segment maintenance latency.
 - Read-heavy workloads touching few segments: increase
   `segment().cachedSegmentLimit()` so the working set of segments (Bloom +

@@ -578,7 +578,6 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         if (!gate.tryEnterCloseAndDrain()) {
             return resultForState(gate.getState());
         }
-        core.freezeWriteCacheForFlush();
         if (!closeInternal()) {
             return OperationResult.error();
         }
@@ -586,19 +585,44 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     }
 
     private boolean closeInternal() {
+        boolean persisted = false;
         try {
+            core.freezeWriteCacheForFlush();
             core.flushFrozenWriteCacheToDeltaFile();
-            core.applyFrozenWriteCacheAfterFlush();
+            persisted = true;
             core.close();
+            releaseDirectoryLock();
             if (!gate.finishCloseToClosed()) {
                 gate.fail();
                 return false;
             }
-            releaseDirectoryLock();
             return true;
         } catch (final RuntimeException e) {
+            cleanupAfterCloseFailure(persisted, e);
+            logger.error("Segment '{}' close failed.", core.getId(), e);
             gate.fail();
             return false;
+        }
+    }
+
+    /**
+     * Releases resources that are safe to discard after a close failure.
+     * Dirty caches and the directory lock are retained when persistence did not
+     * complete.
+     *
+     * @param persisted whether the frozen write cache was persisted
+     * @param failure close failure receiving any cleanup failure as suppressed
+     */
+    private void cleanupAfterCloseFailure(final boolean persisted,
+            final RuntimeException failure) {
+        try {
+            if (persisted) {
+                releaseDirectoryLock();
+            } else {
+                core.closeReadResources();
+            }
+        } catch (final RuntimeException cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
         }
     }
 

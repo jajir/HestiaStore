@@ -47,7 +47,6 @@ without mutating index state.
 - `hestiastore_ops_delete_total`
 - `hestiastore_segment_write_cache_key_limit`
 - `hestiastore_segment_write_cache_key_limit_during_maintenance`
-- `hestiastore_index_buffered_write_key_limit`
 - `hestiastore_split_schedule_total`
 - `hestiastore_split_in_flight`
 - `hestiastore_index_up`

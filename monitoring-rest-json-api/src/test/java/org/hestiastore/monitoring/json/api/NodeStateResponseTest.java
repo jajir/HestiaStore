@@ -42,7 +42,7 @@ class NodeStateResponseTest {
                         16L, 17L),
                 new SegmentReportResponse(18, 19, 20, 21, 22, 23, 24, 25L,
                         26L, 27L, List.of()),
-                new WritePathReportResponse(28, 29, 30, 31L),
+                new WritePathReportResponse(29, 30, 31L),
                 new MaintenanceReportResponse(35L, 36L, 37L, 38L, 39L, 40L,
                         executor, executor),
                 new SplitReportResponse(41L, 42, 43, 44L, 45L, executor),

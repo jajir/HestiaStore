@@ -10,12 +10,11 @@ class IndexWritePathConfigurationTest {
     @Test
     void storesCanonicalWritePathValues() {
         final IndexWritePathConfiguration configuration = new IndexWritePathConfiguration(
-                10, 14, 42, 99);
+                10, 14, 99);
 
         assertEquals(10, configuration.segmentWriteCacheKeyLimit());
         assertEquals(14,
                 configuration.segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(42, configuration.indexBufferedWriteKeyLimit());
         assertEquals(99, configuration.segmentSplitKeyThreshold());
     }
 
@@ -23,7 +22,7 @@ class IndexWritePathConfigurationTest {
     void rejectsMaintenanceLimitNotGreaterThanWriteCacheLimit() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexWritePathConfiguration(10, 10, 42, 99));
+                () -> new IndexWritePathConfiguration(10, 10, 99));
 
         assertEquals(
                 "segmentWriteCacheKeyLimitDuringMaintenance must be greater than segmentWriteCacheKeyLimit",

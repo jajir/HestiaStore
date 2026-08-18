@@ -26,7 +26,6 @@ public final class RuntimeTuningConfigurationMapper {
                         tuning.writePath().segmentWriteCacheKeyLimit(),
                         tuning.writePath()
                                 .segmentWriteCacheKeyLimitDuringMaintenance(),
-                        tuning.writePath().indexBufferedWriteKeyLimit(),
                         tuning.writePath().segmentSplitKeyThreshold());
         final EffectiveIndexSegmentConfiguration segment =
                 new EffectiveIndexSegmentConfiguration(base.segment().maxKeys(),

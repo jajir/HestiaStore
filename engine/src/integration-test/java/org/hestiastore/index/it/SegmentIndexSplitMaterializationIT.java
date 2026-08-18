@@ -151,8 +151,6 @@ class SegmentIndexSplitMaterializationIT {
                 .writePath(writePath -> writePath
                         .maintenanceWriteCacheKeyLimit(96))
                 .writePath(writePath -> writePath
-                        .indexBufferedWriteKeyLimit(192))
-                .writePath(writePath -> writePath
                         .segmentSplitKeyThreshold(512))
                 .bloomFilter(bloomFilter -> bloomFilter
                         .indexSizeBytes(1024 * 128))

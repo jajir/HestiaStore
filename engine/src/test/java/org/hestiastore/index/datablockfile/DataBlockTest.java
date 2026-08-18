@@ -18,8 +18,8 @@ class DataBlockTest {
         final ByteSequence headerBytes = header.toBytesSequence();
         final ByteSequence payloadBytes = payload.getBytesSequence();
         final byte[] raw = new byte[headerBytes.length() + payloadBytes.length()];
-        ByteSequences.copy(headerBytes, 0, raw, 0, headerBytes.length());
-        ByteSequences.copy(payloadBytes, 0, raw, headerBytes.length(),
+        headerBytes.copyTo(0, raw, 0, headerBytes.length());
+        payloadBytes.copyTo(0, raw, headerBytes.length(),
                 payloadBytes.length());
 
         final DataBlock dataBlock = DataBlock.ofSequence(

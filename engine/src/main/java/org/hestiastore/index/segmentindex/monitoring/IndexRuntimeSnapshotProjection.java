@@ -139,7 +139,6 @@ final class IndexRuntimeSnapshotProjection<K, V> {
         return new SegmentIndexWritePathMetrics(
                 metrics.segmentWriteCacheKeyLimit(),
                 metrics.segmentWriteCacheKeyLimitDuringMaintenance(),
-                metrics.indexBufferedWriteKeyLimit(),
                 stable.getTotalStableSegmentWriteBufferKeyCount());
     }
 

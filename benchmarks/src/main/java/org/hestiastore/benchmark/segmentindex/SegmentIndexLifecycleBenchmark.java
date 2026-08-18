@@ -126,7 +126,6 @@ public class SegmentIndexLifecycleBenchmark {
                         .cachedSegmentLimit(4).deltaCacheFileLimit(2))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
                         .maintenanceWriteCacheKeyLimit(512)
-                        .indexBufferedWriteKeyLimit(4096)
                         .segmentSplitKeyThreshold(maxKeysBeforeSplit))//
                 .bloomFilter(bloomFilter -> bloomFilter
                         .indexSizeBytes(Math.max(16_384, keyCount))

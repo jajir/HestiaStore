@@ -133,7 +133,6 @@ public class SegmentIndexPersistedMutationBenchmark {
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(writeCacheKeyLimit)
                         .maintenanceWriteCacheKeyLimit(writeCacheKeyLimit * 2)
-                        .indexBufferedWriteKeyLimit(writeCacheKeyLimit * 4)
                         .segmentSplitKeyThreshold(maxKeysBeforeSplit))//
                 .bloomFilter(bloomFilter -> bloomFilter
                         .indexSizeBytes(Math.max(16_384, seededKeyCount / 2))

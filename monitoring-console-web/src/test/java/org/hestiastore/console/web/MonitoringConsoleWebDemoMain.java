@@ -144,8 +144,6 @@ public final class MonitoringConsoleWebDemoMain {
                         .segmentWriteCacheKeyLimit(DEMO_ACTIVE_PARTITION_KEYS)
                         .maintenanceWriteCacheKeyLimit(
                                 DEMO_PARTITION_BUFFER_KEYS)
-                        .indexBufferedWriteKeyLimit(
-                                DEMO_PARTITION_BUFFER_KEYS * 4)
                         .segmentSplitKeyThreshold(DEMO_MAX_KEYS_PER_SEGMENT))
                 .bloomFilter(bloomFilter -> bloomFilter
                         .indexSizeBytes(DEMO_BLOOM_INDEX_SIZE_BYTES))

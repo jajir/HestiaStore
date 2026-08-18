@@ -206,7 +206,6 @@ class SegmentIndexRuntimeSnapshotCollectorTest {
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(7))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(8))
                 .segment(segment -> segment.chunkKeyLimit(2))
                 .segment(segment -> segment.maxKeys(100))

@@ -164,13 +164,6 @@ public final class HestiaStoreMicrometerBinder implements MeterBinder {
                         "Configured maintenance-time segment write-cache key limit")
                 .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
 
-        Gauge.builder(HestiaStoreMetricNames.INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                monitoredIndex,
-                i -> i.runtimeSnapshot().writePath()
-                        .indexBufferedWriteKeyLimit())
-                .description("Configured index-wide buffered write key limit")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
         Gauge.builder(HestiaStoreMetricNames.SPLIT_TASK_START_DELAY_P95_MICROS,
                 monitoredIndex,
                 i -> i.runtimeSnapshot().split().taskStartDelayP95Micros())

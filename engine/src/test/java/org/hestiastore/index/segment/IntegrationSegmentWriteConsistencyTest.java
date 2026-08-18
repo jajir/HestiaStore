@@ -78,7 +78,6 @@ class IntegrationSegmentWriteConsistencyTest {
     void write_close_reopen_reads_back() {
         assertTrue(true);
         data.forEach(entry -> segment.put(entry.getKey(), entry.getValue()));
-        segment.flush();
         closeAndAssertClosed(segment);
 
         final Segment<Integer, String> reopened = makeSegment(directory,

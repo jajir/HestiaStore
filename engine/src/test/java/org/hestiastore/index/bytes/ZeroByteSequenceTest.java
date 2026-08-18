@@ -25,6 +25,16 @@ class ZeroByteSequenceTest {
     }
 
     @Test
+    void test_copy_to_fills_only_selected_target_range() {
+        final ZeroByteSequence sequence = new ZeroByteSequence(4);
+        final byte[] target = new byte[] { 9, 9, 9, 9, 9 };
+
+        sequence.copyTo(1, target, 1, 3);
+
+        assertArrayEquals(new byte[] { 9, 0, 0, 0, 9 }, target);
+    }
+
+    @Test
     void test_slice_behaviour() {
         final ZeroByteSequence sequence = new ZeroByteSequence(4);
 

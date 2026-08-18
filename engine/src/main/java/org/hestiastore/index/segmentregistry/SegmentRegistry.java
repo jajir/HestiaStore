@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import java.util.List;
 import java.util.Optional;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentFullWriterTx;
 import org.hestiastore.index.segment.SegmentId;
@@ -12,7 +13,8 @@ import org.hestiastore.index.segment.SegmentRuntimeLimits;
  * Main public entry point for segment registry operations and related runtime
  * views.
  * <p>
- * Contract source of truth is {@code docs/architecture/registry.md}.
+ * Contract source of truth is
+ * {@code docs/architecture/registry/registry.md}.
  *
  * @param <K> key type
  * @param <V> value type
@@ -76,14 +78,6 @@ public interface SegmentRegistry<K, V> {
         Vldtn.requireNonNull(segmentId, "segmentId");
         return Optional.empty();
     }
-
-    /**
-     * Creates and registers a new segment, waiting until the segment becomes
-     * available or a terminal failure is reached.
-     *
-     * @return created blocking segment
-     */
-    BlockingSegment<K, V> createSegment();
 
     /**
      * Removes a segment from the registry, waiting until the segment is
@@ -152,6 +146,7 @@ public interface SegmentRegistry<K, V> {
          * Allocates the next segment id for offline materialization.
          *
          * @return next segment id
+         * @throws IndexException if the registry is not ready
          */
         SegmentId nextSegmentId();
 
@@ -161,6 +156,7 @@ public interface SegmentRegistry<K, V> {
          *
          * @param segmentId segment id to materialize
          * @return full writer transaction for building the segment files
+         * @throws IndexException if the registry is not ready
          */
         SegmentFullWriterTx<K, V> openWriterTx(SegmentId segmentId);
     }
@@ -174,13 +170,16 @@ public interface SegmentRegistry<K, V> {
          * Updates runtime-only limits used for future segment materialization.
          *
          * @param runtimeLimits validated segment runtime limits
+         * @throws IndexException if the registry is not ready
          */
         void updateRuntimeLimits(SegmentRuntimeLimits runtimeLimits);
 
         /**
-         * Returns currently loaded segment instances.
+         * Returns currently loaded segment instances when the registry is
+         * ready.
          *
-         * @return loaded segment snapshot
+         * @return loaded segment snapshot, or an empty list when the registry
+         *         is not ready
          */
         List<BlockingSegment<K, V>> loadedSegmentsSnapshot();
     }

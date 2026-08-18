@@ -56,7 +56,6 @@ class RuntimeTuningIT {
                                     .revision())
                             .segmentWriteCacheKeyLimit(6)
                             .segmentWriteCacheKeyLimitDuringMaintenance(8)
-                            .indexBufferedWriteKeyLimit(12)
                             .segmentSplitKeyThreshold(40)
                             .build());
 
@@ -67,8 +66,6 @@ class RuntimeTuningIT {
                     current.writePath().segmentWriteCacheKeyLimit());
             assertEquals(8, current.writePath()
                     .segmentWriteCacheKeyLimitDuringMaintenance());
-            assertEquals(12,
-                    current.writePath().indexBufferedWriteKeyLimit());
             assertEquals(40,
                     current.writePath().segmentSplitKeyThreshold());
             final List<String> paths = changePaths(result);
@@ -76,8 +73,6 @@ class RuntimeTuningIT {
                     .contains("writePath.segmentWriteCacheKeyLimit"));
             assertTrue(paths.contains(
                     "writePath.segmentWriteCacheKeyLimitDuringMaintenance"));
-            assertTrue(paths
-                    .contains("writePath.indexBufferedWriteKeyLimit"));
             assertTrue(paths
                     .contains("writePath.segmentSplitKeyThreshold"));
         }
@@ -112,26 +107,26 @@ class RuntimeTuningIT {
                 directory, buildConf("runtime-tuning-durability-it"))) {
             applyFullPatch(index);
             assertSectionValues(index.runtimeTuning().current(), 4, 30, 6, 8,
-                    12, 40);
+                    40);
         }
 
         try (SegmentIndex<Integer, String> reopened = SegmentIndex
                 .open(directory)) {
             assertSectionValues(reopened.runtimeTuning().current(), 3, 10, 5,
-                    7, 9, 50);
+                    7, 50);
             assertSectionValues(reopened.runtimeTuning().original(), 3, 10, 5,
-                    7, 9, 50);
+                    7, 50);
             applyFullPatch(reopened);
             assertSectionValues(reopened.runtimeTuning().persistCurrent(), 4,
-                    30, 6, 8, 12, 40);
+                    30, 6, 8, 40);
         }
 
         try (SegmentIndex<Integer, String> reopened = SegmentIndex
                 .open(directory)) {
             assertSectionValues(reopened.runtimeTuning().current(), 4, 30, 6,
-                    8, 12, 40);
+                    8, 40);
             assertSectionValues(reopened.runtimeTuning().original(), 4, 30, 6,
-                    8, 12, 40);
+                    8, 40);
         }
     }
 
@@ -145,7 +140,6 @@ class RuntimeTuningIT {
                         .cacheKeyLimit(30)
                         .segmentWriteCacheKeyLimit(6)
                         .segmentWriteCacheKeyLimitDuringMaintenance(8)
-                        .indexBufferedWriteKeyLimit(12)
                         .segmentSplitKeyThreshold(40)
                         .chunkStoreCachePageLimit(2)
                         .build());
@@ -156,7 +150,6 @@ class RuntimeTuningIT {
             final int cachedSegmentLimit, final int cacheKeyLimit,
             final int segmentWriteCacheKeyLimit,
             final int segmentWriteCacheKeyLimitDuringMaintenance,
-            final int indexBufferedWriteKeyLimit,
             final int segmentSplitKeyThreshold) {
         assertEquals(cachedSegmentLimit,
                 snapshot.segment().cachedSegmentLimit());
@@ -166,8 +159,6 @@ class RuntimeTuningIT {
         assertEquals(segmentWriteCacheKeyLimitDuringMaintenance,
                 snapshot.writePath()
                         .segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(indexBufferedWriteKeyLimit,
-                snapshot.writePath().indexBufferedWriteKeyLimit());
         assertEquals(segmentSplitKeyThreshold,
                 snapshot.writePath().segmentSplitKeyThreshold());
     }
@@ -191,7 +182,6 @@ class RuntimeTuningIT {
                         .maxKeys(100))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5)
                         .maintenanceWriteCacheKeyLimit(7)
-                        .indexBufferedWriteKeyLimit(9)
                         .segmentSplitKeyThreshold(50))
                 .logging(logging -> logging.contextEnabled(false))
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024)

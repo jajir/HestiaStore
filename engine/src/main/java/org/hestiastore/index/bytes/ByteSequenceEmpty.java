@@ -4,7 +4,7 @@ package org.hestiastore.index.bytes;
  * Singleton {@link ByteSequence} implementation representing an empty sequence.
  */
 @SuppressWarnings("java:S6548")
-final class ByteSequenceEmpty implements ByteSequence {
+final class ByteSequenceEmpty extends AbstractByteSequence {
 
     static final ByteSequenceEmpty INSTANCE = new ByteSequenceEmpty();
     private static final byte[] EMPTY_BYTES = new byte[0];

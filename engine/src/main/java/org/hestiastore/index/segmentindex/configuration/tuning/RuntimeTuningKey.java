@@ -13,8 +13,6 @@ public enum RuntimeTuningKey {
     /** Maintenance-time segment write-cache key limit. */
     SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE(
             "writePath.segmentWriteCacheKeyLimitDuringMaintenance"),
-    /** Buffered key limit across the full index overlay. */
-    INDEX_BUFFERED_WRITE_KEY_LIMIT("writePath.indexBufferedWriteKeyLimit"),
     /** Split threshold for a single routed segment. */
     SEGMENT_SPLIT_KEY_THRESHOLD("writePath.segmentSplitKeyThreshold"),
     /** Parsed persisted chunk page cache capacity. */

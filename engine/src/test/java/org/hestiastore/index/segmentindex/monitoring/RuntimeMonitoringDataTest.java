@@ -32,7 +32,7 @@ class RuntimeMonitoringDataTest {
     @Test
     void constructorKeepsValidatedScalarValues() {
         final RuntimeMonitoringData data = collected(1L, 2L, 3L, 4,
-                5, 6, 7);
+                5, 6);
 
         assertEquals(1L, data.compactRequestCount());
         assertEquals(2L, data.flushRequestCount());
@@ -40,25 +40,22 @@ class RuntimeMonitoringDataTest {
         assertEquals(4, data.segmentCacheKeyLimit());
         assertEquals(5, data.segmentWriteCacheKeyLimit());
         assertEquals(6, data.segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(7, data.indexBufferedWriteKeyLimit());
     }
 
     @Test
     void constructorRejectsNegativeScalarValues() {
         assertRejects("compactRequestCount",
-                () -> collected(-1L, 0L, 0L, 0, 0, 0, 0));
+                () -> collected(-1L, 0L, 0L, 0, 0, 0));
         assertRejects("flushRequestCount",
-                () -> collected(0L, -1L, 0L, 0, 0, 0, 0));
+                () -> collected(0L, -1L, 0L, 0, 0, 0));
         assertRejects("appliedWalLsn",
-                () -> collected(0L, 0L, -1L, 0, 0, 0, 0));
+                () -> collected(0L, 0L, -1L, 0, 0, 0));
         assertRejects("segmentCacheKeyLimit",
-                () -> collected(0L, 0L, 0L, -1, 0, 0, 0));
+                () -> collected(0L, 0L, 0L, -1, 0, 0));
         assertRejects("segmentWriteCacheKeyLimit",
-                () -> collected(0L, 0L, 0L, 0, -1, 0, 0));
+                () -> collected(0L, 0L, 0L, 0, -1, 0));
         assertRejects("segmentWriteCacheKeyLimitDuringMaintenance",
-                () -> collected(0L, 0L, 0L, 0, 0, -1, 0));
-        assertRejects("indexBufferedWriteKeyLimit",
-                () -> collected(0L, 0L, 0L, 0, 0, 0, -1));
+                () -> collected(0L, 0L, 0L, 0, 0, -1));
     }
 
     private void assertRejects(final String propertyName,
@@ -74,8 +71,7 @@ class RuntimeMonitoringDataTest {
             final long compactRequestCount, final long flushRequestCount,
             final long appliedWalLsn, final int segmentCacheKeyLimit,
             final int segmentWriteCacheKeyLimit,
-            final int segmentWriteCacheKeyLimitDuringMaintenance,
-            final int indexBufferedWriteKeyLimit) {
+            final int segmentWriteCacheKeyLimitDuringMaintenance) {
         return new RuntimeMonitoringData(
                 Instant.parse("2026-06-10T08:15:30Z"),
                 new OperationStatsSnapshot(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L),
@@ -89,7 +85,7 @@ class RuntimeMonitoringDataTest {
                 compactRequestCount, flushRequestCount, appliedWalLsn,
                 segmentCacheKeyLimit, segmentWriteCacheKeyLimit,
                 segmentWriteCacheKeyLimitDuringMaintenance,
-                indexBufferedWriteKeyLimit, SegmentIndexState.READY);
+                SegmentIndexState.READY);
     }
 
     private ExecutorRegistryStats executorStats() {

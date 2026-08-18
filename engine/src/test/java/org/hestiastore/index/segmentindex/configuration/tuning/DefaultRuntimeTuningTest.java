@@ -100,7 +100,6 @@ class DefaultRuntimeTuningTest {
                 .cacheKeyLimit(30)
                 .segmentWriteCacheKeyLimit(12)
                 .segmentWriteCacheKeyLimitDuringMaintenance(18)
-                .indexBufferedWriteKeyLimit(72)
                 .segmentSplitKeyThreshold(144)
                 .build();
 
@@ -113,8 +112,6 @@ class DefaultRuntimeTuningTest {
                 RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT));
         assertEquals(RuntimeTuningValue.ofInt(18), patch.values().get(
                 RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
-        assertEquals(RuntimeTuningValue.ofInt(72), patch.values()
-                .get(RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT));
         assertEquals(RuntimeTuningValue.ofInt(144), patch.values().get(
                 RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD));
     }
@@ -131,7 +128,6 @@ class DefaultRuntimeTuningTest {
         assertEquals(5, snapshot.writePath().segmentWriteCacheKeyLimit());
         assertEquals(7, snapshot.writePath()
                 .segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(9, snapshot.writePath().indexBufferedWriteKeyLimit());
         assertEquals(50, snapshot.writePath().segmentSplitKeyThreshold());
     }
 
@@ -173,7 +169,6 @@ class DefaultRuntimeTuningTest {
                 .expectedRevision(0L)
                 .segmentWriteCacheKeyLimit(6)
                 .segmentWriteCacheKeyLimitDuringMaintenance(8)
-                .indexBufferedWriteKeyLimit(16)
                 .build();
 
         final RuntimeTuningResult result = runtimeTuningService.apply(patch);
@@ -183,7 +178,7 @@ class DefaultRuntimeTuningTest {
         assertEquals(6, limits.maxNumberOfKeysInSegmentWriteCache());
         assertEquals(8,
                 limits.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
-        assertEquals(3, result.changes().size());
+        assertEquals(2, result.changes().size());
         final RuntimeTuningChange activeLimitChange = result.changes().stream()
                 .filter(change -> change.field() == RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT)
                 .findFirst().orElseThrow();
@@ -227,7 +222,6 @@ class DefaultRuntimeTuningTest {
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(7))
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))
                 .segment(segment -> segment.chunkKeyLimit(2))
                 .segment(segment -> segment.maxKeys(100))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(50))

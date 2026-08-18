@@ -95,7 +95,6 @@ public class IndexConfigurationManager<K, V> {
                 configuration.writePath().segmentWriteCacheKeyLimit(),
                 configuration.writePath()
                         .segmentWriteCacheKeyLimitDuringMaintenance(),
-                configuration.writePath().indexBufferedWriteKeyLimit(),
                 configuration.writePath().segmentSplitKeyThreshold(),
                 configuration.bloomFilter().hashFunctions(),
                 configuration.bloomFilter().indexSizeBytes(),

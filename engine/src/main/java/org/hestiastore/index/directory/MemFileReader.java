@@ -64,7 +64,7 @@ public class MemFileReader extends AbstractCloseableResource
                 newPosition = data.length();
             }
             final int toReadBytes = newPosition - position;
-            ByteSequences.copy(data, position, bytes, offset, toReadBytes);
+            data.copyTo(position, bytes, offset, toReadBytes);
             position = newPosition;
             return toReadBytes;
         } else {

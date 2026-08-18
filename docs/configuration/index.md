@@ -43,7 +43,6 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
     .writePath(writePath -> writePath
         .segmentWriteCacheKeyLimit(512)
         .maintenanceWriteCacheKeyLimit(8_192)
-        .indexBufferedWriteKeyLimit(65_536)
         .segmentSplitKeyThreshold(2_000))
     .bloomFilter(bloom -> bloom
         .indexSizeBytes(1024)
@@ -139,8 +138,6 @@ become eligible for split maintenance.
   write-cache threshold.
 - `writePath(...).maintenanceWriteCacheKeyLimit()` sets the per-segment
   maintenance backlog limit.
-- `writePath(...).indexBufferedWriteKeyLimit()` sets the index-wide buffered
-  write budget.
 - `writePath(...).segmentSplitKeyThreshold()` sets the routed segment split
   eligibility threshold.
 
@@ -247,7 +244,6 @@ the implementation supports runtime-safe reopening.
 | `segment().deltaCacheFileLimit()` | Delta-cache files retained per segment | Yes |
 | `writePath().segmentWriteCacheKeyLimit()` | Routed segment write-cache threshold | Yes |
 | `writePath().maintenanceWriteCacheKeyLimit()` | Per-segment maintenance backlog limit | Yes |
-| `writePath().indexBufferedWriteKeyLimit()` | Index-wide buffered-write budget | No on open; use runtime tuning where supported |
 | `writePath().segmentSplitKeyThreshold()` | Routed segment split eligibility threshold | No on open |
 | `maintenance().indexThreads()` | Index maintenance thread count | Yes |
 | `maintenance().registryLifecycleThreads()` | Registry lifecycle thread count | Yes |
@@ -281,7 +277,6 @@ Some names preserve older partition terminology for compatibility.
 | `maxNumberOfKeysInSegmentCache` | `segment().cacheKeyLimit()` |
 | `segmentWriteCacheKeyLimit` | `writePath().segmentWriteCacheKeyLimit()` |
 | `segmentWriteCacheKeyLimitDuringMaintenance` | `writePath().maintenanceWriteCacheKeyLimit()` |
-| `indexBufferedWriteKeyLimit` | `writePath().indexBufferedWriteKeyLimit()` |
 | `maxNumberOfKeysInSegmentChunk` | `segment().chunkKeyLimit()` |
 | `maxNumberOfDeltaCacheFiles` | `segment().deltaCacheFileLimit()` |
 | `maxNumberOfKeysInSegment` | `segment().maxKeys()` |
@@ -316,7 +311,6 @@ RuntimeTuningPatch patch = RuntimeTuningPatch.builder()
     .cacheKeyLimit(260_000)
     .segmentWriteCacheKeyLimit(120_000)
     .segmentWriteCacheKeyLimitDuringMaintenance(180_000)
-    .indexBufferedWriteKeyLimit(720_000)
     .build();
 
 index.runtimeTuning().apply(patch);

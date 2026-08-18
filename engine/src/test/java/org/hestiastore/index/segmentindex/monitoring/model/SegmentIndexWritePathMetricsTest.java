@@ -10,22 +10,21 @@ class SegmentIndexWritePathMetricsTest {
     @Test
     void storesCanonicalWritePathMetrics() {
         final SegmentIndexWritePathMetrics metrics =
-                new SegmentIndexWritePathMetrics(10, 14, 42, 9L);
+                new SegmentIndexWritePathMetrics(10, 14, 9L);
 
         assertEquals(10, metrics.segmentWriteCacheKeyLimit());
         assertEquals(14, metrics.segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(42, metrics.indexBufferedWriteKeyLimit());
         assertEquals(9L, metrics.totalBufferedWriteKeys());
     }
 
     @Test
-    void rejectsIndexBufferedLimitBelowMaintenanceLimit() {
+    void rejectsMaintenanceLimitBelowWriteCacheLimit() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentIndexWritePathMetrics(10, 14, 13, 0L));
+                () -> new SegmentIndexWritePathMetrics(10, 9, 0L));
 
         assertEquals(
-                "indexBufferedWriteKeyLimit must be greater than or equal to segmentWriteCacheKeyLimitDuringMaintenance",
+                "segmentWriteCacheKeyLimitDuringMaintenance must be greater than or equal to segmentWriteCacheKeyLimit",
                 ex.getMessage());
     }
 }

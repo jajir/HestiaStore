@@ -86,11 +86,15 @@ public final class MutableBytes extends ByteSequenceCaching
             final int sourceOffset, final int length) {
         Vldtn.requireNonNull(source, "source");
         validateRange(targetOffset, length, data.length, "targetOffset");
-        ByteSequences.copy(source, sourceOffset, data, targetOffset, length);
+        source.copyTo(sourceOffset, data, targetOffset, length);
     }
 
-    void copyTo(final int sourceOffset, final byte[] target,
-            final int targetOffset, final int length) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void copyToWithValidatedInputs(final int sourceOffset,
+            final byte[] target, final int targetOffset, final int length) {
         System.arraycopy(data, sourceOffset, target, targetOffset, length);
     }
 

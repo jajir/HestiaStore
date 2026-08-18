@@ -869,7 +869,6 @@ class SegmentIndexConcurrentIT {
                         .backgroundAutoEnabled(false))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
                         .maintenanceWriteCacheKeyLimit(1_024)
-                        .indexBufferedWriteKeyLimit(4_096)
                         .segmentSplitKeyThreshold(10_000_000))//
                 .segment(segment -> segment.cacheKeyLimit(30).maxKeys(20)
                         .chunkKeyLimit(5))// small to trigger splits
@@ -893,7 +892,6 @@ class SegmentIndexConcurrentIT {
                         .busyTimeoutMillis(120_000))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
                         .maintenanceWriteCacheKeyLimit(8_192)
-                        .indexBufferedWriteKeyLimit(65_536)
                         .segmentSplitKeyThreshold(2_000))//
                 .segment(segment -> segment.cacheKeyLimit(256)
                         .maxKeys(16_384).chunkKeyLimit(32)
