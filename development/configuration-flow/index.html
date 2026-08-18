@@ -3818,8 +3818,8 @@ filters, and WAL configuration.</p>
 <p>The current resolver applies reopen-time overrides for selected runtime-facing
 values such as segment cache size, segment write-cache limits, maintenance
 settings, I/O buffer size, logging, delta-cache file limit, chunk-store cache
-limit, and index name. It keeps stored values for <code>indexBufferedWriteKeyLimit</code>
-and <code>segmentSplitKeyThreshold</code> during open.</p>
+limit, and index name. It keeps the stored <code>segmentSplitKeyThreshold</code> during
+open.</p>
 <h2 id="bootstrap-application">Bootstrap Application</h2>
 <p><code>SegmentIndexBootstrapOperation</code> applies the effective configuration before and
 during runtime construction. The key configuration-consuming actions are:</p>

@@ -4126,7 +4126,7 @@ preparation until the intended state is clear.</p>
 <p>If verification fails, stop and fix the problem before changing versions.</p>
 <h3 id="4-check-for-forbidden-snapshot-dependencies-or-plugins">4. Check for forbidden snapshot dependencies or plugins</h3>
 <p>Search all Maven project files for snapshot versions:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>rg<span class="w"> </span>-n<span class="w"> </span>--glob<span class="w"> </span><span class="s1">&#39;pom.xml&#39;</span><span class="w"> </span><span class="s1">&#39;SNAPSHOT&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>rg<span class="w"> </span>-n<span class="w"> </span>--glob<span class="w"> </span><span class="s1">'pom.xml'</span><span class="w"> </span><span class="s1">'SNAPSHOT'</span>
 </code></pre></div>
 <p>Before the release bump, the current project version is expected to appear as a
 snapshot. Any unrelated snapshot dependency, plugin, or version property is a
@@ -4138,7 +4138,7 @@ continuing.</p>
 </code></pre></div>
 <p>Then verify again:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>./.agents/skills/release-maven-library/scripts/verify-release.sh
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>rg<span class="w"> </span>-n<span class="w"> </span>--glob<span class="w"> </span><span class="s1">&#39;pom.xml&#39;</span><span class="w"> </span><span class="s1">&#39;SNAPSHOT&#39;</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>rg<span class="w"> </span>-n<span class="w"> </span>--glob<span class="w"> </span><span class="s1">'pom.xml'</span><span class="w"> </span><span class="s1">'SNAPSHOT'</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>git<span class="w"> </span>status<span class="w"> </span>--short
 </code></pre></div>
 <p>After the release bump, there should be no remaining forbidden snapshot
@@ -4146,7 +4146,7 @@ versions in the Maven project files.</p>
 <h3 id="6-commit-and-tag-the-release">6. Commit and tag the release</h3>
 <p>Review the changed files and create a focused release commit:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>git<span class="w"> </span>add<span class="w"> </span>pom.xml<span class="w"> </span>*/pom.xml
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;release: version X.Y.Z&quot;</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"release: version X.Y.Z"</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>git<span class="w"> </span>tag<span class="w"> </span>release-X.Y.Z
 </code></pre></div>
 <p>Use the <code>release-X.Y.Z</code> tag format. Create the tag on the release commit, not
@@ -4176,7 +4176,7 @@ so the parent POM and all publishable modules stay aligned.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh<span class="w"> </span>X.Y.<span class="o">(</span>Z+1<span class="o">)</span>-SNAPSHOT
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>./.agents/skills/release-maven-library/scripts/verify-release.sh
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>git<span class="w"> </span>add<span class="w"> </span>pom.xml<span class="w"> </span>*/pom.xml
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;post-release: bumped to X.Y.(Z+1)-SNAPSHOT&quot;</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"post-release: bumped to X.Y.(Z+1)-SNAPSHOT"</span>
 </code></pre></div>
 <h3 id="10-push-commits-and-tags">10. Push commits and tags</h3>
 <p>Push both the branch and the release tag:</p>

@@ -2833,12 +2833,12 @@
   <a href="#registry-cache-entry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Registry cache Entry
+        Registry Cache Entry
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Registry cache Entry">
+    <nav class="md-nav" aria-label="Registry Cache Entry">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2920,10 +2920,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-registry-getid-with-cached" class="md-nav__link">
+  <a href="#1-registry-load-with-cached-segment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Registry get(id) with cached
+        1. Registry load with cached segment
       
     </span>
   </a>
@@ -2931,10 +2931,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-registry-getid-with-cached-entry-in-loading-state" class="md-nav__link">
+  <a href="#2-registry-load-with-cached-entry-in-loading-state" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Registry get(id) with cached entry in LOADING state
+        2. Registry load with cached entry in LOADING state
       
     </span>
   </a>
@@ -2942,10 +2942,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-registry-getid-cache-miss-with-putifabsentloading" class="md-nav__link">
+  <a href="#3-registry-load-cache-miss-with-putifabsentloading" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Registry get(id) cache miss with putIfAbsent(LOADING)
+        3. Registry load cache miss with putIfAbsent(LOADING)
       
     </span>
   </a>
@@ -2953,10 +2953,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-cache-method-removelastrecentusedsegment" class="md-nav__link">
+  <a href="#4-synchronous-lru-eviction" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Cache method removeLastRecentUsedSegment()
+        4. Synchronous LRU eviction
       
     </span>
   </a>
@@ -3850,12 +3850,12 @@
   <a href="#registry-cache-entry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Registry cache Entry
+        Registry Cache Entry
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Registry cache Entry">
+    <nav class="md-nav" aria-label="Registry Cache Entry">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3937,10 +3937,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-registry-getid-with-cached" class="md-nav__link">
+  <a href="#1-registry-load-with-cached-segment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Registry get(id) with cached
+        1. Registry load with cached segment
       
     </span>
   </a>
@@ -3948,10 +3948,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-registry-getid-with-cached-entry-in-loading-state" class="md-nav__link">
+  <a href="#2-registry-load-with-cached-entry-in-loading-state" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Registry get(id) with cached entry in LOADING state
+        2. Registry load with cached entry in LOADING state
       
     </span>
   </a>
@@ -3959,10 +3959,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-registry-getid-cache-miss-with-putifabsentloading" class="md-nav__link">
+  <a href="#3-registry-load-cache-miss-with-putifabsentloading" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Registry get(id) cache miss with putIfAbsent(LOADING)
+        3. Registry load cache miss with putIfAbsent(LOADING)
       
     </span>
   </a>
@@ -3970,10 +3970,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-cache-method-removelastrecentusedsegment" class="md-nav__link">
+  <a href="#4-synchronous-lru-eviction" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Cache method removeLastRecentUsedSegment()
+        4. Synchronous LRU eviction
       
     </span>
   </a>
@@ -4087,10 +4087,11 @@
 <h2 id="scope">Scope</h2>
 <ul>
 <li>The registry owns:<ul>
-<li>safe access to segment resources (load/create/delete)</li>
+<li>safe access to segment resources (load/delete)</li>
 <li>in-memory segment cache (LRU)</li>
 <li>registry-level state gate (<code>READY</code>, <code>CLOSED</code>, <code>ERROR</code>, <code>FREEZE</code>)</li>
 <li>segment id allocation for new segments via a <code>Supplier&lt;SegmentId&gt;</code></li>
+<li>physical deletion of normal, retired, and unpublished prepared segments</li>
 </ul>
 </li>
 <li>The registry does <strong>not</strong> own protection of "segment in use" vs "segment close/delete" races.
@@ -4104,13 +4105,19 @@
   runtime descriptors, while callers still own higher-level operation policy
   such as fail-fast routing, split coordination, and accepted-vs-completed
   maintenance behavior.</li>
-<li>Segment load/open failures are status-driven:
-  <code>getSegment()</code> and <code>createSegment()</code> return <code>ERROR</code> when loading/opening
-  fails (including missing segment files), with no dedicated registry-status exception type.</li>
+<li>Registry internals use the shared <code>OperationResult&lt;T&gt;</code> and <code>OperationStatus</code>
+  protocol. The public <code>SegmentRegistry</code> facade translates those statuses into
+  blocking results, <code>Optional</code>, <code>boolean</code>, or <code>IndexException</code>, depending on
+  the selected operation.</li>
+<li>A missing segment directory is currently treated as <code>BUSY</code>. Consequently,
+  <code>loadSegment()</code> retries until its busy timeout, while <code>tryGetSegment()</code>
+  returns an empty result.</li>
 </ul>
 <h2 id="registry-state-machine">Registry State Machine</h2>
-<p>Registry starts in <code>FREEZE</code> during bootstrap and transitions to <code>READY</code>
-when startup completes.</p>
+<p>The registry state machine starts in <code>FREEZE</code>. <code>SegmentRegistryImpl</code>
+transitions it to <code>READY</code> during registry construction. This occurs when
+<code>SegmentIndexBootstrapOperation</code> opens the registry, before the remaining
+SegmentIndex runtime services and startup completion steps are assembled.</p>
 <p><img alt="Segment state machine" src="../images/registry-states.png" /></p>
 <h3 id="transitions">Transitions</h3>
 <table>
@@ -4130,7 +4137,7 @@ when startup completes.</p>
 <tr>
 <td><code>FREEZE</code></td>
 <td><code>READY</code></td>
-<td>happens after starting procedure</td>
+<td>registry construction completes</td>
 </tr>
 <tr>
 <td><code>FREEZE</code></td>
@@ -4146,13 +4153,21 @@ when startup completes.</p>
 </table>
 <h3 id="rules">Rules</h3>
 <ul>
-<li>Request operations (<code>getSegment()</code>, <code>allocateSegmentId()</code>, <code>createSegment()</code>,
-  <code>deleteSegment()</code>) are state-gated:
+<li>Status-based load and delete operations are state-gated:
   <code>READY</code> -&gt; normal flow, <code>FREEZE</code> -&gt; <code>BUSY</code>, <code>CLOSED</code> -&gt; <code>CLOSED</code>,
   <code>ERROR</code> -&gt; <code>ERROR</code>.</li>
-<li>In <code>READY</code>, <code>getSegment()</code> and <code>deleteSegment()</code> can still return <code>BUSY</code>
+<li>Materialization and runtime-limit mutations require <code>READY</code> and throw
+  <code>IndexException</code> in every other registry state. Loaded-segment runtime
+  snapshots return an empty list outside <code>READY</code>.</li>
+<li>In <code>READY</code>, loading and deletion can still return <code>BUSY</code>
   on cache entry state conflict.</li>
-<li><code>close()</code> is idempotent and moves <code>READY</code> to <code>FREEZE</code> and than to  <code>CLOSED</code>.</li>
+<li>A segment close failure is not a cache conflict. The cache cancels the unload,
+  restores the entry to <code>READY</code>, and propagates the failure. Delete operations
+  report <code>ERROR</code>; registry close throws <code>IndexException</code> with the close failure
+  as its cause.</li>
+<li><code>close()</code> is idempotent and moves <code>READY</code> to <code>FREEZE</code> and then to <code>CLOSED</code>.</li>
+<li>Registry close attempts every cached entry before reporting accumulated close
+  failures.</li>
 <li><code>ERROR</code> is terminal for the state machine; <code>close()</code> does not transition
   <code>ERROR</code> to <code>CLOSED</code>.</li>
 </ul>
@@ -4166,40 +4181,65 @@ when startup completes.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>getSegment(id)</code></td>
-<td>Load or return cached blocking segment by id (<code>BlockingSegment</code>).</td>
+<td><code>loadSegment(id)</code></td>
+<td>Load or return a cached <code>BlockingSegment</code>, retrying <code>BUSY</code> up to timeout.</td>
 </tr>
 <tr>
-<td><code>allocateSegmentId()</code></td>
-<td>Allocate a new segment id for split or growth (<code>SegmentRegistryResult&lt;SegmentId&gt;</code>).</td>
+<td><code>tryGetSegment(id)</code></td>
+<td>Attempt one load; return empty for <code>BUSY</code> or <code>CLOSED</code>.</td>
 </tr>
 <tr>
-<td><code>createSegment()</code></td>
-<td>Allocate id and create a new blocking segment (<code>BlockingSegment</code>).</td>
+<td><code>tryGetLoadedSegment(id)</code></td>
+<td>Return an already cached segment without loading it.</td>
 </tr>
 <tr>
 <td><code>deleteSegment(id)</code></td>
-<td>Close and delete a segment, then remove from cache (<code>SegmentRegistryResult&lt;Void&gt;</code>).</td>
+<td>Close and delete a segment, retrying <code>BUSY</code> up to timeout.</td>
+</tr>
+<tr>
+<td><code>deleteRetiredSegment(id)</code></td>
+<td>Delete an unreachable split parent using forced cache invalidation.</td>
+</tr>
+<tr>
+<td><code>deleteSegmentIfAvailable(id)</code></td>
+<td>Attempt one deletion and report <code>false</code> when the segment remains busy.</td>
+</tr>
+<tr>
+<td><code>metricsSnapshot()</code></td>
+<td>Return immutable registry-cache counters.</td>
+</tr>
+<tr>
+<td><code>updateCacheLimit(limit)</code></td>
+<td>Apply a positive cache limit while the registry is ready.</td>
+</tr>
+<tr>
+<td><code>materialization()</code></td>
+<td>Expose READY-gated segment-id allocation and prepared writer transactions.</td>
+</tr>
+<tr>
+<td><code>runtime()</code></td>
+<td>Expose READY-gated runtime tuning and loaded snapshots; snapshots are empty outside READY.</td>
 </tr>
 <tr>
 <td><code>close()</code></td>
-<td>Close cached segments (<code>SegmentRegistryResult&lt;Void&gt;</code>).</td>
+<td>Close cached segments and transition the registry gate.</td>
 </tr>
 </tbody>
 </table>
-<p>The public facade returns <code>BlockingSegment</code> instances so the registry remains the
-central access point for retry-aware segment operations. These blocking segments
-translate retryable segment-operation outcomes (<code>BUSY</code>, transient <code>CLOSED</code>)
-into bounded blocking calls while preserving the existing segment state machine
-and background-maintenance semantics. <code>flush()</code> and <code>compact()</code> on the handle
-block only until the request is accepted; they do not wait for the background
-maintenance work to reach <code>READY</code>.</p>
-<p>All registry operations return <code>SegmentRegistryResult&lt;T&gt;</code> (status + optional value).
-Registry BUSY/CLOSED/ERROR outcomes are propagated by <code>SegmentRegistryResultStatus</code>.
-The primary safety model is the registry state
-gate + per-key cache entry state machine, not caller-side pinning.</p>
+<p>The public facade returns <code>BlockingSegment</code> instances so the registry remains
+the central access point for retry-aware segment operations. These blocking
+segments translate retryable segment-operation outcomes (<code>BUSY</code>, transient
+<code>CLOSED</code>) into bounded blocking calls while preserving the existing segment
+state machine and background-maintenance semantics. <code>flush()</code> and <code>compact()</code>
+on the handle block only until the request is accepted; they do not wait for
+the background maintenance work to reach <code>READY</code>.</p>
+<p>Single-attempt operations on <code>BlockingSegment</code> return the shared
+<code>OperationResult&lt;T&gt;</code>. Blocking handle operations retry retryable statuses and
+throw <code>IndexException</code> on timeout or terminal failure. The primary registry
+safety model is the registry state gate plus the per-key cache entry state
+machine, not caller-side pinning.</p>
 <h3 id="response-codes">Response Codes</h3>
-<p><code>SegmentRegistryResultStatus</code> is carried by <code>SegmentRegistryResult&lt;T&gt;</code> with semantics:</p>
+<p>Registry internals use the shared <code>OperationStatus</code> values with these semantics:</p>
 <table>
 <thead>
 <tr>
@@ -4222,12 +4262,25 @@ gate + per-key cache entry state machine, not caller-side pinning.</p>
 </tr>
 <tr>
 <td><code>ERROR</code></td>
-<td>Unrecoverable registry failure.</td>
+<td>Terminal operation failure, including a segment close or filesystem deletion failure.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="registry-cache-entry">Registry cache Entry</h2>
-<p>This section describes the target cache-entry model planned for implementation.</p>
+<p>The public facade translates these statuses as follows:</p>
+<ul>
+<li><code>loadSegment()</code> retries <code>BUSY</code> and throws <code>IndexException</code> on timeout,
+  <code>CLOSED</code>, or <code>ERROR</code>.</li>
+<li>Blocking delete operations retry <code>BUSY</code>, treat <code>CLOSED</code> as already deleted,
+  and throw <code>IndexException</code> on timeout or <code>ERROR</code>.</li>
+<li><code>tryGetSegment()</code> returns empty for <code>BUSY</code> and <code>CLOSED</code>, and throws for
+  <code>ERROR</code>.</li>
+<li><code>deleteSegmentIfAvailable()</code> returns <code>false</code> for <code>BUSY</code>; <code>CLOSED</code> is treated
+  as already deleted.</li>
+<li>A missing segment directory follows the <code>BUSY</code> path rather than producing a
+  distinct not-found or <code>ERROR</code> result.</li>
+</ul>
+<h2 id="registry-cache-entry">Registry Cache Entry</h2>
+<p>This section describes the implemented cache-entry model.</p>
 <h3 id="entry-operations">Entry operations</h3>
 <table>
 <thead>
@@ -4345,6 +4398,11 @@ Only threads touching the same key can block each other.</p>
 </tr>
 <tr>
 <td><code>UNLOADING</code></td>
+<td><code>READY</code></td>
+<td>Segment close fails; unload is cancelled and the failure propagates.</td>
+</tr>
+<tr>
+<td><code>UNLOADING</code></td>
 <td><code>MISSING</code></td>
 <td>Unloader completes and entry is removed from cache.</td>
 </tr>
@@ -4359,17 +4417,20 @@ Only threads touching the same key can block each other.</p>
   by reference pin counting.</li>
 </ul>
 <h2 id="thread-model">Thread model</h2>
-<h3 id="1-registry-getid-with-cached">1. Registry <code>get(id)</code> with cached</h3>
+<h3 id="1-registry-load-with-cached-segment">1. Registry load with cached segment</h3>
 <p><img alt="Sequence Diagram" src="../images/registry-seq01.png" /></p>
-<h3 id="2-registry-getid-with-cached-entry-in-loading-state">2. Registry get(id) with cached entry in LOADING state</h3>
+<h3 id="2-registry-load-with-cached-entry-in-loading-state">2. Registry load with cached entry in LOADING state</h3>
 <p><img alt="Sequence Diagram" src="../images/registry-seq02.png" /></p>
 <p>When the registry entry exists in cache but is still <code>LOADING</code>, the cache waits until loading finishes before returning it. When the entry is <code>UNLOADING</code>, the registry treats it as temporarily unavailable and returns <code>BUSY</code>. The flow is shown below:</p>
-<h3 id="3-registry-getid-cache-miss-with-putifabsentloading">3. Registry <code>get(id)</code> cache miss with <code>putIfAbsent(LOADING)</code></h3>
+<h3 id="3-registry-load-cache-miss-with-putifabsentloading">3. Registry load cache miss with <code>putIfAbsent(LOADING)</code></h3>
 <p><img alt="Sequence Diagram" src="../images/registry-seq03.png" /></p>
-<p>Please note that segment is loaded in callers thread.</p>
-<h3 id="4-cache-method-removelastrecentusedsegment">4. Cache method <code>removeLastRecentUsedSegment()</code></h3>
-<p><img alt="Sequence Diagram" src="../images/registry-seq04.png" /></p>
-<p>The diagram shows only the case where <code>segment.close()</code> succeeds. If <code>segment.close()</code> fails with exeception than the entry remains in <code>UNLOADING</code>. Which is fine.</p>
+<p>The winning caller loads the segment in its own thread.</p>
+<h3 id="4-synchronous-lru-eviction">4. Synchronous LRU eviction</h3>
+<p>Capacity pressure selects the least-recently-used unloadable entry and closes
+it in the loading caller's thread. Successful close removes the old entry and
+reserves the slot for the new load. Failed close restores the old entry to
+<code>READY</code>; the load fails with an <code>IndexException</code> whose cause identifies the
+close failure.</p>
 <h3 id="deletesegmentid-flow"><code>deleteSegment(id)</code> flow</h3>
 <ol>
 <li>Try to transition the cached entry to <code>UNLOADING</code>; return <code>BUSY</code> when the entry is not unloadable.</li>
@@ -4377,7 +4438,12 @@ Only threads touching the same key can block each other.</p>
 <li>Delete the segment directory and files on disk.</li>
 <li>Remove the unloaded entry from cache memory.</li>
 </ol>
-<p>When the segment is not cached, deletion is best‑effort and only touches disk.</p>
+<p>A close failure cancels the unload and produces <code>ERROR</code>; it is not reported as
+<code>BUSY</code>. <code>SegmentImpl</code> logs the original exception at the point where the
+segment core close fails.</p>
+<p>When the segment is not cached, deletion is best‑effort and only touches disk.
+Prepared split rollback uses this same registry deletion path, so unpublished
+children are invalidated from the cache before their directories are removed.</p>
 
 
 
