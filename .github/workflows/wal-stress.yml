@@ -2,13 +2,13 @@ name: WAL Crash and Fault Stress
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "devel" ]
     paths:
       - "engine/**"
       - "pom.xml"
       - ".github/workflows/wal-stress.yml"
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "devel" ]
     paths:
       - "engine/**"
       - "pom.xml"
@@ -68,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [ "main", "develop" ]
+        branch: [ "main", "devel" ]
     steps:
     - name: Checkout repository branch
       uses: actions/checkout@v7
