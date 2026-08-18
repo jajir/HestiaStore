@@ -2,9 +2,9 @@ name: WAL Tools Distribution Release
 
 on:
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "devel" ]
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "devel" ]
     tags: [ "v*" ]
   workflow_dispatch:
 
