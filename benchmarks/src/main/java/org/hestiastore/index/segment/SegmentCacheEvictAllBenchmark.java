@@ -61,7 +61,7 @@ public class SegmentCacheEvictAllBenchmark {
         final int capacity = Math.max(1, numberOfKeys);
         cache = new SegmentCache<>(KEY_COMPARATOR, VALUE_DESCRIPTOR,
                 deltaEntries, capacity, capacity, capacity);
-        for (int key = deltaEntries.size(); key < numberOfKeys; key++) {
+        for (int key = numberOfKeys / 2; key < numberOfKeys; key++) {
             cache.putToWriteCache(Entry.of(key, Integer.toString(key)));
         }
         cache.freezeWriteCache();
