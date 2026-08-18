@@ -29,7 +29,6 @@ public final class SegmentRegistryBuilder<K, V> {
     private TypeDescriptor<V> valueTypeDescriptor;
     private EffectiveIndexConfiguration<K, V> conf;
     private ExecutorService segmentMaintenanceExecutor;
-    private ExecutorService registryMaintenanceExecutor;
     private Supplier<SegmentId> segmentIdAllocator;
     private ChunkStoreCache<K, V> chunkStoreCache = new LruChunkStoreCache<>(0);
 
@@ -102,20 +101,6 @@ public final class SegmentRegistryBuilder<K, V> {
     }
 
     /**
-     * Sets the registry maintenance executor used for load/unload operations.
-     *
-     * @param registryMaintenanceExecutor registry maintenance executor
-     * @return this builder
-     */
-    public SegmentRegistryBuilder<K, V> withRegistryMaintenanceExecutor(
-            final ExecutorService registryMaintenanceExecutor) {
-        this.registryMaintenanceExecutor = Vldtn
-                .requireNonNull(registryMaintenanceExecutor,
-                        "registryMaintenanceExecutor");
-        return this;
-    }
-
-    /**
      * Sets the segment id allocator used for newly created segment ids.
      *
      * @param segmentIdAllocator allocator for segment ids
@@ -158,9 +143,6 @@ public final class SegmentRegistryBuilder<K, V> {
         final ExecutorService resolvedSegmentMaintenanceExecutor = Vldtn
                 .requireNonNull(segmentMaintenanceExecutor,
                         "segmentMaintenanceExecutor");
-        final ExecutorService resolvedRegistryMaintenanceExecutor = Vldtn
-                .requireNonNull(registryMaintenanceExecutor,
-                        "registryMaintenanceExecutor");
         final int maxSegments = Vldtn
                 .requireNonNull(resolvedConf.segment().cachedSegmentLimit(),
                         "maxNumberOfSegmentsInCache")
@@ -202,8 +184,7 @@ public final class SegmentRegistryBuilder<K, V> {
                 gate);
         final SegmentRegistryCache<K, V> cache = new SegmentRegistryCache<>(
                 maxNumberOfSegmentsInCache, segmentOperations,
-                unloadEligibility,
-                resolvedRegistryMaintenanceExecutor);
+                unloadEligibility);
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
                 cache, resolvedRegistryCloseRetryPolicy, gate, resolvedFactory,
                 resolvedFactory::updateRuntimeLimits, resolvedBlockingRetryPolicy,

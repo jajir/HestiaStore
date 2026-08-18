@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,15 +18,19 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentRegistryImplCloseTest {
 
     @Test
@@ -43,7 +49,6 @@ class SegmentRegistryImplCloseTest {
 
         @SuppressWarnings("unchecked")
         final Segment<Integer, String> segment = Mockito.mock(Segment.class);
-        Mockito.when(segment.getState()).thenReturn(SegmentState.READY);
 
         final ExecutorService closer = Executors.newSingleThreadExecutor();
         try {
@@ -88,6 +93,66 @@ class SegmentRegistryImplCloseTest {
                 "Close should retry until timeout budget is consumed");
     }
 
+    @Test
+    void closeAttemptsEveryEntryAndPropagatesCloseFailure() {
+        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        final AtomicInteger closeAttempts = new AtomicInteger();
+        final SegmentRegistryCache<Integer, String> cache = newCache(4,
+                segment -> {
+                    closeAttempts.incrementAndGet();
+                    throw new IllegalStateException("close failed");
+                });
+        final SegmentRegistryImpl<Integer, String> registry = newRegistry(cache,
+                gate, 1, 100);
+        addReadyEntry(cache, SegmentId.of(21));
+        addReadyEntry(cache, SegmentId.of(22));
+
+        final IndexException failure = assertThrows(IndexException.class,
+                registry::close);
+
+        final IllegalStateException cause = assertInstanceOf(
+                IllegalStateException.class, failure.getCause());
+        assertEquals(1, cause.getSuppressed().length);
+        assertEquals(2, closeAttempts.get());
+        assertEquals(SegmentRegistryState.ERROR, gate.getState());
+    }
+
+    @Test
+    void deleteMapsCloseFailureToErrorInsteadOfBusy() {
+        final SegmentRegistryCache<Integer, String> cache = newCache(4,
+                segment -> {
+                    throw new IllegalStateException("close failed");
+                });
+        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        final SegmentRegistryImpl<Integer, String> registry = newRegistry(cache,
+                gate, 1, 100);
+        final SegmentId segmentId = SegmentId.of(31);
+        addReadyEntry(cache, segmentId);
+
+        final OperationResult<Void> result = registry
+                .tryDeleteSegment(segmentId);
+
+        assertSame(OperationStatus.ERROR, result.getStatus());
+    }
+
+    @Test
+    void deleteRetiredMapsCloseFailureToErrorInsteadOfBusy() {
+        final SegmentRegistryCache<Integer, String> cache = newCache(4,
+                segment -> {
+                    throw new IllegalStateException("close failed");
+                });
+        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        final SegmentRegistryImpl<Integer, String> registry = newRegistry(cache,
+                gate, 1, 100);
+        final SegmentId segmentId = SegmentId.of(32);
+        addReadyEntry(cache, segmentId);
+
+        final OperationResult<Void> result = registry
+                .tryDeleteRetiredSegment(segmentId);
+
+        assertSame(OperationStatus.ERROR, result.getStatus());
+    }
+
     private static SegmentRegistryImpl<Integer, String> newRegistry(
             final SegmentRegistryCache<Integer, String> cache,
             final SegmentRegistryStateMachine gate, final int backoffMillis,
@@ -118,20 +183,28 @@ class SegmentRegistryImplCloseTest {
         @SuppressWarnings("unchecked")
         final SegmentLoadCloseOperations<Integer, String> segmentOperations = Mockito
                 .mock(SegmentLoadCloseOperations.class);
-        Mockito.when(segmentOperations.loadSegment(Mockito.any(SegmentId.class)))
-                .thenThrow(new IllegalStateException(
-                        "Loader should not be used"));
-        Mockito.doAnswer(invocation -> {
+        Mockito.lenient().doAnswer(invocation -> {
             unloader.accept(invocation.getArgument(0));
             return null;
         }).when(segmentOperations)
                 .closeSegmentIfNeeded(Mockito.<Segment<Integer, String>>any());
         final SegmentUnloadEligibility unloadEligibility = Mockito
                 .mock(SegmentUnloadEligibility.class);
-        Mockito.when(unloadEligibility.canUnload(Mockito.any()))
+        Mockito.lenient().when(unloadEligibility.canUnload(Mockito.any()))
                 .thenReturn(true);
         return new SegmentRegistryCache<>(limit, segmentOperations,
-                unloadEligibility, Runnable::run);
+                unloadEligibility);
+    }
+
+    private static void addReadyEntry(
+            final SegmentRegistryCache<Integer, String> cache,
+            final SegmentId segmentId) {
+        final SegmentRegistryEntry<Integer, String> entry = new SegmentRegistryEntry<>(
+                segmentId.getId());
+        @SuppressWarnings("unchecked")
+        final Segment<Integer, String> segment = Mockito.mock(Segment.class);
+        entry.finishLoad(segment);
+        readCacheMap(cache).put(segmentId, entry);
     }
 
     @SuppressWarnings("unchecked")

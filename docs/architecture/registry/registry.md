@@ -4,10 +4,11 @@ This document describes the segment registry responsibilities and supported oper
 
 ## Scope
 - The registry owns:
-    - safe access to segment resources (load/create/delete)
+    - safe access to segment resources (load/delete)
     - in-memory segment cache (LRU)
     - registry-level state gate (`READY`, `CLOSED`, `ERROR`, `FREEZE`)
     - segment id allocation for new segments via a `Supplier<SegmentId>`
+    - physical deletion of normal, retired, and unpublished prepared segments
 - The registry does **not** own protection of "segment in use" vs "segment close/delete" races.
   This responsibility belongs to the Segment package. Segment implementations
   must remain safe when one thread uses a segment while another thread closes it.
@@ -19,14 +20,20 @@ This document describes the segment registry responsibilities and supported oper
   runtime descriptors, while callers still own higher-level operation policy
   such as fail-fast routing, split coordination, and accepted-vs-completed
   maintenance behavior.
-- Segment load/open failures are status-driven:
-  `getSegment()` and `createSegment()` return `ERROR` when loading/opening
-  fails (including missing segment files), with no dedicated registry-status exception type.
+- Registry internals use the shared `OperationResult<T>` and `OperationStatus`
+  protocol. The public `SegmentRegistry` facade translates those statuses into
+  blocking results, `Optional`, `boolean`, or `IndexException`, depending on
+  the selected operation.
+- A missing segment directory is currently treated as `BUSY`. Consequently,
+  `loadSegment()` retries until its busy timeout, while `tryGetSegment()`
+  returns an empty result.
 
 ## Registry State Machine
 
-Registry starts in `FREEZE` during bootstrap and transitions to `READY`
-when startup completes.
+The registry state machine starts in `FREEZE`. `SegmentRegistryImpl`
+transitions it to `READY` during registry construction. This occurs when
+`SegmentIndexBootstrapOperation` opens the registry, before the remaining
+SegmentIndex runtime services and startup completion steps are assembled.
 
 ![Segment state machine](./images/registry-states.png)
 
@@ -35,59 +42,87 @@ when startup completes.
 | Original State | New State | When                                      |
 | -------------- | --------- | ----------------------------------------- |
 | `READY`        | `FREEZE`  | is part of `close()` procedure            |
-| `FREEZE`       | `READY`   | happens after starting procedure          |
+| `FREEZE`       | `READY`   | registry construction completes           |
 | `FREEZE`       | `CLOSED`  | index closing while frozen (`close()`)    |
 | any            | `ERROR`   | unrecoverable registry failure (`fail()`) |
 
 ### Rules
 
-- Request operations (`getSegment()`, `allocateSegmentId()`, `createSegment()`,
-  `deleteSegment()`) are state-gated:
+- Status-based load and delete operations are state-gated:
   `READY` -> normal flow, `FREEZE` -> `BUSY`, `CLOSED` -> `CLOSED`,
   `ERROR` -> `ERROR`.
-- In `READY`, `getSegment()` and `deleteSegment()` can still return `BUSY`
+- Materialization and runtime-limit mutations require `READY` and throw
+  `IndexException` in every other registry state. Loaded-segment runtime
+  snapshots return an empty list outside `READY`.
+- In `READY`, loading and deletion can still return `BUSY`
   on cache entry state conflict.
-- `close()` is idempotent and moves `READY` to `FREEZE` and than to  `CLOSED`.
+- A segment close failure is not a cache conflict. The cache cancels the unload,
+  restores the entry to `READY`, and propagates the failure. Delete operations
+  report `ERROR`; registry close throws `IndexException` with the close failure
+  as its cause.
+- `close()` is idempotent and moves `READY` to `FREEZE` and then to `CLOSED`.
+- Registry close attempts every cached entry before reporting accumulated close
+  failures.
 - `ERROR` is terminal for the state machine; `close()` does not transition
   `ERROR` to `CLOSED`.
 
 ## Registry Operations
 
-| Operation             | Description                                                      |
-| --------------------- | ---------------------------------------------------------------- |
-| `getSegment(id)`      | Load or return cached blocking segment by id (`BlockingSegment`). |
-| `allocateSegmentId()` | Allocate a new segment id for split or growth (`SegmentRegistryResult<SegmentId>`). |
-| `createSegment()`     | Allocate id and create a new blocking segment (`BlockingSegment`). |
-| `deleteSegment(id)`   | Close and delete a segment, then remove from cache (`SegmentRegistryResult<Void>`). |
-| `close()`             | Close cached segments (`SegmentRegistryResult<Void>`).           |
+| Operation                      | Description                                                                  |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| `loadSegment(id)`              | Load or return a cached `BlockingSegment`, retrying `BUSY` up to timeout.     |
+| `tryGetSegment(id)`            | Attempt one load; return empty for `BUSY` or `CLOSED`.                        |
+| `tryGetLoadedSegment(id)`      | Return an already cached segment without loading it.                         |
+| `deleteSegment(id)`            | Close and delete a segment, retrying `BUSY` up to timeout.                    |
+| `deleteRetiredSegment(id)`     | Delete an unreachable split parent using forced cache invalidation.          |
+| `deleteSegmentIfAvailable(id)` | Attempt one deletion and report `false` when the segment remains busy.       |
+| `metricsSnapshot()`            | Return immutable registry-cache counters.                                    |
+| `updateCacheLimit(limit)`      | Apply a positive cache limit while the registry is ready.                    |
+| `materialization()`            | Expose READY-gated segment-id allocation and prepared writer transactions.   |
+| `runtime()`                    | Expose READY-gated runtime tuning and loaded snapshots; snapshots are empty outside READY. |
+| `close()`                      | Close cached segments and transition the registry gate.                      |
 
-The public facade returns `BlockingSegment` instances so the registry remains the
-central access point for retry-aware segment operations. These blocking segments
-translate retryable segment-operation outcomes (`BUSY`, transient `CLOSED`)
-into bounded blocking calls while preserving the existing segment state machine
-and background-maintenance semantics. `flush()` and `compact()` on the handle
-block only until the request is accepted; they do not wait for the background
-maintenance work to reach `READY`.
+The public facade returns `BlockingSegment` instances so the registry remains
+the central access point for retry-aware segment operations. These blocking
+segments translate retryable segment-operation outcomes (`BUSY`, transient
+`CLOSED`) into bounded blocking calls while preserving the existing segment
+state machine and background-maintenance semantics. `flush()` and `compact()`
+on the handle block only until the request is accepted; they do not wait for
+the background maintenance work to reach `READY`.
 
-All registry operations return `SegmentRegistryResult<T>` (status + optional value).
-Registry BUSY/CLOSED/ERROR outcomes are propagated by `SegmentRegistryResultStatus`.
-The primary safety model is the registry state
-gate + per-key cache entry state machine, not caller-side pinning.
+Single-attempt operations on `BlockingSegment` return the shared
+`OperationResult<T>`. Blocking handle operations retry retryable statuses and
+throw `IndexException` on timeout or terminal failure. The primary registry
+safety model is the registry state gate plus the per-key cache entry state
+machine, not caller-side pinning.
 
 ### Response Codes
 
-`SegmentRegistryResultStatus` is carried by `SegmentRegistryResult<T>` with semantics:
+Registry internals use the shared `OperationStatus` values with these semantics:
 
 | Code     | Description                                                                               |
 | -------- | ----------------------------------------------------------------------------------------- |
 | `OK`     | Segment returned or operation accepted.                                                   |
 | `BUSY`   | Temporary refusal (cache entry state conflict, `UNLOADING`, or registry is `FREEZE`). |
 | `CLOSED` | Registry closed; no further operations.                                                   |
-| `ERROR`  | Unrecoverable registry failure.                                                           |
+| `ERROR`  | Terminal operation failure, including a segment close or filesystem deletion failure.     |
 
-## Registry cache Entry
+The public facade translates these statuses as follows:
 
-This section describes the target cache-entry model planned for implementation.
+- `loadSegment()` retries `BUSY` and throws `IndexException` on timeout,
+  `CLOSED`, or `ERROR`.
+- Blocking delete operations retry `BUSY`, treat `CLOSED` as already deleted,
+  and throw `IndexException` on timeout or `ERROR`.
+- `tryGetSegment()` returns empty for `BUSY` and `CLOSED`, and throws for
+  `ERROR`.
+- `deleteSegmentIfAvailable()` returns `false` for `BUSY`; `CLOSED` is treated
+  as already deleted.
+- A missing segment directory follows the `BUSY` path rather than producing a
+  distinct not-found or `ERROR` result.
+
+## Registry Cache Entry
+
+This section describes the implemented cache-entry model.
 
 ### Entry operations
 
@@ -128,6 +163,7 @@ Only threads touching the same key can block each other.
 | `LOADING`   | `READY`     | Loader completes successfully and signals waiters.                    |
 | `LOADING`   | `MISSING`   | Loader fails; entry is removed and waiters are signaled with failure. |
 | `READY`     | `UNLOADING` | Eviction/delete starts unload (`tryStartUnload()`).                   |
+| `UNLOADING` | `READY`     | Segment close fails; unload is cancelled and the failure propagates. |
 | `UNLOADING` | `MISSING`   | Unloader completes and entry is removed from cache.                   |
 
 #### Guarantees
@@ -140,27 +176,29 @@ Only threads touching the same key can block each other.
 
 ## Thread model
 
-### 1. Registry `get(id)` with cached
+### 1. Registry load with cached segment
 
 ![Sequence Diagram](./images/registry-seq01.png)
 
-### 2. Registry get(id) with cached entry in LOADING state
+### 2. Registry load with cached entry in LOADING state
 
 ![Sequence Diagram](./images/registry-seq02.png)
 
 When the registry entry exists in cache but is still `LOADING`, the cache waits until loading finishes before returning it. When the entry is `UNLOADING`, the registry treats it as temporarily unavailable and returns `BUSY`. The flow is shown below:
 
-### 3. Registry `get(id)` cache miss with `putIfAbsent(LOADING)`
+### 3. Registry load cache miss with `putIfAbsent(LOADING)`
 
 ![Sequence Diagram](./images/registry-seq03.png)
 
-Please note that segment is loaded in callers thread.
+The winning caller loads the segment in its own thread.
 
-### 4. Cache method `removeLastRecentUsedSegment()`
+### 4. Synchronous LRU eviction
 
-![Sequence Diagram](./images/registry-seq04.png)
-
-The diagram shows only the case where `segment.close()` succeeds. If `segment.close()` fails with exeception than the entry remains in `UNLOADING`. Which is fine.
+Capacity pressure selects the least-recently-used unloadable entry and closes
+it in the loading caller's thread. Successful close removes the old entry and
+reserves the slot for the new load. Failed close restores the old entry to
+`READY`; the load fails with an `IndexException` whose cause identifies the
+close failure.
 
 ### `deleteSegment(id)` flow
 
@@ -169,4 +207,10 @@ The diagram shows only the case where `segment.close()` succeeds. If `segment.cl
 1. Delete the segment directory and files on disk.
 1. Remove the unloaded entry from cache memory.
 
+A close failure cancels the unload and produces `ERROR`; it is not reported as
+`BUSY`. `SegmentImpl` logs the original exception at the point where the
+segment core close fails.
+
 When the segment is not cached, deletion is best‑effort and only touches disk.
+Prepared split rollback uses this same registry deletion path, so unpublished
+children are invalidated from the cache before their directories are removed.

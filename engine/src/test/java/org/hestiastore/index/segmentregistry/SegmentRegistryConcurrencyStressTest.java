@@ -130,7 +130,7 @@ class SegmentRegistryConcurrencyStressTest {
         Mockito.when(unloadEligibility.canUnload(Mockito.any()))
                 .thenReturn(true);
         return new SegmentRegistryCache<>(limit, segmentOperations,
-                unloadEligibility, Runnable::run);
+                unloadEligibility);
     }
 
     private static Segment<Integer, String> segment(final int id) {

@@ -15,10 +15,6 @@ abstract class SegmentRegistryStatusAccess<K, V> {
 
     abstract OperationResult<Segment<K, V>> tryLoadSegment(SegmentId segmentId);
 
-    abstract OperationResult<SegmentId> allocateSegmentId();
-
-    abstract OperationResult<Segment<K, V>> tryCreateSegment();
-
     abstract OperationResult<Void> tryDeleteSegment(SegmentId segmentId);
 
     abstract OperationResult<Void> tryDeleteRetiredSegment(SegmentId segmentId);

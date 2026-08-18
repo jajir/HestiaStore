@@ -79,24 +79,6 @@ final class BlockingSegmentRegistryAdapter<K, V> {
                 loaded.getStatus()));
     }
 
-    Segment<K, V> createSegment() {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final OperationResult<Segment<K, V>> created = segmentRegistry
-                    .tryCreateSegment();
-            if (created.getStatus() == OperationStatus.OK
-                    && created.getValue() != null) {
-                return created.getValue();
-            }
-            if (created.getStatus() == OperationStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "createSegment", null);
-                continue;
-            }
-            throw new IndexException(String.format(
-                    "Segment failed to create: %s", created.getStatus()));
-        }
-    }
-
     void deleteSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final long startNanos = retryPolicy.startNanos();

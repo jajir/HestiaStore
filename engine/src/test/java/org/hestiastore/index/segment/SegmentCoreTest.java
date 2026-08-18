@@ -2,7 +2,10 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -76,6 +80,27 @@ class SegmentCoreTest {
     void invalidateIteratorsBumpsVersion() {
         core.invalidateIterators();
         verify(versionController).changeVersion();
+    }
+
+    @Test
+    void close_evictsCacheBeforeClosingReadResources() {
+        core.close();
+        coreClosed = true;
+
+        final InOrder closeOrder = inOrder(segmentCache, readPath);
+        closeOrder.verify(segmentCache).evictAll();
+        closeOrder.verify(readPath).close();
+    }
+
+    @Test
+    void close_closesReadResourcesWhenCacheEvictionFails() {
+        doThrow(new RuntimeException("eviction failed")).when(segmentCache)
+                .evictAll();
+
+        assertThrows(RuntimeException.class, core::close);
+        coreClosed = true;
+
+        verify(readPath).close();
     }
 
     @Test

@@ -415,9 +415,20 @@ final class SegmentCore<K, V> {
     }
 
     /**
-     * Closes read resources for this segment.
+     * Clears persisted in-memory caches and closes read resources.
      */
     void close() {
+        try {
+            segmentCache.evictAll();
+        } finally {
+            closeReadResources();
+        }
+    }
+
+    /**
+     * Closes read resources without clearing write caches.
+     */
+    void closeReadResources() {
         readPath.close();
         logger.debug("Closing segment '{}'", segmentFiles.getId());
     }
