@@ -363,15 +363,19 @@ public final class PersistentSegmentRouteMap<K> extends AbstractCloseableResourc
     }
 
     private void validateSplitSegmentIds(final RouteSplitPlan<K> split) {
-        if (split.getLowerSegmentId().equals(split.getUpperSegmentId())) {
+        final SegmentId lowerSegmentId = Vldtn
+                .requireNonNull(split.getLowerSegmentId(), "lowerSegmentId");
+        final SegmentId upperSegmentId = Vldtn
+                .requireNonNull(split.getUpperSegmentId(), "upperSegmentId");
+        final SegmentId replacedSegmentId = Vldtn.requireNonNull(
+                split.getReplacedSegmentId(), "replacedSegmentId");
+        if (lowerSegmentId.equals(upperSegmentId)) {
             throw new IllegalArgumentException(String.format(
                     "Split child segment id '%s' is used for both routes.",
-                    split.getLowerSegmentId()));
+                    lowerSegmentId));
         }
-        validateNewSplitSegmentId(split.getLowerSegmentId(),
-                split.getReplacedSegmentId());
-        validateNewSplitSegmentId(split.getUpperSegmentId(),
-                split.getReplacedSegmentId());
+        validateNewSplitSegmentId(lowerSegmentId, replacedSegmentId);
+        validateNewSplitSegmentId(upperSegmentId, replacedSegmentId);
     }
 
     private void validateNewSplitSegmentId(final SegmentId segmentId,
