@@ -145,7 +145,9 @@ final class WalSyncPolicy {
             pendingGroupSyncDeadlineNanos = 0L;
             metrics.recordSyncSuccess(System.nanoTime() - startedNanos,
                     batchBytes);
-            monitor.notifyAll();
+            synchronized (monitor) {
+                monitor.notifyAll();
+            }
         } catch (RuntimeException ex) {
             markSyncFailure(ex);
             checkSyncFailure();
@@ -214,7 +216,9 @@ final class WalSyncPolicy {
                 durableLsn.get(), pendingSyncHighLsn, pendingSyncBytes,
                 segmentCatalog.segments().size(), metrics.syncFailureCount(),
                 ex);
-        monitor.notifyAll();
+        synchronized (monitor) {
+            monitor.notifyAll();
+        }
     }
 
     private boolean pendingGroupSyncDeadlineReached() {
