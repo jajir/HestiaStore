@@ -581,10 +581,10 @@ final class IndexMemoryEstimator {
         final String[] units = { "KiB", "MiB", "GiB", "TiB", "PiB", "EiB" };
         double value = bytes;
         int unitIndex = -1;
-        while (value >= 1024D && unitIndex < units.length - 1) {
+        do {
             value = value / 1024D;
             unitIndex++;
-        }
+        } while (value >= 1024D && unitIndex < units.length - 1);
         return String.format(Locale.ROOT, "%.2f %s", value,
                 units[unitIndex]);
     }
