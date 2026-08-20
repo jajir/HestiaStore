@@ -4,14 +4,14 @@
       "channels": {
         "main": {
           "latestPointerPath": "history/diskio-nightly/latest-main.json",
-          "sha": "b20bc5b3bbd7c2ca573d925820e56e7a9db8b1ac",
-          "timestampUtc": "2026-08-19T03:28:51.213168+00:00"
+          "sha": "6ba0871792734698e0f788c02cc5eadf23ed5d65",
+          "timestampUtc": "2026-08-20T03:27:54.916588+00:00"
         }
       },
       "latestChannel": "main",
       "latestPointerPath": "history/diskio-nightly/latest-main.json",
-      "sha": "b20bc5b3bbd7c2ca573d925820e56e7a9db8b1ac",
-      "timestampUtc": "2026-08-19T03:28:51.213168+00:00"
+      "sha": "6ba0871792734698e0f788c02cc5eadf23ed5d65",
+      "timestampUtc": "2026-08-20T03:27:54.916588+00:00"
     },
     "segment-index-nightly": {
       "channels": {
