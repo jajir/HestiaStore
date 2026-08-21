@@ -1,0 +1,79 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.12, OpenJDK 64-Bit Server VM, 21.0.12+8-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync
+# Parameters: (flushBatchSize = 256, seededKeyCount = 75000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 0.00% complete, ETA 00:00:28
+# Fork: 1 of 1
+# Warmup Iteration   1: 2268.978 ops/s
+# Warmup Iteration   2: 2292.940 ops/s
+Iteration   1: 2359.568 ops/s
+Iteration   2: 2280.563 ops/s
+Iteration   3: 2323.721 ops/s
+Iteration   4: 2369.838 ops/s
+Iteration   5: 2300.506 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync":
+  2326.839 ±(99.9%) 146.181 ops/s [Average]
+  (min, avg, max) = (2280.563, 2326.839, 2369.838), stdev = 37.963
+  CI (99.9%): [2180.658, 2473.020] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12, OpenJDK 64-Bit Server VM, 21.0.12+8-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync
+# Parameters: (flushBatchSize = 256, seededKeyCount = 75000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 50.00% complete, ETA 00:00:46
+# Fork: 1 of 1
+# Warmup Iteration   1: 2246.942 ops/s
+# Warmup Iteration   2: 2282.310 ops/s
+Iteration   1: 2270.226 ops/s
+Iteration   2: 2155.487 ops/s
+Iteration   3: 2089.582 ops/s
+Iteration   4: 2143.187 ops/s
+Iteration   5: 2279.566 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync":
+  2187.610 ±(99.9%) 321.570 ops/s [Average]
+  (min, avg, max) = (2089.582, 2187.610, 2279.566), stdev = 83.511
+  CI (99.9%): [1866.039, 2509.180] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:01:32
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                          (flushBatchSize)  (seededKeyCount)  (snappy)  (valueLength)  (walMode)   Mode  Cnt     Score     Error  Units
+SegmentIndexPersistedMutationBenchmark.deleteSync               256             75000      true             64       sync  thrpt    5  2326.839 ± 146.181  ops/s
+SegmentIndexPersistedMutationBenchmark.putSync                  256             75000      true             64       sync  thrpt    5  2187.610 ± 321.570  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-persisted-mutation.json
