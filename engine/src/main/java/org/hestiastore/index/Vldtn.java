@@ -66,15 +66,35 @@ public final class Vldtn {
      *                                  equal to 0, or not divisible by 1024
      */
     public static int requireIoBufferSize(final int ioBufferSize) {
-        if (ioBufferSize <= 0) {
+        return requireIoBufferSize(ioBufferSize, "ioBufferSize");
+    }
+
+    /**
+     * Validates that a named IO buffer size is greater than 0 and divisible by
+     * 1024.
+     *
+     * @param ioBufferSize the IO buffer size to validate
+     * @param propertyName the name of the property being validated
+     * @return the validated IO buffer size
+     * @throws IllegalArgumentException if the property name is null, the IO
+     *                                  buffer size is less than or equal to 0,
+     *                                  or it is not divisible by 1024
+     */
+    public static int requireIoBufferSize(final int ioBufferSize,
+            final String propertyName) {
+        if (propertyName == null) {
             throw new IllegalArgumentException(
-                    "Property 'ioBufferSize' must be greater than 0");
+                    "Property 'propertyName' must not be null.");
+        }
+        if (ioBufferSize <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be greater than 0", propertyName));
         }
         if (ioBufferSize % 1024 != 0) {
             throw new IllegalArgumentException(String.format(
-                    "Propety 'ioBufferSize' must be divisible by 1024 "
+                    "Propety '%s' must be divisible by 1024 "
                             + "(e.g., 1024, 2048, 4096). Got: '%s'",
-                    ioBufferSize));
+                    propertyName, ioBufferSize));
         }
         return ioBufferSize;
     }
@@ -123,6 +143,28 @@ public final class Vldtn {
                     "Property 'propertyName' must not be null.");
         }
         if (value <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be greater than 0", propertyName));
+        }
+        return value;
+    }
+
+    /**
+     * Validates that the given long value is greater than zero.
+     *
+     * @param value        value to validate
+     * @param propertyName name of the property being validated
+     * @return the validated value
+     * @throws IllegalArgumentException if the property name is null or the
+     *                                  value is less than or equal to zero
+     */
+    public static long requireGreaterThanZero(final long value,
+            final String propertyName) {
+        if (propertyName == null) {
+            throw new IllegalArgumentException(
+                    "Property 'propertyName' must not be null.");
+        }
+        if (value <= 0L) {
             throw new IllegalArgumentException(String.format(
                     "Property '%s' must be greater than 0", propertyName));
         }

@@ -99,6 +99,318 @@ step.
 
 ## Done (Archive)
 
+#### Senku Index implementation
+
+Item `101` implements the first version described by
+[`docs/development/senku-index.md`](development/senku-index.md). The sequence is
+top-down: freeze the public contract first, then add the minimum storage and
+merge machinery needed to make that contract executable, and finally prove the
+whole index through its public API. Open or link one implementation issue before
+starting the first production-code slice.
+
+Package and implementation rules for every item:
+
+- The supported public API belongs to `org.hestiastore.index.senku`; initial
+  implementation classes belong to the single
+  `org.hestiastore.index.senku.internal` package. Do not add speculative
+  `util`, `spi`, factory, adapter, or one-class subpackages.
+- Reuse `Directory`, `FileLock`, `PropertyStoreImpl`, `ChunkStoreFile`,
+  `ChunkStoreWriterTx`, the existing Snappy and magic-number filters,
+  `SingleChunkEntryWriterImpl`, `SingleChunkEntryIterator`, `Reader`,
+  `EntryComparator`, `TypeDescriptor`, and
+  `IndexConfigurationDefaults.DEFAULT_DISK_IO_BUFFER_SIZE_BYTES`. Do not change
+  existing storage or Segment Index code merely to make Senku fit.
+- Use `Vldtn` for every argument, state-independent configuration, constructor,
+  and factory validation. Add a narrowly scoped `Vldtn` operation only when no
+  existing operation expresses the required check; test that operation
+  directly. Convert lower-level failures at the Senku boundary to
+  `IndexException` as specified by the architecture.
+- Prefer JDK `HashMap`, `PriorityQueue`, locks, conditions, latches, streams, and
+  executors. Do not introduce an interface with one implementation, a recovery
+  framework, runtime monitoring, persisted configuration, or an asynchronous
+  ingestion layer in this sequence.
+
+Testing rules for every item:
+
+- Add the matching JUnit 5 `*Test` for every changed production class in the
+  same package. A slice is not complete when only a later end-to-end test covers
+  its new classes.
+- Use a real `MemDirectory` for every Senku unit and integration test. Do not
+  use `FsDirectory`, temporary filesystem directories, or mocked `Directory`
+  objects. A small test-only `MemDirectory` subclass may inject one specific
+  failure; do not build a generic fault-injection framework.
+- Put whole-index tests under `engine/src/integration-test/java` with an `*IT`
+  suffix and exercise only the public Senku API. Keep component tests under
+  `engine/src/test/java`.
+- Cover empty, one-element, exact-boundary, boundary-plus-one, duplicate-key,
+  malformed-input, repeated-call, and cleanup/resource-ownership cases wherever
+  they apply. Assert both returned data and the resulting in-memory directory
+  tree.
+- Make concurrency tests deterministic with latches, barriers, conditions,
+  direct invocation of a package-private coordinator scan operation, and
+  bounded awaits. Never use `Thread.sleep()` and never make the three-second
+  production scan interval configurable solely for tests.
+
+- [x] 101. Implement the first Senku Index without changing existing low-level
+  storage behavior (Risk: HIGH). Owner: `engine` Senku package. Outcome: the
+  documented write-once lifecycle, synchronous flushes, background sorted-run
+  maintenance, finalization, and globally sorted ready stream are available
+  through the new public API. Guardrails: all `101.x` slices and their tests are
+  complete; deferred features remain in the architecture's limitations or
+  technical-debt sections. Validation: items `101.1` through `101.20`, the
+  Senku JMH gate, `mvn clean verify`, strict documentation build, and a clean
+  static-analysis report for the new package.
+
+##### Public contract and persisted format
+
+- [x] 101.1 Add the Senku public contracts and flat builder configuration
+  (Risk: MEDIUM). Owner: `engine/src/main/java/org/hestiastore/index/senku`.
+  Outcome: add the documented merge function and registry, writing and ready
+  handles, builder settings/defaults, and package Javadoc without placeholder
+  operations that throw `UnsupportedOperationException`. Guardrails: expose no
+  delete, abort-writing, writing close, monitoring, or persisted write tuning;
+  keep object construction in the builder; use `Vldtn` for all inputs and every
+  numeric boundary. Validation: direct tests for every default, missing required
+  setting, null dependency, lower/upper boundary, overflow-sensitive capacity
+  calculation, zero/duplicate merge-function registration, and repeated invalid
+  calls.
+
+- [x] 101.2 Implement deterministic path names and exact property codecs
+  (Risk: HIGH). Owner: Senku internal metadata. Outcome: parse and write the
+  documented `flush-N`, `shard-N`, `level-N`, `run-N`, part, manifest, and ready
+  formats using canonical numeric names with a minimum width of five digits and
+  `PropertyStoreImpl`; publish
+  every manifest last through the existing directory transaction and rename
+  operations. Guardrails: property files contain only documented keys, are
+  authoritative, and have no compatibility/version framework; unknown,
+  missing, extra, malformed, negative, non-contiguous, or contradictory data
+  fails fast. Validation: round-trip and invalid-input tests for empty and
+  non-empty runs, flush manifests, ready metadata, name limits, extra/missing
+  parts, temporary files, and exact directory layouts in `MemDirectory`.
+
+##### Storage primitives
+
+- [x] 101.3 Implement the opaque packed `LargeFilePosition` value
+  (Risk: MEDIUM). Owner: Senku internal storage. Outcome: encode and decode the
+  documented non-negative `long` into a physical part number and local signed-
+  `int` `CellPosition` without exposing a page ID. Guardrails: use overflow-safe
+  `Vldtn` checks and keep shifting/masking inside this class. Validation: direct
+  tests for zero, maximum local position, maximum supported manifest part,
+  round trips, numeric ordering, sign-bit preservation, negative inputs, and a
+  position beyond the declared part count.
+
+- [x] 101.4 Build `LargeFileWriterTx` and `LargeFileReader` over existing chunk
+  stores (Risk: HIGH). Owner: Senku internal storage. Outcome: append versioned,
+  compressed entry pages, rotate by `maxEntriesPerPart`, commit contiguous
+  `part-N.chunk` files, and read sequentially or from an opaque position while
+  crossing parts. Guardrails: reuse the documented filter order and transaction
+  lifecycle; do not virtualize `Directory`, expose page IDs, split a page, add
+  random mutation, or promise rollback after failure. Validation: direct tests
+  for empty commit, one page, exact part boundary, rotation, multi-part reads,
+  positioned reads, stable EOF, idempotent close, read/append after close or
+  commit, page-version mismatch, invalid/missing/extra parts, early failure, and
+  underlying reader/writer closure.
+
+- [x] 101.5 Implement the compressed flush `shard-index.dat` codec
+  (Risk: HIGH). Owner: Senku internal storage. Outcome: write and read exactly
+  one versioned 20-byte big-endian record for every configured shard containing
+  shard ID, opaque `LargeFilePosition`, and record count. Guardrails: use one
+  existing `ChunkStoreFile`; store no page IDs; use overflow-checking count
+  arithmetic and reject a table that cannot fit the existing signed-`int`
+  storage API. Validation: round trips for one and many shards, empty shards,
+  maximum shard count, malformed length/order/ID/count/position, wrong version,
+  extra chunks, truncated payload, and count overflow.
+
+##### Sorting and ingestion
+
+- [x] 101.6 Implement one reusable k-way sorted-entry merge loop
+  (Risk: HIGH). Owner: Senku internal merge. Outcome: use a JDK `PriorityQueue`
+  and the configured key comparator to lazily merge sorted cursors and collapse
+  every duplicate key through the one configured merge function. Guardrails:
+  do not materialize an input or output run, preserve no write order, and add no
+  merge-function dispatch abstraction. Validation: pure unit tests for zero,
+  one, two, and many inputs; empty inputs; all-equal keys; duplicates within and
+  across inputs; skewed lengths; comparator edge cases; count overflow; merge
+  callback failure; and closure of all cursors on success, early consumer close,
+  and failure.
+
+- [x] 101.7 Implement `SenkuIngestor` and synchronous flush publication
+  (Risk: HIGH). Owner: Senku internal ingestion. Outcome: serialize `put()` and
+  `finishWriting()` with one `ReentrantLock`, merge duplicate values in one
+  `HashMap`, flush at the distinct-key limit on the caller thread, partition by
+  `Math.floorMod(hash, shardCount)`, sort each shard, and publish one flush
+  generation with its sparse index and manifest. Guardrails: validate keys and
+  values with `Vldtn`, never use `ConcurrentHashMap`, never publish an empty
+  flush, and make no copy or mutation-safety promise for caller objects.
+  Validation: direct tests for nulls, distinct versus duplicate threshold
+  accounting, exact threshold flush, final partial flush, negative hashes
+  including `Integer.MIN_VALUE`, shard skew, sorted shard regions, page/part
+  boundaries, concurrent caller serialization, merge callback failure, and
+  manifest-last behavior under an injected in-memory write failure.
+
+##### Maintenance data path
+
+- [x] 101.8 Implement one flush-to-level-zero batch
+  (Risk: HIGH). Owner: Senku internal merge. Outcome: select up to
+  `mergeFanIn` committed flush generations, validate their manifests and sparse
+  indexes once, run one independent merge job for each shard, publish one level-
+  zero run per shard including empty runs, and delete the shared flush inputs
+  only after every shard completion is accepted. Guardrails: jobs read only
+  their persisted shard ranges; no job owns or removes the permanent `flush/`
+  directory; L0 jobs may run in parallel. Validation: `MemDirectory` tests for
+  full and drain-mode partial batches, empty and non-empty shards, duplicate
+  collapse, multi-page/part input, one failed shard, completion in different
+  orders, no early input deletion, manifest-last output, and exact batch
+  cleanup.
+
+- [x] 101.9 Implement same-level sorted-run merge and promotion
+  (Risk: HIGH). Owner: Senku internal merge. Outcome: merge up to
+  `mergeFanIn` runs from one shard and one numeric level into the next level,
+  including drain-mode partial groups and one-input rewrites needed to leave one
+  terminal run. Guardrails: never merge different levels, never run two sorted-
+  run jobs for the same shard, and use the shared lazy merge loop and exact
+  manifest counts. Validation: tests for normal fan-in, partial groups,
+  one-input promotion, empty runs, duplicate keys, record-count overflow,
+  early/late EOF, mixed-level rejection, publication failure, input cleanup,
+  and removal of empty run/level/shard directories only when unowned.
+
+##### Coordinator and lifecycle
+
+- [x] 101.10 Implement the coordinator-owned source catalog and eligibility
+  scan (Risk: HIGH). Owner: Senku internal maintenance. Outcome: one
+  package-private `scanOnce()` traverses only structural directories and
+  property metadata, discovers committed sources, ignores incomplete sources,
+  and computes deterministic bottom-up merge candidates. Guardrails: do not
+  enumerate data parts during ordinary scans, read shard data, repair metadata,
+  add a catalog lock, or depend on one atomic directory-tree snapshot.
+  Validation: direct no-sleep tests for empty trees, new committed sources,
+  incomplete temporary sources, authoritative metadata, missing/extra/conflicting
+  catalog entries, stable repeated scans, level ordering, shard ordering, and
+  old-run selection.
+
+- [x] 101.11 Add bounded scheduling, reservations, and completion handling
+  (Risk: HIGH). Owner: Senku internal maintenance. Outcome: reserve exact input
+  and output directory IDs before placing jobs into the fixed worker pool and
+  bounded FIFO queue; serialize scans and completion processing on the one
+  coordinator thread; accept a worker-published output and eagerly delete its
+  obsolete inputs. Guardrails: keep pending work in the catalog/L0 batch rather
+  than creating unbounded job objects; allow L0 beside a sorted-run merge for
+  the same shard, but only one sorted-run job per shard; workers publish and
+  return immutable results but never edit the catalog. Validation: deterministic
+  executor tests for full capacity, FIFO queueing, duplicate/conflicting
+  reservations, output observed before completion, concurrent L0 and run work,
+  unique run IDs, completion order, worker failure, cancellation, and exact
+  reservation release.
+
+- [x] 101.12 Add queue-driven ingestion backpressure
+  (Risk: HIGH). Owner: Senku internal maintenance and ingestion. Outcome: the
+  coordinator pauses ingestion only when the bounded queue is full and known
+  eligible work remains unqueued, and resumes it only when capacity exists and
+  no eligible work remains pending. Guardrails: keep one boolean and one
+  `Condition` under the ingestion lock; perform no directory I/O while holding
+  that lock; preserve caller interruption; do not add byte/disk-space
+  prediction. Validation: latch-based tests for high/low water transitions,
+  spurious/repeated scans, queue-full-without-backlog, backlog-with-capacity,
+  multiple blocked callers, wake on finish/error, interrupt preservation, and
+  no lost signal or put after writing ends.
+
+- [x] 101.13 Implement writing runtime ownership and fail-fast shutdown
+  (Risk: HIGH). Owner: Senku internal lifecycle. Outcome: `create()` validates
+  before mutation, acquires the single root `FileLock`, creates non-daemon
+  maintenance executors, records one `firstFailure`, and performs the documented
+  minimal shutdown without rollback or filesystem cleanup. Guardrails: catch
+  `Exception`, never `Throwable`; do not interrupt running merge jobs; release
+  every owned resource exactly once; restore interrupt status after
+  uninterruptible lifecycle waits. Validation: direct tests for create failure
+  at each acquisition step, second-handle lock rejection, caller-thread and
+  background failures, racing failures, queued/running jobs, schedule failure,
+  worker termination, lock release, no leaked live thread, suppressed cleanup
+  errors, and generic later `ERROR` rejections.
+
+- [x] 101.14 Implement `finishWriting()` and terminal layout publication
+  (Risk: HIGH). Owner: Senku internal lifecycle and maintenance. Outcome: reject
+  later writes, flush the remaining map, immediately enter drain mode, continue
+  same-level merges until every configured shard owns exactly one terminal run,
+  stop all maintenance threads, publish `ready.properties` last, and transfer
+  the still-held root lock to `SenkuReady`. Guardrails: create an empty terminal
+  run for every empty shard, keep `flush/` present and empty, do not equalize
+  terminal levels, and do not add a final full-data rewrite. Validation:
+  deterministic tests for an empty index, partial flush group, partial run
+  groups, one-input promotions, uneven terminal levels, concurrent puts and
+  finish calls, awakened blocked puts, interrupted caller, failed drain, exact
+  cleanup/layout, thread termination, and lock transfer.
+
+##### Ready streaming
+
+- [x] 101.15 Implement ready-index open, global streaming, and close
+  (Risk: HIGH). Owner: Senku public API and internal stream. Outcome: `open()`
+  acquires the root lock, validates the authoritative ready tree without
+  creating missing directories, and exposes one lazy globally sorted m-way
+  stream across the terminal shard runs using the established Segment Index
+  stream-closing behavior. Guardrails: permit only one active stream, retain no
+  background thread, never materialize the dataset, make ready close idempotent,
+  and make `SenkuReady.close()` break an active stream and release the lock.
+  Validation: direct tests for empty and many-shard streams, global comparator
+  order, laziness, early stream close, exhaustion, consumer failure, second
+  stream rejection, repeated ready close, stream use after ready close, close
+  during streaming, reopening after close, wrong I/O size behavior, and every
+  missing/extra/malformed ready-layout case.
+
+##### Whole-index proof and performance
+
+- [x] 101.16 Add public-API functional integration coverage
+  (Risk: HIGH). Owner: `engine/src/integration-test/java` Senku tests. Outcome:
+  drive create, unsorted puts, synchronous flushes, maintenance, finalization,
+  stream, close, and reopen through the public API only and compare every entry
+  with an independent sorted reference map. Guardrails: use `MemDirectory` only
+  and configuration values small enough to cross every boundary in one test
+  run. Validation: `*IT` cases for empty, one key, all duplicate keys, one and
+  many shards, one and many flushes/pages/parts/levels, highly skewed hashes,
+  exact thresholds, threshold-plus-one, and multiple merge fan-ins.
+
+- [x] 101.17 Add public-API concurrency and lifecycle integration coverage
+  (Risk: HIGH). Owner: `engine/src/integration-test/java` Senku tests. Outcome:
+  prove that concurrent callers, maintenance, backpressure, finalization,
+  streaming, and root locking compose without data loss, deadlock, or resource
+  leaks. Guardrails: real `MemDirectory`, bounded waits, no sleeping, no private
+  state assertions, and no unsupported crash-recovery expectations.
+  Validation: repeated `*IT` cases for disjoint and duplicate keyspaces,
+  maintenance overlapping ingestion, queue saturation, finish races, active-
+  stream close, second-handle rejection, injected storage/merge failure, and
+  eventual termination of every Senku-owned non-daemon thread.
+
+- [x] 101.18 Add deterministic reference-model and boundary stress tests
+  (Risk: MEDIUM). Owner: Senku unit and integration tests. Outcome: seeded
+  randomized sequences compare the final stream and duplicate reductions with a
+  small independent model across a matrix of shard counts, flush limits, page
+  limits, part limits, fan-ins, thread counts, and queue sizes. Guardrails: log
+  the seed on failure, cap the matrix for normal CI, and do not introduce a
+  property-testing dependency. Validation: repeat the focused suite enough to
+  cover zero/one/max-small boundaries and multiple completion interleavings,
+  then run it as part of normal `mvn verify`.
+
+- [x] 101.19 Establish the first Senku performance baseline
+  (Risk: MEDIUM). Owner: `benchmarks` and Senku implementation. Outcome: add the
+  smallest JMH coverage that measures ingestion throughput, synchronous flush,
+  flush-to-L0 merge, sorted-run merge, ready-stream throughput, and end-to-end
+  ingest-to-first-sorted-result latency using `MemDirectory`. Guardrails: add no
+  production tuning solely for the benchmark and claim no improvement without
+  repeated forks and recorded confidence intervals. Validation: benchmark
+  contract/smoke tests plus persisted baseline results for representative
+  duplicate rates, shard skew, and boundary-crossing configurations.
+
+- [x] 101.20 Complete the Senku implementation gate and documentation audit
+  (Risk: MEDIUM). Owner: `engine`, `benchmarks`, and documentation. Outcome:
+  every production class has its direct test, the public API and lifecycle have
+  complete Javadocs, the actual package/layout/defaults match the architecture,
+  and resolved implementation discoveries are incorporated without populating
+  speculative features. Guardrails: keep the `Open Points` heading in
+  `senku-index.md` even when empty; retain first-version limitations honestly;
+  remove unused code/imports and do not leave placeholder types. Validation:
+  focused Senku tests, `mvn clean verify`, `mvn clean site`,
+  `python3 scripts/check_docs_nav.py`, `mkdocs build --strict`, and
+  `git diff --check`.
+
 - [x] 100.5 Replace list-building segment membership checks with direct
   snapshot lookup (Risk: MEDIUM).
     - `RouteMapSnapshot.containsSegmentId(...)` now scans immutable map values

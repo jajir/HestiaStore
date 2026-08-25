@@ -45,6 +45,7 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotRoutePu
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SenkuIndexBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SequentialFileReadingBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SequentialFileWritingBenchmark
 ```
@@ -97,6 +98,18 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleB
 Run both persisted-mutation thread counts with otherwise identical parameters.
 The one-writer case protects latency-sensitive behavior; the 16-writer case
 exposes WAL queue admission and sync-batching contention.
+
+Senku's first-version baseline uses only `MemDirectory` and covers ingestion,
+synchronous flush, flush-to-L0, recursive run merge, complete ready streaming,
+and ingest-to-first-sorted-result latency. Its end-to-end cases include 0% and
+50% duplicates, balanced and skewed shards, and page/part boundary crossings:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-index-baseline \
+  --output-dir /tmp/hestia-bench/senku
+```
 
 Quick smoke run:
 

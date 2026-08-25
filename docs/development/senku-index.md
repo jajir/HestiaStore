@@ -7,9 +7,9 @@ owner: engine
 
 # Senku Index
 
-This page proposes a write-once, finalize-once, stream-many index optimized for
+This page defines a write-once, finalize-once, stream-many index optimized for
 fast bulk ingestion from concurrent callers. Senku has no point-read API and
-lives in the separate `org.hestiastore.index.senkuindex` package.
+lives in the separate `org.hestiastore.index.senku` package.
 
 ## Primary Goal
 
@@ -1032,6 +1032,26 @@ reader, position, or `Directory` API is changed.
 
 ## Implementation Plan
 
+### Package Layout
+
+The public API lives directly in `org.hestiastore.index.senku`. The first
+implementation uses only one additional package,
+`org.hestiastore.index.senku.internal`, for storage, ingestion, merge,
+maintenance, stream, and lifecycle implementation classes. This keeps the
+supported API obvious without creating speculative `util`, `spi`, `factory`,
+or one-class component packages. Internal types may be split into narrower
+packages later only when their real dependencies show a cohesive boundary.
+
+The root package contains the public `SenkuIndex`, `SenkuIndexBuilder`,
+`SenkuWriting`, `SenkuReady`, `SenkuMergeFunction`, and
+`SenkuMergeFunctionRegistry` types. Assembly remains in the builder. The
+internal package does not define alternative public API contracts or extension
+points.
+
+Unit and integration tests mirror these packages. Every Senku storage test uses
+`MemDirectory`; the first implementation has no Senku test backed by
+`FsDirectory` or a temporary filesystem directory.
+
 ### Minimal Builder
 
 The first builder is one flat object. It validates inputs and constructs Senku
@@ -1297,9 +1317,9 @@ pages sequentially from such a position while crossing physical parts
 transparently. It does not assign or expose page IDs.
 
 `LargeFile`, `LargeFileWriterTx`, `LargeFileReader`, and `LargeFilePosition` are
-package-private final implementation classes in the Senku package. They are not
-public extension points, and no Senku-specific interface is introduced for
-their single implementations. Their minimal API shape is:
+package-private final implementation classes in the Senku internal package.
+They are not public extension points, and no Senku-specific interface is
+introduced for their single implementations. Their minimal API shape is:
 
 ```java
 final class LargeFile {
@@ -1668,10 +1688,12 @@ map. It uses the writing lock only to update the shared `ingestionPaused` flag
 and signal its `ingestionMayProceed` condition.
 
 The initial worker pool is a JDK `ThreadPoolExecutor` with equal core and maximum
-sizes, an `ArrayBlockingQueue` of `maintenanceQueueSize`, an abort rejection
-policy, and the Senku non-daemon thread factory. Workers are created lazily. The
-queue contains reserved jobs waiting to start and preserves FIFO order. It is
-not reprioritized after submission. Unexpected rejection is an `IndexException`
+sizes, an `ArrayBlockingQueue` of `maintenanceQueueSize`, and the Senku
+non-daemon thread factory. Workers are created lazily. The queue contains
+reserved jobs waiting to start and preserves FIFO order. It is not reprioritized
+after submission. The rejection handler waits only for a queue slot already
+admitted by the coordinator, avoiding the executor's transient worker-handoff
+race. Shutdown or interrupted submission is an `IndexException`
 and triggers normal first-failure shutdown.
 
 Every periodic scan traverses only the logical Senku directory hierarchy: the
