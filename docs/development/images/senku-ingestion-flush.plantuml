@@ -1,0 +1,36 @@
+@startuml senku-ingestion-flush
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+top to bottom direction
+
+title Senku Ingestion and Sharded Flush Directories
+
+actor "Concurrent callers" as Callers
+component "SenkuIngestor\n\nHashMap<K,V>\none ReentrantLock\nexact map size" as Ingestor
+component "Stop-the-world flush\nwhile holding the lock\n\n1. count records per shard\n2. place map-entry references in shard ranges\n3. sort each shard range by key\n4. record shard ID, start, and record count\n5. publish manifest.properties last\n6. clear map and unlock" as Flush
+
+frame "Committed staging directories" {
+  folder "flush/flush-00001/\n\nmanifest.properties\nshard-index.dat\npart-00000.chunk\npart-00001.chunk\n\nscarce shard-start index [m]\nS000: shard ID, start, record count\nS001: shard ID, start, record count\n..." as Flush1
+  folder "flush/flush-K/\n\nmanifest.properties\nshard-index.dat\npart-00000.chunk\n\nlater generation\ndifferent record counts" as FlushK
+}
+
+Callers --> Ingestor : put\nlock; get; optional merge; put
+Ingestor --> Flush : map limit reached
+Flush --> Flush1 : flush generation 1
+Flush --> FlushK : later generation
+
+note bottom of Flush1
+The shard count and shardFor(key) are fixed.
+A logical generation may span ordered parts.
+Each part is a ChunkStoreFile of compressed pages.
+LargeFile composes parts without changing ChunkStoreFile.
+Shard starts are opaque LargeFilePosition tokens; no page ID is exposed.
+High position bits select the part; low 31 bits hold
+the existing local CellPosition.
+Parts rotate before a page would exceed maxEntriesPerPart.
+This entry limit does not guarantee a physical byte limit.
+end note
+@enduml

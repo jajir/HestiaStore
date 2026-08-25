@@ -1,0 +1,44 @@
+@startuml senku-finalization
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+top to bottom direction
+
+title Senku finishWriting() Terminal Shard Consolidation
+
+component "finishWriting()\nacquire writing lock\nleave WRITING" as Finish
+component "Flush remaining map\nfinish reserved maintenance" as Drain
+
+frame "Remaining committed sources for every shard S" {
+  artifact "Flush fragments\nfor shard S" as Flush
+  artifact "Sorted runs L0 ... Lmax\nfor shard S" as Runs
+}
+
+component "Bottom-up forced consolidation\n\nMerge only same-level inputs\nup to mergeFanIn at a time\nPromote a lone lower run by one-input rewrite" as Consolidate
+
+frame "Terminal runs; numeric levels may differ" {
+  folder "One immutable sorted run\nper configured shard\nempty run: partCount=0, recordCount=0" as FinalRuns
+}
+
+component "Delete obsolete committed inputs\nand empty source directories" as Cleanup
+component "Publish ready.properties\nwith shardCount\nExactly one run remains\nper configured shard" as Ready
+
+Finish --> Drain
+Drain --> Flush
+Drain --> Runs
+Flush --> Consolidate
+Runs --> Consolidate
+Consolidate --> FinalRuns
+FinalRuns --> Cleanup
+Cleanup --> Ready
+
+note right of Consolidate
+This may read and rewrite the complete dataset.
+Different shards are never merged together.
+Runs from different numeric levels are never merged directly.
+An already-single shard run is carried without rewriting.
+Merge or cleanup failure publishes no ready.properties.
+end note
+@enduml

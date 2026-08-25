@@ -1,0 +1,40 @@
+@startuml senku-index-failure-lifecycle
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+skinparam state {
+  BackgroundColor #F7F9FC
+  BorderColor #34495E
+  FontColor #17202A
+}
+left to right direction
+
+title Senku Runtime Failure Transitions
+
+state "WRITING" as Writing
+state "READY" as Ready
+state "ERROR" as Error
+state "CLOSED" as Closed : Resources released\nOriginal error retained\nNo data guarantee
+
+Writing --> Error : failure
+Ready --> Error : internal stream, storage,\ncleanup, or close failure
+
+Error --> Closed : [SenkuReady]\nclose(); release resources\nreport primary failure
+
+note bottom of Error
+SenkuWriting permits no operation.
+A running put() or flush does not poll a background
+failure. Later calls receive a generic state failure.
+Background shutdown stops workers and releases the
+root lock, but performs no explicit index cleanup.
+SenkuReady permits only close().
+Writing shutdown cannot be retried in v1.
+end note
+note bottom of Ready
+An internal stream or storage failure
+indicates inconsistent state and moves
+the handle to ERROR after cleanup.
+end note
+Closed --> [*]
+@enduml

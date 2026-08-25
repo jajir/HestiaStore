@@ -1,0 +1,52 @@
+@startuml senku-sorted-streaming
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+top to bottom direction
+
+title Senku READY Globally Sorted Streaming
+
+frame "Only terminal runs remain when ready.properties is published" {
+  folder "Shard S000\none final sorted run" as Source0
+  folder "Shard S001\none final sorted run" as Source1
+  artifact "..." as SourceMore
+  folder "Shard S(m-1)\none final sorted run" as SourceM
+}
+
+frame "One sequential cursor per shard containing data" {
+  component "Cursor S000" as Cursor0
+  component "Cursor S001" as Cursor1
+  component "..." as CursorMore
+  component "Cursor S(m-1)" as CursorM
+}
+
+component "Global merge of at most m inputs\nCompare the head of every\nshard cursor" as GlobalMerge
+component "Stream<Entry<K,V>>\nGlobal comparator order\nclose owns all cursors" as Stream
+component "SenkuReady.close()\nforcibly closes active stream" as ReadyClose
+
+Source0 --> Cursor0
+Source1 --> Cursor1
+SourceMore --> CursorMore
+SourceM --> CursorM
+
+Cursor0 --> GlobalMerge
+Cursor1 --> GlobalMerge
+CursorMore --> GlobalMerge
+CursorM --> GlobalMerge
+GlobalMerge --> Stream
+ReadyClose --> Stream : close
+
+note right of GlobalMerge
+One stream needs at most m source cursors
+and current-part readers. Duplicate keys
+were folded during terminal consolidation.
+Manifest-only empty runs contribute no cursor.
+The directory lock permits only one SenkuReady handle.
+That handle permits only one active stream.
+Exhaustion, stream close, or ready close releases every cursor.
+An internal cursor, storage, or cleanup failure
+moves SenkuReady to ERROR.
+end note
+@enduml

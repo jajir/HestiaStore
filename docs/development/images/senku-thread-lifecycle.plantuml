@@ -1,0 +1,132 @@
+@startuml senku-thread-lifecycle
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+
+title Senku Thread Ownership and Lifecycle
+
+actor "Caller threads" as Callers
+participant "SenkuIngestor\nno owned thread" as Ingestor
+participant "Shared runtime state\nAtomicReference firstFailure\nCountDownLatch maintenanceFinished\ningestionPaused + Condition" as Runtime
+participant "Maintenance coordinator\none non-daemon scheduled thread" as Coordinator
+participant "Maintenance pool\nup to maintenanceThreads\nnon-daemon workers\nbounded FIFO queue" as Workers
+database "Committed flushes and runs" as Files
+
+note over Ingestor, Files
+There is no Senku-owned Directory call lock.
+The configured Directory must permit concurrent calls
+on independent paths. A concurrent publication may
+appear in the current or next scan.
+Returned readers and writers are thread-confined.
+end note
+
+== WRITING ==
+Callers -> Ingestor : put(key, value)
+Ingestor -> Ingestor : acquire ReentrantLock
+loop while ingestionPaused
+  Ingestor -> Runtime : awaitUninterruptibly ingestionMayProceed\nrelease writing lock
+  Runtime --> Ingestor : wake; reacquire writing lock
+end
+Ingestor -> Ingestor : get; optional merge; put
+alt map below limit
+  Ingestor --> Callers : unlock; return
+else map full
+  Ingestor -> Files : synchronously write and publish flush\nwhile holding lock
+  Ingestor --> Callers : clear map; unlock; return
+end
+
+loop once every three seconds
+  Coordinator -> Files : scan logical directory hierarchy\nread committed source manifests
+  Coordinator -> Coordinator : select bottom-up\nflush->L0, L0->L1, ...
+  Coordinator -> Coordinator : reserve exact inputs
+  Coordinator -> Coordinator : allocate output run ID
+  Coordinator -> Workers : enqueue reserved jobs\nuntil bounded FIFO queue is full
+  alt queue full and eligible work remains unqueued
+    Coordinator -> Runtime : acquire writing lock\nset ingestionPaused; unlock
+  else queue has capacity and no eligible work remains unqueued
+    Coordinator -> Runtime : acquire writing lock\nclear ingestionPaused; signalAll; unlock
+  end
+  Workers -> Files : merge; close input readers\npublish output manifest last
+  Workers --> Coordinator : immutable completed-run result
+  Coordinator -> Coordinator : accept output; replace catalog
+  Coordinator -> Files : delete replaced inputs
+end
+
+note over Coordinator, Files
+Exactly one L0 batch may be active.
+Only the coordinator owns its state; it needs no lock.
+L0 flush inputs remain reserved until every shard succeeds.
+Each worker publishes its run. The coordinator then accepts
+the complete L0 batch and deletes the shared flush inputs.
+Queued jobs are never reprioritized.
+end note
+
+== finishWriting() ==
+Callers -> Ingestor : acquire lock; leave WRITING\nclear pause; signalAll\nflush remainder; unlock
+Ingestor -> Files : publish final flush
+Ingestor -> Coordinator : enter drain mode immediately
+Ingestor -> Runtime : await maintenanceFinished\nwithout writing lock
+Coordinator -> Files : scan logical directory hierarchy immediately
+loop until one terminal run remains per configured shard
+  Coordinator -> Coordinator : on each scheduled scan,\nselect eligible known work
+  Coordinator -> Workers : submit bounded merge jobs
+  Workers -> Files : merge; close input readers\npublish output manifest last
+  Workers --> Coordinator : immutable completed-run result
+  Coordinator -> Coordinator : accept output; replace catalog
+  Coordinator -> Files : delete replaced inputs
+end
+note over Coordinator, Workers
+After completion, a worker takes the next already-queued job.
+Newly eligible work waits for the next scheduled scan.
+end note
+Coordinator -> Workers : shut down worker executor
+Coordinator -> Coordinator : shut down scheduled executor
+Coordinator -> Runtime : countDown maintenanceFinished
+Runtime --> Ingestor : wake
+Ingestor -> Coordinator : await both executor terminations
+Ingestor --> Callers : transfer same exclusive .lock\nreturn SenkuReady
+
+note over Callers, Files
+READY owns no background threads.
+READY retains the exclusive root .lock.
+openStream() runs on its caller thread.
+Terminal shard levels may differ.
+end note
+
+== First failure during WRITING or finalization ==
+alt maintenance worker reports failure
+  Workers -> Runtime : compareAndSet(null, failure)
+  Workers --> Coordinator : failure result; readers closed
+else caller-thread flush reports failure
+  Ingestor -> Runtime : compareAndSet(null, failure)
+  Ingestor -> Coordinator : wake failure handling
+  Ingestor --> Callers : release writing lock\nthrow immediately
+end
+Coordinator -> Runtime : read primary failure; enter ERROR
+Coordinator -> Runtime : acquire writing lock\nclear ingestionPaused; signalAll; unlock
+Coordinator -> Coordinator : stop scans and submissions\ndiscard unsubmitted jobs
+Coordinator -> Workers : clear queued jobs; shutdown\ndo not interrupt running jobs
+Workers -> Files : close owned resources\nperform no explicit file deletion
+Workers --> Coordinator : running jobs return
+Coordinator -> Coordinator : wait for worker termination\nno catalog or filesystem cleanup
+Coordinator -> Runtime : release exclusive root .lock
+Coordinator -> Coordinator : shut down scheduled executor
+Coordinator -> Runtime : countDown maintenanceFinished
+Runtime --> Ingestor : if finishWriting is waiting, wake
+Ingestor -> Coordinator : if finishWriting is active,\nawait both executor terminations
+Ingestor --> Callers : if finishWriting was active,\nreport generic finalization failure
+
+note over Callers, Workers
+An active put() or flush does not poll firstFailure.
+Later ingestion calls receive only a generic ERROR-state failure.
+An active finishWriting() waits without holding the writing ReentrantLock.
+It reports a generic finalization failure without the worker cause.
+If that waiting caller is interrupted, finish shutdown and restore its flag.
+Only the coordinator counts down maintenanceFinished.
+A SenkuReady in ERROR retains the root .lock until close completes.
+SenkuWriting minimal shutdown releases its root .lock after workers stop.
+The invalid directory may contain partial artifacts
+and must be deleted externally.
+end note
+@enduml
