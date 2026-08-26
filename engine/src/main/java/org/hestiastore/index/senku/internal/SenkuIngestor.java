@@ -10,7 +10,8 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.senku.SenkuMergeFunction;
 
 /**
- * Owns the single locked ingestion map and synchronous flush trigger.
+ * Owns the locked active ingestion map and rotates full maps for flushing
+ * outside the ingestion lock.
  */
 final class SenkuIngestor<K, V> {
 
@@ -19,13 +20,28 @@ final class SenkuIngestor<K, V> {
     private final SenkuMergeFunction<K, V> mergeFunction;
     private final SenkuFlushWriter<K, V> flushWriter;
     private final int maxInMemoryEntries;
-    private final Map<K, V> entries;
+    private final int initialMapCapacity;
 
+    private Map<K, V> entries;
+    private Map<K, V> flushingEntries;
+    private long flushingId;
     private long nextFlushId;
     private boolean flushIdsExhausted;
+    private boolean flushing;
     private boolean accepting = true;
     private boolean paused;
+    private IndexException flushFailure;
 
+    /**
+     * Creates an ingestor backed by one active map and at most one map being
+     * flushed.
+     *
+     * @param lock               shared writing lifecycle lock
+     * @param mergeFunction      duplicate-key merge function
+     * @param flushWriter        persistent flush writer
+     * @param maxInMemoryEntries maximum distinct keys per map
+     * @param initialMapCapacity initial capacity of each rotated map
+     */
     SenkuIngestor(final ReentrantLock lock,
             final SenkuMergeFunction<K, V> mergeFunction,
             final SenkuFlushWriter<K, V> flushWriter,
@@ -37,44 +53,119 @@ final class SenkuIngestor<K, V> {
         this.flushWriter = Vldtn.requireNonNull(flushWriter, "flushWriter");
         this.maxInMemoryEntries = Vldtn.requireGreaterThanZero(
                 maxInMemoryEntries, "maxInMemoryEntries");
-        this.entries = new HashMap<>(Vldtn.requireGreaterThanZero(
-                initialMapCapacity, "initialMapCapacity"));
+        this.initialMapCapacity = Vldtn.requireGreaterThanZero(
+                initialMapCapacity, "initialMapCapacity");
+        this.entries = new HashMap<>(this.initialMapCapacity);
     }
 
+    /**
+     * Adds or merges an entry and writes a claimed full map without holding the
+     * ingestion lock.
+     *
+     * @param key   non-null key
+     * @param value non-null value
+     */
     void put(final K key, final V value) {
+        final boolean flush;
         lock.lock();
         try {
-            while (paused && accepting) {
-                ingestionMayProceed.awaitUninterruptibly();
-            }
-            if (!accepting) {
-                throw new IndexException("Senku index no longer accepts writes.");
-            }
-            final K validatedKey = Vldtn.requireNonNull(key, "key");
-            final V validatedValue = Vldtn.requireNonNull(value, "value");
-            final V current = entries.get(validatedKey);
-            final V stored = current == null ? validatedValue
-                    : merge(validatedKey, current, validatedValue);
-            entries.put(validatedKey, stored);
-            if (entries.size() == maxInMemoryEntries) {
-                flushLocked();
-            }
+            flush = putLocked(key, value);
         } finally {
             lock.unlock();
         }
+        if (flush) {
+            flushClaimed();
+        }
     }
 
+    /**
+     * Adds or merges an entry while the caller holds the ingestion lock.
+     *
+     * @param key   non-null key
+     * @param value non-null value
+     * @return true when the caller claimed responsibility for flushing a full
+     *         rotated map
+     */
+    boolean putLocked(final K key, final V value) {
+        while ((paused || flushing && entries.size() == maxInMemoryEntries)
+                && accepting) {
+            ingestionMayProceed.awaitUninterruptibly();
+        }
+        requireAcceptingLocked();
+        final K validatedKey = Vldtn.requireNonNull(key, "key");
+        final V validatedValue = Vldtn.requireNonNull(value, "value");
+        final V current = entries.get(validatedKey);
+        final V stored = current == null ? validatedValue
+                : merge(validatedKey, current, validatedValue);
+        entries.put(validatedKey, stored);
+        if (entries.size() == maxInMemoryEntries && !flushing) {
+            claimFlushLocked();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Flushes a previously claimed map and any next map filled while that I/O
+     * was running.
+     */
+    void flushClaimed() {
+        while (true) {
+            final Map<K, V> batch;
+            final long generation;
+            lock.lock();
+            try {
+                batch = flushingEntries;
+                generation = flushingId;
+            } finally {
+                lock.unlock();
+            }
+            try {
+                flushWriter.write(generation, batch);
+            } catch (IndexException e) {
+                recordFlushFailure(e);
+                throw e;
+            }
+
+            lock.lock();
+            try {
+                advanceFlushIdLocked();
+                if (accepting && entries.size() == maxInMemoryEntries) {
+                    try {
+                        claimNextFlushLocked();
+                    } catch (IndexException e) {
+                        recordFlushFailureLocked(e);
+                        throw e;
+                    }
+                    ingestionMayProceed.signalAll();
+                } else {
+                    finishFlushLocked();
+                    return;
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    /**
+     * Flushes the current partial map after any in-progress flush completes.
+     *
+     * @return true when a map was published
+     */
     boolean flushRemaining() {
         lock.lock();
         try {
+            awaitFlushLocked();
             if (entries.isEmpty()) {
                 return false;
             }
-            flushLocked();
-            return true;
+            claimFlushLocked();
         } finally {
             lock.unlock();
         }
+        flushClaimed();
+        return true;
     }
 
     /**
@@ -103,20 +194,20 @@ final class SenkuIngestor<K, V> {
     boolean stopAcceptingAndFlush() {
         lock.lock();
         try {
-            if (!accepting) {
-                throw new IndexException("Senku index no longer accepts writes.");
-            }
+            requireAcceptingLocked();
             accepting = false;
             paused = false;
             ingestionMayProceed.signalAll();
+            awaitFlushLocked();
             if (entries.isEmpty()) {
                 return false;
             }
-            flushLocked();
-            return true;
+            claimFlushLocked();
         } finally {
             lock.unlock();
         }
+        flushClaimed();
+        return true;
     }
 
     /**
@@ -163,16 +254,65 @@ final class SenkuIngestor<K, V> {
         }
     }
 
-    private void flushLocked() {
+    private void awaitFlushLocked() {
+        while (flushing) {
+            ingestionMayProceed.awaitUninterruptibly();
+        }
+        if (flushFailure != null) {
+            throw flushFailure;
+        }
+    }
+
+    private void requireAcceptingLocked() {
+        if (flushFailure != null) {
+            throw flushFailure;
+        }
+        if (!accepting) {
+            throw new IndexException("Senku index no longer accepts writes.");
+        }
+    }
+
+    private void claimFlushLocked() {
+        claimNextFlushLocked();
+        flushing = true;
+    }
+
+    private void claimNextFlushLocked() {
         if (flushIdsExhausted) {
             throw new IndexException("Senku flush ID sequence is exhausted.");
         }
-        flushWriter.write(nextFlushId, entries);
-        entries.clear();
+        flushingEntries = entries;
+        flushingId = nextFlushId;
+        entries = new HashMap<>(initialMapCapacity);
+    }
+
+    private void advanceFlushIdLocked() {
         if (nextFlushId == Long.MAX_VALUE) {
             flushIdsExhausted = true;
         } else {
             nextFlushId++;
         }
+    }
+
+    private void finishFlushLocked() {
+        flushing = false;
+        flushingEntries = null;
+        ingestionMayProceed.signalAll();
+    }
+
+    private void recordFlushFailure(final IndexException failure) {
+        lock.lock();
+        try {
+            recordFlushFailureLocked(failure);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void recordFlushFailureLocked(final IndexException failure) {
+        flushFailure = failure;
+        accepting = false;
+        paused = false;
+        finishFlushLocked();
     }
 }

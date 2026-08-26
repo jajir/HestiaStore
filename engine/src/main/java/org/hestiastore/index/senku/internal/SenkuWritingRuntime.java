@@ -46,6 +46,7 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
 
     private volatile SenkuWritingState state = SenkuWritingState.WRITING;
     private volatile SenkuReadyRuntime<K, V> ready;
+    private boolean finishRequested;
     private ScheduledFuture<?> periodicScan;
 
     SenkuWritingRuntime(final Directory rootDirectory,
@@ -88,21 +89,36 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
                 TimeUnit.SECONDS);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void put(final K key, final V value) {
         IndexException failure = null;
+        boolean flush = false;
         writingLock.lock();
         try {
             Vldtn.requireNonNull(key, "key");
             Vldtn.requireNonNull(value, "value");
             requireWriting("put");
             try {
-                ingestor.put(key, value);
+                flush = ingestor.putLocked(key, value);
             } catch (IndexException e) {
-                failure = e;
+                if (finishRequested || state != SenkuWritingState.WRITING) {
+                    requireWriting("put");
+                } else {
+                    failure = e;
+                }
             }
         } finally {
             writingLock.unlock();
+        }
+        if (failure == null && flush) {
+            try {
+                ingestor.flushClaimed();
+            } catch (IndexException e) {
+                failure = e;
+            }
         }
         if (failure != null) {
             reportCallerFailure(failure);
@@ -110,12 +126,16 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SenkuReady<K, V> finishWriting() {
         IndexException callerFailure = null;
         writingLock.lock();
         try {
             requireWriting("finishWriting");
+            finishRequested = true;
             try {
                 ingestor.stopAcceptingAndFlush();
                 state = SenkuWritingState.FINISHING;
@@ -290,9 +310,13 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
     }
 
     private void requireWriting(final String operation) {
-        if (state != SenkuWritingState.WRITING) {
+        if (finishRequested || state != SenkuWritingState.WRITING) {
+            final SenkuWritingState current = finishRequested
+                    && state == SenkuWritingState.WRITING
+                            ? SenkuWritingState.FINISHING
+                            : state;
             throw new IndexException("Senku " + operation
-                    + " is not allowed in state " + state + ".");
+                    + " is not allowed in state " + current + ".");
         }
     }
 
