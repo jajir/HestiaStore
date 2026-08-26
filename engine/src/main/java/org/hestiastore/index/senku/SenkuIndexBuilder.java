@@ -74,8 +74,9 @@ public final class SenkuIndexBuilder<K, V> {
     }
 
     /**
-     * Sets the distinct-key count per ingestion map that triggers a synchronous
-     * flush. During a flush, one additional map can be populated.
+     * Sets the approximate distinct-key count per striped ingestion batch that
+     * triggers a synchronous flush. During a flush, one additional batch can
+     * be populated.
      *
      * @param value in-memory entry limit
      * @return this builder

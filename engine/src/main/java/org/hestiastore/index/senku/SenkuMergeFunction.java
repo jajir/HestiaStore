@@ -3,7 +3,8 @@ package org.hestiastore.index.senku;
 /**
  * Reduces two values written for the same key to one value.
  * <p>
- * Senku does not preserve write order. Implementations must therefore be fast,
+ * Senku does not preserve write order and may invoke one instance concurrently
+ * for different keys. Implementations must therefore be thread-safe, fast,
  * associative, commutative, and free of interaction with external state.
  *
  * @param <K> key type

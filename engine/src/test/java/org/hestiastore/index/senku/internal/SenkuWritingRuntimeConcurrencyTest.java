@@ -31,6 +31,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
+import org.hestiastore.index.senku.SenkuMergeFunction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,9 +75,16 @@ class SenkuWritingRuntimeConcurrencyTest {
         flushStarted = new CountDownLatch(1);
         releaseFlush = new CountDownLatch(1);
         callers = Executors.newFixedThreadPool(2);
+        createRuntime((key, first, second) -> first + second, 2);
+    }
+
+    private void createRuntime(
+            final SenkuMergeFunction<Integer, Long> mergeFunction,
+            final int maxInMemoryEntries) {
         final ReentrantLock writingLock = new ReentrantLock();
-        ingestor = new SenkuIngestor<>(writingLock,
-                (key, first, second) -> first + second, flushWriter, 2, 4);
+        ingestor = new SenkuIngestor<>(new ReentrantLock(), mergeFunction,
+                flushWriter, maxInMemoryEntries,
+                maxInMemoryEntries * 2);
         writing = new SenkuWritingRuntime<>(rootDirectory,
                 new TypeDescriptorInteger(), new TypeDescriptorLong(),
                 DATA_BLOCK_SIZE, 1, fileLock, writingLock, ingestor,
@@ -92,7 +100,8 @@ class SenkuWritingRuntimeConcurrencyTest {
     }
 
     @Test
-    void nextRuntimePutCompletesWhileFullMapFlushIsBlocked() throws Exception {
+    void runtimeAcceptsOneActiveMapDuringFlushThenAppliesBackpressure()
+            throws Exception {
         stubBlockingFlush();
         writing.put(1, 1L);
         final Future<?> firstFlush = callers.submit(() -> writing.put(2, 2L));
@@ -104,8 +113,15 @@ class SenkuWritingRuntimeConcurrencyTest {
             final Future<?> fillsNextMap = callers
                     .submit(() -> writing.put(4, 4L));
             fillsNextMap.get(1, TimeUnit.SECONDS);
+            final Future<?> blockedByFullNextMap = callers
+                    .submit(() -> writing.put(5, 5L));
 
             assertEquals(2, ingestor.size());
+            assertThrows(TimeoutException.class,
+                    () -> blockedByFullNextMap.get(50,
+                            TimeUnit.MILLISECONDS));
+            releaseFlush.countDown();
+            blockedByFullNextMap.get(5, TimeUnit.SECONDS);
         } finally {
             releaseFlush.countDown();
         }
@@ -115,6 +131,41 @@ class SenkuWritingRuntimeConcurrencyTest {
         assertEquals(List.of(Map.of(1, 1L, 2, 2L),
                 Map.of(3, 3L, 4, 4L)), batches);
         verify(flushWriter, times(2)).write(anyLong(), anyMap());
+    }
+
+    @Test
+    void runtimePutsForDistinctKeysMutateConcurrently() throws Exception {
+        final CountDownLatch mergesEntered = new CountDownLatch(2);
+        final CountDownLatch releaseMerges = new CountDownLatch(1);
+        createRuntime((key, first, second) -> {
+            mergesEntered.countDown();
+            try {
+                if (!releaseMerges.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException(
+                            "Timed out waiting for concurrent runtime merge.");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(
+                        "Concurrent runtime merge was interrupted.", e);
+            }
+            return first + second;
+        }, 10);
+        writing.put(1, 1L);
+        writing.put(2, 1L);
+        try {
+            final Future<?> first = callers.submit(() -> writing.put(1, 1L));
+            final Future<?> second = callers.submit(() -> writing.put(2, 1L));
+
+            assertTrue(mergesEntered.await(1, TimeUnit.SECONDS));
+            releaseMerges.countDown();
+            first.get(5, TimeUnit.SECONDS);
+            second.get(5, TimeUnit.SECONDS);
+        } finally {
+            releaseMerges.countDown();
+        }
+
+        assertEquals(2, ingestor.size());
     }
 
     @Test

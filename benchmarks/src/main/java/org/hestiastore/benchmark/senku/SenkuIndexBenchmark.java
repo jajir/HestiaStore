@@ -1,7 +1,6 @@
 package org.hestiastore.benchmark.senku;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
@@ -26,6 +25,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.ThreadParams;
 
 /**
  * Measures the six first-version Senku performance boundaries through its
@@ -39,14 +39,19 @@ public class SenkuIndexBenchmark {
     /**
      * Measures lock-protected ingestion before finalization.
      *
-     * @param state benchmark index
+     * @param state       benchmark index
+     * @param threadState disjoint per-thread key sequence
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
+    @Warmup(iterations = 3, time = 40, timeUnit = TimeUnit.MILLISECONDS)
+    @Measurement(iterations = 7, time = 40,
+            timeUnit = TimeUnit.MILLISECONDS)
     @Threads(4)
-    public void ingest(final IngestState state) {
-        state.put();
+    public void ingest(final IngestState state,
+            final IngestThreadState threadState) {
+        state.put(threadState.nextKey());
     }
 
     /**
@@ -139,7 +144,6 @@ public class SenkuIndexBenchmark {
     @State(Scope.Benchmark)
     public static class IngestState {
 
-        private final AtomicInteger sequence = new AtomicInteger();
         private SenkuWriting<Integer, Long> writing;
 
         /**
@@ -153,9 +157,10 @@ public class SenkuIndexBenchmark {
 
         /**
          * Adds one unique entry.
+         *
+         * @param key unique key assigned to the calling benchmark thread
          */
-        public void put() {
-            final int key = sequence.getAndIncrement();
+        public void put(final int key) {
             writing.put(Integer.valueOf(key), Long.valueOf(key));
         }
 
@@ -166,7 +171,39 @@ public class SenkuIndexBenchmark {
         public void tearDown() {
             close(writing.finishWriting());
             writing = null;
-            sequence.set(0);
+        }
+    }
+
+    /**
+     * Per-thread disjoint key sequence that avoids benchmarking a shared key
+     * counter instead of concurrent Senku ingestion.
+     */
+    @State(Scope.Thread)
+    public static class IngestThreadState {
+
+        private int nextKey;
+        private int stride = 1;
+
+        /**
+         * Assigns one interleaved key sequence to each benchmark thread.
+         *
+         * @param threadParams JMH thread identity and group size
+         */
+        @Setup(Level.Iteration)
+        public void setup(final ThreadParams threadParams) {
+            nextKey = threadParams.getThreadIndex();
+            stride = threadParams.getThreadCount();
+        }
+
+        /**
+         * Returns the next key assigned to this benchmark thread.
+         *
+         * @return next unique key
+         */
+        int nextKey() {
+            final int key = nextKey;
+            nextKey += stride;
+            return key;
         }
     }
 

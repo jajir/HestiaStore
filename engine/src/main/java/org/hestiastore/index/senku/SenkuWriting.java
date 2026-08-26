@@ -3,10 +3,11 @@ package org.hestiastore.index.senku;
 /**
  * Write-only Senku lifecycle handle.
  * <p>
- * The handle is thread-safe. Concurrent calls may overlap while full maps are
- * flushed, and duplicate values are reduced without preserving their write
- * order. It deliberately has no close or abort operation; writing ends only
- * through {@link #finishWriting()}.
+ * The handle is thread-safe. Concurrent puts may mutate distinct keys in
+ * parallel and may overlap while full maps are flushed. Duplicate values for
+ * one key are reduced atomically without preserving their write order. It
+ * deliberately has no close or abort operation; writing ends only through
+ * {@link #finishWriting()}.
  *
  * @param <K> key type
  * @param <V> value type

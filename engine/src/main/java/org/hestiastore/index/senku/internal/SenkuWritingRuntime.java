@@ -46,7 +46,7 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
 
     private volatile SenkuWritingState state = SenkuWritingState.WRITING;
     private volatile SenkuReadyRuntime<K, V> ready;
-    private boolean finishRequested;
+    private volatile boolean finishRequested;
     private ScheduledFuture<?> periodicScan;
 
     SenkuWritingRuntime(final Directory rootDirectory,
@@ -94,35 +94,17 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
      */
     @Override
     public void put(final K key, final V value) {
-        IndexException failure = null;
-        boolean flush = false;
-        writingLock.lock();
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(value, "value");
+        requireWriting("put");
         try {
-            Vldtn.requireNonNull(key, "key");
-            Vldtn.requireNonNull(value, "value");
-            requireWriting("put");
-            try {
-                flush = ingestor.putLocked(key, value);
-            } catch (IndexException e) {
-                if (finishRequested || state != SenkuWritingState.WRITING) {
-                    requireWriting("put");
-                } else {
-                    failure = e;
-                }
+            ingestor.put(key, value);
+        } catch (IndexException e) {
+            if (finishRequested || state != SenkuWritingState.WRITING) {
+                requireWriting("put");
             }
-        } finally {
-            writingLock.unlock();
-        }
-        if (failure == null && flush) {
-            try {
-                ingestor.flushClaimed();
-            } catch (IndexException e) {
-                failure = e;
-            }
-        }
-        if (failure != null) {
-            reportCallerFailure(failure);
-            throw failure;
+            reportCallerFailure(e);
+            throw e;
         }
     }
 

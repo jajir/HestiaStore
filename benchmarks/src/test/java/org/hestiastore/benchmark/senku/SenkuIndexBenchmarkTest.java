@@ -28,10 +28,19 @@ class SenkuIndexBenchmarkTest {
         assertDoesNotThrow(() -> {
             state.setup();
             for (int key = 0; key < 20; key++) {
-                benchmark.ingest(state);
+                state.put(key);
             }
             state.tearDown();
         });
+    }
+
+    @Test
+    void ingestionThreadStateDefaultsToUniqueSequentialKeys() {
+        final SenkuIndexBenchmark.IngestThreadState state =
+                new SenkuIndexBenchmark.IngestThreadState();
+
+        assertEquals(0, state.nextKey());
+        assertEquals(1, state.nextKey());
     }
 
     @Test

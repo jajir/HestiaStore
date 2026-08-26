@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -117,7 +118,7 @@ class SenkuIngestorTest {
     }
 
     @Test
-    void concurrentPutsAreSerializedWithoutLostMerges()
+    void concurrentPutsDoNotLoseMerges()
             throws InterruptedException {
         final int threadCount = 4;
         final int keyCount = 100;
@@ -158,6 +159,97 @@ class SenkuIngestorTest {
             expected.add(Entry.of(key, (long) threadCount));
         }
         assertEquals(expected, actual);
+    }
+
+    @Test
+    void concurrentUniquePutsSurviveRepeatedRotations()
+            throws InterruptedException {
+        final int threadCount = 4;
+        final int keysPerThread = 64;
+        final SenkuIngestor<Integer, Long> ingestor = newIngestor(16,
+                (key, first, second) -> first + second);
+        final CountDownLatch start = new CountDownLatch(1);
+        final CountDownLatch done = new CountDownLatch(threadCount);
+        final ExecutorService executor = Executors
+                .newFixedThreadPool(threadCount);
+        try {
+            for (int thread = 0; thread < threadCount; thread++) {
+                final int firstKey = thread * keysPerThread;
+                executor.execute(() -> {
+                    try {
+                        start.await();
+                        for (int offset = 0; offset < keysPerThread; offset++) {
+                            ingestor.put(firstKey + offset, 1L);
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        done.countDown();
+                    }
+                });
+            }
+            start.countDown();
+            assertTrue(done.await(10, TimeUnit.SECONDS));
+        } finally {
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
+
+        ingestor.stopAcceptingAndFlush();
+        final int generationCount = names().size();
+        assertTrue(generationCount > 1);
+        final List<Entry<Integer, Long>> actual = new ArrayList<>();
+        for (long generation = 0; generation < generationCount; generation++) {
+            actual.addAll(readShard(flushDirectory, generation, 0, 1, 10L));
+        }
+        actual.sort(Comparator.comparing(Entry::getKey));
+        final List<Entry<Integer, Long>> expected = new ArrayList<>();
+        for (int key = 0; key < threadCount * keysPerThread; key++) {
+            expected.add(Entry.of(key, 1L));
+        }
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void distinctKeyMergesRunConcurrently() throws Exception {
+        final CountDownLatch mergesEntered = new CountDownLatch(2);
+        final CountDownLatch releaseMerges = new CountDownLatch(1);
+        final SenkuIngestor<Integer, Long> ingestor = newIngestor(10,
+                (key, first, second) -> {
+                    mergesEntered.countDown();
+                    try {
+                        if (!releaseMerges.await(5, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException(
+                                    "Timed out waiting for concurrent merge.");
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(
+                                "Concurrent merge was interrupted.", e);
+                    }
+                    return first + second;
+                });
+        ingestor.put(1, 1L);
+        ingestor.put(2, 1L);
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            final Future<?> first = executor.submit(() -> ingestor.put(1, 1L));
+            final Future<?> second = executor.submit(() -> ingestor.put(2, 1L));
+
+            assertTrue(mergesEntered.await(1, TimeUnit.SECONDS));
+            releaseMerges.countDown();
+            first.get(5, TimeUnit.SECONDS);
+            second.get(5, TimeUnit.SECONDS);
+        } finally {
+            releaseMerges.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
+        }
+
+        assertEquals(2, ingestor.size());
+        assertTrue(ingestor.flushRemaining());
+        assertEquals(List.of(Entry.of(1, 2L), Entry.of(2, 2L)),
+                readShard(flushDirectory, 0L, 0, 1, 10L));
     }
 
     @Test
