@@ -1,0 +1,45 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.index.segment.SegmentMergeSequentialBenchmark.mergeSequential
+# Parameters: (keyCount = 32768)
+
+# Run progress: 0.00% complete, ETA 00:00:04
+# Fork: 1 of 1
+# Warmup Iteration   1: 276.148 us/op
+Iteration   1: 267.642 us/op
+Iteration   2: 276.166 us/op
+Iteration   3: 276.269 us/op
+
+
+Result "org.hestiastore.index.segment.SegmentMergeSequentialBenchmark.mergeSequential":
+  273.359 ±(99.9%) 90.331 us/op [Average]
+  (min, avg, max) = (267.642, 273.359, 276.269), stdev = 4.951
+  CI (99.9%): [183.028, 363.689] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:04
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                        (keyCount)  Mode  Cnt    Score    Error  Units
+SegmentMergeSequentialBenchmark.mergeSequential       32768  avgt    3  273.359 ± 90.331  us/op
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-merge-sequential.json
