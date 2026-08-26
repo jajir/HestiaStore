@@ -2,6 +2,7 @@ package org.hestiastore.index.senku;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -163,14 +164,19 @@ class SenkuIndexConcurrencyIT {
 
     @Test
     void backgroundMergeFailureStopsEveryOwnedThread() {
+        final IllegalStateException cause = new IllegalStateException(
+                "injected merge failure");
         final SenkuWriting<Integer, Long> writing = writing(new MemDirectory(),
                 1, 1, 2, 1, 1, (key, first, second) -> {
-                    throw new IllegalStateException("injected merge failure");
+                    throw cause;
                 });
         writing.put(1, 1L);
         writing.put(1, 2L);
 
-        assertThrows(IndexException.class, writing::finishWriting);
+        final IndexException thrown = assertThrows(IndexException.class,
+                writing::finishWriting);
+        assertEquals("Unable to merge sorted entries.", thrown.getMessage());
+        assertSame(cause, thrown.getCause());
         assertThrows(IndexException.class, () -> writing.put(2, 2L));
         assertNoSenkuThreads();
     }

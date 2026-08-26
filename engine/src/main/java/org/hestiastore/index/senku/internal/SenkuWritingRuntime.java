@@ -133,10 +133,25 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
         }
         awaitMaintenanceFinished();
         awaitControlTermination();
-        if (firstFailure.get() != null || ready == null) {
+        return completedResult();
+    }
+
+    /**
+     * Returns the transferred ready handle or rethrows the recorded first
+     * failure without replacing its cause chain.
+     *
+     * @return transferred ready handle
+     */
+    SenkuReady<K, V> completedResult() {
+        final IndexException failure = firstFailure.get();
+        if (failure != null) {
+            throw failure;
+        }
+        final SenkuReady<K, V> completed = ready;
+        if (completed == null) {
             throw new IndexException("Unable to finish Senku writing.");
         }
-        return ready;
+        return completed;
     }
 
     /**
