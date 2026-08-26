@@ -271,9 +271,9 @@ failure in a maintenance worker is reported only to the coordinator, which
 stops new maintenance submission and eventually moves the writing runtime to
 `ERROR`. A running `put()` or synchronous flush does not poll for that failure
 and may complete before the coordinator acquires the writing lock. A waiting
-`finishWriting()` reports only a generic finalization failure without the worker
-exception or cause. Returning null has the same effect; null is never
-interpreted as deletion.
+`finishWriting()` rethrows the recorded first failure with its original cause
+chain. Returning null has the same effect; null is never interpreted as
+deletion.
 
 Senku does not interpret `TypeDescriptor.getTombstone()` and has no tombstone
 semantics. A non-null value equal to the descriptor's tombstone is stored,
@@ -408,13 +408,18 @@ without affecting the ready handle. It exposes no cleanup operation after
 transfer. Repeated `SenkuReady.close()` is harmless.
 
 `finishWriting()` blocks until finalization succeeds or fails. Internally it
-acquires the same writing lock as `put()`, prevents further puts, and flushes
-the remaining map. It then releases that lock before draining all remaining
-flush generations into shard runs, consolidating every configured shard to
-exactly one terminal sorted run, and publishing `ready.properties` with the
-structural shard count. This can read and rewrite substantial data and
-therefore delays the first sorted result. This internal finalization phase is
-not a public state. Failure moves the writing handle directly to `ERROR`.
+acquires the same writing lock as `put()` and flushes the remaining map while
+the lifecycle remains `WRITING`. Holding the lock prevents another caller from
+entering `put()` during that synchronous publication. Only after the final
+flush manifest is committed does the runtime transition to `FINISHING` and
+release the lock. The coordinator can then drain all remaining flush
+generations into shard runs, consolidate every configured shard to exactly one
+terminal sorted run, and publish `ready.properties` with the structural shard
+count. This ordering prevents a periodic coordinator scan from entering drain
+mode while the final flush is present but not yet visible through its manifest.
+The finalization work can read and rewrite substantial data and therefore
+delays the first sorted result. Failure moves the writing handle directly to
+`ERROR`.
 
 The first `finishWriting()` caller that acquires the lock owns that terminal
 attempt. It records that admission is closed before releasing the lock.
@@ -1572,12 +1577,14 @@ runs, and return immutable completion results. The coordinator changes catalog
 membership and eagerly deletes replaced inputs using the L0 batch barrier
 described above.
 
-`finishWriting()` acquires the writing lock, prevents later puts, clears any
-backpressure pause, signals all waiting put callers, and asks `SenkuIngestor` to
-flush the remaining map synchronously. Awakened puts observe that writing has
-ended and fail the lifecycle check without changing the map. `finishWriting()`
-then releases the lock, wakes the coordinator immediately, and switches it to
-drain mode. Drain mode
+`finishWriting()` acquires the writing lock, clears any backpressure pause,
+signals waiting put callers, and asks `SenkuIngestor` to flush the remaining map
+synchronously. The lifecycle stays `WRITING` during that publication, but
+awakened puts cannot acquire the still-held lock. After the committed flush
+manifest is visible, `finishWriting()` changes the lifecycle to `FINISHING`,
+releases the lock, wakes the coordinator immediately, and switches it to drain
+mode. Awakened puts then acquire the lock, observe that writing has ended, and
+fail the lifecycle check without changing the map. Drain mode
 bypasses the normal three-second delay and starts with one immediate logical-
 hierarchy scan. Later job completions process their results and release their
 reservations but do not perform another eligibility pass. An available worker
@@ -1599,10 +1606,10 @@ reacquire the root `FileLock`; `finishWriting()` transfers that same lock to the
 returned `SenkuReady` handle, which retains it until `close()`. On failure the
 coordinator attempts the exceptional lock release before completing the latch.
 A `finishWriting()` caller waits for both maintenance executors to terminate,
-then checks whether finalization succeeded. A failed drain produces a generic
-`IndexException` without the background worker exception or cause. A background
-failure with no waiting caller still performs minimal thread shutdown and
-completes the latch.
+then checks whether finalization succeeded. A failed drain rethrows the recorded
+first `IndexException` without replacing its cause chain. A background failure
+with no waiting caller still performs minimal thread shutdown and completes the
+latch.
 
 `put()` and its synchronous flush path never read `firstFailure` and never wait
 on `maintenanceFinished`. If they already hold the writing lock when a

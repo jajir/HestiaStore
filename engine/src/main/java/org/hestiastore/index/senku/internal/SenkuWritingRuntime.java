@@ -116,9 +116,9 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
         writingLock.lock();
         try {
             requireWriting("finishWriting");
-            state = SenkuWritingState.FINISHING;
             try {
                 ingestor.stopAcceptingAndFlush();
+                state = SenkuWritingState.FINISHING;
             } catch (IndexException e) {
                 callerFailure = e;
                 state = SenkuWritingState.ERROR;

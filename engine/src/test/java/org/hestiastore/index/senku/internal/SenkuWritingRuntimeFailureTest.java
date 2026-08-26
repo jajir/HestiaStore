@@ -3,6 +3,7 @@ package org.hestiastore.index.senku.internal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
@@ -80,6 +81,21 @@ class SenkuWritingRuntimeFailureTest {
 
         assertSame(expected, thrown);
         assertSame(cause, thrown.getCause());
+    }
+
+    @Test
+    void finishDoesNotExposeDrainModeBeforeFlushPublication() {
+        final IndexException expected = new IndexException(
+                "Unable to publish final flush.");
+        doAnswer(invocation -> {
+            assertEquals(SenkuWritingState.WRITING, writing.state());
+            throw expected;
+        }).when(ingestor).stopAcceptingAndFlush();
+
+        final IndexException thrown = assertThrows(IndexException.class,
+                writing::finishWriting);
+
+        assertSame(expected, thrown);
     }
 
     @Test
