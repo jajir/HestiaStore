@@ -180,7 +180,7 @@ public class SenkuParallelIngestionBenchmark {
      * @param sequence non-negative unique sequence
      * @return unique biased bit-board key
      */
-    static long biasedBoardKey(final long sequence) {
+    public static long biasedBoardKey(final long sequence) {
         final long pattern = sequence & 0x07ff_ffffL;
         final int lowFive = (int) pattern & 31;
         final int hash = lowFive | (int) (pattern >>> 5 & 0x7ff) << 5

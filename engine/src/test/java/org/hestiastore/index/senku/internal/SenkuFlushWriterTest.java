@@ -5,6 +5,7 @@ import static org.hestiastore.index.senku.internal.SenkuFlushTestSupport.readSha
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +111,28 @@ class SenkuFlushWriterTest {
                 readShard(flushDirectory, 0L, 0, 2, 10L));
         assertEquals(List.of(Entry.of(1, 10L), Entry.of(7, 70L)),
                 readShard(flushDirectory, 0L, 1, 2, 10L));
+    }
+
+    @Test
+    void writeSortsLargeShardRanges() {
+        final int entryCount = 8_192;
+        final int shardCount = 8;
+        final Map<Integer, Long> entries = new HashMap<>();
+        for (int key = entryCount - 1; key >= 0; key--) {
+            entries.put(key, (long) key);
+        }
+
+        newWriter(value -> value, shardCount, 2_048, entryCount).write(0L,
+                List.of(entries));
+
+        for (int shardId = 0; shardId < shardCount; shardId++) {
+            final List<Entry<Integer, Long>> expected = new ArrayList<>();
+            for (int key = shardId; key < entryCount; key += shardCount) {
+                expected.add(Entry.of(key, (long) key));
+            }
+            assertEquals(expected, readShard(flushDirectory, 0L, shardId,
+                    shardCount, entryCount));
+        }
     }
 
     private SenkuFlushWriter<Integer, Long> newWriter(

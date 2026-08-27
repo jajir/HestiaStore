@@ -1,0 +1,21 @@
+{
+  "profile": "senku-ingestion-map-baseline",
+  "description": "Bounded current HashMap ingestion baseline with collision-heavy, bit-board, and randomized Long keys.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuIngestionMapBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "senku-ingestion-map-baseline",
+      "include": "org.hestiastore.index.senku.internal.SenkuIngestionMapBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.senku.internal.SenkuIngestionMapBenchmark.buildUniqueEntries",
+        "org.hestiastore.index.senku.internal.SenkuIngestionMapBenchmark.updateExistingEntry"
+      ],
+      "expectedResultCount": 6,
+      "args": [
+        "-prof", "gc"
+      ]
+    }
+  ]
+}

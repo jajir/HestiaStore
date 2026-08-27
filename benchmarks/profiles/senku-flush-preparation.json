@@ -1,0 +1,25 @@
+{
+  "profile": "senku-flush-preparation",
+  "description": "Senku flush partitioning and sorting strategies without filesystem or page-encoding cost.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/benchmark/senku/SenkuFlushPreparationBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "senku-flush-preparation",
+      "include": "org.hestiastore.benchmark.senku.SenkuFlushPreparationBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.senku.SenkuFlushPreparationBenchmark.buildMutationStripeMaps",
+        "org.hestiastore.benchmark.senku.SenkuFlushPreparationBenchmark.buildPersistentShardMaps",
+        "org.hestiastore.benchmark.senku.SenkuFlushPreparationBenchmark.concurrentShardSort",
+        "org.hestiastore.benchmark.senku.SenkuFlushPreparationBenchmark.currentSingleArray",
+        "org.hestiastore.benchmark.senku.SenkuFlushPreparationBenchmark.perShardArrays",
+        "org.hestiastore.benchmark.senku.SenkuFlushPreparationBenchmark.prepartitionedShardMaps"
+      ],
+      "expectedResultCount": 6,
+      "args": [
+        "-prof", "gc"
+      ]
+    }
+  ]
+}

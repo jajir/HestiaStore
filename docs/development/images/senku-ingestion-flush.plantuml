@@ -11,7 +11,7 @@ title Senku Ingestion and Sharded Flush Directories
 actor "Concurrent callers" as Callers
 component "SenkuIngestor\n\n32 active HashMap<K,V> stripes\n32 independent mutation locks\napproximate sampled count" as Ingestor
 component "Atomic rotation\nunder all mutation locks\n\n1. detach the active striped batch\n2. install 32 new active maps\n3. release mutation locks" as Rotation
-component "Detached batch flush outside mutation locks\nwithout copying map nodes\n\n1. traverse detached maps directly\n2. count records per persistent shard\n3. place entry references in shard ranges\n4. sort each shard range by key\n5. write parts and shard-start index\n6. publish manifest.properties last" as Flush
+component "Detached batch flush outside mutation locks\nwithout copying map nodes\n\n1. traverse detached maps directly\n2. count records per persistent shard\n3. place entry references in shard ranges\n4. sort large multi-shard batches concurrently\n5. write parts and shard-start index\n6. publish manifest.properties last" as Flush
 
 frame "Committed staging directories" {
   folder "flush/flush-00001/\n\nmanifest.properties\nshard-index.dat\npart-00000.chunk\npart-00001.chunk\n\nscarce shard-start index [m]\nS000: shard ID, start, record count\nS001: shard ID, start, record count\n..." as Flush1

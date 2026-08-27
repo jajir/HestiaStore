@@ -540,7 +540,12 @@ the detached maps and computes the start offset of each shard in one reference
 array. A second traversal places each existing `Map.Entry<K, V>` reference into
 its contiguous shard range. It does not construct an aggregate `HashMap` or
 allocate another map node per entry. Each range is sorted independently by the
-configured key comparator and written into a `flush/flush-N/` directory.
+configured key comparator. For a detached batch of at least 8,192 entries with
+more than one shard, the ranges are sorted concurrently on the JVM common
+fork-join pool when that pool has parallelism available. Smaller batches and
+single-shard indexes sort serially. Page encoding and directory writes remain
+sequential on the flushing caller and publish into a `flush/flush-N/`
+directory.
 A page never contains entries from two shards: the writer closes the current
 page when it reaches `maxKeysPerPage` or at every non-empty shard boundary,
 whichever comes first. Every page starts with fresh differential-key state so
@@ -552,11 +557,12 @@ No maintenance thread reads or controls active or detached ingestion maps.
 
 During a flush, memory can contain one active striped batch, one detached
 striped batch, one reference per detached entry, and `O(shardCount)` counts and
-offsets. Sorting one shard range at a time adds only that sort's temporary
-workspace; Senku creates no wrapper object per entry. The two detached-map
-traversals compute the configured shard hash twice, which avoids retaining one
-shard ID per entry. The physical pages store only key and value because the
-shard-start index already defines their boundaries.
+offsets. Concurrent range sorting can temporarily retain sort workspaces for
+several shards, bounded in aggregate by `O(entryCount)`. Senku creates no
+wrapper object per encoded entry. The two detached-map traversals compute the
+configured shard hash twice, which avoids retaining one shard ID per entry.
+The physical pages store only key and value because the shard-start index
+already defines their boundaries.
 
 A failed flush closes its currently owned resources, releases the detached
 batch, moves the index to `ERROR`, and leaves its incomplete output in place. It
@@ -1538,7 +1544,7 @@ maintenance:
 
 | Component | Thread ownership | Lifetime |
 | --- | --- | --- |
-| `SenkuIngestor` | No owned thread; `put()`, rotation, and detached flush execute on caller threads | `WRITING` |
+| `SenkuIngestor` | No owned thread; `put()`, rotation, page encoding, and writes execute on caller threads. Large multi-shard flushes borrow common fork-join workers while sorting independent shard ranges. | `WRITING` |
 | `SenkuMaintenanceCoordinator` | One non-daemon scheduled control thread | `WRITING` through final drain or minimal failure shutdown |
 | Maintenance worker pool | Up to `maintenanceThreads` non-daemon threads, created lazily, with a bounded FIFO work queue | First submitted merge through final drain or minimal failure shutdown |
 | Ready stream | No owned thread; the merge executes on the `openStream()` caller | One active stream in `READY` |
@@ -1559,6 +1565,12 @@ construction after acquiring the lock, it closes opened resources and releases
 it without changing persistent files. Cleanup failures are suppressed on the
 primary `IndexException`; neither factory method leaks an owned non-daemon
 thread or lock.
+
+Senku does not create or shut down a sort executor. A detached flush borrows
+the JVM common fork-join pool only for large multi-shard sorts and joins all
+sort tasks before page encoding begins. Applications that also place sustained
+work on the common pool should benchmark the resulting contention under their
+production concurrency.
 
 #### Concurrent Directory Access
 

@@ -142,6 +142,43 @@ metrics contain operations per second and allocation per operation. Capture
 process peak resident memory alongside each run with the operating system's
 process-accounting tool.
 
+The focused flush-preparation profile excludes page encoding and filesystem I/O
+to compare the current range-partitioned reference array with separate
+per-shard arrays, maps already partitioned by persistent shard, and concurrent
+sorting of independent shard ranges. It also compares the construction cost of
+the current mutation-stripe maps with persistent-shard maps so moving work into
+ingestion is not evaluated as a free optimization:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-flush-preparation \
+  --output-dir /tmp/hestia-bench/senku-flush-preparation
+```
+
+The complete flush-writer profile starts with populated detached maps and times
+the production partitioning, sorting, page encoding, and `MemDirectory` write:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-flush-writer \
+  --output-dir /tmp/hestia-bench/senku-flush-writer
+```
+
+The bounded ingestion-map baseline isolates construction of unique entries and
+eight-thread updates of an existing fixed key set. It compares a synthetic
+unique-hash distribution that systematically collapses JDK bucket bits, the
+real bit-board-style distribution, and randomized keys without including
+flush, maintenance, filesystem, or final-drain work:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-ingestion-map-baseline \
+  --output-dir /tmp/hestia-bench/senku-ingestion-map-baseline
+```
+
 Quick smoke run:
 
 ```sh

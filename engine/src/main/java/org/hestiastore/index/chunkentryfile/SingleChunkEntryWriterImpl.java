@@ -40,14 +40,26 @@ public class SingleChunkEntryWriterImpl<K, V>
 
     @Override
     public void put(final Entry<K, V> entry) {
-        Vldtn.requireNonNull(entry, "entry");
+        final Entry<K, V> validatedEntry = Vldtn.requireNonNull(entry,
+                "entry");
+        put(validatedEntry.getKey(), validatedEntry.getValue());
+    }
+
+    /**
+     * Writes one key/value pair directly without requiring a temporary
+     * {@link Entry} wrapper.
+     *
+     * @param key   key to write
+     * @param value value to write
+     */
+    public void put(final K key, final V value) {
         if (closed) {
             throw new IllegalStateException("Chunk writer already closed");
         }
         // Write diff-encoded key directly into the chunk payload writer.
-        diffKeyWriter.writeTo(fileWriter, entry.getKey());
+        diffKeyWriter.writeTo(fileWriter, key);
         // Write value payload via type writer
-        valueWriter.write(fileWriter, entry.getValue());
+        valueWriter.write(fileWriter, value);
     }
 
     @Override

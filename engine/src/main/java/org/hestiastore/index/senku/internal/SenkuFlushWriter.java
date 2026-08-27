@@ -4,9 +4,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.ToIntFunction;
+import java.util.stream.IntStream;
 
-import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.SingleChunkEntryWriterImpl;
@@ -18,6 +19,8 @@ import org.hestiastore.index.directory.Directory;
  * Sorts and publishes one immutable flush generation.
  */
 final class SenkuFlushWriter<K, V> {
+
+    private static final int PARALLEL_SORT_MIN_ENTRIES = 8_192;
 
     private final Directory flushDirectory;
     private final TypeDescriptor<K> keyTypeDescriptor;
@@ -100,6 +103,7 @@ final class SenkuFlushWriter<K, V> {
         final int[] starts = starts(counts);
         final Map.Entry<K, V>[] ordered = orderByShard(entries, starts,
                 entryCount);
+        sortShards(ordered, starts, counts);
         final LargeFile largeFile = new LargeFile(generationDirectory,
                 dataBlockSize, maxEntriesPerPart, 0);
         final LargeFileWriterTx writer = largeFile.openWriterTx();
@@ -114,7 +118,6 @@ final class SenkuFlushWriter<K, V> {
                 if (count == 0) {
                     continue;
                 }
-                Arrays.sort(ordered, from, to, entryComparator);
                 packedPositions[shardId] = writeShard(writer, ordered, from, to)
                         .getPacked();
             }
@@ -127,6 +130,23 @@ final class SenkuFlushWriter<K, V> {
             writer.abort(e);
             throw e;
         }
+    }
+
+    /**
+     * Sorts independent persistent-shard ranges concurrently before sequential
+     * page encoding. Each task owns a disjoint array range.
+     */
+    private void sortShards(final Map.Entry<K, V>[] ordered,
+            final int[] starts, final int[] counts) {
+        IntStream shards = IntStream.range(0, shardCount);
+        if (ordered.length >= PARALLEL_SORT_MIN_ENTRIES && shardCount > 1
+                && ForkJoinPool.getCommonPoolParallelism() > 1) {
+            shards = shards.parallel();
+        }
+        shards.forEach(shardId -> {
+            final int from = starts[shardId];
+            Arrays.sort(ordered, from, from + counts[shardId], entryComparator);
+        });
     }
 
     private LargeFilePosition writeShard(final LargeFileWriterTx writer,
@@ -142,7 +162,7 @@ final class SenkuFlushWriter<K, V> {
                             valueTypeDescriptor);
             for (int index = pageStart; index < pageEnd; index++) {
                 final Map.Entry<K, V> entry = entries[index];
-                pageWriter.put(Entry.of(entry.getKey(), entry.getValue()));
+                pageWriter.put(entry.getKey(), entry.getValue());
             }
             final LargeFilePosition position = writer.appendPage(
                     pageWriter.closeSequence(), pageEnd - pageStart);
