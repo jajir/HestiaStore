@@ -1,0 +1,21 @@
+{
+  "profile": "senku-parallel-ingestion",
+  "description": "Eight-thread filesystem-backed Senku ingestion with biased bit-board hashes, overlapping flushes, and a fixed heap.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/benchmark/senku/SenkuParallelIngestionBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "senku-parallel-ingestion",
+      "include": "org.hestiastore.benchmark.senku.SenkuParallelIngestionBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.senku.SenkuParallelIngestionBenchmark.filesystemIngestThroughput",
+        "org.hestiastore.benchmark.senku.SenkuParallelIngestionBenchmark.filesystemPutLatency"
+      ],
+      "expectedResultCount": 2,
+      "args": [
+        "-prof", "gc"
+      ]
+    }
+  ]
+}

@@ -117,7 +117,7 @@ class SenkuL0BatchTest {
             final Map<Integer, Long> entries) {
         new SenkuFlushWriter<>(flushDirectory, keys, values,
                 key -> key, SHARD_COUNT, 1, 4L, DATA_BLOCK_SIZE)
-                .write(generation, entries);
+                .write(generation, List.of(entries));
     }
 
     private static Map<Integer, Long> entries(final int firstKey,

@@ -283,7 +283,7 @@ final class SenkuIngestor<K, V> {
                 controlLock.unlock();
             }
             try {
-                flushWriter.write(generation, combine(batchMaps));
+                flushWriter.write(generation, batchMaps);
             } catch (IndexException e) {
                 recordFlushFailure(e);
                 throw e;
@@ -344,8 +344,25 @@ final class SenkuIngestor<K, V> {
     }
 
     private int stripe(final K key) {
-        final int hash = key.hashCode();
-        return (hash ^ hash >>> 16) & (INGESTION_STRIPE_COUNT - 1);
+        return stripeForHash(key.hashCode());
+    }
+
+    /**
+     * Applies the MurmurHash3 32-bit avalanche finalizer before selecting a
+     * mutation stripe. This avoids conditioning each stripe on the same low
+     * spread bits used by the stripe's {@link HashMap} bucket index.
+     *
+     * @param hashCode key hash code
+     * @return mutation stripe from zero through 31
+     */
+    static int stripeForHash(final int hashCode) {
+        int hash = hashCode;
+        hash ^= hash >>> 16;
+        hash *= 0x85ebca6b;
+        hash ^= hash >>> 13;
+        hash *= 0xc2b2ae35;
+        hash ^= hash >>> 16;
+        return hash & (INGESTION_STRIPE_COUNT - 1);
     }
 
     private void lockAllMutations() {
@@ -419,16 +436,6 @@ final class SenkuIngestor<K, V> {
             maps.add(new HashMap<>(capacity));
         }
         return maps;
-    }
-
-    private Map<K, V> combine(final List<Map<K, V>> maps) {
-        // ponytail: Flatten here; teach SenkuFlushWriter about shards only if
-        // this in-memory copy becomes measurable beside persistent I/O.
-        final Map<K, V> combined = new HashMap<>(initialMapCapacity);
-        for (Map<K, V> map : maps) {
-            combined.putAll(map);
-        }
-        return combined;
     }
 
     private void advanceFlushIdLocked() {

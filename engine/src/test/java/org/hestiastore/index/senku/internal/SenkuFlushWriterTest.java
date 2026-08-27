@@ -39,7 +39,8 @@ class SenkuFlushWriterTest {
         entries.put(3, 30L);
         entries.put(1, 10L);
 
-        newWriter(value -> value, 4, 2, 3L).write(0L, entries);
+        newWriter(value -> value, 4, 2, 3L).write(0L,
+                List.of(Map.of(), entries, Map.of()));
 
         assertEquals(List.of(Entry.of(0, 0L), Entry.of(4, 40L)),
                 readShard(flushDirectory, 0L, 0, 4, 3L));
@@ -62,7 +63,7 @@ class SenkuFlushWriterTest {
     void writeUsesFloorModForNegativeAndMinimumHashes() {
         final Map<Integer, Long> entries = Map.of(1, 10L, 2, 20L);
         newWriter(key -> key == 1 ? -1 : Integer.MIN_VALUE, 3, 10, 10L)
-                .write(0L, entries);
+                .write(0L, List.of(Map.of(), entries));
 
         assertEquals(List.of(), readShard(flushDirectory, 0L, 0, 3, 10L));
         assertEquals(List.of(Entry.of(2, 20L)),
@@ -74,7 +75,8 @@ class SenkuFlushWriterTest {
     @Test
     void writeRotatesAtEveryEntryWhenConfigured() {
         newWriter(value -> 0, 1, 1, 1L).write(0L,
-                Map.of(1, 10L, 2, 20L, 3, 30L));
+                List.of(Map.of(1, 10L), Map.of(),
+                        Map.of(2, 20L, 3, 30L)));
 
         final Directory generation = flushDirectory
                 .openSubDirectory("flush-00000");
@@ -87,11 +89,11 @@ class SenkuFlushWriterTest {
         final SenkuFlushWriter<Integer, Long> writer = newWriter(value -> 0, 1,
                 1, 1L);
         assertThrows(IllegalArgumentException.class,
-                () -> writer.write(0L, Map.of()));
+                () -> writer.write(0L, List.of(Map.of(), Map.of())));
 
-        writer.write(0L, Map.of(1, 1L));
+        writer.write(0L, List.of(Map.of(), Map.of(1, 1L)));
         assertThrows(IndexException.class,
-                () -> writer.write(0L, Map.of(2, 2L)));
+                () -> writer.write(0L, List.of(Map.of(2, 2L))));
     }
 
     private SenkuFlushWriter<Integer, Long> newWriter(

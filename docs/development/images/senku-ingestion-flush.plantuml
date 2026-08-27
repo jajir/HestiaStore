@@ -9,21 +9,31 @@ top to bottom direction
 title Senku Ingestion and Sharded Flush Directories
 
 actor "Concurrent callers" as Callers
-component "SenkuIngestor\n\nHashMap<K,V>\none ReentrantLock\nexact map size" as Ingestor
-component "Stop-the-world flush\nwhile holding the lock\n\n1. count records per shard\n2. place map-entry references in shard ranges\n3. sort each shard range by key\n4. record shard ID, start, and record count\n5. publish manifest.properties last\n6. clear map and unlock" as Flush
+component "SenkuIngestor\n\n32 active HashMap<K,V> stripes\n32 independent mutation locks\napproximate sampled count" as Ingestor
+component "Atomic rotation\nunder all mutation locks\n\n1. detach the active striped batch\n2. install 32 new active maps\n3. release mutation locks" as Rotation
+component "Asynchronous detached flush\nwithout copying map nodes\n\n1. traverse detached maps directly\n2. count records per persistent shard\n3. place entry references in shard ranges\n4. sort each shard range by key\n5. write parts and shard-start index\n6. publish manifest.properties last" as Flush
 
 frame "Committed staging directories" {
   folder "flush/flush-00001/\n\nmanifest.properties\nshard-index.dat\npart-00000.chunk\npart-00001.chunk\n\nscarce shard-start index [m]\nS000: shard ID, start, record count\nS001: shard ID, start, record count\n..." as Flush1
   folder "flush/flush-K/\n\nmanifest.properties\nshard-index.dat\npart-00000.chunk\n\nlater generation\ndifferent record counts" as FlushK
 }
 
-Callers --> Ingestor : put\nlock; get; optional merge; put
-Ingestor --> Flush : map limit reached
+Callers --> Ingestor : put\navalanche hash; lock one stripe\nget; optional merge; put
+Ingestor --> Rotation : sampled count reaches limit
+Rotation --> Ingestor : new active striped batch\naccept puts while flush runs
+Rotation --> Flush : detached immutable stripe maps
 Flush --> Flush1 : flush generation 1
 Flush --> FlushK : later generation
 
+note right of Rotation
+At most one detached batch is being flushed.
+If the new active batch also fills, put calls wait
+until the current flush advances to that batch.
+end note
+
 note bottom of Flush1
 The shard count and shardFor(key) are fixed.
+Mutation stripes do not change persistent shard IDs.
 A logical generation may span ordered parts.
 Each part is a ChunkStoreFile of compressed pages.
 LargeFile composes parts without changing ChunkStoreFile.

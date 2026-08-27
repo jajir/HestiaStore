@@ -6,12 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -63,6 +64,8 @@ class SenkuWritingRuntimeConcurrencyTest {
     private final List<Long> generations = new CopyOnWriteArrayList<>();
     private final List<Map<Integer, Long>> batches =
             new CopyOnWriteArrayList<>();
+    private final List<Integer> batchStripeCounts =
+            new CopyOnWriteArrayList<>();
 
     private CountDownLatch flushStarted;
     private CountDownLatch releaseFlush;
@@ -100,7 +103,7 @@ class SenkuWritingRuntimeConcurrencyTest {
     }
 
     @Test
-    void runtimeAcceptsOneActiveMapDuringFlushThenAppliesBackpressure()
+    void runtimeAcceptsOneActiveBatchDuringFlushThenAppliesBackpressure()
             throws Exception {
         stubBlockingFlush();
         writing.put(1, 1L);
@@ -130,7 +133,8 @@ class SenkuWritingRuntimeConcurrencyTest {
         assertEquals(List.of(0L, 1L), generations);
         assertEquals(List.of(Map.of(1, 1L, 2, 2L),
                 Map.of(3, 3L, 4, 4L)), batches);
-        verify(flushWriter, times(2)).write(anyLong(), anyMap());
+        assertEquals(List.of(32, 32), batchStripeCounts);
+        verify(flushWriter, times(2)).write(anyLong(), anyList());
     }
 
     @Test
@@ -169,7 +173,7 @@ class SenkuWritingRuntimeConcurrencyTest {
     }
 
     @Test
-    void stoppingWaitsForCurrentFlushThenWritesActiveMap() throws Exception {
+    void stoppingWaitsForCurrentFlushThenWritesActiveBatch() throws Exception {
         stubBlockingFlush();
         writing.put(1, 1L);
         final Future<?> firstFlush = callers.submit(() -> writing.put(2, 2L));
@@ -200,7 +204,7 @@ class SenkuWritingRuntimeConcurrencyTest {
     @Test
     void flushFailureStopsFurtherWrites() {
         final IndexException failure = new IndexException("flush failed");
-        doThrow(failure).when(flushWriter).write(anyLong(), anyMap());
+        doThrow(failure).when(flushWriter).write(anyLong(), anyList());
         writing.put(1, 1L);
 
         final IndexException actual = assertThrows(IndexException.class,
@@ -214,14 +218,17 @@ class SenkuWritingRuntimeConcurrencyTest {
     private void stubBlockingFlush() {
         doAnswer(invocation -> {
             final long generation = invocation.getArgument(0);
-            final Map<Integer, Long> entries = invocation.getArgument(1);
+            final List<Map<Integer, Long>> entries = invocation.getArgument(1);
             generations.add(generation);
-            batches.add(Map.copyOf(entries));
+            batchStripeCounts.add(entries.size());
             if (generation == 0L) {
                 flushStarted.countDown();
                 assertTrue(releaseFlush.await(5, TimeUnit.SECONDS));
             }
+            final Map<Integer, Long> batch = new HashMap<>();
+            entries.forEach(batch::putAll);
+            batches.add(Map.copyOf(batch));
             return null;
-        }).when(flushWriter).write(anyLong(), anyMap());
+        }).when(flushWriter).write(anyLong(), anyList());
     }
 }

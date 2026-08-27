@@ -8,8 +8,8 @@ top to bottom direction
 
 title Senku finishWriting() Terminal Shard Consolidation
 
-component "finishWriting()\nacquire writing lock\nleave WRITING" as Finish
-component "Flush remaining map\nfinish reserved maintenance" as Drain
+component "finishWriting()\nclose ingestion admission\nleave WRITING" as Finish
+component "Wait for detached flush\nflush remaining striped batch\nfinish reserved maintenance" as Drain
 
 frame "Remaining committed sources for every shard S" {
   artifact "Flush fragments\nfor shard S" as Flush

@@ -2,6 +2,7 @@ package org.hestiastore.index.senku.internal;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.ToIntFunction;
 
@@ -57,11 +58,20 @@ final class SenkuFlushWriter<K, V> {
                 "dataBlockSize");
     }
 
-    void write(final long generation, final Map<K, V> entries) {
+    /**
+     * Writes one detached striped batch without copying its mappings into an
+     * aggregate map. The caller owns the maps and keeps them immutable until
+     * this method returns.
+     *
+     * @param generation generation identifier
+     * @param entries    non-empty aggregate of detached mutation stripes
+     */
+    void write(final long generation, final List<Map<K, V>> entries) {
         Vldtn.requireGreaterThanOrEqualToZero(generation, "generation");
-        final Map<K, V> validatedEntries = Vldtn.requireNonNull(entries,
+        final List<Map<K, V>> validatedEntries = Vldtn.requireNonNull(entries,
                 "entries");
-        Vldtn.requireTrue(!validatedEntries.isEmpty(),
+        final int entryCount = entryCount(validatedEntries);
+        Vldtn.requireTrue(entryCount > 0,
                 "Property 'entries' must not be empty");
         final String directoryName = SenkuFileNames.flushDirectory(generation);
         if (flushDirectory.isFileExists(directoryName)) {
@@ -72,7 +82,8 @@ final class SenkuFlushWriter<K, V> {
         final Directory generationDirectory = flushDirectory
                 .openSubDirectory(directoryName);
         try {
-            writeGeneration(generationDirectory, validatedEntries);
+            writeGeneration(generationDirectory, validatedEntries,
+                    entryCount);
         } catch (IndexException e) {
             throw e;
         } catch (Exception e) {
@@ -84,10 +95,11 @@ final class SenkuFlushWriter<K, V> {
     }
 
     private void writeGeneration(final Directory generationDirectory,
-            final Map<K, V> entries) {
+            final List<Map<K, V>> entries, final int entryCount) {
         final int[] counts = countShards(entries);
         final int[] starts = starts(counts);
-        final Map.Entry<K, V>[] ordered = orderByShard(entries, starts);
+        final Map.Entry<K, V>[] ordered = orderByShard(entries, starts,
+                entryCount);
         final LargeFile largeFile = new LargeFile(generationDirectory,
                 dataBlockSize, maxEntriesPerPart, 0);
         final LargeFileWriterTx writer = largeFile.openWriterTx();
@@ -142,10 +154,21 @@ final class SenkuFlushWriter<K, V> {
         return Vldtn.requireNonNull(firstPosition, "firstPosition");
     }
 
-    private int[] countShards(final Map<K, V> entries) {
+    private int entryCount(final List<Map<K, V>> entries) {
+        int count = 0;
+        for (final Map<K, V> stripe : entries) {
+            count = Math.addExact(count,
+                    Vldtn.requireNonNull(stripe, "stripeEntries").size());
+        }
+        return count;
+    }
+
+    private int[] countShards(final List<Map<K, V>> entries) {
         final int[] counts = new int[shardCount];
-        for (final K key : entries.keySet()) {
-            counts[shardId(key)]++;
+        for (final Map<K, V> stripe : entries) {
+            for (final K key : stripe.keySet()) {
+                counts[shardId(key)]++;
+            }
         }
         return counts;
     }
@@ -161,13 +184,15 @@ final class SenkuFlushWriter<K, V> {
     }
 
     @SuppressWarnings("unchecked")
-    private Map.Entry<K, V>[] orderByShard(final Map<K, V> entries,
-            final int[] starts) {
-        final Map.Entry<K, V>[] ordered = new Map.Entry[entries.size()];
+    private Map.Entry<K, V>[] orderByShard(final List<Map<K, V>> entries,
+            final int[] starts, final int entryCount) {
+        final Map.Entry<K, V>[] ordered = new Map.Entry[entryCount];
         final int[] next = Arrays.copyOf(starts, starts.length);
-        for (final Map.Entry<K, V> entry : entries.entrySet()) {
-            final int shardId = shardId(entry.getKey());
-            ordered[next[shardId]++] = entry;
+        for (final Map<K, V> stripe : entries) {
+            for (final Map.Entry<K, V> entry : stripe.entrySet()) {
+                final int shardId = shardId(entry.getKey());
+                ordered[next[shardId]++] = entry;
+            }
         }
         return ordered;
     }
