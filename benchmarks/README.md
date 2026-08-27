@@ -111,6 +111,37 @@ python3 benchmarks/scripts/run_jmh_profile.py \
   --output-dir /tmp/hestia-bench/senku
 ```
 
+The filesystem-backed parallel-ingestion profile measures eight caller threads
+using unique `Long` keys with deliberately biased bit-board-style hashes and the
+non-null `NullValue.NULL` singleton. It uses a ten-million-entry rotation
+threshold, 32 persistent shards, a fixed 4 GiB heap, and three forks. Each fork
+uses one index across warmup and measurement so flush and maintenance work
+overlaps sustained ingestion. The runner retains raw JMH JSON and log files
+under the supplied output directory:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-parallel-ingestion \
+  --output-dir /tmp/hestia-bench/senku-parallel
+```
+
+Run the same class with JFR when CPU, allocation hot spots, garbage-collection
+generations and pauses, or peak live heap are needed. Keep JFR separate from the
+GC-profiler run so profiler overhead is comparable between commits:
+
+```sh
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar \
+  SenkuParallelIngestionBenchmark -prof jfr:dir=/tmp/hestia-bench/senku-jfr
+```
+
+Run the profile from both the candidate and a detached worktree at the selected
+baseline commit on the same quiet machine. The sample-time result contains the
+put p50, p95, and p99 percentiles; the throughput result and `gc` secondary
+metrics contain operations per second and allocation per operation. Capture
+process peak resident memory alongside each run with the operating system's
+process-accounting tool.
+
 Quick smoke run:
 
 ```sh

@@ -64,6 +64,8 @@ class SenkuWritingRuntimeConcurrencyTest {
     private final List<Long> generations = new CopyOnWriteArrayList<>();
     private final List<Map<Integer, Long>> batches =
             new CopyOnWriteArrayList<>();
+    private final List<Integer> batchStripeCounts =
+            new CopyOnWriteArrayList<>();
 
     private CountDownLatch flushStarted;
     private CountDownLatch releaseFlush;
@@ -101,7 +103,7 @@ class SenkuWritingRuntimeConcurrencyTest {
     }
 
     @Test
-    void runtimeAcceptsOneActiveMapDuringFlushThenAppliesBackpressure()
+    void runtimeAcceptsOneActiveBatchDuringFlushThenAppliesBackpressure()
             throws Exception {
         stubBlockingFlush();
         writing.put(1, 1L);
@@ -131,6 +133,7 @@ class SenkuWritingRuntimeConcurrencyTest {
         assertEquals(List.of(0L, 1L), generations);
         assertEquals(List.of(Map.of(1, 1L, 2, 2L),
                 Map.of(3, 3L, 4, 4L)), batches);
+        assertEquals(List.of(32, 32), batchStripeCounts);
         verify(flushWriter, times(2)).write(anyLong(), anyList());
     }
 
@@ -170,7 +173,7 @@ class SenkuWritingRuntimeConcurrencyTest {
     }
 
     @Test
-    void stoppingWaitsForCurrentFlushThenWritesActiveMap() throws Exception {
+    void stoppingWaitsForCurrentFlushThenWritesActiveBatch() throws Exception {
         stubBlockingFlush();
         writing.put(1, 1L);
         final Future<?> firstFlush = callers.submit(() -> writing.put(2, 2L));
@@ -217,13 +220,14 @@ class SenkuWritingRuntimeConcurrencyTest {
             final long generation = invocation.getArgument(0);
             final List<Map<Integer, Long>> entries = invocation.getArgument(1);
             generations.add(generation);
-            final Map<Integer, Long> combined = new HashMap<>();
-            entries.forEach(combined::putAll);
-            batches.add(Map.copyOf(combined));
+            batchStripeCounts.add(entries.size());
             if (generation == 0L) {
                 flushStarted.countDown();
                 assertTrue(releaseFlush.await(5, TimeUnit.SECONDS));
             }
+            final Map<Integer, Long> batch = new HashMap<>();
+            entries.forEach(batch::putAll);
+            batches.add(Map.copyOf(batch));
             return null;
         }).when(flushWriter).write(anyLong(), anyList());
     }

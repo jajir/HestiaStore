@@ -58,6 +58,14 @@ final class SenkuFlushWriter<K, V> {
                 "dataBlockSize");
     }
 
+    /**
+     * Writes one detached striped batch without copying its mappings into an
+     * aggregate map. The caller owns the maps and keeps them immutable until
+     * this method returns.
+     *
+     * @param generation generation identifier
+     * @param entries    non-empty aggregate of detached mutation stripes
+     */
     void write(final long generation, final List<Map<K, V>> entries) {
         Vldtn.requireGreaterThanOrEqualToZero(generation, "generation");
         final List<Map<K, V>> validatedEntries = Vldtn.requireNonNull(entries,
@@ -148,8 +156,8 @@ final class SenkuFlushWriter<K, V> {
 
     private int[] countShards(final List<Map<K, V>> entries) {
         final int[] counts = new int[shardCount];
-        for (final Map<K, V> map : entries) {
-            for (final K key : map.keySet()) {
+        for (final Map<K, V> stripe : entries) {
+            for (final K key : stripe.keySet()) {
                 counts[shardId(key)]++;
             }
         }
@@ -171,8 +179,8 @@ final class SenkuFlushWriter<K, V> {
             final int[] starts, final int entryCount) {
         final Map.Entry<K, V>[] ordered = new Map.Entry[entryCount];
         final int[] next = Arrays.copyOf(starts, starts.length);
-        for (final Map<K, V> map : entries) {
-            for (final Map.Entry<K, V> entry : map.entrySet()) {
+        for (final Map<K, V> stripe : entries) {
+            for (final Map.Entry<K, V> entry : stripe.entrySet()) {
                 final int shardId = shardId(entry.getKey());
                 ordered[next[shardId]++] = entry;
             }

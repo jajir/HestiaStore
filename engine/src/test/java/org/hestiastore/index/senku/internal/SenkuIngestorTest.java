@@ -4,10 +4,12 @@ import static org.hestiastore.index.senku.internal.LargeFileTestSupport.DATA_BLO
 import static org.hestiastore.index.senku.internal.SenkuFlushTestSupport.readShard;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SenkuIngestorTest {
+
+    private static final int BIASED_BOARD_KEY_COUNT = 1_000_000;
 
     private MemDirectory flushDirectory;
 
@@ -65,6 +69,64 @@ class SenkuIngestorTest {
         ingestor.put(2, 2L);
 
         assertEquals(Set.of("flush-00000", "flush-00001"), names());
+    }
+
+    @Test
+    void approximateThresholdRotatesWithinDocumentedOvershoot() {
+        final int threshold = 256;
+        final SenkuIngestor<Integer, Long> ingestor = newIngestor(threshold,
+                (key, first, second) -> first + second);
+        int key = 0;
+
+        while (names().isEmpty() && key < threshold * 2) {
+            ingestor.put(key, 1L);
+            key++;
+        }
+
+        assertFalse(names().isEmpty());
+        assertTrue(key > threshold);
+        assertTrue(key < threshold + threshold / 4);
+        assertEquals(0, ingestor.size());
+    }
+
+    @Test
+    void equalKeysAndExtremeHashesHaveDeterministicStripes() {
+        final String first = new String("equal");
+        final String second = new String("equal");
+
+        assertNotSame(first, second);
+        assertEquals(first, second);
+        assertEquals(SenkuIngestor.stripeFromHash(first.hashCode()),
+                SenkuIngestor.stripeFromHash(second.hashCode()));
+        assertEquals(4, SenkuIngestor.stripeFromHash(Integer.MIN_VALUE));
+        assertEquals(24, SenkuIngestor.stripeFromHash(Integer.MAX_VALUE));
+        assertEquals(10, SenkuIngestor.stripeFromHash(-1));
+    }
+
+    @Test
+    void avalancheRoutingBalancesBiasedBoardHashes() {
+        final int[] oldStripeSizes = new int[32];
+        final int[] stripeSizes = new int[32];
+        final int[] observedBucketBits = new int[32];
+        for (int sequence = 0; sequence < BIASED_BOARD_KEY_COUNT; sequence++) {
+            final long key = biasedBoardKey(sequence);
+            final int hash = Long.hashCode(key);
+            final int bucketBits = (hash ^ hash >>> 16) & 31;
+            oldStripeSizes[bucketBits]++;
+            final int stripe = SenkuIngestor.stripeFromHash(hash);
+            stripeSizes[stripe]++;
+            observedBucketBits[stripe] |= 1 << bucketBits;
+        }
+
+        assertTrue(Arrays.stream(oldStripeSizes)
+                .allMatch(size -> size == BIASED_BOARD_KEY_COUNT / 32));
+        assertTrue(Arrays.stream(observedBucketBits)
+                .allMatch(bucketBits -> bucketBits == -1));
+        final int minimum = Arrays.stream(stripeSizes).min().orElseThrow();
+        final int maximum = Arrays.stream(stripeSizes).max().orElseThrow();
+        assertTrue((double) maximum / minimum < 1.10,
+                () -> "Unbalanced mutation stripes: "
+                        + Arrays.toString(stripeSizes));
     }
 
     @Test
@@ -382,5 +444,11 @@ class SenkuIngestorTest {
 
     private Set<String> names() {
         return flushDirectory.getFileNames().collect(Collectors.toSet());
+    }
+
+    private static long biasedBoardKey(final int sequence) {
+        final int lowFive = sequence & 31;
+        return lowFive | (long) (sequence >>> 5 & 0x7ff) << 5
+                | (long) (sequence >>> 16) << 21;
     }
 }
