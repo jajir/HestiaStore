@@ -293,7 +293,7 @@ class SenkuMaintenanceCoordinatorTest {
             final Map<Integer, Long> entries) {
         new SenkuFlushWriter<>(flushDirectory, new TypeDescriptorInteger(),
                 new TypeDescriptorLong(), key -> key, shardCount, 1, 4L,
-                DATA_BLOCK_SIZE).write(generation, entries);
+                DATA_BLOCK_SIZE).write(generation, List.of(entries));
     }
 
     @SafeVarargs

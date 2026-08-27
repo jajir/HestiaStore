@@ -9,16 +9,16 @@ top to bottom direction
 title Senku Ingestion and Sharded Flush Directories
 
 actor "Concurrent callers" as Callers
-component "SenkuIngestor\n\nHashMap<K,V>\none ReentrantLock\nexact map size" as Ingestor
-component "Stop-the-world flush\nwhile holding the lock\n\n1. count records per shard\n2. place map-entry references in shard ranges\n3. sort each shard range by key\n4. record shard ID, start, and record count\n5. publish manifest.properties last\n6. clear map and unlock" as Flush
+component "SenkuIngestor active batch\n\n32 HashMap<K,V> stripes\n32 mutation locks\nsampled total size" as Ingestor
+component "Detached batch flush\nwhile a fresh batch accepts puts\n\n1. iterate stripe maps directly\n2. count records per persistent shard\n3. place entry references in shard ranges\n4. sort each shard range by key\n5. record shard start and count\n6. publish manifest.properties last" as Flush
 
 frame "Committed staging directories" {
   folder "flush/flush-00001/\n\nmanifest.properties\nshard-index.dat\npart-00000.chunk\npart-00001.chunk\n\nscarce shard-start index [m]\nS000: shard ID, start, record count\nS001: shard ID, start, record count\n..." as Flush1
   folder "flush/flush-K/\n\nmanifest.properties\nshard-index.dat\npart-00000.chunk\n\nlater generation\ndifferent record counts" as FlushK
 }
 
-Callers --> Ingestor : put\nlock; get; optional merge; put
-Ingestor --> Flush : map limit reached
+Callers --> Ingestor : put\navalanche hash; stripe lock; merge
+Ingestor --> Flush : sampled limit reached\ndetach maps; install fresh batch
 Flush --> Flush1 : flush generation 1
 Flush --> FlushK : later generation
 

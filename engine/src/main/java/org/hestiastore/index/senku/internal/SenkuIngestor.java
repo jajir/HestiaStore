@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.ToIntFunction;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -22,12 +23,15 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
 final class SenkuIngestor<K, V> {
 
     private static final int INGESTION_STRIPE_COUNT = 32;
+    private static final int STRIPE_MIX_MULTIPLIER_1 = 0x7feb352d;
+    private static final int STRIPE_MIX_MULTIPLIER_2 = 0x846ca68b;
 
     private final ReentrantLock controlLock;
     private final ReentrantLock[] mutationLocks =
             new ReentrantLock[INGESTION_STRIPE_COUNT];
     private final Condition ingestionMayProceed;
     private final SenkuMergeFunction<K, V> mergeFunction;
+    private final ToIntFunction<K> shardHashFunction;
     private final SenkuFlushWriter<K, V> flushWriter;
     private final int maxInMemoryEntries;
     private final int initialMapCapacity;
@@ -54,18 +58,22 @@ final class SenkuIngestor<K, V> {
      *
      * @param controlLock        lifecycle, rotation, and backpressure lock
      * @param mergeFunction      duplicate-key merge function
+     * @param shardHashFunction  configured persistent-shard hash function
      * @param flushWriter        persistent flush writer
      * @param maxInMemoryEntries approximate distinct-key rotation threshold
      * @param initialMapCapacity total initial capacity of each rotated batch
      */
     SenkuIngestor(final ReentrantLock controlLock,
             final SenkuMergeFunction<K, V> mergeFunction,
+            final ToIntFunction<K> shardHashFunction,
             final SenkuFlushWriter<K, V> flushWriter,
             final int maxInMemoryEntries, final int initialMapCapacity) {
         this.controlLock = Vldtn.requireNonNull(controlLock, "controlLock");
         ingestionMayProceed = controlLock.newCondition();
         this.mergeFunction = Vldtn.requireNonNull(mergeFunction,
                 "mergeFunction");
+        this.shardHashFunction = Vldtn.requireNonNull(shardHashFunction,
+                "shardHashFunction");
         this.flushWriter = Vldtn.requireNonNull(flushWriter, "flushWriter");
         this.maxInMemoryEntries = Vldtn.requireGreaterThanZero(
                 maxInMemoryEntries, "maxInMemoryEntries");
@@ -283,7 +291,7 @@ final class SenkuIngestor<K, V> {
                 controlLock.unlock();
             }
             try {
-                flushWriter.write(generation, combine(batchMaps));
+                flushWriter.write(generation, batchMaps);
             } catch (IndexException e) {
                 recordFlushFailure(e);
                 throw e;
@@ -344,8 +352,32 @@ final class SenkuIngestor<K, V> {
     }
 
     private int stripe(final K key) {
-        final int hash = key.hashCode();
-        return (hash ^ hash >>> 16) & (INGESTION_STRIPE_COUNT - 1);
+        try {
+            return stripeFromHash(shardHashFunction.applyAsInt(key));
+        } catch (Exception e) {
+            if (e instanceof IndexException) {
+                throw (IndexException) e;
+            }
+            throw new IndexException("Senku shard hash function failed.", e);
+        }
+    }
+
+    /**
+     * Independently avalanches the configured persistent-shard hash before
+     * selecting a mutation stripe. This prevents the stripe selection from
+     * fixing the same low bits that {@link HashMap} uses for its buckets.
+     *
+     * @param hash configured persistent-shard hash
+     * @return mutation stripe number
+     */
+    static int stripeFromHash(final int hash) {
+        int mixed = hash;
+        mixed ^= mixed >>> 16;
+        mixed *= STRIPE_MIX_MULTIPLIER_1;
+        mixed ^= mixed >>> 15;
+        mixed *= STRIPE_MIX_MULTIPLIER_2;
+        mixed ^= mixed >>> 16;
+        return mixed & (INGESTION_STRIPE_COUNT - 1);
     }
 
     private void lockAllMutations() {
@@ -419,16 +451,6 @@ final class SenkuIngestor<K, V> {
             maps.add(new HashMap<>(capacity));
         }
         return maps;
-    }
-
-    private Map<K, V> combine(final List<Map<K, V>> maps) {
-        // ponytail: Flatten here; teach SenkuFlushWriter about shards only if
-        // this in-memory copy becomes measurable beside persistent I/O.
-        final Map<K, V> combined = new HashMap<>(initialMapCapacity);
-        for (Map<K, V> map : maps) {
-            combined.putAll(map);
-        }
-        return combined;
     }
 
     private void advanceFlushIdLocked() {

@@ -341,6 +341,33 @@ class SenkuIngestorTest {
         assertThrows(IndexException.class, () -> ingestor.put(1, 1L));
     }
 
+    @Test
+    void stripeMixerDistributesHashesWithFixedHashMapBucketBits() {
+        final int[] counts = new int[32];
+        for (int value = 0; value < 32_768; value++) {
+            final int upperBits = value << 5;
+            final int hash = upperBits | (upperBits >>> 16 & 31);
+            assertEquals(0, (hash ^ hash >>> 16) & 31);
+            counts[SenkuIngestor.stripeFromHash(hash)]++;
+        }
+
+        int minimum = Integer.MAX_VALUE;
+        int maximum = Integer.MIN_VALUE;
+        for (int count : counts) {
+            minimum = Math.min(minimum, count);
+            maximum = Math.max(maximum, count);
+        }
+        assertTrue(minimum > 0);
+        assertTrue(maximum - minimum < 256,
+                "independent stripe mixer should remain balanced");
+    }
+
+    @Test
+    void stripeMixerHasStableResultsForExtremeHashes() {
+        assertEquals(4, SenkuIngestor.stripeFromHash(Integer.MIN_VALUE));
+        assertEquals(24, SenkuIngestor.stripeFromHash(Integer.MAX_VALUE));
+    }
+
     private SenkuIngestor<Integer, Long> newIngestor(
             final int maxInMemoryEntries,
             final SenkuMergeFunction<Integer, Long> mergeFunction) {
@@ -349,7 +376,8 @@ class SenkuIngestorTest {
                         new TypeDescriptorInteger(), new TypeDescriptorLong(),
                         value -> 0, 1, 10, 10L, DATA_BLOCK_SIZE);
         return new SenkuIngestor<>(new ReentrantLock(), mergeFunction,
-                flushWriter, maxInMemoryEntries, maxInMemoryEntries * 2);
+                value -> value, flushWriter, maxInMemoryEntries,
+                maxInMemoryEntries * 2);
     }
 
     private Set<String> names() {

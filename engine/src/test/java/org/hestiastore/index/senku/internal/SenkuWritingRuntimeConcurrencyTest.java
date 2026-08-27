@@ -6,12 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -83,7 +84,7 @@ class SenkuWritingRuntimeConcurrencyTest {
             final int maxInMemoryEntries) {
         final ReentrantLock writingLock = new ReentrantLock();
         ingestor = new SenkuIngestor<>(new ReentrantLock(), mergeFunction,
-                flushWriter, maxInMemoryEntries,
+                value -> value, flushWriter, maxInMemoryEntries,
                 maxInMemoryEntries * 2);
         writing = new SenkuWritingRuntime<>(rootDirectory,
                 new TypeDescriptorInteger(), new TypeDescriptorLong(),
@@ -130,7 +131,7 @@ class SenkuWritingRuntimeConcurrencyTest {
         assertEquals(List.of(0L, 1L), generations);
         assertEquals(List.of(Map.of(1, 1L, 2, 2L),
                 Map.of(3, 3L, 4, 4L)), batches);
-        verify(flushWriter, times(2)).write(anyLong(), anyMap());
+        verify(flushWriter, times(2)).write(anyLong(), anyList());
     }
 
     @Test
@@ -200,7 +201,7 @@ class SenkuWritingRuntimeConcurrencyTest {
     @Test
     void flushFailureStopsFurtherWrites() {
         final IndexException failure = new IndexException("flush failed");
-        doThrow(failure).when(flushWriter).write(anyLong(), anyMap());
+        doThrow(failure).when(flushWriter).write(anyLong(), anyList());
         writing.put(1, 1L);
 
         final IndexException actual = assertThrows(IndexException.class,
@@ -214,14 +215,16 @@ class SenkuWritingRuntimeConcurrencyTest {
     private void stubBlockingFlush() {
         doAnswer(invocation -> {
             final long generation = invocation.getArgument(0);
-            final Map<Integer, Long> entries = invocation.getArgument(1);
+            final List<Map<Integer, Long>> entries = invocation.getArgument(1);
             generations.add(generation);
-            batches.add(Map.copyOf(entries));
+            final Map<Integer, Long> combined = new HashMap<>();
+            entries.forEach(combined::putAll);
+            batches.add(Map.copyOf(combined));
             if (generation == 0L) {
                 flushStarted.countDown();
                 assertTrue(releaseFlush.await(5, TimeUnit.SECONDS));
             }
             return null;
-        }).when(flushWriter).write(anyLong(), anyMap());
+        }).when(flushWriter).write(anyLong(), anyList());
     }
 }

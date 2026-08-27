@@ -81,7 +81,7 @@ public final class SenkuRuntime {
                     flush, keys, values, hash, shardCount, maxKeysPerPage,
                     maxEntriesPerPart, blockSize);
             final SenkuIngestor<K, V> ingestor = new SenkuIngestor<>(
-                    new ReentrantLock(), merge, flushWriter,
+                    new ReentrantLock(), merge, hash, flushWriter,
                     maxInMemoryEntries, initialMapCapacity);
             workers = new ThreadPoolExecutor(maintenanceThreads,
                     maintenanceThreads, 0L, TimeUnit.MILLISECONDS,

@@ -91,17 +91,17 @@ public interface SenkuReady<K, V> extends AutoCloseable {
 }
 ```
 
-`SenkuWriting` is thread-safe by serialization through one `ReentrantLock`.
-Mutations are atomic, but operations on different keys or concurrent operations
-on the same key have no guaranteed order. Duplicate values for one key are
-merged rather than resolved by call order.
+`SenkuWriting` is thread-safe. Ingestion uses 32 independently locked mutation
+stripes, so operations on different stripes can proceed concurrently while
+operations on one key remain serialized. Concurrent operations have no
+guaranteed order. Duplicate values for one key are merged rather than resolved
+by call order.
 `putIfAbsent` and conditional `replace` are intentionally excluded because they
 would add state-resolution work.
 
-The initial implementation deliberately routes every public writing operation
-through the same lock and one in-memory `HashMap`. `openStream()` is backed by a
-Senku-owned lazy merge implementation rather than materializing the complete
-result in memory.
+Each active ingestion batch contains one `HashMap` per mutation stripe.
+`openStream()` is backed by a Senku-owned lazy merge implementation rather than
+materializing the complete result in memory.
 
 Invalid or missing builder settings fail with `IllegalArgumentException` that
 names the setting. `create()` completes all builder validation before it changes
@@ -251,7 +251,8 @@ public final class SenkuMergeFunctionRegistry<K, V> {
 
 The registry is frozen when the index is created. Senku does not retain mutation
 order, so merge functions must be deterministic, associative, and commutative.
-While holding the writing lock, `put()` first validates the arguments with
+Before acquiring the selected mutation-stripe lock, `put()` validates the
+arguments with
 `Vldtn.requireNonNull(key, "key")` and
 `Vldtn.requireNonNull(value, "value")`. A null argument therefore throws
 `IllegalArgumentException` before the map changes and leaves the handle in
@@ -269,8 +270,8 @@ Keys, supplied values, and merge results must be non-null. A merge function that
 throws from `put()` fails that call and moves the index to `ERROR`. A merge
 failure in a maintenance worker is reported only to the coordinator, which
 stops new maintenance submission and eventually moves the writing runtime to
-`ERROR`. A running `put()` or synchronous flush does not poll for that failure
-and may complete before the coordinator acquires the writing lock. A waiting
+`ERROR`. A running `put()` or caller-driven flush does not poll for that failure
+and may complete before the coordinator closes ingestion admission. A waiting
 `finishWriting()` rethrows the recorded first failure with its original cause
 chain. Returning null has the same effect; null is never interpreted as
 deletion.
@@ -408,11 +409,11 @@ without affecting the ready handle. It exposes no cleanup operation after
 transfer. Repeated `SenkuReady.close()` is harmless.
 
 `finishWriting()` blocks until finalization succeeds or fails. Internally it
-acquires the same writing lock as `put()` and flushes the remaining map while
-the lifecycle remains `WRITING`. Holding the lock prevents another caller from
-entering `put()` during that synchronous publication. Only after the final
-flush manifest is committed does the runtime transition to `FINISHING` and
-release the lock. The coordinator can then drain all remaining flush
+closes ingestion admission, waits for a detached batch already being flushed,
+then rotates and publishes the remaining active batch while the lifecycle
+remains `WRITING`. Puts that lose the admission race fail without changing the
+batch. Only after the final flush manifest is committed does the runtime
+transition to `FINISHING`. The coordinator can then drain all remaining flush
 generations into shard runs, consolidate every configured shard to exactly one
 terminal sorted run, and publish `ready.properties` with the structural shard
 count. This ordering prevents a periodic coordinator scan from entering drain
@@ -438,8 +439,9 @@ valid and openable.
 
 - `SenkuIndex` owns lifecycle transitions and the thread-safe public API.
 - `SenkuIngestor` accepts all user `put` calls during `WRITING`,
-  owns one active in-memory `HashMap` and one `ReentrantLock`, and performs
-  stop-the-world flushes while holding that lock.
+  owns one active striped batch and at most one detached batch being flushed.
+  Its per-stripe locks allow concurrent mutation and its control lock protects
+  rotation, lifecycle admission, and flush backpressure.
 - A completed flush produces one immutable logical directory holding a fixed
   number of independently sorted, addressable shards.
 - The structural `flush/` directory is created once by `create()` and retained
@@ -465,27 +467,29 @@ The write path is:
 ```text
 put
   -> SenkuIngestor
-  -> acquire the ReentrantLock
-  -> HashMap.get(key), optionally merge, then HashMap.put(key, value)
-  -> exact map size reaches its configured limit
-  -> entries are distributed to a fixed number of shards
+  -> avalanche the configured shard hash into one of 32 mutation stripes
+  -> acquire that stripe lock
+  -> stripe HashMap.get(key), optionally merge, then HashMap.put(key, value)
+  -> sampled distinct-key total reaches its configured limit
+  -> detach the complete stripe-map list and install a fresh active batch
+  -> detached entries are distributed directly to persistent shards
   -> every shard is sorted
   -> one immutable flush generation is published
-  -> the map is cleared and the lock is released
+  -> ingestion may continue in the active batch during publication
 ```
 
-The initial design intentionally accepts a stop-the-world flush.
-The single lock makes a concurrent map unnecessary. A different in-memory
-structure may replace the initial `HashMap` only when measurements justify the
-change. The lock is non-fair because ingestion throughput, not waiter ordering,
+Mutation stripes are selected by an avalanche mix of the configured persistent
+shard hash. The extra mix is deliberate: selecting a stripe with the same low
+spread bits that Java `HashMap` uses for buckets would force every stripe map
+into only one thirty-second of its buckets and cause treeification. Stripe and
+control locks are non-fair because ingestion throughput, not waiter ordering,
 is the goal.
 
-The Java 17 `HashMap` is constructed with an overflow-safe initial-capacity
-calculation that can hold `maxInMemoryEntries` at its normal load factor without
-a resize. After a successful flush Senku calls `clear()` and reuses the same
-table instead of paying for its growth again. The initial large table allocation
-and retained empty-table memory are accepted consequences of the user-selected
-entry limit and must be included in ingestion benchmarks.
+The 32 Java 17 `HashMap` instances divide an overflow-safe total initial
+capacity calculated for `maxInMemoryEntries`. Rotation installs a new batch;
+the detached maps stay immutable while the caller that claimed them publishes
+the flush. The simultaneous active and detached batches are an accepted peak-
+memory consequence and must be included in ingestion benchmarks.
 
 `HashMap` has a maximum table capacity of `2^30`. At its normal `0.75` load
 factor, the largest entry threshold that preserves the no-resize guarantee is
@@ -505,19 +509,25 @@ validation protects the sizing arithmetic and load-factor contract; it does not
 predict available heap. A valid configuration can still fail allocation when
 the selected entry count or key/value objects exceed the process memory budget.
 
-### Stop-The-World Flush
+### Striped Rotation and Caller-Driven Flush
 
-Every public operation on `SenkuWriting` acquires the same `ReentrantLock` before
-examining lifecycle state or the map. `put()` performs its get, optional merge,
-put, and exact `HashMap.size()` threshold check while holding the lock. The
-limit therefore has no concurrency overshoot. It counts key-value entries, not
-bytes, so the user must size it for the encoded key and value sizes of the
-dataset.
+`put()` performs its get, optional merge, put, and sampled size publication
+while holding only the selected mutation-stripe lock. Sampling avoids a shared
+atomic increment on every distinct insertion. The approximate trigger may lag
+the real distinct-key count by less than 25 percent of the configured threshold.
+The limit counts key-value entries, not bytes, so the user must size it for the
+dataset's encoded key and value sizes.
 
-The caller whose put reaches the limit performs the complete flush synchronously
-without releasing the lock. It first counts entries for every shard and computes
-the start offset of each shard in one reference array. A second map pass places
-each `Map.Entry<K, V>` reference into its contiguous shard range. Each range is
+The caller that observes the rotation request acquires the control lock and all
+mutation locks, detaches the active list of 32 maps, and installs a new list.
+After releasing the mutation locks it performs the flush while other callers
+can fill the new active batch. At most one detached batch is flushed; if the
+active batch reaches its threshold before publication finishes, subsequent
+puts wait for capacity. The flush writer first counts entries for every
+persistent shard across all detached maps and computes each shard's start
+offset in one reference array. A second pass places each `Map.Entry<K, V>`
+reference directly into its contiguous shard range; it does not construct a
+third combined `HashMap`. Each range is
 then sorted independently by the configured key comparator. The writer consumes
 the sorted ranges and writes compressed pages into a `flush/flush-N/` directory.
 A page never contains entries from two shards: the writer closes the current
@@ -526,9 +536,8 @@ whichever comes first. Every page starts with fresh differential-key state so
 it can be decoded independently by `SingleChunkEntryIterator`. Other writing
 calls wait for the same lock. Part transactions write `part-N.chunk.tmp` and
 rename it to `part-N.chunk` on commit. The directory becomes committed only
-when its `manifest.properties` file is published last. The map is cleared and
-the lock is released only after publication. No maintenance thread reads or
-controls the map or its lock.
+when its `manifest.properties` file is published last. No maintenance thread
+reads or controls the active or detached maps or their locks.
 
 The map cannot be cleared before every entry has been written, so the configured
 map limit is not a peak-memory limit. The partition uses one reference per map
@@ -771,8 +780,9 @@ Such an unfinished index is invalid and must be removed externally.
 `finishWriting()` produces the terminal shard runs and marker required by
 `READY`:
 
-1. Acquire the writing lock, prevent future puts, and flush the remaining map.
-2. Release the writing lock after the flush is committed.
+1. Close ingestion admission, wait for any detached flush, and publish the
+   remaining striped batch.
+2. Transition the lifecycle to `FINISHING` after the flush is committed.
 3. Finish already-reserved maintenance work.
 4. Merge every remaining flush generation into level-0 shard runs, allowing the
    last group to contain fewer than `mergeFanIn` inputs.
@@ -908,11 +918,11 @@ routing, monitoring, maintenance, or lifecycle orchestration.
 
 - The initial object-based `put()` and in-memory map are accepted as a simple
   baseline. A primitive or batch path may be added only after measurement.
-- Stop-the-world flush pauses all writers and its duration is part of the primary
-  latency metric.
-- The `SenkuIngestor` `HashMap` baseline has object and hashing overhead, and
-  serializes every public writing operation through one lock. Both costs must be
-  measured before choosing a replacement.
+- Caller-driven flush consumes CPU and I/O on the caller that claimed rotation,
+  and a second full active batch applies backpressure until publication ends.
+- The striped `HashMap` baseline has object, hashing, and lock overhead. Its
+  costs and the distribution of configured hashes across mutation stripes must
+  be measured before choosing a replacement.
 - The shard count and routing function must remain stable for the lifetime of an
   index.
 - Comparator-equal keys must always route to the same shard.
@@ -953,8 +963,8 @@ routing, monitoring, maintenance, or lifecycle orchestration.
 - `maxInMemoryEntries` limits entry count rather than bytes. The same setting can
   therefore consume very different amounts of memory for different key and
   value types. It also does not bound peak flush memory: sorting needs at least
-  an additional `O(maxInMemoryEntries)` reference/index representation while the
-  map remains live under the writing lock.
+  an additional `O(maxInMemoryEntries)` reference/index representation while
+  both the detached and new active batches may remain live.
 - Each active merge worker can retain up to `mergeFanIn` decompressed input
   pages, one output page, priority-queue state, and transient compression
   arrays. Ready streaming can retain one decompressed page for each non-empty
@@ -1512,7 +1522,7 @@ maintenance:
 
 | Component | Thread ownership | Lifetime |
 | --- | --- | --- |
-| `SenkuIngestor` | No owned thread; `put()` and synchronous flush execute on caller threads | `WRITING` |
+| `SenkuIngestor` | No owned thread; `put()` and caller-driven detached-batch flush execute on caller threads | `WRITING` |
 | `SenkuMaintenanceCoordinator` | One non-daemon scheduled control thread | `WRITING` through final drain or minimal failure shutdown |
 | Maintenance worker pool | Up to `maintenanceThreads` non-daemon threads, created lazily, with a bounded FIFO work queue | First submitted merge through final drain or minimal failure shutdown |
 | Ready stream | No owned thread; the merge executes on the `openStream()` caller | One active stream in `READY` |
@@ -1565,26 +1575,25 @@ that handle. Waiting for an extra flush generation is unnecessary because
 `manifest.properties` publication already separates incomplete and committed
 inputs.
 
-During normal writing, `SenkuIngestor` alone checks the exact map size. The
-same writing lock owns a `Condition` used only for maintenance backpressure. A
-`put()` waits on that condition before touching the map while ingestion is
-paused; waiting releases the lock. The caller whose put reaches the limit
-performs a complete flush synchronously while holding the writing lock and does
-not notify the coordinator. The coordinator wakes on its next three-second
+During normal writing, `SenkuIngestor` samples each stripe's distinct-key count
+and owns a control-lock `Condition` for rotation and maintenance backpressure.
+A `put()` waits on that condition before touching its stripe map while ingestion
+is paused; waiting releases the control lock. The caller that claims a requested
+rotation detaches the full batch and flushes it after releasing all mutation
+locks. It does not notify the coordinator. The coordinator wakes on its next three-second
 interval and scans the logical directory hierarchy for committed sources.
 Maintenance workers merge their reserved file sources, publish their output
 runs, and return immutable completion results. The coordinator changes catalog
 membership and eagerly deletes replaced inputs using the L0 batch barrier
 described above.
 
-`finishWriting()` acquires the writing lock, clears any backpressure pause,
-signals waiting put callers, and asks `SenkuIngestor` to flush the remaining map
-synchronously. The lifecycle stays `WRITING` during that publication, but
-awakened puts cannot acquire the still-held lock. After the committed flush
-manifest is visible, `finishWriting()` changes the lifecycle to `FINISHING`,
-releases the lock, wakes the coordinator immediately, and switches it to drain
-mode. Awakened puts then acquire the lock, observe that writing has ended, and
-fail the lifecycle check without changing the map. Drain mode
+`finishWriting()` serializes the terminal lifecycle request, clears any
+backpressure pause, closes `SenkuIngestor` admission, waits for any detached
+flush, and publishes the remaining active batch. The lifecycle stays `WRITING`
+during that publication, but concurrent puts fail the closed admission check.
+After the committed flush manifest is visible, `finishWriting()` changes the
+lifecycle to `FINISHING`, wakes the coordinator immediately, and switches it to
+drain mode. Drain mode
 bypasses the normal three-second delay and starts with one immediate logical-
 hierarchy scan. Later job completions process their results and release their
 reservations but do not perform another eligibility pass. An available worker
@@ -1595,9 +1604,8 @@ The same exclusive root `FileLock` transfers to that handle without being
 released.
 
 Every writing runtime owns one `CountDownLatch maintenanceFinished`, initialized
-to one. The code waiting in `finishWriting()` belongs to `SenkuIngestor`, but
-runs on the user caller thread because the ingestor owns no thread. It releases
-the ingestion `ReentrantLock` before awaiting the latch.
+to one. The code waiting in `finishWriting()` runs on the user caller thread
+after the final ingestion flush; the ingestor owns no thread.
 Maintenance workers only return results or record `firstFailure`; they never
 complete the latch. `SenkuMaintenanceCoordinator` is its sole completer and
 calls `countDown()` once as its final control action after the terminal outcome
@@ -1611,12 +1619,11 @@ first `IndexException` without replacing its cause chain. A background failure
 with no waiting caller still performs minimal thread shutdown and completes the
 latch.
 
-`put()` and its synchronous flush path never read `firstFailure` and never wait
-on `maintenanceFinished`. If they already hold the writing lock when a
-background job fails, they finish their current work before the coordinator can
-move the runtime to `ERROR`. Later calls are rejected by the generic lifecycle
-state check. This deliberately permits additional data to be published after a
-background job has failed.
+`put()` and its caller-driven flush path never read `firstFailure` and never wait
+on `maintenanceFinished`. If they are already mutating or publishing when a
+background job fails, they may finish that current work before admission closes.
+Later calls are rejected by the generic lifecycle state check. This deliberately
+permits additional data to be published after a background job has failed.
 
 `finishWriting()` waits uninterruptibly to completion because returning early
 could orphan non-daemon threads or transfer an index whose outcome is unknown.
@@ -1645,9 +1652,8 @@ reconciliation are unnecessary because the index will never resume.
 Failure shutdown follows this order:
 
 1. The first reporter records the primary failure for coordinator use and wakes
-   the coordinator. It acquires the writing lock, waiting for any active
-   synchronous flush to finish, then clears `ingestionPaused`, moves the runtime
-   to `ERROR`, and signals callers waiting on `ingestionMayProceed`. Later
+   the coordinator. It moves the runtime to `ERROR`, closes ingestion admission,
+   clears the pause, and signals callers waiting on `ingestionMayProceed`. Later
    exceptions never replace the internally retained failure.
 2. A caller-thread `put()` or flush failure is thrown back to that same caller.
    A background failure is never injected into an active or later ingestion
@@ -1691,8 +1697,8 @@ worker pool of `maintenanceThreads`. During ordinary `WRITING`, it checks
 eligible committed files with `scheduleWithFixedDelay(...)`, waiting three
 seconds after each scan rather than trying to catch up missed ticks. It receives
 no immediate signal from `SenkuIngestor` and has no reference to the in-memory
-map. It uses the writing lock only to update the shared `ingestionPaused` flag
-and signal its `ingestionMayProceed` condition.
+map. It invokes `SenkuIngestor.setPaused(...)`; the ingestor updates the pause
+under its control lock and signals its `ingestionMayProceed` condition.
 
 The initial worker pool is a JDK `ThreadPoolExecutor` with equal core and maximum
 sizes, an `ArrayBlockingQueue` of `maintenanceQueueSize`, and the Senku
@@ -1819,8 +1825,9 @@ The coordinator clears `ingestionPaused` and calls `signalAll()` only when the
 queue has capacity and no eligible work remains unqueued. Queue emptiness alone
 is not the low-water condition because workers may still be active and more
 eligible sources may remain on disk. The coordinator changes the flag only
-after completing its catalog and scheduling work; it acquires the writing lock
-briefly and performs no storage operation while holding it. Repeated
+after completing its catalog and scheduling work; the callback acquires the
+ingestor control lock briefly and performs no storage operation while holding
+it. Repeated
 observations of the same state do not signal again.
 
 This backpressure bounds throughput imbalance only after the coordinator has
@@ -1860,9 +1867,8 @@ for merge output are not represented by queue saturation.
   that stream-time global merging costs more than hash balancing saves. Range
   boundaries would need sampling or another skew-control strategy because the
   input distribution is not known in advance.
-- Replace the stop-the-world flush with an active/frozen map swap and bounded
-  asynchronous flushing. The initial implementation intentionally keeps the
-  simpler single locked map.
+- Move detached-batch publication off the caller thread if benchmarks show that
+  one caller paying the complete flush cost harms producer scheduling.
 - Add primitive or batch ingestion and flatter in-memory storage if object and
   map overhead dominates.
 - Refill executor capacity from the active L0 batch during completion handling
