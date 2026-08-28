@@ -28,8 +28,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.ThreadParams;
 
 /**
- * Measures the current striped {@link HashMap} ingestion layout independently
- * from flush, maintenance, filesystem, and final-drain costs.
+ * Compares striped {@link HashMap} and mixed open-addressed ingestion layouts
+ * independently from flush, maintenance, filesystem, and final-drain costs.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -39,10 +39,11 @@ import org.openjdk.jmh.infra.ThreadParams;
 public class SenkuIngestionMapBenchmark {
 
     private static final int ENTRY_COUNT = 1_048_576;
-    private static final int INGESTION_STRIPE_COUNT = 32;
-    private static final String COLLISION_HEAVY = "collision-heavy";
-    private static final String BIT_BOARD = "bit-board";
-    private static final String RANDOMIZED = "randomized";
+    static final String HASH_MAP = "hash-map";
+    static final String MIXED_OPEN_ADDRESSED = "mixed-open-addressed";
+    static final String COLLISION_HEAVY = "collision-heavy";
+    static final String BIT_BOARD = "bit-board";
+    static final String RANDOMIZED = "randomized";
 
     /**
      * Builds one complete unique-key batch using the current mutation maps.
@@ -56,9 +57,11 @@ public class SenkuIngestionMapBenchmark {
     @OperationsPerInvocation(ENTRY_COUNT)
     public List<Map<Long, NullValue>> buildUniqueEntries(
             final UniqueBuildState state) {
-        final List<Map<Long, NullValue>> maps = newMaps(state.entryCount);
+        final List<Map<Long, NullValue>> maps = newMaps(state.entryCount,
+                state.stripeCount, state.implementation);
         for (final Long key : state.keys) {
-            maps.get(stripe(key.longValue())).put(key, NULL);
+            maps.get(stripe(key.longValue(), state.stripeCount)).put(key,
+                    NULL);
         }
         return maps;
     }
@@ -88,6 +91,12 @@ public class SenkuIngestionMapBenchmark {
         @Param({ COLLISION_HEAVY, BIT_BOARD, RANDOMIZED })
         String distribution = COLLISION_HEAVY;
 
+        @Param({ HASH_MAP, MIXED_OPEN_ADDRESSED })
+        String implementation = HASH_MAP;
+
+        @Param({ "32", "64", "128" })
+        int stripeCount = 32;
+
         int entryCount = ENTRY_COUNT;
         private Long[] keys;
 
@@ -109,6 +118,12 @@ public class SenkuIngestionMapBenchmark {
         @Param({ COLLISION_HEAVY, BIT_BOARD, RANDOMIZED })
         String distribution = COLLISION_HEAVY;
 
+        @Param({ HASH_MAP, MIXED_OPEN_ADDRESSED })
+        String implementation = HASH_MAP;
+
+        @Param({ "32", "64", "128" })
+        int stripeCount = 32;
+
         int entryCount = ENTRY_COUNT;
         private Long[] keys;
         private List<Map<Long, NullValue>> maps;
@@ -120,14 +135,15 @@ public class SenkuIngestionMapBenchmark {
         @Setup(Level.Trial)
         public void setup() {
             requirePowerOfTwo(entryCount);
+            requirePowerOfTwo(stripeCount);
             keys = keys(distribution, entryCount);
-            maps = newMaps(entryCount);
-            locks = new ReentrantLock[INGESTION_STRIPE_COUNT];
+            maps = newMaps(entryCount, stripeCount, implementation);
+            locks = new ReentrantLock[stripeCount];
             for (int index = 0; index < locks.length; index++) {
                 locks[index] = new ReentrantLock();
             }
             for (final Long key : keys) {
-                maps.get(stripe(key.longValue())).put(key, NULL);
+                maps.get(stripe(key.longValue(), stripeCount)).put(key, NULL);
             }
         }
 
@@ -141,7 +157,7 @@ public class SenkuIngestionMapBenchmark {
 
         private NullValue updateExisting(final int keyIndex) {
             final Long key = keys[keyIndex];
-            final int stripe = stripe(key.longValue());
+            final int stripe = stripe(key.longValue(), stripeCount);
             final ReentrantLock lock = locks[stripe];
             lock.lock();
             try {
@@ -155,6 +171,38 @@ public class SenkuIngestionMapBenchmark {
                 return current;
             } finally {
                 lock.unlock();
+            }
+        }
+
+        /**
+         * Updates one entry while recording acquisition and critical-section
+         * timing for the dedicated contention benchmark.
+         *
+         * @param keyIndex bounded key-array index
+         * @param counters calling thread's JMH auxiliary counters
+         * @return existing non-null value
+         */
+        NullValue updateExistingWithTiming(final int keyIndex,
+                final SenkuIngestionLockBenchmark.LockTimingCounters counters) {
+            final Long key = keys[keyIndex];
+            final int stripe = stripe(key.longValue(), stripeCount);
+            final ReentrantLock lock = locks[stripe];
+            final long waitStart = System.nanoTime();
+            lock.lock();
+            final long holdStart = System.nanoTime();
+            try {
+                final Map<Long, NullValue> map = maps.get(stripe);
+                final NullValue current = map.get(key);
+                if (current == null) {
+                    throw new IllegalStateException(
+                            "Expected an existing benchmark key.");
+                }
+                map.put(key, current);
+                return current;
+            } finally {
+                final long holdEnd = System.nanoTime();
+                lock.unlock();
+                counters.record(holdStart - waitStart, holdEnd - holdStart);
             }
         }
     }
@@ -201,19 +249,47 @@ public class SenkuIngestionMapBenchmark {
         }
     }
 
-    private static List<Map<Long, NullValue>> newMaps(final int entryCount) {
+    /**
+     * Creates a bounded set of candidate mutation maps.
+     *
+     * @param entryCount     expected total mapping count
+     * @param stripeCount    power-of-two mutation stripe count
+     * @param implementation selected map implementation
+     * @return empty mutation maps
+     */
+    static List<Map<Long, NullValue>> newMaps(final int entryCount,
+            final int stripeCount, final String implementation) {
         final int totalCapacity = (int) ((4L * entryCount + 2L) / 3L);
         final int capacity = 1
-                + (totalCapacity - 1) / INGESTION_STRIPE_COUNT;
+                + (totalCapacity - 1) / stripeCount;
         final List<Map<Long, NullValue>> maps = new ArrayList<>(
-                INGESTION_STRIPE_COUNT);
-        for (int index = 0; index < INGESTION_STRIPE_COUNT; index++) {
-            maps.add(new HashMap<>(capacity));
+                stripeCount);
+        for (int index = 0; index < stripeCount; index++) {
+            maps.add(newMap(capacity, implementation));
         }
         return maps;
     }
 
-    private static Long[] keys(final String distribution,
+    private static Map<Long, NullValue> newMap(final int capacity,
+            final String implementation) {
+        if (HASH_MAP.equals(implementation)) {
+            return new HashMap<>(capacity);
+        }
+        if (MIXED_OPEN_ADDRESSED.equals(implementation)) {
+            return new SenkuIngestionMap<>(capacity, value -> value.hashCode());
+        }
+        throw new IllegalArgumentException(
+                "Unknown map implementation: " + implementation);
+    }
+
+    /**
+     * Creates the selected preboxed deterministic key distribution.
+     *
+     * @param distribution distribution name
+     * @param entryCount  number of unique keys
+     * @return preboxed keys
+     */
+    static Long[] keys(final String distribution,
             final int entryCount) {
         final Long[] keys = new Long[entryCount];
         for (int index = 0; index < entryCount; index++) {
@@ -253,8 +329,15 @@ public class SenkuIngestionMapBenchmark {
         return value ^ value >>> 31;
     }
 
-    private static int stripe(final long key) {
-        return SenkuIngestor.stripeFromHash(Long.hashCode(key));
+    /**
+     * Selects a candidate mutation stripe using the production mixer.
+     *
+     * @param key         primitive key
+     * @param stripeCount power-of-two stripe count
+     * @return mutation stripe
+     */
+    static int stripe(final long key, final int stripeCount) {
+        return SenkuIngestor.stripeFromHash(Long.hashCode(key), stripeCount);
     }
 
     private static void requirePowerOfTwo(final int value) {

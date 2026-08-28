@@ -2,10 +2,8 @@ package org.hestiastore.index.senku.internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.ToIntFunction;
@@ -22,7 +20,7 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
  */
 final class SenkuIngestor<K, V> {
 
-    private static final int INGESTION_STRIPE_COUNT = 32;
+    private static final int INGESTION_STRIPE_COUNT = 128;
     private static final int STRIPE_MIX_MULTIPLIER_1 = 0x7feb352d;
     private static final int STRIPE_MIX_MULTIPLIER_2 = 0x846ca68b;
 
@@ -37,11 +35,12 @@ final class SenkuIngestor<K, V> {
     private final int initialMapCapacity;
     private final int countCheckInterval;
 
-    private volatile List<Map<K, V>> entries;
+    private volatile List<SenkuIngestionMap<K, V>> entries;
     private volatile int[] stripeEntryCounts;
-    private volatile AtomicIntegerArray publishedStripeSizes;
+    private volatile int[] publishedStripeSizes;
+    private volatile AtomicInteger publishedEntryCount;
     private volatile int[] nextCountChecks;
-    private List<Map<K, V>> flushingEntries;
+    private List<SenkuIngestionMap<K, V>> flushingEntries;
     private long flushingId;
     private long nextFlushId;
     private boolean flushIdsExhausted;
@@ -98,7 +97,8 @@ final class SenkuIngestor<K, V> {
     void put(final K key, final V value) {
         final K validatedKey = Vldtn.requireNonNull(key, "key");
         final V validatedValue = Vldtn.requireNonNull(value, "value");
-        final int stripe = stripe(validatedKey);
+        final int configuredHash = configuredHash(validatedKey);
+        final int stripe = stripeFromHash(configuredHash);
         final ReentrantLock mutationLock = mutationLocks[stripe];
         boolean accepted = false;
         boolean rotate = false;
@@ -110,15 +110,19 @@ final class SenkuIngestor<K, V> {
             try {
                 requireAccepting();
                 if (!paused && !rotationRequested) {
-                    final Map<K, V> stripeEntries = entries.get(stripe);
-                    final V current = stripeEntries.get(validatedKey);
+                    final SenkuIngestionMap<K, V> stripeEntries = ingestionMap(
+                            stripe);
+                    final V current = stripeEntries.getWithHash(validatedKey,
+                            configuredHash);
                     if (current == null) {
-                        stripeEntries.put(validatedKey, validatedValue);
+                        stripeEntries.putWithHash(validatedKey, validatedValue,
+                                configuredHash);
                         stripeEntryCounts[stripe]++;
                         sampleCount(stripe, stripeEntryCounts[stripe]);
                     } else {
-                        stripeEntries.put(validatedKey, merge(validatedKey,
-                                current, validatedValue));
+                        stripeEntries.putWithHash(validatedKey,
+                                merge(validatedKey, current, validatedValue),
+                                configuredHash);
                     }
                     rotate = rotationRequested;
                     accepted = true;
@@ -281,7 +285,7 @@ final class SenkuIngestor<K, V> {
 
     private void flushClaimed() {
         while (true) {
-            final List<Map<K, V>> batchMaps;
+            final List<SenkuIngestionMap<K, V>> batchMaps;
             final long generation;
             controlLock.lock();
             try {
@@ -351,9 +355,9 @@ final class SenkuIngestor<K, V> {
         }
     }
 
-    private int stripe(final K key) {
+    private int configuredHash(final K key) {
         try {
-            return stripeFromHash(shardHashFunction.applyAsInt(key));
+            return shardHashFunction.applyAsInt(key);
         } catch (Exception e) {
             if (e instanceof IndexException) {
                 throw (IndexException) e;
@@ -364,20 +368,32 @@ final class SenkuIngestor<K, V> {
 
     /**
      * Independently avalanches the configured persistent-shard hash before
-     * selecting a mutation stripe. This prevents the stripe selection from
-     * fixing the same low bits that {@link HashMap} uses for its buckets.
+     * selecting a mutation stripe. Table probing applies a separate avalanche
+     * so conditioning a key on one stripe does not condition its table slot.
      *
      * @param hash configured persistent-shard hash
      * @return mutation stripe number
      */
     static int stripeFromHash(final int hash) {
+        return stripeFromHash(hash, INGESTION_STRIPE_COUNT);
+    }
+
+    /**
+     * Independently avalanches a configured hash for a selected power-of-two
+     * mutation-stripe count.
+     *
+     * @param hash        configured persistent-shard hash
+     * @param stripeCount positive power-of-two stripe count
+     * @return mutation stripe number
+     */
+    static int stripeFromHash(final int hash, final int stripeCount) {
         int mixed = hash;
         mixed ^= mixed >>> 16;
         mixed *= STRIPE_MIX_MULTIPLIER_1;
         mixed ^= mixed >>> 15;
         mixed *= STRIPE_MIX_MULTIPLIER_2;
         mixed ^= mixed >>> 16;
-        return mixed & (INGESTION_STRIPE_COUNT - 1);
+        return mixed & (stripeCount - 1);
     }
 
     private void lockAllMutations() {
@@ -417,12 +433,11 @@ final class SenkuIngestor<K, V> {
         if (stripeSize < nextCountChecks[stripe]) {
             return;
         }
-        publishedStripeSizes.set(stripe, stripeSize);
+        final int previousSize = publishedStripeSizes[stripe];
+        publishedStripeSizes[stripe] = stripeSize;
         nextCountChecks[stripe] = stripeSize + countCheckInterval;
-        long approximateCount = 0L;
-        for (int index = 0; index < INGESTION_STRIPE_COUNT; index++) {
-            approximateCount += publishedStripeSizes.get(index);
-        }
+        final int approximateCount = publishedEntryCount
+                .addAndGet(stripeSize - previousSize);
         if (approximateCount >= maxInMemoryEntries) {
             rotationRequested = true;
         }
@@ -430,27 +445,33 @@ final class SenkuIngestor<K, V> {
 
     private void resetCountSampling() {
         stripeEntryCounts = new int[INGESTION_STRIPE_COUNT];
-        publishedStripeSizes = new AtomicIntegerArray(INGESTION_STRIPE_COUNT);
+        publishedStripeSizes = new int[INGESTION_STRIPE_COUNT];
+        publishedEntryCount = new AtomicInteger();
         nextCountChecks = new int[INGESTION_STRIPE_COUNT];
         Arrays.fill(nextCountChecks, countCheckInterval);
     }
 
     private int entryCountLocked() {
         int count = 0;
-        for (Map<K, V> map : entries) {
+        for (SenkuIngestionMap<K, V> map : entries) {
             count = Math.addExact(count, map.size());
         }
         return count;
     }
 
-    private List<Map<K, V>> newMaps() {
+    private List<SenkuIngestionMap<K, V>> newMaps() {
         final int capacity = 1
                 + (initialMapCapacity - 1) / INGESTION_STRIPE_COUNT;
-        final List<Map<K, V>> maps = new ArrayList<>(INGESTION_STRIPE_COUNT);
+        final List<SenkuIngestionMap<K, V>> maps = new ArrayList<>(
+                INGESTION_STRIPE_COUNT);
         for (int index = 0; index < INGESTION_STRIPE_COUNT; index++) {
-            maps.add(new HashMap<>(capacity));
+            maps.add(new SenkuIngestionMap<>(capacity, shardHashFunction));
         }
         return maps;
+    }
+
+    private SenkuIngestionMap<K, V> ingestionMap(final int stripe) {
+        return entries.get(stripe);
     }
 
     private void advanceFlushIdLocked() {

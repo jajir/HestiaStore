@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 class SenkuIngestorTest {
 
     private static final int BIASED_BOARD_KEY_COUNT = 1_000_000;
+    private static final int INGESTION_STRIPE_COUNT = 128;
 
     private MemDirectory flushDirectory;
 
@@ -84,7 +85,7 @@ class SenkuIngestorTest {
         }
 
         assertFalse(names().isEmpty());
-        assertTrue(key > threshold);
+        assertTrue(key >= threshold);
         assertTrue(key < threshold + threshold / 4);
         assertEquals(0, ingestor.size());
     }
@@ -98,16 +99,16 @@ class SenkuIngestorTest {
         assertEquals(first, second);
         assertEquals(SenkuIngestor.stripeFromHash(first.hashCode()),
                 SenkuIngestor.stripeFromHash(second.hashCode()));
-        assertEquals(4, SenkuIngestor.stripeFromHash(Integer.MIN_VALUE));
-        assertEquals(24, SenkuIngestor.stripeFromHash(Integer.MAX_VALUE));
-        assertEquals(10, SenkuIngestor.stripeFromHash(-1));
+        assertEquals(36, SenkuIngestor.stripeFromHash(Integer.MIN_VALUE));
+        assertEquals(56, SenkuIngestor.stripeFromHash(Integer.MAX_VALUE));
+        assertEquals(74, SenkuIngestor.stripeFromHash(-1));
     }
 
     @Test
     void avalancheRoutingBalancesBiasedBoardHashes() {
         final int[] oldStripeSizes = new int[32];
-        final int[] stripeSizes = new int[32];
-        final int[] observedBucketBits = new int[32];
+        final int[] stripeSizes = new int[INGESTION_STRIPE_COUNT];
+        final int[] observedBucketBits = new int[INGESTION_STRIPE_COUNT];
         for (int sequence = 0; sequence < BIASED_BOARD_KEY_COUNT; sequence++) {
             final long key = biasedBoardKey(sequence);
             final int hash = Long.hashCode(key);
@@ -221,6 +222,56 @@ class SenkuIngestorTest {
             expected.add(Entry.of(key, (long) threadCount));
         }
         assertEquals(expected, actual);
+    }
+
+    @Test
+    void collisionHeavyLongKeysMergeAtomicallyAndFlushCompletely()
+            throws InterruptedException {
+        final int threadCount = 8;
+        final int keyCount = 4_096;
+        final SenkuIngestor<Long, Long> ingestor = newLongIngestor(
+                keyCount * 2, (key, first, second) -> first + second);
+        final CountDownLatch start = new CountDownLatch(1);
+        final ExecutorService executor = Executors.newFixedThreadPool(
+                threadCount);
+        try {
+            final List<Future<?>> puts = new ArrayList<>();
+            for (int thread = 0; thread < threadCount; thread++) {
+                puts.add(executor.submit(() -> {
+                    try {
+                        start.await();
+                        for (int sequence = 0; sequence < keyCount;
+                                sequence++) {
+                            ingestor.put(collisionHeavyKey(sequence), 1L);
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }));
+            }
+            start.countDown();
+            for (final Future<?> put : puts) {
+                try {
+                    put.get(10, TimeUnit.SECONDS);
+                } catch (ExecutionException | TimeoutException e) {
+                    throw new AssertionError("Concurrent put failed.", e);
+                }
+            }
+        } finally {
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
+
+        assertEquals(keyCount, ingestor.size());
+        assertTrue(ingestor.flushRemaining());
+        final TypeDescriptorLong longs = new TypeDescriptorLong();
+        final List<Entry<Long, Long>> actual = readShard(flushDirectory, 0L,
+                0, 1, 10_000L, longs, longs);
+        assertEquals(keyCount, actual.size());
+        assertEquals(keyCount,
+                actual.stream().map(Entry::getKey).distinct().count());
+        assertTrue(actual.stream().allMatch(
+                entry -> entry.getValue().longValue() == threadCount));
     }
 
     @Test
@@ -405,7 +456,7 @@ class SenkuIngestorTest {
 
     @Test
     void stripeMixerDistributesHashesWithFixedHashMapBucketBits() {
-        final int[] counts = new int[32];
+        final int[] counts = new int[INGESTION_STRIPE_COUNT];
         for (int value = 0; value < 32_768; value++) {
             final int upperBits = value << 5;
             final int hash = upperBits | (upperBits >>> 16 & 31);
@@ -426,8 +477,12 @@ class SenkuIngestorTest {
 
     @Test
     void stripeMixerHasStableResultsForExtremeHashes() {
-        assertEquals(4, SenkuIngestor.stripeFromHash(Integer.MIN_VALUE));
-        assertEquals(24, SenkuIngestor.stripeFromHash(Integer.MAX_VALUE));
+        assertEquals(36, SenkuIngestor.stripeFromHash(Integer.MIN_VALUE));
+        assertEquals(56, SenkuIngestor.stripeFromHash(Integer.MAX_VALUE));
+        assertEquals(4,
+                SenkuIngestor.stripeFromHash(Integer.MIN_VALUE, 32));
+        assertEquals(24,
+                SenkuIngestor.stripeFromHash(Integer.MAX_VALUE, 32));
     }
 
     private SenkuIngestor<Integer, Long> newIngestor(
@@ -442,6 +497,19 @@ class SenkuIngestorTest {
                 maxInMemoryEntries * 2);
     }
 
+    private SenkuIngestor<Long, Long> newLongIngestor(
+            final int maxInMemoryEntries,
+            final SenkuMergeFunction<Long, Long> mergeFunction) {
+        final TypeDescriptorLong longs = new TypeDescriptorLong();
+        final SenkuFlushWriter<Long, Long> flushWriter =
+                new SenkuFlushWriter<>(flushDirectory, longs, longs,
+                        value -> Long.hashCode(value.longValue()), 1, 1_024,
+                        10_000L, DATA_BLOCK_SIZE);
+        return new SenkuIngestor<>(new ReentrantLock(), mergeFunction,
+                value -> Long.hashCode(value.longValue()), flushWriter,
+                maxInMemoryEntries, maxInMemoryEntries * 2);
+    }
+
     private Set<String> names() {
         return flushDirectory.getFileNames().collect(Collectors.toSet());
     }
@@ -450,5 +518,15 @@ class SenkuIngestorTest {
         final int lowFive = sequence & 31;
         return lowFive | (long) (sequence >>> 5 & 0x7ff) << 5
                 | (long) (sequence >>> 16) << 21;
+    }
+
+    private static long collisionHeavyKey(final long sequence) {
+        final int lowBucketBits = (int) sequence & 0x3ff;
+        final int upperHashBits = (int) (sequence >>> 10) & 0xffff;
+        final int hash = upperHashBits << 16
+                | (upperHashBits ^ lowBucketBits);
+        final int cycle = (int) (sequence >>> 26);
+        final int lowWord = hash ^ cycle;
+        return (long) cycle << 32 | Integer.toUnsignedLong(lowWord);
     }
 }

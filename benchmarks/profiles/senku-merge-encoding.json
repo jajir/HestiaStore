@@ -1,0 +1,34 @@
+{
+  "profile": "senku-merge-encoding",
+  "description": "Senku Long-to-NullValue maintenance merge encoding, allocation, GC, and data-block-size comparison.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuMergeEncodingBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "senku-merge-encoding",
+      "include": "org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark.merge"
+      ],
+      "expectedResultCount": 6,
+      "args": [
+        "-prof", "gc"
+      ]
+    },
+    {
+      "label": "senku-merge-encoding-jfr",
+      "include": "org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark.merge"
+      ],
+      "expectedResultCount": 6,
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-prof", "jfr:dir=/tmp/hestia-bench/senku-merge-encoding-jfr"
+      ]
+    }
+  ]
+}

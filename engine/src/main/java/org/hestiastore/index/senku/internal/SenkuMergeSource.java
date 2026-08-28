@@ -68,6 +68,22 @@ final class SenkuMergeSource {
                 valueTypeDescriptor, recordCount, requireSourceEof);
     }
 
+    /**
+     * Opens the exact source range using the primitive long decoder.
+     *
+     * @param ordinal stable source ordinal used for duplicate ordering
+     * @param primitiveLongValue whether values use the built-in long encoding;
+     *                           false selects zero-byte null values
+     * @return primitive-long cursor owned by the caller
+     */
+    SenkuLongSourceCursor openLongs(final int ordinal,
+            final boolean primitiveLongValue) {
+        final LargeFileReader reader = startPosition == null ? file.openReader()
+                : file.openReader(startPosition);
+        return new SenkuLongSourceCursor(reader, recordCount, requireSourceEof,
+                primitiveLongValue, ordinal);
+    }
+
     long recordCount() {
         return recordCount;
     }

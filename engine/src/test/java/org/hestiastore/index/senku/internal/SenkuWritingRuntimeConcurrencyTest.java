@@ -133,7 +133,7 @@ class SenkuWritingRuntimeConcurrencyTest {
         assertEquals(List.of(0L, 1L), generations);
         assertEquals(List.of(Map.of(1, 1L, 2, 2L),
                 Map.of(3, 3L, 4, 4L)), batches);
-        assertEquals(List.of(32, 32), batchStripeCounts);
+        assertEquals(List.of(128, 128), batchStripeCounts);
         verify(flushWriter, times(2)).write(anyLong(), anyList());
     }
 

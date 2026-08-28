@@ -1,11 +1,13 @@
 package org.hestiastore.index.senku.internal;
 
+import static org.hestiastore.index.datatype.NullValue.NULL;
 import static org.hestiastore.index.senku.internal.LargeFileTestSupport.DATA_BLOCK_SIZE;
 import static org.hestiastore.index.senku.internal.SenkuFlushTestSupport.readShard;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,8 +17,10 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
+import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
@@ -135,6 +139,41 @@ class SenkuFlushWriterTest {
         }
     }
 
+    @Test
+    void writeUsesPrimitiveLongOrderingWithoutChangingPersistedFormat() {
+        final TypeDescriptorLong keys = new TypeDescriptorLong();
+        final TypeDescriptorNull values = new TypeDescriptorNull();
+        final Map<Long, NullValue> entries = new HashMap<>();
+        entries.put(Long.MAX_VALUE, NULL);
+        entries.put(0L, NULL);
+        entries.put(Long.MIN_VALUE, NULL);
+        entries.put(-1L, NULL);
+
+        new SenkuFlushWriter<>(flushDirectory, keys, values, key -> 0, 1, 2,
+                4L, DATA_BLOCK_SIZE).write(0L, List.of(entries));
+
+        assertEquals(List.of(Entry.of(Long.MIN_VALUE, NULL),
+                Entry.of(-1L, NULL), Entry.of(0L, NULL),
+                Entry.of(Long.MAX_VALUE, NULL)),
+                readShard(flushDirectory, 0L, 0, 1, 4L, keys, values));
+    }
+
+    @Test
+    void writeRetainsUnsignedOrderingFromCustomLongDescriptor() {
+        final TypeDescriptorLong keys = new UnsignedLongDescriptor();
+        final TypeDescriptorLong values = new TypeDescriptorLong();
+        final Map<Long, Long> entries = Map.of(-1L, 1L, 0L, 2L,
+                Long.MIN_VALUE, 3L, Long.MAX_VALUE, 4L);
+
+        new SenkuFlushWriter<>(flushDirectory, keys, values, key -> 0, 1, 4,
+                4L, DATA_BLOCK_SIZE).write(0L, List.of(entries));
+
+        assertEquals(List.of(Entry.of(0L, 2L),
+                Entry.of(Long.MAX_VALUE, 4L), Entry.of(Long.MIN_VALUE, 3L),
+                Entry.of(-1L, 1L)), readShard(flushDirectory, 0L, 0, 1, 4L,
+                        keys, values));
+    }
+
     private SenkuFlushWriter<Integer, Long> newWriter(
             final ToIntFunction<Integer> hash,
             final int shardCount, final int maxKeysPerPage,
@@ -143,5 +182,14 @@ class SenkuFlushWriterTest {
                 new TypeDescriptorInteger(), new TypeDescriptorLong(), hash,
                 shardCount, maxKeysPerPage, maxEntriesPerPart,
                 DATA_BLOCK_SIZE);
+    }
+
+    private static final class UnsignedLongDescriptor
+            extends TypeDescriptorLong {
+
+        @Override
+        public Comparator<Long> getComparator() {
+            return Long::compareUnsigned;
+        }
     }
 }

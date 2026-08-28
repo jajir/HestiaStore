@@ -24,50 +24,50 @@ mvn -pl benchmarks -am package
 
 This produces a runnable JMH fat-jar:
 
-`benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar`
+`benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar`
 
 ## Run benchmarks
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ChunkStoreWriteBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ChunkStoreSteadyWriteBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DataBlockByteReaderBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryIteratorBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SortedDataFileWriterBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Benchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar StringEncodingBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar UniqueCacheSortedKeyIteratorBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexRangeScanBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentMergeSequentialBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotRoutePutBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SenkuIndexBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SequentialFileReadingBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SequentialFileWritingBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar ChunkStoreWriteBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar ChunkStoreSteadyWriteBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar DataBlockByteReaderBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SingleChunkEntryIteratorBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SortedDataFileWriterBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar ByteSequenceCrc32Benchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar StringEncodingBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar UniqueCacheSortedKeyIteratorBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexGetBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexRangeScanBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentMergeSequentialBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexHotRoutePutBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexLifecycleBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SenkuIndexBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SequentialFileReadingBenchmark
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SequentialFileWritingBenchmark
 ```
 
 Compare both modes in one run (recommended):
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "ChunkStore.*Benchmark" -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar "ChunkStore.*Benchmark" -prof gc
 ```
 
 Read-path only (recommended for byte-slice migration checks):
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "DataBlockByteReaderBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SingleChunkEntryIteratorBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SortedDataFileWriterBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "UniqueCacheSortedKeyIteratorBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=live -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark -p workingSetMode=cold -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexRangeScanBenchmark -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentMergeSequentialBenchmark -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar "DataBlockByteReaderBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar "SingleChunkEntryIteratorBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar "SortedDataFileWriterBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar "UniqueCacheSortedKeyIteratorBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=live -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark -p workingSetMode=cold -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexRangeScanBenchmark -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentMergeSequentialBenchmark -prof gc
 ```
 
 The measured sorted-key snapshot comparison is documented in
@@ -83,16 +83,16 @@ per-entry hot loop so bounded-scan checks cannot regress it unnoticed.
 Mixed partitioned-ingest workloads with concurrent reads:
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark -p workloadMode=splitHeavy -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark -p workloadMode=splitHeavy -prof gc
 ```
 
 Persisted mutation and lifecycle paths:
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -t 1 -p walMode=sync -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -t 16 -p walMode=sync -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleBenchmark -p walMode=sync
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -t 1 -p walMode=sync -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark -t 16 -p walMode=sync -prof gc
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar SegmentIndexLifecycleBenchmark -p walMode=sync
 ```
 
 Run both persisted-mutation thread counts with otherwise identical parameters.
@@ -131,7 +131,7 @@ generations and pauses, or peak live heap are needed. Keep JFR separate from the
 GC-profiler run so profiler overhead is comparable between commits:
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar \
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar \
   SenkuParallelIngestionBenchmark -prof jfr:dir=/tmp/hestia-bench/senku-jfr
 ```
 
@@ -179,10 +179,65 @@ python3 benchmarks/scripts/run_jmh_profile.py \
   --output-dir /tmp/hestia-bench/senku-ingestion-map-baseline
 ```
 
+Three focused profiles cover the current ingestion, flush-ordering, and
+maintenance-encoding hot paths. Run each profile from the candidate and the
+selected baseline worktree on the same quiet host:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-ingestion-contention \
+  --output-dir /tmp/hestia-bench/senku-ingestion-contention
+
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-flush-ordering \
+  --output-dir /tmp/hestia-bench/senku-flush-ordering
+
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-merge-encoding \
+  --output-dir /tmp/hestia-bench/senku-merge-encoding
+```
+
+The ingestion profile compares `HashMap` with the mixed open-addressed table at
+32, 64, and 128 stripes for build and duplicate-update throughput. Its lock
+benchmark exposes accumulated wait and hold nanoseconds as JMH auxiliary
+counters; divide each counter by its `operations` counter for nanoseconds per
+update. Its rotation benchmark reports the latency and allocation cost of
+locking every stripe and replacing the lazy batch. The flush profile isolates
+partitioning and ordering, comparing the former full `Map.Entry[]` plus TimSort
+with serial and four-worker compact ordering. The merge profile measures the
+complete decode, reduction, page encoding, compression, and in-memory write
+phase for generic and exact primitive-long paths at 8, 32, and 128 KiB block
+sizes.
+
+The `gc` profiler records allocation per operation, allocation rate, GC count,
+and GC time beside the primary throughput or latency result. The merge profile
+also has a short JFR pass for allocation-site and CPU phase attribution. For a
+separate peak-resident-memory measurement on macOS, build the runner and wrap a
+single-fork invocation with the operating-system accounting tool:
+
+```sh
+mvn -pl benchmarks -am package
+
+/usr/bin/time -l java -jar \
+  benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar \
+  SenkuMergeEncodingBenchmark.merge \
+  -p path=primitive -p dataBlockBytes=8192 \
+  -wi 1 -i 3 -f 1 -prof jfr:dir=/tmp/hestia-bench/senku-merge-jfr
+```
+
+Record `maximum resident set size` from `time`, and use the generated recording
+to inspect peak live heap, GC pauses, and samples attributed to source decoding,
+duplicate reduction, page encoding, compression, and writing. Keep this pass
+separate from canonical GC-profiler comparisons because JFR changes the
+measurement overhead.
+
 Quick smoke run:
 
 ```sh
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "ChunkStore.*Benchmark" -wi 1 -i 1 -f 1 -r 1s -w 1s
+java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar "ChunkStore.*Benchmark" -wi 1 -i 1 -f 1 -r 1s -w 1s
 ```
 
 ## Canonical compare flow

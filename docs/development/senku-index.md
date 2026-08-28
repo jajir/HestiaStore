@@ -99,10 +99,10 @@ than resolved by call order.
 `putIfAbsent` and conditional `replace` are intentionally excluded because they
 would add state-resolution work.
 
-Lifecycle transitions use a writing lock, while active ingestion uses 32
-independent `HashMap` instances and mutation locks. `openStream()` is backed by
-a Senku-owned lazy merge implementation rather than materializing the complete
-result in memory.
+Lifecycle transitions use a writing lock, while active ingestion uses 128
+independent open-addressed mutation tables and locks. `openStream()` is backed
+by a Senku-owned lazy merge implementation rather than materializing the
+complete result in memory.
 
 Invalid or missing builder settings fail with `IllegalArgumentException` that
 names the setting. `create()` completes all builder validation before it changes
@@ -141,7 +141,7 @@ passed to `SenkuIndex.builder(...)` are also required and must be non-null.
 | --- | --- | --- | --- | --- |
 | `shardHashFunction` | Required | Non-null; comparator-equal keys must route to the same shard | `IllegalArgumentException` if missing or null | No |
 | `shardCount` | Required | 1 through `1_000_000` | `IllegalArgumentException` if missing or outside the range | Yes, in `ready.properties` |
-| `maxInMemoryEntries` | Required | 1 through `805_306_368` | `IllegalArgumentException` if missing or outside the range | No |
+| `maxInMemoryEntries` | Required | 1 through `805_306_368` | `IllegalArgumentException` if missing or outside the ingestion-table range | No |
 | `mergeFanIn` | Required | Integer greater than or equal to 2 | `IllegalArgumentException` if missing or outside the range | No |
 | `maintenanceThreads` | Required | Positive integer | `IllegalArgumentException` if missing or outside the range | No |
 | `maxKeysPerPage` | Default: `1_000_000` | Positive integer | `IllegalArgumentException` if outside the range | No |
@@ -176,8 +176,29 @@ will be detected before incorrect results are produced.
 The optional `maxKeysPerPage` setting controls the maximum number of sorted
 key-value entries in one page and defaults to `1_000_000`. It must be positive.
 A page closes when it reaches this count or the current shard ends, whichever
-happens first. This setting bounds entry count, not encoded bytes or retained
-memory.
+happens first. This always bounds entry count; the built-in fixed-width paths
+also derive a strict encoded-byte bound from it.
+
+Maintenance page encoding uses one growable contiguous buffer per active job
+instead of retaining a byte-sequence object and copied byte array for each
+serialized field. The exact built-in `Long`-key merge paths have a strict
+encoded output-buffer bound derived from the configured entry limit: at most
+10 bytes per `Long`/`NullValue` record and 18 bytes per `Long`/`Long` record,
+subject to the JVM's maximum safe array size. Other generic value codecs can
+emit an application-defined number of bytes, so imposing a smaller byte cap
+would reject previously valid values; those paths remain bounded by
+`maxKeysPerPage` and the maximum Java array size.
+
+At most `maintenanceThreads` jobs allocate merge buffers concurrently; queued
+jobs do not open their inputs. Each active fan-in job retains one decoded input
+page per source, one output page, compression output, and chunk-store block
+buffers. For the fixed-size built-in types this makes the page component
+explicitly bounded by approximately
+`maintenanceThreads * ((mergeFanIn + 1) * maxKeysPerPage * encodedRecordBytes)`
+before compression and block overhead. Existing files may contain pages written
+with an older, larger limit, so operators should size `maxKeysPerPage`,
+`mergeFanIn`, and `maintenanceThreads` together rather than treating them as
+independent throughput controls.
 
 The optional `maxEntriesPerPart` setting controls the maximum number of
 key-value entries in one physical `LargeFile` part and defaults to
@@ -203,9 +224,19 @@ always fits within the part's entry limit. `maxInMemoryEntries` must be from 1
 through 805,306,368, `mergeFanIn` must be at least two, and `diskIoBufferSize`
 must pass the same
 `Vldtn.requireIoBufferSize(...)` rule as Segment Index: positive and divisible
-by 1,024. The first version deliberately imposes no combined heap,
-encoded-page-size, or file-handle budget across otherwise valid configuration
-values.
+by 1,024. Generic codecs deliberately have no smaller shared heap or encoded
+byte budget beyond the worker, fan-in, page-entry, and Java-array limits because
+their maximum serialized value size is unknown.
+
+The reproducible `senku-merge-encoding` JMH profile compares the generic and
+primitive-key merge paths and the supported 8, 32, and 128 KiB data-block
+sizes. On the reference 100,000-entry in-memory merge, increasing the block
+size did not improve latency: 8 KiB measured 2.100 ms/op and 2.206 MB/op,
+32 KiB measured 2.105 ms/op and 2.337 MB/op, and 128 KiB measured 2.198 ms/op
+and 3.123 MB/op. Therefore the 8 KiB default remains unchanged; larger blocks
+increase per-job retained and allocated memory without a demonstrated speed
+benefit for this workload. Use JMH's `gc` profiler for allocation and GC totals
+and its JFR profiler when peak heap and phase attribution are required.
 
 Senku does not persist write-path builder configuration, type/comparator
 identity, shard hash, or merge-function identity. The one exception is the
@@ -258,8 +289,10 @@ arguments with
 `Vldtn.requireNonNull(key, "key")` and
 `Vldtn.requireNonNull(value, "value")`. A null argument therefore throws
 `IllegalArgumentException` before the map changes and leaves the handle in
-`WRITING`. Senku then calls `HashMap.get(key)`. A null result means absent
-because null values are forbidden, so the supplied value is stored directly.
+`WRITING`. Senku then probes the selected open-addressed mutation table with an
+independently mixed version of the already computed configured hash. A null
+result means absent because null values are forbidden, so the supplied value is
+stored directly.
 Otherwise Senku calls the sole merge function while holding that stripe lock
 and stores its result. For
 example, three puts for one key cause two logical merge calls, but Senku does
@@ -473,37 +506,41 @@ The write path is:
 ```text
 put
   -> SenkuIngestor
-  -> avalanche the configured shard hash into one of 32 mutation stripes
+  -> compute the configured shard hash once
+  -> independently avalanche it into one of 128 mutation stripes
   -> acquire that stripe's lock
-  -> HashMap.get(key), optionally merge, then HashMap.put(key, value)
+  -> probe a flat open-addressed table, optionally merge, then store
   -> sampled distinct-key count requests rotation
   -> acquire every mutation lock and detach the complete active batch
   -> install a fresh striped batch and release the mutation locks
   -> count persistent shards directly across the detached maps
-  -> order and sort Map.Entry references by persistent shard and key
+  -> order keys and values into compact shard ranges and sort each range
   -> publish one immutable flush generation while new puts continue
 ```
 
 Mutation-stripe routing applies an independent avalanche mix to the configured
-persistent shard hash before selecting a stripe. The extra mix avoids fixing the
-same five low spread bits later used by the stripe's JDK `HashMap` bucket index,
-which would otherwise concentrate each stripe into one thirty-second of its
-buckets. Persistent shard IDs continue to use only the unmodified configured
-`shardHashFunction` and `shardCount`. Stripe and control locks are non-fair
-because ingestion throughput, not waiter ordering, is the goal.
+persistent shard hash before selecting a stripe. Table probing applies a second
+independent avalanche so the stripe selector's low bits do not also determine
+the initial probe slot. The tables use parallel key, value, and hash arrays,
+linear probing, a 0.75 load threshold, and lazy allocation; they neither
+allocate one node per entry nor treeify collision chains. Persistent shard IDs
+continue to use only the unmodified configured `shardHashFunction` and
+`shardCount`. Stripe and control locks are non-fair because ingestion
+throughput, not waiter ordering, is the goal.
 
-The overflow-safe initial-capacity calculation is divided across the 32 active
-maps. With well-distributed hashes, their aggregate capacity holds
+The overflow-safe initial-capacity calculation is divided across the 128 active
+tables. With well-distributed configured hashes, their aggregate capacity holds
 `maxInMemoryEntries` at the normal load factor without resizing. An unusually
-skewed stripe may still resize. Rotation constructs fresh, initially empty maps;
-the detached maps retain their tables only until flush success or terminal
-failure releases that batch.
+skewed stripe may still resize. Rotation constructs fresh lazy tables, so their
+arrays are allocated only when a stripe first receives an entry; detached
+tables retain their arrays only until flush success or terminal failure releases
+that batch.
 
-`HashMap` has a maximum table capacity of `2^30`. At its normal `0.75` load
-factor, the largest entry threshold that preserves the no-resize guarantee is
-therefore 805,306,368. The builder accepts `maxInMemoryEntries` from 1 through
-that value and calculates the constructor capacity with `long` arithmetic before
-the checked cast to `int`:
+The ingestion table has a maximum table capacity of `2^30`. At its normal
+`0.75` load factor, the largest entry threshold that preserves the no-resize
+guarantee is therefore 805,306,368. The builder accepts
+`maxInMemoryEntries` from 1 through that value and calculates the requested
+aggregate capacity with `long` arithmetic before the checked cast to `int`:
 
 ```java
 private static final int MAX_IN_MEMORY_ENTRIES = 805_306_368;
@@ -512,40 +549,44 @@ long requestedCapacity = (4L * maxInMemoryEntries + 2L) / 3L;
 int initialCapacity = (int) requestedCapacity;
 ```
 
-Each stripe receives the ceiling of that aggregate request divided by 32, and
-the JDK rounds each map request to a supported power-of-two table capacity. This
+Each stripe receives the ceiling of that aggregate request divided by 128, and
+the table rounds each request to a supported power-of-two capacity. This
 validation protects the sizing arithmetic; it does not predict available heap.
 A valid configuration can still fail allocation when the selected entry count
 or key/value objects exceed the process memory budget.
 
 ### Striped Rotation and Detached Flush
 
-Each stripe publishes its local distinct-key count only at an interval of
-`max(1, maxInMemoryEntries / 128)`. A put that observes the sum of published
-stripe counts at or above the configured limit requests rotation. The exact
-batch count can therefore exceed the limit, but the unpublished aggregate is
-strictly less than 25 percent of the threshold. This avoids a shared atomic
-increment on every put. The limit counts entries, not bytes, so the user must
-size it for the encoded key and value sizes of the dataset.
+Each stripe publishes its local distinct-key-count delta only at an interval of
+`max(1, maxInMemoryEntries / (128 * 4))`. One shared atomic aggregate is updated
+at that sampling boundary rather than scanning every stripe or incrementing it
+on every put. A total at or above the configured limit requests rotation. The
+exact batch count can therefore exceed the limit, but the unpublished aggregate
+is strictly less than 25 percent of the threshold. The limit counts entries,
+not bytes, so the user must size it for the key and value objects in the
+dataset.
 
 The caller that claims rotation acquires all mutation locks in a fixed order,
-detaches the 32 maps, installs 32 fresh maps, resets count sampling, and releases
-the locks. It then flushes the detached maps on its caller thread. Other callers
-can immediately mutate the fresh batch. At most one detached batch exists. If
-the fresh batch also fills, new puts wait until the current flush publishes and
-the flushing caller detaches the next batch.
+detaches the 128 tables, installs 128 fresh lazy tables, resets count sampling,
+and releases the locks. It then flushes the detached tables on its caller
+thread. Other callers can immediately mutate the fresh batch. At most one
+detached batch exists. If the fresh batch also fills, new puts wait until the
+current flush publishes and the flushing caller detaches the next batch.
 
 `SenkuFlushWriter` counts entries for every persistent shard directly across
-the detached maps and computes the start offset of each shard in one reference
-array. A second traversal places each existing `Map.Entry<K, V>` reference into
-its contiguous shard range. It does not construct an aggregate `HashMap` or
-allocate another map node per entry. Each range is sorted independently by the
-configured key comparator. For a detached batch of at least 8,192 entries with
-more than one shard, the ranges are sorted concurrently on the JVM common
-fork-join pool when that pool has parallelism available. Smaller batches and
-single-shard indexes sort serially. Page encoding and directory writes remain
-sequential on the flushing caller and publish into a `flush/flush-N/`
-directory.
+the detached tables and computes the start offset of each shard in a compact
+order. A second traversal places exact built-in `Long` keys in a primitive
+`long[]`; generic keys use an `Object[]`; exact `NullValue` values require no
+per-entry array. No full `Map.Entry[]` or aggregate map is created. Each range
+is sorted independently. Exact `Long` keys avoid object-comparator calls and use
+primitive signed ordering compatible with `TypeDescriptorLong`; generic
+descriptors use their comparator through an index-based introsort with a
+heapsort fallback.
+For a detached batch of at least 8,192 entries with more than one shard, ranges
+are sorted on a process-wide daemon fork-join pool capped at four workers.
+Smaller batches and single-shard indexes sort serially. Page encoding and
+directory writes remain sequential on the flushing caller and publish into a
+`flush/flush-N/` directory.
 A page never contains entries from two shards: the writer closes the current
 page when it reaches `maxKeysPerPage` or at every non-empty shard boundary,
 whichever comes first. Every page starts with fresh differential-key state so
@@ -556,7 +597,7 @@ becomes committed only when its `manifest.properties` file is published last.
 No maintenance thread reads or controls active or detached ingestion maps.
 
 During a flush, memory can contain one active striped batch, one detached
-striped batch, one reference per detached entry, and `O(shardCount)` counts and
+striped batch, compact key/value ordering arrays, and `O(shardCount)` counts and
 offsets. Concurrent range sorting can temporarily retain sort workspaces for
 several shards, bounded in aggregate by `O(entryCount)`. Senku creates no
 wrapper object per encoded entry. The two detached-map traversals compute the
@@ -933,18 +974,20 @@ routing, monitoring, maintenance, or lifecycle orchestration.
 
 ## Performance Constraints
 
-- The initial object-based `put()` and in-memory map are accepted as a simple
-  baseline. A primitive or batch path may be added only after measurement.
-- Thirty-two mutation stripes allow independent puts to proceed concurrently.
+- The public object-based `put()` remains unchanged, but the mutation table is
+  a measured flat open-addressed implementation without per-entry nodes.
+- One hundred twenty-eight mutation stripes allow independent puts to proceed
+  concurrently. A focused sweep must be rerun for materially different worker
+  counts or configured-hash distributions.
   A duplicate key remains serialized by its one stripe lock.
 - Batch rotation briefly acquires every mutation lock. Persistent flush I/O
   occurs after detachment, while callers populate the next active batch.
 - Only one detached batch may flush. A second full active batch applies
   backpressure until the first flush completes.
 - Caller-driven flush consumes CPU and I/O on the caller that claimed rotation.
-- The striped `HashMap` baseline retains object, key-boxing, hashing, and lock
-  overhead. Its costs and the distribution of configured shard hashes across
-  mutation stripes must be measured before choosing a replacement.
+- Object key/value storage, caller-side boxing, configured hashing, and stripe
+  locks remain costs even though the table removes `HashMap` nodes and tree
+  bins.
 - The shard count and routing function must remain stable for the lifetime of an
   index.
 - Comparator-equal keys must always route to the same shard.
@@ -1544,13 +1587,13 @@ maintenance:
 
 | Component | Thread ownership | Lifetime |
 | --- | --- | --- |
-| `SenkuIngestor` | No owned thread; `put()`, rotation, page encoding, and writes execute on caller threads. Large multi-shard flushes borrow common fork-join workers while sorting independent shard ranges. | `WRITING` |
+| `SenkuIngestor` | No owned thread; `put()`, rotation, page encoding, and writes execute on caller threads. Large multi-shard flushes use a process-wide daemon fork-join pool capped at four workers while sorting independent shard ranges. | `WRITING` |
 | `SenkuMaintenanceCoordinator` | One non-daemon scheduled control thread | `WRITING` through final drain or minimal failure shutdown |
 | Maintenance worker pool | Up to `maintenanceThreads` non-daemon threads, created lazily, with a bounded FIFO work queue | First submitted merge through final drain or minimal failure shutdown |
 | Ready stream | No owned thread; the merge executes on the `openStream()` caller | One active stream in `READY` |
 
-Creation acquires the exclusive root `FileLock` and constructs 32 active
-`HashMap` instances, their mutation locks, the ingestion control lock, the
+Creation acquires the exclusive root `FileLock` and constructs 128 active lazy
+open-addressed tables, their mutation locks, the ingestion control lock, the
 lifecycle writing lock, coordinator, and worker pool before exposing the
 `WRITING` handle. The coordinator starts its three-second schedule only after
 initialization succeeds. All owned threads are non-daemon so their termination
@@ -1566,11 +1609,12 @@ it without changing persistent files. Cleanup failures are suppressed on the
 primary `IndexException`; neither factory method leaks an owned non-daemon
 thread or lock.
 
-Senku does not create or shut down a sort executor. A detached flush borrows
-the JVM common fork-join pool only for large multi-shard sorts and joins all
-sort tasks before page encoding begins. Applications that also place sustained
-work on the common pool should benchmark the resulting contention under their
-production concurrency.
+Senku lazily creates but does not shut down one process-wide daemon sort pool.
+Its parallelism is capped at four, it is independent of the JVM common pool,
+and every detached flush joins all sort tasks before page encoding begins.
+Concurrent Senku indexes share this bound, preventing each index from
+multiplying sort-worker memory, but heavy concurrent flushes should still be
+benchmarked under production load.
 
 #### Concurrent Directory Access
 
@@ -1604,8 +1648,9 @@ that handle. Waiting for an extra flush generation is unnecessary because
 `manifest.properties` publication already separates incomplete and committed
 inputs.
 
-During normal writing, `SenkuIngestor` samples the 32 stripe sizes and requests
-rotation at the approximate threshold. Its control lock owns a `Condition` used
+During normal writing, `SenkuIngestor` publishes sampled deltas from the 128
+stripe sizes into one atomic aggregate and requests rotation at the approximate
+threshold. Its control lock owns a `Condition` used
 for maintenance and rotation backpressure. A `put()` waits on that condition
 before taking its mutation-stripe lock while ingestion is paused or a full
 active batch cannot yet rotate; waiting releases the control lock. The caller

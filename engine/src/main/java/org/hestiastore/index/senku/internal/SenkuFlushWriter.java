@@ -1,18 +1,16 @@
 package org.hestiastore.index.senku.internal;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.ToIntFunction;
-import java.util.stream.IntStream;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.SingleChunkEntryWriterImpl;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeDescriptorLong;
+import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.hestiastore.index.directory.Directory;
 
 /**
@@ -21,12 +19,13 @@ import org.hestiastore.index.directory.Directory;
 final class SenkuFlushWriter<K, V> {
 
     private static final int PARALLEL_SORT_MIN_ENTRIES = 8_192;
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    private static final int MAX_LONG_KEY_BYTES = 2 + Long.BYTES;
 
     private final Directory flushDirectory;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final ToIntFunction<K> shardHashFunction;
-    private final Comparator<Map.Entry<K, V>> entryComparator;
     private final int shardCount;
     private final int maxKeysPerPage;
     private final long maxEntriesPerPart;
@@ -46,9 +45,6 @@ final class SenkuFlushWriter<K, V> {
                 "valueTypeDescriptor");
         this.shardHashFunction = Vldtn.requireNonNull(shardHashFunction,
                 "shardHashFunction");
-        final Comparator<K> keyComparator = keyTypeDescriptor.getComparator();
-        this.entryComparator = (first, second) -> keyComparator
-                .compare(first.getKey(), second.getKey());
         this.shardCount = Vldtn.requireGreaterThanZero(shardCount,
                 "shardCount");
         this.maxKeysPerPage = Vldtn.requireGreaterThanZero(maxKeysPerPage,
@@ -69,10 +65,11 @@ final class SenkuFlushWriter<K, V> {
      * @param generation generation identifier
      * @param entries    non-empty aggregate of detached mutation stripes
      */
-    void write(final long generation, final List<Map<K, V>> entries) {
+    void write(final long generation,
+            final List<? extends Map<K, V>> entries) {
         Vldtn.requireGreaterThanOrEqualToZero(generation, "generation");
-        final List<Map<K, V>> validatedEntries = Vldtn.requireNonNull(entries,
-                "entries");
+        final List<? extends Map<K, V>> validatedEntries = Vldtn
+                .requireNonNull(entries, "entries");
         final int entryCount = entryCount(validatedEntries);
         Vldtn.requireTrue(entryCount > 0,
                 "Property 'entries' must not be empty");
@@ -98,10 +95,10 @@ final class SenkuFlushWriter<K, V> {
     }
 
     private void writeGeneration(final Directory generationDirectory,
-            final List<Map<K, V>> entries, final int entryCount) {
+            final List<? extends Map<K, V>> entries, final int entryCount) {
         final int[] counts = countShards(entries);
         final int[] starts = starts(counts);
-        final Map.Entry<K, V>[] ordered = orderByShard(entries, starts,
+        final SenkuFlushOrder<K, V> ordered = orderByShard(entries, starts,
                 entryCount);
         sortShards(ordered, starts, counts);
         final LargeFile largeFile = new LargeFile(generationDirectory,
@@ -136,21 +133,14 @@ final class SenkuFlushWriter<K, V> {
      * Sorts independent persistent-shard ranges concurrently before sequential
      * page encoding. Each task owns a disjoint array range.
      */
-    private void sortShards(final Map.Entry<K, V>[] ordered,
+    private void sortShards(final SenkuFlushOrder<K, V> ordered,
             final int[] starts, final int[] counts) {
-        IntStream shards = IntStream.range(0, shardCount);
-        if (ordered.length >= PARALLEL_SORT_MIN_ENTRIES && shardCount > 1
-                && ForkJoinPool.getCommonPoolParallelism() > 1) {
-            shards = shards.parallel();
-        }
-        shards.forEach(shardId -> {
-            final int from = starts[shardId];
-            Arrays.sort(ordered, from, from + counts[shardId], entryComparator);
-        });
+        SenkuFlushSortTask.sortAll(ordered, starts, counts,
+                entryCount(counts) >= PARALLEL_SORT_MIN_ENTRIES);
     }
 
     private LargeFilePosition writeShard(final LargeFileWriterTx writer,
-            final Map.Entry<K, V>[] entries, final int from, final int to) {
+            final SenkuFlushOrder<K, V> entries, final int from, final int to) {
         LargeFilePosition firstPosition = null;
         int pageStart = from;
         while (pageStart < to) {
@@ -158,11 +148,14 @@ final class SenkuFlushWriter<K, V> {
             final int pageEnd = remaining <= maxKeysPerPage ? to
                     : pageStart + maxKeysPerPage;
             final SingleChunkEntryWriterImpl<K, V> pageWriter =
-                    new SingleChunkEntryWriterImpl<>(keyTypeDescriptor,
-                            valueTypeDescriptor);
+                    newPageWriter(pageEnd - pageStart);
             for (int index = pageStart; index < pageEnd; index++) {
-                final Map.Entry<K, V> entry = entries[index];
-                pageWriter.put(entry.getKey(), entry.getValue());
+                if (entries.hasPrimitiveLongKeys()) {
+                    pageWriter.putLongKey(entries.longKey(index),
+                            entries.value(index));
+                } else {
+                    pageWriter.put(entries.key(index), entries.value(index));
+                }
             }
             final LargeFilePosition position = writer.appendPage(
                     pageWriter.closeSequence(), pageEnd - pageStart);
@@ -174,12 +167,32 @@ final class SenkuFlushWriter<K, V> {
         return Vldtn.requireNonNull(firstPosition, "firstPosition");
     }
 
-    private int[] countShards(final List<Map<K, V>> entries) {
+    private SingleChunkEntryWriterImpl<K, V> newPageWriter(
+            final int recordCount) {
+        if (keyTypeDescriptor.getClass() != TypeDescriptorLong.class) {
+            return new SingleChunkEntryWriterImpl<>(keyTypeDescriptor,
+                    valueTypeDescriptor);
+        }
+        final int maxRecordBytes;
+        if (valueTypeDescriptor.getClass() == TypeDescriptorNull.class) {
+            maxRecordBytes = MAX_LONG_KEY_BYTES;
+        } else if (valueTypeDescriptor.getClass() == TypeDescriptorLong.class) {
+            maxRecordBytes = MAX_LONG_KEY_BYTES + Long.BYTES;
+        } else {
+            return new SingleChunkEntryWriterImpl<>(keyTypeDescriptor,
+                    valueTypeDescriptor);
+        }
+        final int maxEncodedBytes = (int) Math.min(MAX_ARRAY_SIZE,
+                (long) recordCount * maxRecordBytes);
+        return new SingleChunkEntryWriterImpl<>(keyTypeDescriptor,
+                valueTypeDescriptor, maxEncodedBytes);
+    }
+
+    private int[] countShards(
+            final List<? extends Map<K, V>> entries) {
         final int[] counts = new int[shardCount];
         for (final Map<K, V> stripe : entries) {
-            for (final K key : stripe.keySet()) {
-                counts[shardId(key)]++;
-            }
+            stripe.forEach((key, value) -> counts[shardId(key)]++);
         }
         return counts;
     }
@@ -194,21 +207,30 @@ final class SenkuFlushWriter<K, V> {
         return starts;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map.Entry<K, V>[] orderByShard(final List<Map<K, V>> entries,
+    private SenkuFlushOrder<K, V> orderByShard(
+            final List<? extends Map<K, V>> entries,
             final int[] starts, final int entryCount) {
-        final Map.Entry<K, V>[] ordered = new Map.Entry[entryCount];
-        final int[] next = Arrays.copyOf(starts, starts.length);
+        final SenkuFlushOrder<K, V> ordered = new SenkuFlushOrder<>(
+                keyTypeDescriptor, valueTypeDescriptor, entryCount);
+        final int[] next = starts.clone();
         for (final Map<K, V> stripe : entries) {
-            for (final Map.Entry<K, V> entry : stripe.entrySet()) {
-                final int shardId = shardId(entry.getKey());
-                ordered[next[shardId]++] = entry;
-            }
+            stripe.forEach((key, value) -> {
+                final int shardId = shardId(key);
+                ordered.set(next[shardId]++, key, value);
+            });
         }
         return ordered;
     }
 
-    private int entryCount(final List<Map<K, V>> entries) {
+    private int entryCount(final int[] counts) {
+        int count = 0;
+        for (final int shardEntryCount : counts) {
+            count = Math.addExact(count, shardEntryCount);
+        }
+        return count;
+    }
+
+    private int entryCount(final List<? extends Map<K, V>> entries) {
         int count = 0;
         for (int index = 0; index < entries.size(); index++) {
             final Map<K, V> map = Vldtn.requireNonNull(entries.get(index),

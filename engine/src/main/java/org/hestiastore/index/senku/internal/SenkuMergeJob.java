@@ -9,7 +9,9 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockSize;
+import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.senku.SenkuMergeFunction;
 
@@ -172,6 +174,15 @@ final class SenkuMergeJob<K, V> {
      * @return immutable completed-run result
      */
     SenkuCompletedRun execute() {
+        if (usesPrimitiveLongKeyPath()) {
+            final SenkuRunManifest manifest = new SenkuLongMergeWriter<>(sources,
+                    outputDirectory, (TypeDescriptorLong) keyTypeDescriptor,
+                    valueTypeDescriptor, longKeyMergeFunction(),
+                    maxKeysPerPage, maxEntriesPerPart,
+                    dataBlockSize, publicationAllowed).write();
+            return new SenkuCompletedRun(shardId, outputLevel, outputRunId,
+                    manifest);
+        }
         final List<EntryIterator<K, V>> inputs = openInputs();
         final SenkuMergedEntryIterator<K, V> merged;
         try {
@@ -187,6 +198,18 @@ final class SenkuMergeJob<K, V> {
                 .write(merged);
         return new SenkuCompletedRun(shardId, outputLevel, outputRunId,
                 manifest);
+    }
+
+    private boolean usesPrimitiveLongKeyPath() {
+        return keyTypeDescriptor.getClass() == TypeDescriptorLong.class
+                && (valueTypeDescriptor.getClass() == TypeDescriptorLong.class
+                        || valueTypeDescriptor
+                                .getClass() == TypeDescriptorNull.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private SenkuMergeFunction<Long, V> longKeyMergeFunction() {
+        return (SenkuMergeFunction<Long, V>) mergeFunction;
     }
 
     private List<EntryIterator<K, V>> openInputs() {

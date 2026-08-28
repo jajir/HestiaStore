@@ -1,0 +1,51 @@
+{
+  "profile": "senku-ingestion-contention",
+  "description": "Collision-heavy Long-key comparison of legacy HashMap and mixed open-addressed ingestion tables across bounded stripe-count candidates, including lock wait/hold timing.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuIngestionMapBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuIngestionLockBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuIngestionRotationBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "senku-ingestion-table-stripe-sweep",
+      "include": "org.hestiastore.index.senku.internal.SenkuIngestionMapBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.senku.internal.SenkuIngestionMapBenchmark.buildUniqueEntries",
+        "org.hestiastore.index.senku.internal.SenkuIngestionMapBenchmark.updateExistingEntry"
+      ],
+      "expectedResultCount": 12,
+      "args": [
+        "-p", "distribution=collision-heavy",
+        "-p", "implementation=hash-map,mixed-open-addressed",
+        "-p", "stripeCount=32,64,128",
+        "-prof", "gc"
+      ]
+    },
+    {
+      "label": "senku-ingestion-lock-timing",
+      "include": "org.hestiastore.index.senku.internal.SenkuIngestionLockBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.senku.internal.SenkuIngestionLockBenchmark.updateExistingEntry"
+      ],
+      "expectedResultCount": 6,
+      "args": [
+        "-p", "distribution=collision-heavy",
+        "-p", "implementation=hash-map,mixed-open-addressed",
+        "-p", "stripeCount=32,64,128"
+      ]
+    },
+    {
+      "label": "senku-ingestion-rotation-sweep",
+      "include": "org.hestiastore.index.senku.internal.SenkuIngestionRotationBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.senku.internal.SenkuIngestionRotationBenchmark.rotateBatch"
+      ],
+      "expectedResultCount": 3,
+      "args": [
+        "-p", "stripeCount=32,64,128",
+        "-prof", "gc"
+      ]
+    }
+  ]
+}
