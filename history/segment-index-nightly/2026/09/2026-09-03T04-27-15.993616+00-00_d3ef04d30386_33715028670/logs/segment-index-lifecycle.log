@@ -1,0 +1,101 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCheckAndRepairConsistency
+# Parameters: (keyCount = 16384, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 0.00% complete, ETA 00:00:12
+# Fork: 1 of 1
+# Warmup Iteration   1: 236.381 ms/op
+Iteration   1: 214.512 ms/op
+Iteration   2: 215.365 ms/op
+Iteration   3: 213.908 ms/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCheckAndRepairConsistency":
+  214.595 ±(99.9%) 13.352 ms/op [Average]
+  (min, avg, max) = (213.908, 214.595, 215.365), stdev = 0.732
+  CI (99.9%): [201.243, 227.948] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCompact
+# Parameters: (keyCount = 16384, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 33.33% complete, ETA 00:00:42
+# Fork: 1 of 1
+# Warmup Iteration   1: 252.848 ms/op
+Iteration   1: 233.256 ms/op
+Iteration   2: 233.626 ms/op
+Iteration   3: 230.760 ms/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCompact":
+  232.548 ±(99.9%) 28.440 ms/op [Average]
+  (min, avg, max) = (230.760, 232.548, 233.626), stdev = 1.559
+  CI (99.9%): [204.108, 260.987] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openExisting
+# Parameters: (keyCount = 16384, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 66.67% complete, ETA 00:00:18
+# Fork: 1 of 1
+# Warmup Iteration   1: 233.293 ms/op
+Iteration   1: 213.415 ms/op
+Iteration   2: 211.701 ms/op
+Iteration   3: 212.713 ms/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openExisting":
+  212.609 ±(99.9%) 15.714 ms/op [Average]
+  (min, avg, max) = (211.701, 212.609, 213.415), stdev = 0.861
+  CI (99.9%): [196.895, 228.323] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:50
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                        (keyCount)  (snappy)  (valueLength)  (walMode)  Mode  Cnt    Score    Error  Units
+SegmentIndexLifecycleBenchmark.openAndCheckAndRepairConsistency       16384      true             64       sync  avgt    3  214.595 ± 13.352  ms/op
+SegmentIndexLifecycleBenchmark.openAndCompact                         16384      true             64       sync  avgt    3  232.548 ± 28.440  ms/op
+SegmentIndexLifecycleBenchmark.openExisting                           16384      true             64       sync  avgt    3  212.609 ± 15.714  ms/op
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-lifecycle.json
