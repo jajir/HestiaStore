@@ -16,6 +16,7 @@ import org.hestiastore.index.directory.Directory;
  */
 final class SenkuRunWriter<K, V> {
 
+    private final SenkuStorageFormat format;
     private final Directory directory;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -27,12 +28,12 @@ final class SenkuRunWriter<K, V> {
     /**
      * Creates a writer for one already-created run directory.
      *
-     * @param directory target run directory
-     * @param keyTypeDescriptor key codec
+     * @param directory           target run directory
+     * @param keyTypeDescriptor   key codec
      * @param valueTypeDescriptor value codec
-     * @param maxKeysPerPage maximum entries in one encoded page
-     * @param maxEntriesPerPart maximum entries in one physical part
-     * @param dataBlockSize chunk-store block size
+     * @param maxKeysPerPage      maximum entries in one encoded page
+     * @param maxEntriesPerPart   maximum entries in one physical part
+     * @param dataBlockSize       chunk-store block size
      */
     SenkuRunWriter(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -49,6 +50,20 @@ final class SenkuRunWriter<K, V> {
             final int maxKeysPerPage, final long maxEntriesPerPart,
             final DataBlockSize dataBlockSize,
             final BooleanSupplier publicationAllowed) {
+        this(directory, keyTypeDescriptor, valueTypeDescriptor, maxKeysPerPage,
+                maxEntriesPerPart, dataBlockSize, publicationAllowed,
+                SenkuStorageFormat.createDefault());
+    }
+
+    /** Creates this component with the index's immutable storage format. */
+    SenkuRunWriter(final Directory directory,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int maxKeysPerPage, final long maxEntriesPerPart,
+            final DataBlockSize dataBlockSize,
+            final BooleanSupplier publicationAllowed,
+            final SenkuStorageFormat format) {
+        this.format = Vldtn.requireNonNull(format, "format");
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
@@ -56,8 +71,8 @@ final class SenkuRunWriter<K, V> {
                 "valueTypeDescriptor");
         this.maxKeysPerPage = Vldtn.requireGreaterThanZero(maxKeysPerPage,
                 "maxKeysPerPage");
-        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(
-                maxEntriesPerPart, "maxEntriesPerPart");
+        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(maxEntriesPerPart,
+                "maxEntriesPerPart");
         Vldtn.requireTrue(maxEntriesPerPart >= maxKeysPerPage,
                 "maxEntriesPerPart must be greater than or equal to maxKeysPerPage");
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
@@ -76,13 +91,13 @@ final class SenkuRunWriter<K, V> {
         final EntryIterator<K, V> validatedEntries = Vldtn
                 .requireNonNull(entries, "entries");
         final LargeFileWriterTx writer = new LargeFile(directory, dataBlockSize,
-                maxEntriesPerPart, 0).openWriterTx();
+                maxEntriesPerPart, 0, format).openWriterTx();
         long recordCount = 0L;
         try {
             while (validatedEntries.hasNext()) {
-                final SingleChunkEntryWriterImpl<K, V> page =
-                        new SingleChunkEntryWriterImpl<>(keyTypeDescriptor,
-                                valueTypeDescriptor);
+                final SingleChunkEntryWriterImpl<K, V> page = new SingleChunkEntryWriterImpl<>(
+                        keyTypeDescriptor, valueTypeDescriptor,
+                        Integer.MAX_VALUE - 8, format.keyCodec());
                 int pageEntries = 0;
                 while (pageEntries < maxKeysPerPage
                         && validatedEntries.hasNext()) {

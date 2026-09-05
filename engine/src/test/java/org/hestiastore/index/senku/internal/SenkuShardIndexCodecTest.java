@@ -7,12 +7,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.List;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.chunkstore.ChunkStoreWriterTx;
+import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
+import org.hestiastore.index.chunkstore.ChunkStoreFile;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,8 +52,27 @@ class SenkuShardIndexCodecTest {
 
     @Test
     void readRejectsMissingFile() {
-        assertThrows(IndexException.class, () -> SenkuShardIndexCodec
-                .read(directory, DATA_BLOCK_SIZE, 1));
+        assertThrows(IndexException.class,
+                () -> SenkuShardIndexCodec.read(directory, DATA_BLOCK_SIZE, 1));
+    }
+
+    @Test
+    void rawCompressionRoundTripsAndNullSettingIsRejected() {
+        final SenkuShardIndex expected = oneRecordIndex();
+        assertThrows(IllegalArgumentException.class, () -> SenkuShardIndexCodec
+                .write(directory, DATA_BLOCK_SIZE, expected, null));
+        SenkuShardIndexCodec.write(directory, DATA_BLOCK_SIZE, expected,
+                Compression.none());
+        assertEquals(expected.recordCount(0), SenkuShardIndexCodec
+                .read(directory, DATA_BLOCK_SIZE, 1).recordCount(0));
+        final var store = new ChunkStoreFile(directory,
+                SenkuFileNames.SHARD_INDEX_FILE, DATA_BLOCK_SIZE, List.of(),
+                List.of(new ChunkFilterMagicNumberValidation()));
+        try (var reader = store
+                .openReader(store.getFirstChunkStorePosition())) {
+            assertEquals(1L << ChunkFilter.BIT_POSITION_MAGIC_NUMBER,
+                    reader.read().getHeader().getFlags());
+        }
     }
 
     @Test
@@ -76,16 +100,16 @@ class SenkuShardIndexCodecTest {
     void readRejectsWrongVersion() {
         writeRaw(2, validPayload(0, 0L, 1L));
 
-        assertThrows(IndexException.class, () -> SenkuShardIndexCodec
-                .read(directory, DATA_BLOCK_SIZE, 1));
+        assertThrows(IndexException.class,
+                () -> SenkuShardIndexCodec.read(directory, DATA_BLOCK_SIZE, 1));
     }
 
     @Test
     void readRejectsTruncatedAndOversizedPayload() {
         writeRaw(SenkuShardIndexCodec.SHARD_INDEX_VERSION,
                 ByteSequences.wrap(new byte[19]));
-        assertThrows(IndexException.class, () -> SenkuShardIndexCodec
-                .read(directory, DATA_BLOCK_SIZE, 1));
+        assertThrows(IndexException.class,
+                () -> SenkuShardIndexCodec.read(directory, DATA_BLOCK_SIZE, 1));
 
         final MemDirectory oversizedDirectory = new MemDirectory();
         writeRaw(oversizedDirectory, SenkuShardIndexCodec.SHARD_INDEX_VERSION,
@@ -98,8 +122,8 @@ class SenkuShardIndexCodecTest {
     void readRejectsWrongShardIdAndNegativeValues() {
         writeRaw(SenkuShardIndexCodec.SHARD_INDEX_VERSION,
                 validPayload(1, 0L, 1L));
-        assertThrows(IndexException.class, () -> SenkuShardIndexCodec
-                .read(directory, DATA_BLOCK_SIZE, 1));
+        assertThrows(IndexException.class,
+                () -> SenkuShardIndexCodec.read(directory, DATA_BLOCK_SIZE, 1));
 
         final MemDirectory negativePositionDirectory = new MemDirectory();
         writeRaw(negativePositionDirectory,
@@ -121,27 +145,23 @@ class SenkuShardIndexCodecTest {
         writeRaw(SenkuShardIndexCodec.SHARD_INDEX_VERSION,
                 validPayload(0, 0L, 0L));
 
-        assertThrows(IndexException.class, () -> SenkuShardIndexCodec
-                .read(directory, DATA_BLOCK_SIZE, 1));
+        assertThrows(IndexException.class,
+                () -> SenkuShardIndexCodec.read(directory, DATA_BLOCK_SIZE, 1));
     }
 
     @Test
     void readRejectsExtraChunk() {
-        final ChunkStoreWriterTx transaction = LargeFile
-                .chunkStore(directory, DATA_BLOCK_SIZE,
-                        SenkuFileNames.SHARD_INDEX_FILE)
-                .openWriteTx();
+        final ChunkStoreWriterTx transaction = LargeFile.chunkStore(directory,
+                DATA_BLOCK_SIZE, SenkuFileNames.SHARD_INDEX_FILE).openWriteTx();
         final ChunkStoreWriter writer = transaction.open();
         final ByteSequence payload = validPayload(0, 0L, 1L);
-        writer.writeSequence(payload,
-                SenkuShardIndexCodec.SHARD_INDEX_VERSION);
-        writer.writeSequence(payload,
-                SenkuShardIndexCodec.SHARD_INDEX_VERSION);
+        writer.writeSequence(payload, SenkuShardIndexCodec.SHARD_INDEX_VERSION);
+        writer.writeSequence(payload, SenkuShardIndexCodec.SHARD_INDEX_VERSION);
         writer.close();
         transaction.commit();
 
-        assertThrows(IndexException.class, () -> SenkuShardIndexCodec
-                .read(directory, DATA_BLOCK_SIZE, 1));
+        assertThrows(IndexException.class,
+                () -> SenkuShardIndexCodec.read(directory, DATA_BLOCK_SIZE, 1));
     }
 
     private static SenkuShardIndex oneRecordIndex() {
@@ -154,10 +174,8 @@ class SenkuShardIndexCodecTest {
 
     private static void writeRaw(final MemDirectory target, final int version,
             final ByteSequence payload) {
-        final ChunkStoreWriterTx transaction = LargeFile
-                .chunkStore(target, DATA_BLOCK_SIZE,
-                        SenkuFileNames.SHARD_INDEX_FILE)
-                .openWriteTx();
+        final ChunkStoreWriterTx transaction = LargeFile.chunkStore(target,
+                DATA_BLOCK_SIZE, SenkuFileNames.SHARD_INDEX_FILE).openWriteTx();
         final ChunkStoreWriter writer = transaction.open();
         writer.writeSequence(payload, version);
         writer.close();

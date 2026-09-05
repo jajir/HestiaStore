@@ -72,6 +72,10 @@ public final class SenkuIndexBuilder<K, V> {
     public SenkuIndexBuilder<K, V> maxEntriesPerPart(
             long maxEntriesPerPart);
 
+    public SenkuIndexBuilder<K, V> keyPageCodec(KeyPageCodec<K> codec);
+
+    public SenkuIndexBuilder<K, V> compression(Compression compression);
+
     public SenkuWriting<K, V> create();
 }
 
@@ -104,8 +108,9 @@ independent open-addressed mutation tables and locks. `openStream()` is backed
 by a Senku-owned lazy merge implementation rather than materializing the
 complete result in memory.
 
-Invalid or missing builder settings fail with `IllegalArgumentException` that
-names the setting. `create()` completes all builder validation before it changes
+Missing or out-of-range basic builder settings fail with `IllegalArgumentException`
+that names the setting. Unsupported key-codec/descriptor combinations and
+compression levels fail with `IndexException`. `create()` completes all builder validation before it changes
 storage. Storage, locking, merge, lifecycle, and streaming failures crossing a
 created Senku handle are reported as `IndexException`; lower-level runtime
 exceptions are wrapped with their original cause.
@@ -139,6 +144,8 @@ passed to `SenkuIndex.builder(...)` are also required and must be non-null.
 
 | Setting | Required or default | Accepted value | Failure | Persisted |
 | --- | --- | --- | --- | --- |
+| `keyPageCodec` | Default: `KeyPageCodecs.prefix()` | Prefix for any descriptor; `longDeltaVarint()` or `longFixedWeightDeltaVarint(...)` for exact `TypeDescriptorLong` | `IllegalArgumentException` for null/invalid domain; `IndexException` for incompatible descriptor | Yes, in `format.properties` and page headers |
+| `compression` | Default: `Compression.zstd(3)` | `none()` or `zstd(1..22)` | `IllegalArgumentException` if null; `IndexException` for unsupported level | Yes, in `format.properties` |
 | `shardHashFunction` | Required | Non-null; comparator-equal keys must route to the same shard | `IllegalArgumentException` if missing or null | No |
 | `shardCount` | Required | 1 through `1_000_000` | `IllegalArgumentException` if missing or outside the range | Yes, in `ready.properties` |
 | `maxInMemoryEntries` | Required | 1 through `805_306_368` | `IllegalArgumentException` if missing or outside the ingestion-table range | No |
@@ -168,7 +175,7 @@ The initial configuration has four required performance parameters:
 `diskIoBufferSize` is the same storage parameter used by Segment Index. It
 defaults to `IndexConfigurationDefaults.DEFAULT_DISK_IO_BUFFER_SIZE_BYTES`
 (`8_192` bytes) when creating an index and is used to construct the existing
-`DataBlockSize`. Because Senku does not persist configuration, `open()` requires
+`DataBlockSize`. Because Senku does not persist this I/O setting, `open()` requires
 the caller to supply the matching value. A wrong value is not compared against
 metadata. It may fail during storage decoding, but Senku cannot promise that it
 will be detected before incorrect results are produced.
@@ -457,6 +464,11 @@ generations into shard runs, consolidate every configured shard to exactly one
 terminal sorted run, and publish `ready.properties` with the structural shard
 count. This ordering prevents a periodic coordinator scan from entering drain
 mode while the final flush is present but not yet visible through its manifest.
+Before any successful readiness decision, the coordinator must observe
+`FINISHING` and reconcile the committed-source hierarchy. A completion callback
+cannot use a catalog snapshot from `WRITING` to establish final drain: a put
+may have published another flush after that snapshot. This reconciliation is
+required even when the final active batch was empty.
 The finalization work can read and rewrite substantial data and therefore
 delays the first sorted result. Failure moves the writing handle directly to
 `ERROR`.
@@ -947,13 +959,14 @@ implements that merge directly with the priority-queue algorithm above;
 existing `DataFileSorter` merge behavior is not a design constraint.
 
 Senku should reuse `Directory`, `FileLock`, `TypeDescriptor`, `Entry`,
-`ByteSequence`, `ChunkStoreFile`, the Snappy and magic-number chunk filters,
+`ByteSequence`, `ChunkStoreFile`, the Zstd and magic-number chunk filters,
 `SingleChunkEntryWriterImpl`, `SingleChunkEntryIterator`, `IndexException`, and
 `Vldtn`. The surrounding flush or merge loop counts entries and closes the
 current `SingleChunkEntryWriterImpl` at `maxKeysPerPage`; no custom page writer
 is needed. Senku owns its ready-stream adapter and handle lifecycle because the
 corresponding existing abstractions do not expose the required stream-close and
-ownership-transfer contracts. Existing code remains unchanged.
+ownership-transfer contracts. Shared page writers and readers accept a matched
+`KeyPageCodec`, while their existing constructors retain prefix encoding.
 `CloseableResource` and `AbstractCloseableResource` may still be reused by
 internal resources whose lifecycle matches their exact contract, but not by the
 idempotently closed `SenkuReady` handle. `SenkuWriting` is not closeable. Senku
@@ -1022,7 +1035,7 @@ routing, monitoring, maintenance, or lifecycle orchestration.
 - Compression may reduce physical I/O and disk consumption, but it does not
   remove logical merge passes. It helps only when the data compresses enough to
   repay its CPU cost.
-- The existing Snappy filter materializes byte arrays. Its copy and allocation
+- The Zstd filter materializes byte arrays. Its copy and allocation
   cost must be measured at the selected `maxKeysPerPage` and the dataset's
   actual encoded sizes.
 - `maxInMemoryEntries` limits entry count rather than bytes. The same setting can
@@ -1184,6 +1197,7 @@ not part of the persistent ready layout.
 ```text
 senku-index/
 ├── .lock
+├── format.properties
 ├── flush/
 │   ├── flush-00042/
 │   │   ├── manifest.properties
@@ -1222,6 +1236,7 @@ levels. For example:
 ```text
 senku-index/
 ├── .lock
+├── format.properties
 ├── ready.properties
 ├── flush/
 ├── shard-00000/
@@ -1304,6 +1319,96 @@ missing, extra, malformed, negative, or inconsistent manifest property fails
 fast with `IndexException`. The temporary manifest is written through the
 existing properties infrastructure and renamed for publication.
 
+### Key Page Encoding and Compression
+
+The logical type remains `TypeDescriptorLong`; no 48-bit board descriptor is
+required. For sorted long keys, select:
+
+```java
+builder.keyPageCodec(KeyPageCodecs.longDeltaVarint())
+       .compression(Compression.zstd(3));
+```
+
+These types live in `org.hestiastore.index.chunkentryfile` and
+`org.hestiastore.index.chunkstore`, respectively. The first key in each page is
+an eight-byte, big-endian absolute long. Subsequent keys store only the positive
+numeric gap, using canonical unsigned LEB128 (seven data bits per byte). Gaps
+1 through 127 take one byte; the full signed-long range is supported with up to
+ten bytes per gap. Values retain their descriptor encoding and are interleaved
+after each key. Every page resets its key state, so page/shard starts remain
+independently readable. This is numeric delta encoding, not a three-bit prefix
+length. Custom long descriptor subclasses or comparators are rejected in delta
+mode rather than silently changing their semantics.
+
+The immutable root `format.properties` is published before any pages:
+
+```properties
+formatVersion=2
+keyPageCodec=3
+compression=zstd
+compressionLevel=3
+```
+
+For non-negative keys with a known number of set bits and optional binary
+parity constraints, a rank codec stores each key's ordinal within that domain:
+
+```java
+builder.keyPageCodec(KeyPageCodecs.longFixedWeightDeltaVarint(
+        49, 27, new long[] { 3L }, 0))
+       .compression(Compression.zstd(3));
+```
+
+Here every key has 27 set bits among its low 49 bits, and the parity of the
+bits selected by mask `3L` is even. This is a generic integer-domain example,
+not a built-in board geometry. A caller supplies the correct domain for its
+dataset. `bitCount` is 1 through 63, `setBitCount` is 0 through `bitCount`, and
+there are at most eight ordered parity masks within the logical bit width.
+Each bit of `paritySyndrome` specifies the required parity of the corresponding
+mask. An empty mask array and syndrome zero select the entire fixed-weight
+domain. An empty domain is invalid.
+
+Ranks preserve numeric key order, so gap encoding operates on ranks while
+ingestion, sharding, comparisons, duplicate reducers, and returned entries
+continue to use the original logical longs. The first rank in each page is
+eight-byte big-endian; subsequent ranks use canonical unsigned LEB128 gaps.
+Readers reject ranks outside the domain, and writers reject keys with wrong
+bit width, set-bit count, or parity. The immutable codec shares a bounded
+dynamic-programming table across page readers and writers. Rank conversion
+adds CPU work and must be measured against numeric deltas for the actual data.
+
+The rank codec has ID 4 and persists all four additional domain properties:
+
+```properties
+formatVersion=2
+keyPageCodec=4
+compression=zstd
+compressionLevel=3
+fixedWeightBitCount=49
+fixedWeightSetBitCount=27
+fixedWeightParityMasks=3
+fixedWeightParitySyndrome=0
+```
+
+`fixedWeightParityMasks` is a comma-separated list of canonical non-negative
+decimal longs, or an empty value when no equations are configured. Reopening
+reconstructs the complete codec solely from root metadata; it needs no custom
+descriptor, callback, registry, or application class. The parameter arrays are
+defensively copied. Missing, extra, malformed, or incompatible properties fail
+with `IndexException`; `KeyPageCodecs.fromId(4)` without parameters also fails.
+Domain parameters must remain immutable for the lifetime of the index.
+
+The default key codec is prefix (ID 2); numeric delta-varints use ID 3, and
+fixed-weight rank delta-varints use ID 4. Compression
+records `zstd` plus level 1 through 22, or `none` plus level 0. Chunk flag bit 6
+marks Zstd; a compressed result that is not smaller is stored raw. The same
+compression choice applies to data pages and shard tables. Reopen reads the
+persisted format, so callers do not repeat compression or codec settings.
+Unknown or missing format metadata, legacy page version 1, Snappy chunks, and
+root/page codec mismatches fail with `IndexException`. Prefix and numeric-delta
+indexes with valid format metadata remain readable. Indexes without that
+metadata must be rebuilt in a fresh directory; there is no in-place migration.
+Snappy remains available for the unrelated Segment Index implementation.
+
 `ready.properties` contains exactly the structural count needed to validate the
 ready layout. For example:
 
@@ -1336,10 +1441,10 @@ record[shardId]: shard ID (int)
                  record count (long)
 ```
 
-Its write filters are `ChunkFilterSnappyCompress` followed by
-`ChunkFilterMagicNumberWriting`. Its read filters are
-`ChunkFilterMagicNumberValidation` followed by
-`ChunkFilterSnappyDecompress`. The existing chunk header and filters replace a
+Its write filters are the configured `ChunkFilterZstdCompress` (omitted for
+`Compression.none()`) followed by `ChunkFilterMagicNumberWriting`. Its read
+filters are `ChunkFilterMagicNumberValidation` followed by
+`ChunkFilterZstdDecompress`, which also accepts uncompressed fallback chunks. The existing chunk header and filters replace a
 custom Senku header, trailer, or checksum format. The shard-index writer passes
 `SHARD_INDEX_VERSION = 1` to `ChunkStoreWriter.writeSequence(...)`. The reader
 requires `chunk.getHeader().getVersion() == SHARD_INDEX_VERSION` immediately
@@ -1434,12 +1539,12 @@ final class LargeFileReader
 
 `appendPage(...)` validates the positive entry count, rotates by
 `maxEntriesPerPart`, hides the version required by
-`ChunkStoreWriter.writeSequence(...)`, and always supplies
-`SENKU_PAGE_VERSION`. It returns the opaque start position of the appended page;
-that position is never a page ID. A caller cannot mix page versions within one
-Senku source, and the version is not builder configuration. `LargeFileReader`
-validates that every entry page has this version and fails with `IndexException`
-on a mismatch.
+`ChunkStoreWriter.writeSequence(...)`, and supplies the selected key codec ID:
+2 for prefix encoding or 3 for long delta-varints. It returns the opaque start
+position of the appended page; that position is never a page ID. Each writer
+uses one immutable format. `LargeFileReader` resolves the codec from every page
+header and rejects unknown IDs, including legacy version 1. Ready streams also
+require each page codec to match the root's persisted choice.
 
 The whole-source `openReader()` starts at the beginning and reads through every
 part declared by the source manifest. It is used for a complete sorted run. The
@@ -1517,17 +1622,19 @@ first format's signed-`int` manifest count limits one `LargeFile` to
 `Integer.MAX_VALUE - 1`, inclusive. The writer checks the count before opening
 each new part.
 
-Each physical part is one existing `ChunkStoreFile`. The first implementation
-uses `ChunkFilterSnappyCompress` and `ChunkFilterMagicNumberWriting` while
-writing, and `ChunkFilterMagicNumberValidation` and
-`ChunkFilterSnappyDecompress` while reading. Each page uses the existing
-`SingleChunkEntryWriterImpl`; the surrounding flush or merge loop counts entries
-and closes the page at `maxKeysPerPage` or a shard boundary. Reading reuses
-`SingleChunkEntryIterator`. Senku neither counts encoded bytes nor prevalidates
-an encoded page size.
+Each physical part is one existing `ChunkStoreFile`. Writing uses the selected
+Zstd filter (or no compressor) followed by `ChunkFilterMagicNumberWriting`;
+reading uses `ChunkFilterMagicNumberValidation` and `ChunkFilterZstdDecompress`.
+Each page uses `SingleChunkEntryWriterImpl` with the selected `KeyPageCodec`;
+the surrounding flush or merge loop closes the page at `maxKeysPerPage` or a
+shard boundary. `SingleChunkEntryIterator` and `SenkuLongSourceCursor` share the
+same page-local `LongKeyPageReader` on built-in long paths. Generic prefix keys
+continue to use `DiffKeyReader`. Zstd encoding and frame decoding reject
+uncompressed pages larger than 256 MiB before allocating a compression or
+decompression array; entry-count settings should stay within this byte limit.
 
-The reused `DiffKeyWriter` still validates its own one-byte differential-key
-length fields while encoding. This inherited format limit is not builder
+For prefix encoding, the reused `DiffKeyWriter` still validates its own
+one-byte differential-key length fields while encoding. This inherited format limit is not builder
 configuration. A key that cannot be represented, or data that exceeds another
 existing storage limit, fails during flush or merge and moves the writing handle
 to `ERROR` with `IndexException`.
@@ -1671,10 +1778,14 @@ awakened or newly arriving puts. After the committed flush manifest is visible,
 `finishWriting()` changes the lifecycle to `FINISHING`, releases the lock,
 wakes the coordinator immediately, and switches it to drain mode. Drain mode
 bypasses the normal three-second delay and starts with one immediate logical-
-hierarchy scan. Later job completions process their results and release their
-reservations but do not perform another eligibility pass. An available worker
-automatically takes the next job already in the executor queue; newly eligible
-work waits for the next scheduled scan. The coordinator and worker pool stop
+hierarchy scan. Later job completions process their results, release their
+reservations, and queue another immediate scan while the runtime is
+`FINISHING`. The completion callback never publishes readiness directly from
+cached counts. Each queued drain tick refreshes the catalog, fills available
+worker capacity, and checks for failure before deciding whether drain is
+complete. An available worker also takes the next job already in the executor
+queue. Ordinary `WRITING` completions keep the periodic scheduling policy.
+The coordinator and worker pool stop
 before the `SenkuReady` handle is returned; `READY` owns no background threads.
 The same exclusive root `FileLock` transfers to that handle without being
 released.
@@ -1862,9 +1973,10 @@ every scan the coordinator:
    and published its output run.
 6. Accepts the published output, replaces the catalog entries, deletes every
    obsolete input file and empty input directory, and releases the reservation.
-   It does not submit newly eligible work. An available worker takes the next
-   job already in the executor queue, while new work waits for the next
-   scheduled scan.
+   It does not submit newly eligible work inline. An available worker takes the
+   next job already in the executor queue. During `WRITING`, new work waits for
+   the next scheduled scan; during `FINISHING`, completion queues an immediate
+   scan and eligibility pass.
 7. On failure, enters minimal writing shutdown without deleting any source or
    output path and without resubmitting the reservation.
 
@@ -1882,9 +1994,11 @@ During `finishWriting()`, the same coordinator enters drain mode. Drain mode may
 reserve a partial flush group and partial same-level run groups, but it never
 merges runs from different numeric levels. A lone run is promoted by a one-input
 rewrite when a higher-level run still exists. Every job still respects
-`mergeFanIn` and `maintenanceThreads`. Drain completes only when the catalog
-contains one terminal source per configured shard. Numeric terminal levels may
-differ between shards.
+`mergeFanIn` and `maintenanceThreads`. Drain completes only after a scan that
+observed `FINISHING` has reconciled all committed sources, no flushes or
+submitted jobs remain, and the catalog contains one terminal source per
+configured shard. Numeric terminal levels may differ between shards. Already
+queued ticks become no-ops once the runtime has terminalized.
 
 ### Ingestion Backpressure
 
@@ -1951,16 +2065,18 @@ for merge output are not represented by queue saturation.
   one caller paying the complete flush cost harms producer scheduling.
 - Add primitive or batch ingestion and flatter in-memory storage if object and
   map overhead dominates.
-- Refill executor capacity from the active L0 batch during completion handling
-  if benchmarks show that waiting for the next three-second scan leaves workers
-  idle. This refill needs no directory scan because the pending shard jobs are
-  already known to the coordinator.
+- Refill executor capacity from the active L0 batch during ordinary `WRITING`
+  completion handling if benchmarks show that waiting for the next three-second
+  scan leaves workers idle. This refill needs no directory scan because the
+  pending shard jobs are already known to the coordinator. `FINISHING`
+  completions already request an immediate reconciliation and scheduling pass.
 - Skip forced terminal shard consolidation and lazily merge remaining sources
   if measurements show that `finishWriting()` latency matters more than bounded
   stream resources.
 - Pack small non-empty same-batch shard runs into fewer container files.
-- Replace the initial Snappy page filter or delta-key encoding only when
-  benchmarks show a net reduction in elapsed time and disk use.
+- Evaluate additional key encodings and compression levels with the
+  `senku-compression` profile and representative board data; elapsed time,
+  allocation, and disk bytes all matter.
 
 ## Open Points
 

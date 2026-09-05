@@ -12,6 +12,7 @@ import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.chunkstore.ChunkStoreReader;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.chunkstore.ChunkStoreWriterTx;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
 
@@ -29,6 +30,16 @@ final class SenkuShardIndexCodec {
 
     static void write(final Directory directory,
             final DataBlockSize dataBlockSize, final SenkuShardIndex index) {
+        write(directory, dataBlockSize, index, Compression.zstd(3));
+    }
+
+    /**
+     * Publishes the shard table using the index's chunk compression setting.
+     */
+    static void write(final Directory directory,
+            final DataBlockSize dataBlockSize, final SenkuShardIndex index,
+            final Compression compression) {
+        Vldtn.requireNonNull(compression, "compression");
         final Directory validatedDirectory = Vldtn.requireNonNull(directory,
                 "directory");
         final DataBlockSize validatedBlockSize = Vldtn
@@ -43,8 +54,10 @@ final class SenkuShardIndexCodec {
         requireAbsent(validatedDirectory,
                 SenkuFileNames.temporary(SenkuFileNames.SHARD_INDEX_FILE));
         final ByteSequence payload = encode(validatedIndex);
-        final ChunkStoreWriterTx transaction = chunkStore(validatedDirectory,
-                validatedBlockSize).openWriteTx();
+        final ChunkStoreWriterTx transaction = LargeFile
+                .chunkStore(validatedDirectory, validatedBlockSize,
+                        SenkuFileNames.SHARD_INDEX_FILE, compression)
+                .openWriteTx();
         final ChunkStoreWriter writer = transaction.open();
         try {
             writer.writeSequence(payload, SHARD_INDEX_VERSION);
@@ -67,8 +80,7 @@ final class SenkuShardIndexCodec {
                 .requireNonNull(dataBlockSize, "dataBlockSize");
         final int validatedShardCount = Vldtn.requireGreaterThanZero(shardCount,
                 "shardCount");
-        if (!validatedDirectory
-                .isFileExists(SenkuFileNames.SHARD_INDEX_FILE)) {
+        if (!validatedDirectory.isFileExists(SenkuFileNames.SHARD_INDEX_FILE)) {
             throw new IndexException("Required shard-index.dat is missing.");
         }
         final ChunkStoreFile store = chunkStore(validatedDirectory,
@@ -126,13 +138,11 @@ final class SenkuShardIndexCodec {
                 .order(ByteOrder.BIG_ENDIAN);
         final long[] positions = new long[shardCount];
         final long[] counts = new long[shardCount];
-        for (int expectedShardId = 0; expectedShardId < shardCount;
-                expectedShardId++) {
+        for (int expectedShardId = 0; expectedShardId < shardCount; expectedShardId++) {
             final int storedShardId = buffer.getInt();
             if (storedShardId != expectedShardId) {
-                throw new IndexException("Shard-index record "
-                        + expectedShardId + " contains shard ID "
-                        + storedShardId + ".");
+                throw new IndexException("Shard-index record " + expectedShardId
+                        + " contains shard ID " + storedShardId + ".");
             }
             positions[expectedShardId] = buffer.getLong();
             counts[expectedShardId] = buffer.getLong();

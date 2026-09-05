@@ -15,7 +15,7 @@ import org.hestiastore.index.directory.Directory;
  */
 final class LargeFileWriterTx {
 
-    private static final int SENKU_PAGE_VERSION = 1;
+    private final SenkuStorageFormat format;
 
     private final Directory directory;
     private final DataBlockSize dataBlockSize;
@@ -29,13 +29,21 @@ final class LargeFileWriterTx {
     private boolean committed;
 
     LargeFileWriterTx(final Directory directory,
-            final DataBlockSize dataBlockSize,
-            final long maxEntriesPerPart) {
+            final DataBlockSize dataBlockSize, final long maxEntriesPerPart) {
+        this(directory, dataBlockSize, maxEntriesPerPart,
+                SenkuStorageFormat.createDefault());
+    }
+
+    /** Creates a transaction using the index's immutable storage format. */
+    LargeFileWriterTx(final Directory directory,
+            final DataBlockSize dataBlockSize, final long maxEntriesPerPart,
+            final SenkuStorageFormat format) {
+        this.format = Vldtn.requireNonNull(format, "format");
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
-        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(
-                maxEntriesPerPart, "maxEntriesPerPart");
+        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(maxEntriesPerPart,
+                "maxEntriesPerPart");
     }
 
     LargeFilePosition appendPage(final ByteSequence page,
@@ -56,10 +64,9 @@ final class LargeFileWriterTx {
                 openNextPart();
             }
             final CellPosition position = currentWriter
-                    .writeSequence(validatedPage, SENKU_PAGE_VERSION);
+                    .writeSequence(validatedPage, format.keyCodec().getId());
             entriesInCurrentPart += validatedCount;
-            return LargeFilePosition.of(currentPartNumber,
-                    position.getValue());
+            return LargeFilePosition.of(currentPartNumber, position.getValue());
         } catch (Exception e) {
             closeAfterFailure(e);
             throw asIndexException("Unable to append large-file page.", e);
@@ -102,7 +109,7 @@ final class LargeFileWriterTx {
         requireAbsent(partName);
         requireAbsent(SenkuFileNames.temporary(partName));
         final ChunkStoreFile chunkStore = LargeFile.chunkStore(directory,
-                dataBlockSize, currentPartNumber);
+                dataBlockSize, partName, format.compression());
         currentTransaction = chunkStore.openWriteTx();
         currentWriter = currentTransaction.open();
         entriesInCurrentPart = 0L;

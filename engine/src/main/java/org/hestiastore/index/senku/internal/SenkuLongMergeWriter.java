@@ -23,12 +23,13 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
  * <p>
  * One cursor is retained per source and one bounded-growth page buffer is
  * retained per active merge job. Distinct records remain primitive from page
- * decoding through output encoding; boxing is limited to actual duplicate
- * calls through the public generic merge-function contract.
+ * decoding through output encoding; boxing is limited to actual duplicate calls
+ * through the public generic merge-function contract.
  * </p>
  */
 final class SenkuLongMergeWriter<V> {
 
+    private final SenkuStorageFormat format;
     private final List<SenkuMergeSource> sources;
     private final Directory directory;
     private final TypeDescriptorLong keyTypeDescriptor;
@@ -40,8 +41,8 @@ final class SenkuLongMergeWriter<V> {
     private final long maxEntriesPerPart;
     private final DataBlockSize dataBlockSize;
     private final BooleanSupplier publicationAllowed;
-    private final PriorityQueue<SenkuLongSourceCursor> queue =
-            new PriorityQueue<>(SenkuLongMergeWriter::compareCursors);
+    private final PriorityQueue<SenkuLongSourceCursor> queue = new PriorityQueue<>(
+            SenkuLongMergeWriter::compareCursors);
 
     private long mergedKey;
     private long mergedLongValue;
@@ -50,15 +51,15 @@ final class SenkuLongMergeWriter<V> {
     /**
      * Creates a primitive writer for one already-created output run.
      *
-     * @param sources exact sorted input ranges
-     * @param directory target run directory
-     * @param keyTypeDescriptor exact built-in long key descriptor
+     * @param sources             exact sorted input ranges
+     * @param directory           target run directory
+     * @param keyTypeDescriptor   exact built-in long key descriptor
      * @param valueTypeDescriptor exact built-in long or null-value descriptor
-     * @param mergeFunction duplicate reducer
-     * @param maxKeysPerPage maximum entries in one page
-     * @param maxEntriesPerPart maximum entries in one physical part
-     * @param dataBlockSize chunk-store block size
-     * @param publicationAllowed publication fencing callback
+     * @param mergeFunction       duplicate reducer
+     * @param maxKeysPerPage      maximum entries in one page
+     * @param maxEntriesPerPart   maximum entries in one physical part
+     * @param dataBlockSize       chunk-store block size
+     * @param publicationAllowed  publication fencing callback
      */
     SenkuLongMergeWriter(final List<SenkuMergeSource> sources,
             final Directory directory,
@@ -68,8 +69,23 @@ final class SenkuLongMergeWriter<V> {
             final int maxKeysPerPage, final long maxEntriesPerPart,
             final DataBlockSize dataBlockSize,
             final BooleanSupplier publicationAllowed) {
-        this.sources = List.copyOf(
-                Vldtn.requireNonNull(sources, "sources"));
+        this(sources, directory, keyTypeDescriptor, valueTypeDescriptor,
+                mergeFunction, maxKeysPerPage, maxEntriesPerPart, dataBlockSize,
+                publicationAllowed, SenkuStorageFormat.createDefault());
+    }
+
+    /** Creates this component with the index's immutable storage format. */
+    SenkuLongMergeWriter(final List<SenkuMergeSource> sources,
+            final Directory directory,
+            final TypeDescriptorLong keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final SenkuMergeFunction<Long, V> mergeFunction,
+            final int maxKeysPerPage, final long maxEntriesPerPart,
+            final DataBlockSize dataBlockSize,
+            final BooleanSupplier publicationAllowed,
+            final SenkuStorageFormat format) {
+        this.format = Vldtn.requireNonNull(format, "format");
+        this.sources = List.copyOf(Vldtn.requireNonNull(sources, "sources"));
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
@@ -77,8 +93,8 @@ final class SenkuLongMergeWriter<V> {
                 "valueTypeDescriptor");
         primitiveLongValue = valueTypeDescriptor
                 .getClass() == TypeDescriptorLong.class;
-        Vldtn.requireTrue(primitiveLongValue || valueTypeDescriptor
-                .getClass() == TypeDescriptorNull.class,
+        Vldtn.requireTrue(primitiveLongValue
+                || valueTypeDescriptor.getClass() == TypeDescriptorNull.class,
                 "Primitive long merge requires Long or NullValue values");
         this.maxKeysPerPage = Vldtn.requireGreaterThanZero(maxKeysPerPage,
                 "maxKeysPerPage");
@@ -88,8 +104,8 @@ final class SenkuLongMergeWriter<V> {
                 (long) this.maxKeysPerPage * maximumBytesPerEntry);
         this.mergeFunction = Vldtn.requireNonNull(mergeFunction,
                 "mergeFunction");
-        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(
-                maxEntriesPerPart, "maxEntriesPerPart");
+        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(maxEntriesPerPart,
+                "maxEntriesPerPart");
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
         this.publicationAllowed = Vldtn.requireNonNull(publicationAllowed,
@@ -103,15 +119,14 @@ final class SenkuLongMergeWriter<V> {
      */
     SenkuRunManifest write() {
         final LargeFileWriterTx writer = new LargeFile(directory, dataBlockSize,
-                maxEntriesPerPart, 0).openWriterTx();
+                maxEntriesPerPart, 0, format).openWriterTx();
         long recordCount = 0L;
         try {
             openInputs();
             while (!queue.isEmpty()) {
-                final SingleChunkEntryWriterImpl<Long, V> page =
-                        new SingleChunkEntryWriterImpl<>(
-                                keyTypeDescriptor, valueTypeDescriptor,
-                                maxEncodedPageBytes);
+                final SingleChunkEntryWriterImpl<Long, V> page = new SingleChunkEntryWriterImpl<>(
+                        keyTypeDescriptor, valueTypeDescriptor,
+                        maxEncodedPageBytes, format.keyCodec());
                 int pageEntries = 0;
                 while (pageEntries < maxKeysPerPage && mergeNext()) {
                     writeMerged(page);
@@ -145,7 +160,7 @@ final class SenkuLongMergeWriter<V> {
             for (final SenkuMergeSource source : sources) {
                 final SenkuLongSourceCursor cursor = Vldtn
                         .requireNonNull(source, "source").openLongs(ordinal++,
-                                primitiveLongValue);
+                                primitiveLongValue, format.keyCodec());
                 opened.add(cursor);
                 if (cursor.hasCurrent()) {
                     queue.add(cursor);
@@ -211,8 +226,9 @@ final class SenkuLongMergeWriter<V> {
                     "mergedValue")).longValue();
             return;
         }
-        mergedValue = Vldtn.requireNonNull(mergeFunction.apply(mergedKey,
-                mergedValue, nullValue()), "mergedValue");
+        mergedValue = Vldtn.requireNonNull(
+                mergeFunction.apply(mergedKey, mergedValue, nullValue()),
+                "mergedValue");
     }
 
     private void writeMerged(final SingleChunkEntryWriterImpl<Long, V> page) {
@@ -247,8 +263,7 @@ final class SenkuLongMergeWriter<V> {
         }
     }
 
-    private static void closeCursors(
-            final List<SenkuLongSourceCursor> cursors,
+    private static void closeCursors(final List<SenkuLongSourceCursor> cursors,
             final Exception primary) {
         for (final SenkuLongSourceCursor cursor : cursors) {
             closeCursor(cursor, primary);
@@ -267,7 +282,8 @@ final class SenkuLongMergeWriter<V> {
     private static int compareCursors(final SenkuLongSourceCursor first,
             final SenkuLongSourceCursor second) {
         final int compared = Long.compare(first.key(), second.key());
-        return compared == 0 ? Integer.compare(first.ordinal(), second.ordinal())
+        return compared == 0
+                ? Integer.compare(first.ordinal(), second.ordinal())
                 : compared;
     }
 }

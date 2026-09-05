@@ -179,7 +179,7 @@ python3 benchmarks/scripts/run_jmh_profile.py \
   --output-dir /tmp/hestia-bench/senku-ingestion-map-baseline
 ```
 
-Three focused profiles cover the current ingestion, flush-ordering, and
+Four focused profiles cover the current ingestion, flush-ordering, and
 maintenance-encoding hot paths. Run each profile from the candidate and the
 selected baseline worktree on the same quiet host:
 
@@ -198,6 +198,11 @@ python3 benchmarks/scripts/run_jmh_profile.py \
   --repo-root . \
   --profile senku-merge-encoding \
   --output-dir /tmp/hestia-bench/senku-merge-encoding
+
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-compression \
+  --output-dir /tmp/hestia-bench/senku-compression
 ```
 
 The ingestion profile compares `HashMap` with the mixed open-addressed table at
@@ -210,7 +215,67 @@ partitioning and ordering, comparing the former full `Map.Entry[]` plus TimSort
 with serial and four-worker compact ordering. The merge profile measures the
 complete decode, reduction, page encoding, compression, and in-memory write
 phase for generic and exact primitive-long paths at 8, 32, and 128 KiB block
-sizes.
+sizes. The compression profile fixes the primitive path and 8 KiB blocks, and
+compares `prefix-zstd`, `delta-zstd`, and `delta-none`. Its synthetic interleaved
+long keys isolate pipeline costs; use representative board pages separately to
+measure compression ratio. When comparing against the previous Snappy-only
+revision, omit `storage` on the baseline and keep the JDK, entry count, block
+size, warmups, measurements, forks, and profiler identical.
+
+Local validation on macOS with JDK 25.0.2 (2026-09-05), using the profile's
+100,000 interleaved keys, 8 KiB blocks, two 500 ms warmups, four 500 ms
+measurements, two forks, and the GC profiler:
+
+| Primitive merge pipeline | Mean time (ms/op) | Java allocation (MB/op) |
+| --- | ---: | ---: |
+| Previous prefix/Snappy | 1.898 | 2.203 |
+| Prefix/Zstd-3 | 2.056 | 2.040 |
+| Delta-varint/Zstd-3 | 1.460 | 0.784 |
+| Delta-varint/raw | 1.544 | 1.128 |
+
+The earlier baseline run was 1.936 ms/op, so the selected delta/Zstd pipeline
+reduced measured time by 23–25% and allocation by 64%. Prefix/Zstd alone traded
+some CPU time for space. These synthetic timings are not full solver throughput.
+
+A separate production-codec round-trip check used 12,395,378 saved 49-bit board
+keys, regrouped with the application's 25-bit prefix routing into 128 pages.
+Payloads occupied 28,803,721 bytes with prefix/Snappy, 18,822,895 bytes with
+prefix/Zstd-3, and 13,333,436 bytes with delta-varint/Zstd-3 (54% smaller than
+prefix/Snappy). All keys round-tripped exactly. These are payload bytes, excluding
+chunk headers, block padding, and metadata; the saved sample is not a claim
+about every solver round's compression ratio.
+
+The `senku-fixed-weight-compression` profile compares numeric deltas with
+fixed-weight parity-class rank deltas on exactly the same synthetic logical
+keys. Both variants use the primitive merge path, Zstd-3, and 8 KiB blocks.
+Run it when changing rank conversion or its merge/reader integration:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile senku-fixed-weight-compression \
+  --output-dir /tmp/hestia-bench/senku-fixed-weight-compression
+```
+
+The synthetic keys have 27 set bits within 49 bits and even parity under mask
+`3`; they are not claimed to represent a solver frontier. This profile isolates
+the rank conversion CPU and allocation tradeoff. Use real keys separately for
+compression-density measurements, and verify reconstructed logical keys.
+
+Local validation on Apple M4/macOS with JDK 25.0.2 (2026-09-05), using the
+profile's 100,000 logical keys, two 500 ms warmups, four 500 ms measurements,
+two forks, and the GC profiler:
+
+| Primitive fixed-weight merge pipeline | Mean time (ms/op) | Java allocation (B/op) |
+| --- | ---: | ---: |
+| Numeric delta / Zstd-3 | 1.688 ± 0.064 | 1,169,523 |
+| Fixed-weight parity rank delta / Zstd-3 | 11.923 ± 0.289 | 787,270 |
+
+The rank pipeline was 7.06 times slower in this CPU-focused merge benchmark,
+while allocating 32.7% fewer Java bytes per operation. These measurements are
+not full solver throughput or a compression-ratio measurement: rank encoding
+trades conversion CPU for more compact pages, and must be evaluated together
+with real-data storage savings and the rest of the application pipeline.
 
 The `gc` profiler records allocation per operation, allocation rate, GC count,
 and GC time beside the primary throughput or latency result. The merge profile

@@ -12,8 +12,9 @@ import org.hestiastore.index.sorteddatafile.DiffKeyWriter;
  * Encodes one sorted entry page into a reusable in-memory byte buffer.
  *
  * <p>
- * Exact built-in long descriptors use primitive key/value methods that retain
- * the existing differential-key wire format without intermediate boxing.
+ * Exact built-in long descriptors use primitive key/value methods without
+ * intermediate boxing. Existing constructors select byte-prefix keys; an
+ * explicit codec can select numeric delta-varints instead.
  * </p>
  */
 public class SingleChunkEntryWriterImpl<K, V>
@@ -27,13 +28,12 @@ public class SingleChunkEntryWriterImpl<K, V>
     private final boolean primitiveLongKey;
     private final boolean primitiveLongValue;
     private final byte[] longBuffer = new byte[LONG_BYTES];
-    private boolean hasPreviousLongKey;
-    private long previousLongKey;
+    private final LongKeyPageWriter longKeyWriter;
     private boolean closed = false;
 
     /**
      * Creates a new chunk writer.
-     * 
+     *
      * @param keyTypeDescriptor   required key type descriptor
      * @param valueTypeDescriptor required value type descriptor
      */
@@ -43,25 +43,44 @@ public class SingleChunkEntryWriterImpl<K, V>
     }
 
     /**
-     * Creates a new chunk writer with an explicit encoded-page byte limit.
-     * The limit bounds the retained growable buffer and causes encoding to fail
+     * Creates a new chunk writer with an explicit encoded-page byte limit. The
+     * limit bounds the retained growable buffer and causes encoding to fail
      * before allocating beyond it.
      *
-     * @param keyTypeDescriptor required key type descriptor
+     * @param keyTypeDescriptor   required key type descriptor
      * @param valueTypeDescriptor required value type descriptor
-     * @param maxEncodedBytes positive maximum encoded page size
+     * @param maxEncodedBytes     positive maximum encoded page size
      */
     public SingleChunkEntryWriterImpl(final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int maxEncodedBytes) {
+        this(keyTypeDescriptor, valueTypeDescriptor, maxEncodedBytes,
+                KeyPageCodecs.prefix());
+    }
+
+    /**
+     * Creates a bounded page writer using the selected sorted-key encoding.
+     *
+     * @param keyTypeDescriptor   logical keys
+     * @param valueTypeDescriptor value encoding
+     * @param maxEncodedBytes     maximum retained page bytes
+     * @param keyPageCodec        matched key writer/reader selection
+     */
+    public SingleChunkEntryWriterImpl(final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int maxEncodedBytes, final KeyPageCodec<K> keyPageCodec) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
+        Vldtn.requireNonNull(keyPageCodec, "keyPageCodec")
+                .validate(keyTypeDescriptor);
         fileWriter = new InMemoryFileWriter(maxEncodedBytes);
         this.valueWriter = valueTypeDescriptor.getTypeWriter();
         primitiveLongKey = keyTypeDescriptor
                 .getClass() == TypeDescriptorLong.class;
         primitiveLongValue = valueTypeDescriptor
                 .getClass() == TypeDescriptorLong.class;
+        longKeyWriter = primitiveLongKey ? new LongKeyPageWriter(keyPageCodec)
+                : null;
         diffKeyWriter = primitiveLongKey ? null
                 : new DiffKeyWriter<>(keyTypeDescriptor.getTypeEncoder(),
                         keyTypeDescriptor.getComparator());
@@ -69,8 +88,7 @@ public class SingleChunkEntryWriterImpl<K, V>
 
     @Override
     public void put(final Entry<K, V> entry) {
-        final Entry<K, V> validatedEntry = Vldtn.requireNonNull(entry,
-                "entry");
+        final Entry<K, V> validatedEntry = Vldtn.requireNonNull(entry, "entry");
         put(validatedEntry.getKey(), validatedEntry.getValue());
     }
 
@@ -97,7 +115,7 @@ public class SingleChunkEntryWriterImpl<K, V>
      * exactly {@link TypeDescriptorLong}; subclasses may define different
      * ordering or encoding semantics and therefore use the generic path.
      *
-     * @param key primitive long key to write
+     * @param key   primitive long key to write
      * @param value value to write
      */
     public void putLongKey(final long key, final V value) {
@@ -112,7 +130,7 @@ public class SingleChunkEntryWriterImpl<K, V>
      * This method is available only when both configured descriptors are
      * exactly {@link TypeDescriptorLong}.
      *
-     * @param key primitive long key to write
+     * @param key   primitive long key to write
      * @param value primitive long value to write
      */
     public void putLongs(final long key, final long value) {
@@ -136,27 +154,7 @@ public class SingleChunkEntryWriterImpl<K, V>
     }
 
     private void writeLongKey(final long key) {
-        if (hasPreviousLongKey) {
-            final int compared = Long.compare(previousLongKey, key);
-            if (compared == 0) {
-                throw new IllegalArgumentException(
-                        "Attempt to insert same key as previous long key");
-            }
-            if (compared > 0) {
-                throw new IllegalArgumentException(
-                        "Attempt to insert long key in invalid order");
-            }
-        }
-        writeLong(key, longBuffer);
-        final int sharedBytes = hasPreviousLongKey
-                ? Long.numberOfLeadingZeros(previousLongKey ^ key) / Byte.SIZE
-                : 0;
-        final int diffBytes = LONG_BYTES - sharedBytes;
-        fileWriter.write((byte) sharedBytes);
-        fileWriter.write((byte) diffBytes);
-        fileWriter.write(longBuffer, sharedBytes, diffBytes);
-        previousLongKey = key;
-        hasPreviousLongKey = true;
+        longKeyWriter.write(fileWriter, key);
     }
 
     private void requirePrimitiveLongKey() {

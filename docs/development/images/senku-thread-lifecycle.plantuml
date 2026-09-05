@@ -78,17 +78,20 @@ Ingestor -> Files : traverse and publish final detached flush
 Ingestor -> Coordinator : enter drain mode immediately
 Ingestor -> Runtime : await maintenanceFinished\nwithout writing lock
 Coordinator -> Files : scan logical directory hierarchy immediately
-loop until one terminal run remains per configured shard
-  Coordinator -> Coordinator : on each scheduled scan,\nselect eligible known work
+loop until a fresh scan sees no flushes/jobs and one terminal run per shard
+  Coordinator -> Coordinator : select eligible work\nfrom the refreshed catalog
   Coordinator -> Workers : submit bounded merge jobs
   Workers -> Files : merge; close input readers\npublish output manifest last
   Workers --> Coordinator : immutable completed-run result
   Coordinator -> Coordinator : accept output; replace catalog
   Coordinator -> Files : delete replaced inputs
+  Coordinator -> Coordinator : enqueue immediate finishing tick
+  Coordinator -> Files : rescan hierarchy before\ntesting drain completion
 end
 note over Coordinator, Workers
 After completion, a worker takes the next already-queued job.
-Newly eligible work waits for the next scheduled scan.
+FINISHING completions also queue an immediate scan.
+Readiness is never published from cached completion counts.
 end note
 Coordinator -> Workers : shut down worker executor
 Coordinator -> Coordinator : shut down scheduled executor

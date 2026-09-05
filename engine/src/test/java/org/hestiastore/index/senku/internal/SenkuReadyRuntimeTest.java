@@ -41,12 +41,16 @@ class SenkuReadyRuntimeTest {
     void globallyMergesTerminalShardRunsLazily() {
         writeRun(0, 2, 7L, Entry.of(1, 10L), Entry.of(4, 40L));
         writeRun(1, 1, 3L, Entry.of(2, 20L), Entry.of(3, 30L));
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
         SenkuMetadataCodec.publishReady(root, 2);
         final SenkuReadyRuntime<Integer, Long> ready = ready();
 
         try (Stream<Entry<Integer, Long>> stream = ready.openStream()) {
-            assertEquals(List.of(Entry.of(1, 10L), Entry.of(2, 20L),
-                    Entry.of(3, 30L), Entry.of(4, 40L)), stream.toList());
+            assertEquals(
+                    List.of(Entry.of(1, 10L), Entry.of(2, 20L),
+                            Entry.of(3, 30L), Entry.of(4, 40L)),
+                    stream.toList());
         }
         ready.close();
 
@@ -57,6 +61,8 @@ class SenkuReadyRuntimeTest {
     void emptyTerminalRunsProduceAnEmptyStream() {
         writeRun(0, 0, 0L);
         writeRun(1, 0, 0L);
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
         SenkuMetadataCodec.publishReady(root, 2);
         final SenkuReadyRuntime<Integer, Long> ready = ready();
 
@@ -69,6 +75,8 @@ class SenkuReadyRuntimeTest {
     @Test
     void permitsOnlyOneActiveStreamAndCloseReleasesTheSlot() {
         writeRun(0, 0, 0L, Entry.of(1, 1L));
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
         SenkuMetadataCodec.publishReady(root, 1);
         final SenkuReadyRuntime<Integer, Long> ready = ready();
         final Stream<Entry<Integer, Long>> first = ready.openStream();
@@ -84,6 +92,8 @@ class SenkuReadyRuntimeTest {
     @Test
     void readyCloseBreaksActiveStreamAndIsIdempotent() {
         writeRun(0, 0, 0L, Entry.of(1, 1L), Entry.of(2, 2L));
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
         SenkuMetadataCodec.publishReady(root, 1);
         final SenkuReadyRuntime<Integer, Long> ready = ready();
         final Stream<Entry<Integer, Long>> stream = ready.openStream();
@@ -100,6 +110,8 @@ class SenkuReadyRuntimeTest {
     void comparatorEqualKeysAcrossShardsFailFast() {
         writeRun(0, 0, 0L, Entry.of(1, 1L));
         writeRun(1, 0, 0L, Entry.of(1, 2L));
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
         SenkuMetadataCodec.publishReady(root, 2);
         final SenkuReadyRuntime<Integer, Long> ready = ready();
 
@@ -114,6 +126,8 @@ class SenkuReadyRuntimeTest {
         assertThrows(IndexException.class, this::ready);
 
         writeRun(0, 0, 0L);
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
         SenkuMetadataCodec.publishReady(root, 1);
         root.touch("unknown");
         assertThrows(IndexException.class, this::ready);

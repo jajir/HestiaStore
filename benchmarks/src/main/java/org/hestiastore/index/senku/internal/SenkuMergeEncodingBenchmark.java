@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.NullValue;
@@ -52,18 +54,49 @@ public class SenkuMergeEncodingBenchmark {
     @Param({ "8192", "32768", "131072" })
     int dataBlockBytes = 8_192;
 
+    @Param({ "prefix-zstd" })
+    String storage = "prefix-zstd";
+
+    @Param({ "sequential" })
+    String keyShape = "sequential";
+
+    private SenkuStorageFormat format;
     private final TypeDescriptorNull values = new TypeDescriptorNull();
     private TypeDescriptorLong keys;
     private DataBlockSize dataBlockSize;
     private int pageEntryLimit;
     private List<SenkuMergeSource> sources;
     private SenkuMergeJob<Long, NullValue> job;
+    private long[] orderedKeys;
 
     /**
      * Creates reusable immutable sorted sources outside measured invocations.
      */
     @Setup(Level.Trial)
     public void setupTrial() {
+        format = switch (storage) {
+        case "prefix-zstd" ->
+            new SenkuStorageFormat(KeyPageCodecs.prefix(), Compression.zstd(3));
+        case "delta-zstd" -> new SenkuStorageFormat(
+                KeyPageCodecs.longDeltaVarint(), Compression.zstd(3));
+        case "delta-none" -> new SenkuStorageFormat(
+                KeyPageCodecs.longDeltaVarint(), Compression.none());
+        case "rank-zstd" ->
+            new SenkuStorageFormat(KeyPageCodecs.longFixedWeightDeltaVarint(49,
+                    27, new long[] { 3 }, 0), Compression.zstd(3));
+        default -> throw new IllegalArgumentException(
+                "Unknown storage format: " + storage);
+        };
+        if ("generic".equals(path) && format.keyCodec().isLongDeltaVarint()) {
+            throw new IllegalArgumentException(
+                    "Delta benchmark requires primitive long ordering.");
+        }
+        if (format.keyCodec().isLongFixedWeightDeltaVarint()
+                && !"fixed-weight".equals(keyShape)) {
+            throw new IllegalArgumentException(
+                    "Rank benchmark requires fixed-weight keys.");
+        }
+        orderedKeys = createOrderedKeys();
         keys = "generic".equals(path) ? new TypeDescriptorLong() {
             // Exact-type selection intentionally disabled for the baseline.
         } : new TypeDescriptorLong();
@@ -77,14 +110,14 @@ public class SenkuMergeEncodingBenchmark {
     }
 
     /**
-     * Creates a fresh destination because each merge publishes immutable
-     * output files and a manifest.
+     * Creates a fresh destination because each merge publishes immutable output
+     * files and a manifest.
      */
     @Setup(Level.Invocation)
     public void setupInvocation() {
-        job = new SenkuMergeJob<>(sources, new MemDirectory(), 0, 1, 0L,
-                keys, values, (key, first, second) -> NULL, pageEntryLimit,
-                entryCount, dataBlockSize);
+        job = new SenkuMergeJob<>(sources, new MemDirectory(), 0, 1, 0L, keys,
+                values, (key, first, second) -> NULL, pageEntryLimit,
+                entryCount, dataBlockSize, () -> true, format);
     }
 
     /**
@@ -102,14 +135,39 @@ public class SenkuMergeEncodingBenchmark {
         final List<Entry<Long, NullValue>> entries = new ArrayList<>(
                 sourceEntries);
         for (int index = 0; index < sourceEntries; index++) {
-            final long key = (long) index * SOURCE_COUNT + source;
+            final long key = orderedKeys[index * SOURCE_COUNT + source];
             entries.add(Entry.of(key, NULL));
         }
         final MemDirectory directory = new MemDirectory();
         final SenkuRunManifest manifest = new SenkuRunWriter<>(directory,
                 new TypeDescriptorLong(), values, pageEntryLimit, entryCount,
-                dataBlockSize).write(new EntryIteratorList<>(entries));
+                dataBlockSize, () -> true, format)
+                .write(new EntryIteratorList<>(entries));
         return SenkuMergeSource.run(new LargeFile(directory, dataBlockSize,
                 entryCount, manifest.partCount()), manifest.recordCount());
+    }
+
+    private long[] createOrderedKeys() {
+        final long[] result = new long[entryCount];
+        if ("sequential".equals(keyShape)) {
+            for (int i = 0; i < result.length; i++) {
+                result[i] = i;
+            }
+        } else if ("fixed-weight".equals(keyShape)) {
+            long candidate = (1L << 27) - 1;
+            int size = 0;
+            while (size < result.length) {
+                if ((Long.bitCount(candidate & 3) & 1) == 0) {
+                    result[size++] = candidate;
+                }
+                final long lowest = candidate & -candidate;
+                final long ripple = candidate + lowest;
+                candidate = ripple | (((ripple ^ candidate) >>> 2) / lowest);
+            }
+        } else {
+            throw new IllegalArgumentException(
+                    "Unknown key shape: " + keyShape);
+        }
+        return result;
     }
 }

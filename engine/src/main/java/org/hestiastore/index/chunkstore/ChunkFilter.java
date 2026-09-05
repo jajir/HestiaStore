@@ -10,6 +10,7 @@ public interface ChunkFilter {
     int BIT_POSITION_SNAPPY_COMPRESSION = 3;
     int BIT_POSITION_XOR_ENCRYPT = 4;
     int BIT_POSITION_AES_GCM_ENCRYPT = 5;
+    int BIT_POSITION_ZSTD_COMPRESSION = 6;
 
     /**
      * Apply the filter to the input chunk data.

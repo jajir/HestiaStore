@@ -5,10 +5,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
+import org.hestiastore.index.chunkentryfile.KeyPageCodec;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.properties.PropertyMutationSession;
@@ -23,8 +28,23 @@ final class SenkuMetadataCodec {
     private static final String PART_COUNT = "partCount";
     private static final String RECORD_COUNT = "recordCount";
     private static final String SHARD_COUNT = "shardCount";
+    private static final String FORMAT_VERSION = "formatVersion";
+    private static final String KEY_CODEC = "keyPageCodec";
+    private static final String COMPRESSION = "compression";
+    private static final String COMPRESSION_LEVEL = "compressionLevel";
+    private static final String FIXED_WEIGHT_BIT_COUNT = "fixedWeightBitCount";
+    private static final String FIXED_WEIGHT_SET_BIT_COUNT = "fixedWeightSetBitCount";
+    private static final String FIXED_WEIGHT_PARITY_MASKS = "fixedWeightParityMasks";
+    private static final String FIXED_WEIGHT_PARITY_SYNDROME = "fixedWeightParitySyndrome";
+    private static final Set<String> FORMAT_KEYS = Set.of(FORMAT_VERSION,
+            KEY_CODEC, COMPRESSION, COMPRESSION_LEVEL);
+    private static final Set<String> FIXED_WEIGHT_FORMAT_KEYS = Set.of(
+            FORMAT_VERSION, KEY_CODEC, COMPRESSION, COMPRESSION_LEVEL,
+            FIXED_WEIGHT_BIT_COUNT, FIXED_WEIGHT_SET_BIT_COUNT,
+            FIXED_WEIGHT_PARITY_MASKS, FIXED_WEIGHT_PARITY_SYNDROME);
     private static final Set<String> FLUSH_KEYS = Set.of(PART_COUNT);
-    private static final Set<String> RUN_KEYS = Set.of(PART_COUNT, RECORD_COUNT);
+    private static final Set<String> RUN_KEYS = Set.of(PART_COUNT,
+            RECORD_COUNT);
     private static final Set<String> READY_KEYS = Set.of(SHARD_COUNT);
 
     private SenkuMetadataCodec() {
@@ -106,9 +126,8 @@ final class SenkuMetadataCodec {
     static void publishReady(final Directory directory, final int shardCount) {
         final int validatedShardCount = Vldtn.requireGreaterThanZero(shardCount,
                 SHARD_COUNT);
-        writeAndPublish(directory, SenkuFileNames.READY_FILE,
-                writer -> writer.setString(SHARD_COUNT,
-                        Integer.toString(validatedShardCount)));
+        writeAndPublish(directory, SenkuFileNames.READY_FILE, writer -> writer
+                .setString(SHARD_COUNT, Integer.toString(validatedShardCount)));
     }
 
     /**
@@ -127,16 +146,97 @@ final class SenkuMetadataCodec {
         return shardCount;
     }
 
+    /** Publishes immutable format metadata before any pages are written. */
+    static void publishStorageFormat(final Directory directory,
+            final SenkuStorageFormat format) {
+        writeAndPublish(directory, SenkuFileNames.FORMAT_FILE, writer -> {
+            writer.setString(FORMAT_VERSION, "2");
+            writer.setString(KEY_CODEC,
+                    Integer.toString(format.keyCodec().getId()));
+            writer.setString(COMPRESSION, format.compression().getId());
+            writer.setString(COMPRESSION_LEVEL,
+                    Integer.toString(format.compression().getLevel()));
+            final KeyPageCodec<?> codec = format.keyCodec();
+            if (codec.isLongFixedWeightDeltaVarint()) {
+                writer.setString(FIXED_WEIGHT_BIT_COUNT,
+                        Integer.toString(codec.getFixedWeightBitCount()));
+                writer.setString(FIXED_WEIGHT_SET_BIT_COUNT,
+                        Integer.toString(codec.getFixedWeightSetBitCount()));
+                writer.setString(FIXED_WEIGHT_PARITY_MASKS,
+                        Arrays.stream(codec.getFixedWeightParityMasks())
+                                .mapToObj(Long::toString)
+                                .collect(Collectors.joining(",")));
+                writer.setString(FIXED_WEIGHT_PARITY_SYNDROME,
+                        Integer.toString(codec.getFixedWeightParitySyndrome()));
+            }
+        });
+    }
+
+    /**
+     * Resolves exact metadata; indexes without the new format must be rebuilt.
+     */
+    static SenkuStorageFormat readStorageFormat(final Directory directory) {
+        final Properties properties = readProperties(directory,
+                SenkuFileNames.FORMAT_FILE);
+        final boolean fixedWeight = properties
+                .containsKey(FIXED_WEIGHT_BIT_COUNT);
+        requireExactKeys(properties, SenkuFileNames.FORMAT_FILE,
+                fixedWeight ? FIXED_WEIGHT_FORMAT_KEYS : FORMAT_KEYS);
+        if (parseInt(properties, FORMAT_VERSION) != 2) {
+            throw invalidMetadata(
+                    "Unsupported Senku storage format; rebuild the index.");
+        }
+        return new SenkuStorageFormat(readKeyCodec(properties, fixedWeight),
+                Compression.fromId(properties.getProperty(COMPRESSION),
+                        parseInt(properties, COMPRESSION_LEVEL)));
+    }
+
+    private static KeyPageCodec<?> readKeyCodec(final Properties properties,
+            final boolean fixedWeight) {
+        final int codecId = parseInt(properties, KEY_CODEC);
+        if (!fixedWeight) {
+            return KeyPageCodecs.fromId(codecId);
+        }
+        final String encodedMasks = properties
+                .getProperty(FIXED_WEIGHT_PARITY_MASKS);
+        final String[] maskValues = encodedMasks.isEmpty() ? new String[0]
+                : encodedMasks.split(",", -1);
+        if (maskValues.length > 8) {
+            throw invalidMetadata(
+                    "Fixed-weight format has too many parity masks.");
+        }
+        final long[] masks = new long[maskValues.length];
+        for (int i = 0; i < masks.length; i++) {
+            masks[i] = parseCanonicalLong(maskValues[i],
+                    FIXED_WEIGHT_PARITY_MASKS);
+        }
+        try {
+            final KeyPageCodec<Long> codec = KeyPageCodecs
+                    .longFixedWeightDeltaVarint(
+                            parseInt(properties, FIXED_WEIGHT_BIT_COUNT),
+                            parseInt(properties, FIXED_WEIGHT_SET_BIT_COUNT),
+                            masks,
+                            parseInt(properties, FIXED_WEIGHT_PARITY_SYNDROME));
+            if (codec.getId() != codecId) {
+                throw invalidMetadata(
+                        "Key codec does not match fixed-weight parameters.");
+            }
+            return codec;
+        } catch (IllegalArgumentException exception) {
+            throw new IndexException("Invalid fixed-weight codec metadata.",
+                    exception);
+        }
+    }
+
     private static void writeAndPublish(final Directory directory,
-            final String committedName,
-            final Consumer<PropertyWriter> values) {
+            final String committedName, final Consumer<PropertyWriter> values) {
         final Directory validatedDirectory = Vldtn.requireNonNull(directory,
                 "directory");
         final String temporaryName = SenkuFileNames.temporary(committedName);
         requireAbsent(validatedDirectory, committedName);
         requireAbsent(validatedDirectory, temporaryName);
-        final PropertyStoreImpl store = PropertyStoreImpl.fromDirectory(
-                validatedDirectory, temporaryName, false);
+        final PropertyStoreImpl store = PropertyStoreImpl
+                .fromDirectory(validatedDirectory, temporaryName, false);
         try (PropertyMutationSession session = store.openMutationSession()) {
             values.accept(session.writer());
         }
@@ -145,25 +245,36 @@ final class SenkuMetadataCodec {
 
     private static Properties readExact(final Directory directory,
             final String fileName, final Set<String> expectedKeys) {
+        final Properties properties = readProperties(directory, fileName);
+        requireExactKeys(properties, fileName, expectedKeys);
+        return properties;
+    }
+
+    private static Properties readProperties(final Directory directory,
+            final String fileName) {
         final Directory validatedDirectory = Vldtn.requireNonNull(directory,
                 "directory");
         if (!validatedDirectory.isFileExists(fileName)) {
-            throw invalidMetadata("Required metadata file '" + fileName
-                    + "' is missing.");
+            throw invalidMetadata(
+                    "Required metadata file '" + fileName + "' is missing.");
         }
         final Properties properties = new Properties();
         try {
             properties.load(new ByteArrayInputStream(
                     readEntireFile(validatedDirectory, fileName)));
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             throw new IndexException(
                     "Unable to parse metadata file '" + fileName + "'.", e);
         }
+        return properties;
+    }
+
+    private static void requireExactKeys(final Properties properties,
+            final String fileName, final Set<String> expectedKeys) {
         if (!properties.stringPropertyNames().equals(expectedKeys)) {
             throw invalidMetadata("Metadata file '" + fileName
                     + "' must contain exactly " + expectedKeys + ".");
         }
-        return properties;
     }
 
     private static byte[] readEntireFile(final Directory directory,
@@ -190,16 +301,19 @@ final class SenkuMetadataCodec {
             }
             return parsed;
         } catch (NumberFormatException e) {
-            throw new IndexException(
-                    "Metadata property '" + propertyName
-                            + "' must be a canonical integer.",
-                    e);
+            throw new IndexException("Metadata property '" + propertyName
+                    + "' must be a canonical integer.", e);
         }
     }
 
     private static long parseLong(final Properties properties,
             final String propertyName) {
-        final String encoded = properties.getProperty(propertyName);
+        return parseCanonicalLong(properties.getProperty(propertyName),
+                propertyName);
+    }
+
+    private static long parseCanonicalLong(final String encoded,
+            final String propertyName) {
         try {
             final long parsed = Long.parseLong(encoded);
             if (!Long.toString(parsed).equals(encoded)) {
@@ -207,10 +321,8 @@ final class SenkuMetadataCodec {
             }
             return parsed;
         } catch (NumberFormatException e) {
-            throw new IndexException(
-                    "Metadata property '" + propertyName
-                            + "' must be a canonical long.",
-                    e);
+            throw new IndexException("Metadata property '" + propertyName
+                    + "' must be a canonical long.", e);
         }
     }
 

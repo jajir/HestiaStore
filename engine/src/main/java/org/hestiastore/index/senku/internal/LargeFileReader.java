@@ -5,6 +5,8 @@ import org.hestiastore.index.Reader;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.chunkstore.CellPosition;
+import org.hestiastore.index.chunkentryfile.KeyPageCodec;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkStoreReader;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -15,7 +17,15 @@ import org.hestiastore.index.directory.Directory;
  */
 final class LargeFileReader implements Reader<ByteSequence>, AutoCloseable {
 
-    private static final int SENKU_PAGE_VERSION = 1;
+    private KeyPageCodec<?> keyCodec;
+    private final KeyPageCodec<?> requiredCodec;
+
+    /** Returns the validated codec of the most recently read page. */
+    @SuppressWarnings("unchecked")
+    <K> KeyPageCodec<K> keyCodec() {
+        return (KeyPageCodec<K>) Vldtn.requireNonNull(keyCodec,
+                "currentPageCodec");
+    }
 
     private final Directory directory;
     private final DataBlockSize dataBlockSize;
@@ -30,7 +40,9 @@ final class LargeFileReader implements Reader<ByteSequence>, AutoCloseable {
 
     LargeFileReader(final Directory directory,
             final DataBlockSize dataBlockSize, final int partCount,
-            final LargeFilePosition startPosition) {
+            final LargeFilePosition startPosition,
+            final KeyPageCodec<?> requiredCodec) {
+        this.requiredCodec = requiredCodec;
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
@@ -61,7 +73,7 @@ final class LargeFileReader implements Reader<ByteSequence>, AutoCloseable {
                 openReaderIfNeeded();
                 final Chunk chunk = currentReader.read();
                 if (chunk != null) {
-                    validateVersion(chunk);
+                    keyCodec = resolveCodec(chunk.getHeader().getVersion());
                     return chunk.getPayloadSequence();
                 }
                 closeCurrentReader();
@@ -76,6 +88,17 @@ final class LargeFileReader implements Reader<ByteSequence>, AutoCloseable {
             }
             throw new IndexException("Unable to read large-file page.", e);
         }
+    }
+
+    private KeyPageCodec<?> resolveCodec(final int id) {
+        if (requiredCodec == null) {
+            return KeyPageCodecs.fromId(id);
+        }
+        if (requiredCodec.getId() != id) {
+            throw new IndexException(
+                    "Page codec does not match Senku root metadata.");
+        }
+        return requiredCodec;
     }
 
     @Override
@@ -93,16 +116,9 @@ final class LargeFileReader implements Reader<ByteSequence>, AutoCloseable {
         }
         final CellPosition position = CellPosition.of(dataBlockSize,
                 partNumber == firstPartNumber ? firstLocalPosition : 0);
-        currentReader = LargeFile.chunkStore(directory, dataBlockSize,
-                partNumber).openReader(position);
-    }
-
-    private static void validateVersion(final Chunk chunk) {
-        final int version = chunk.getHeader().getVersion();
-        if (version != SENKU_PAGE_VERSION) {
-            throw new IndexException("Unexpected Senku page version " + version
-                    + "; expected " + SENKU_PAGE_VERSION + ".");
-        }
+        currentReader = LargeFile
+                .chunkStore(directory, dataBlockSize, partNumber)
+                .openReader(position);
     }
 
     private void closeCurrentReader() {

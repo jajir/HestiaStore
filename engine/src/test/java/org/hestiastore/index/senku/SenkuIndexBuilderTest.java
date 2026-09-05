@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.directory.MemDirectory;
@@ -41,6 +43,21 @@ class SenkuIndexBuilderTest {
     }
 
     @Test
+    void encodingSettingsAreFluentAndRejectInvalidDescriptorsBeforeStorage() {
+        final SenkuIndexBuilder<Integer, Long> builder = newBuilder();
+        assertSame(builder, builder.keyPageCodec(KeyPageCodecs.prefix()));
+        assertSame(builder, builder.compression(Compression.none()));
+        assertThrows(IllegalArgumentException.class,
+                () -> builder.keyPageCodec(null));
+        assertThrows(IllegalArgumentException.class,
+                () -> builder.compression(null));
+        final var incompatible = KeyPageCodecs.<Integer>fromId(3);
+        assertThrows(IndexException.class,
+                () -> builder.keyPageCodec(incompatible));
+        assertEquals(0, directory.getFileNames().count());
+    }
+
+    @Test
     void setters_areFluentAndUseLastValue() {
         final SenkuIndexBuilder<Integer, Long> builder = newBuilder();
 
@@ -72,8 +89,7 @@ class SenkuIndexBuilderTest {
         final SenkuIndexBuilder<Integer, Long> builder = newBuilder()
                 .shardHashFunction(value -> value.hashCode())
                 .shardCount(SenkuIndexBuilder.MAX_SHARD_COUNT)
-                .maxInMemoryEntries(
-                        SenkuIndexBuilder.MAX_IN_MEMORY_ENTRIES)
+                .maxInMemoryEntries(SenkuIndexBuilder.MAX_IN_MEMORY_ENTRIES)
                 .mergeFanIn(Integer.MAX_VALUE)
                 .maintenanceThreads(Integer.MAX_VALUE);
 
@@ -96,8 +112,7 @@ class SenkuIndexBuilderTest {
     void validate_rejectsMissingShardCount() {
         final SenkuIndexBuilder<Integer, Long> builder = newBuilder()
                 .shardHashFunction(value -> value.hashCode())
-                .maxInMemoryEntries(1)
-                .mergeFanIn(2).maintenanceThreads(1);
+                .maxInMemoryEntries(1).mergeFanIn(2).maintenanceThreads(1);
 
         assertMissingSetting(builder, "shardCount");
     }
@@ -169,8 +184,7 @@ class SenkuIndexBuilderTest {
 
         assertInvalidSetting(() -> builder.shardCount(0), "shardCount");
         assertInvalidSetting(
-                () -> builder.shardCount(
-                        SenkuIndexBuilder.MAX_SHARD_COUNT + 1),
+                () -> builder.shardCount(SenkuIndexBuilder.MAX_SHARD_COUNT + 1),
                 "shardCount");
     }
 
@@ -190,8 +204,7 @@ class SenkuIndexBuilderTest {
     void positiveSettings_rejectNonPositiveValues() {
         final SenkuIndexBuilder<Integer, Long> builder = newBuilder();
 
-        assertInvalidSetting(() -> builder.maxKeysPerPage(0),
-                "maxKeysPerPage");
+        assertInvalidSetting(() -> builder.maxKeysPerPage(0), "maxKeysPerPage");
         assertInvalidSetting(() -> builder.maintenanceThreads(0),
                 "maintenanceThreads");
         assertInvalidSetting(() -> builder.maintenanceQueueSize(0),
@@ -227,9 +240,8 @@ class SenkuIndexBuilderTest {
     void createReturnsWorkingHandleAndFreezesFunctionRegistry() {
         final SenkuIndexBuilder<Integer, Long> builder = validBuilder()
                 .shardCount(1).maxInMemoryEntries(2).maxKeysPerPage(1)
-                .mergeFanIn(2).maintenanceThreads(1)
-                .maintenanceQueueSize(1).diskIoBufferSize(1_024)
-                .maxEntriesPerPart(2L);
+                .mergeFanIn(2).maintenanceThreads(1).maintenanceQueueSize(1)
+                .diskIoBufferSize(1_024).maxEntriesPerPart(2L);
 
         final SenkuWriting<Integer, Long> writing = builder.create();
 

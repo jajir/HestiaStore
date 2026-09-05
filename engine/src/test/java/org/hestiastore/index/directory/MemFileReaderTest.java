@@ -43,4 +43,17 @@ class MemFileReaderTest {
             assertEquals(-1, reader.read(out, 0, 1));
         }
     }
+
+    @Test
+    void positionTracksReadsSkipsAndClose() {
+        final var reader = new MemFileReader(new byte[] { 1, 2, 3 });
+        assertEquals(0, reader.getPosition());
+        reader.read();
+        assertEquals(1, reader.getPosition());
+        reader.skip(1);
+        assertEquals(2, reader.getPosition());
+        reader.close();
+        assertEquals(-1, reader.getPosition());
+    }
+
 }

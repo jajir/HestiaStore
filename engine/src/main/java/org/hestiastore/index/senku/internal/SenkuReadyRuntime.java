@@ -26,6 +26,7 @@ import org.hestiastore.index.senku.SenkuReady;
  */
 final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
 
+    private final SenkuStorageFormat format;
     private final Directory rootDirectory;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -41,11 +42,11 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
     /**
      * Validates and owns an already-locked ready index.
      *
-     * @param rootDirectory Senku root
-     * @param keyTypeDescriptor key codec and comparator
+     * @param rootDirectory       Senku root
+     * @param keyTypeDescriptor   key codec and comparator
      * @param valueTypeDescriptor value codec
-     * @param dataBlockSize chunk-store block size
-     * @param fileLock already-held root lock
+     * @param dataBlockSize       chunk-store block size
+     * @param fileLock            already-held root lock
      */
     SenkuReadyRuntime(final Directory rootDirectory,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -60,6 +61,8 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
         this.fileLock = Vldtn.requireNonNull(fileLock, "fileLock");
+        format = SenkuMetadataCodec.readStorageFormat(rootDirectory);
+        format.keyCodec().validate(keyTypeDescriptor);
         terminalRuns = validateReadyLayout();
     }
 
@@ -69,7 +72,8 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
         try {
             ensureOpen();
             if (activeIterator != null) {
-                throw new IndexException("A Senku ready stream is already open.");
+                throw new IndexException(
+                        "A Senku ready stream is already open.");
             }
             final List<EntryIterator<K, V>> inputs = openInputs();
             try {
@@ -84,8 +88,9 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
                 throw e;
             }
             final SenkuMergedEntryIterator<K, V> iterator = activeIterator;
-            return StreamSupport.stream(new SenkuStreamSpliterator<>(iterator,
-                    keyTypeDescriptor.getComparator()), false)
+            return StreamSupport
+                    .stream(new SenkuStreamSpliterator<>(iterator,
+                            keyTypeDescriptor.getComparator()), false)
                     .onClose(() -> closeStream(iterator));
         } finally {
             lock.unlock();
@@ -127,6 +132,7 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
         final Set<String> expectedRoot = new HashSet<>();
         expectedRoot.add(SenkuFileNames.LOCK_FILE);
         expectedRoot.add(SenkuFileNames.READY_FILE);
+        expectedRoot.add(SenkuFileNames.FORMAT_FILE);
         expectedRoot.add(SenkuFileNames.FLUSH_DIRECTORY);
         for (int shardId = 0; shardId < shardCount; shardId++) {
             expectedRoot.add(SenkuFileNames.shardDirectory(shardId));
@@ -143,8 +149,8 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
     }
 
     private SenkuRunSource readTerminalRun(final int shardId) {
-        final Directory shard = rootDirectory.openSubDirectory(
-                SenkuFileNames.shardDirectory(shardId));
+        final Directory shard = rootDirectory
+                .openSubDirectory(SenkuFileNames.shardDirectory(shardId));
         final List<String> levelNames = shard.getFileNames().toList();
         if (levelNames.size() != 1) {
             throw new IndexException(
@@ -178,8 +184,9 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
                 terminalRuns.size());
         try {
             for (final SenkuRunSource source : terminalRuns) {
-                inputs.add(source.mergeSource(dataBlockSize, 1L)
-                        .open(keyTypeDescriptor, valueTypeDescriptor));
+                inputs.add(source.mergeSource(dataBlockSize, 1L).open(
+                        keyTypeDescriptor, valueTypeDescriptor,
+                        format.keyCodec()));
             }
             return inputs;
         } catch (Exception e) {

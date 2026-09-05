@@ -21,6 +21,7 @@ final class SenkuSourceEntryIterator<K, V> extends AbstractCloseableResource
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final boolean requireSourceEof;
+    private final int expectedCodecId;
 
     private long remaining;
     private SingleChunkEntryIterator<K, V> currentPage;
@@ -29,16 +30,29 @@ final class SenkuSourceEntryIterator<K, V> extends AbstractCloseableResource
     /**
      * Opens one exact persisted entry range.
      *
-     * @param pages source large-file pages
-     * @param keyTypeDescriptor key codec
+     * @param pages               source large-file pages
+     * @param keyTypeDescriptor   key codec
      * @param valueTypeDescriptor value codec
-     * @param recordCount exact number of entries in the range
-     * @param requireSourceEof whether the range must end with the large file
+     * @param recordCount         exact number of entries in the range
+     * @param requireSourceEof    whether the range must end with the large file
      */
     SenkuSourceEntryIterator(final LargeFileReader pages,
             final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final long recordCount, final boolean requireSourceEof) {
+            final TypeDescriptor<V> valueTypeDescriptor, final long recordCount,
+            final boolean requireSourceEof) {
+        this(pages, keyTypeDescriptor, valueTypeDescriptor, recordCount,
+                requireSourceEof, 0);
+    }
+
+    /**
+     * Opens a range with an optional required root codec (zero accepts page
+     * metadata).
+     */
+    SenkuSourceEntryIterator(final LargeFileReader pages,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor, final long recordCount,
+            final boolean requireSourceEof, final int expectedCodecId) {
+        this.expectedCodecId = expectedCodecId;
         this.pages = Vldtn.requireNonNull(pages, "pages");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
@@ -86,8 +100,14 @@ final class SenkuSourceEntryIterator<K, V> extends AbstractCloseableResource
                     throw new IndexException(
                             "Source ended before its declared recordCount.");
                 }
+                if (expectedCodecId != 0
+                        && pages.keyCodec().getId() != expectedCodecId) {
+                    throw new IndexException(
+                            "Page codec does not match Senku root metadata.");
+                }
                 currentPage = new SingleChunkEntryIterator<>(payload,
-                        keyTypeDescriptor, valueTypeDescriptor);
+                        keyTypeDescriptor, valueTypeDescriptor,
+                        pages.keyCodec());
             }
             next = Vldtn.requireNonNull(currentPage.next(), "entry");
             remaining--;

@@ -5,9 +5,12 @@ import static org.hestiastore.index.senku.internal.LargeFileTestSupport.page;
 import static org.hestiastore.index.senku.internal.LargeFileTestSupport.text;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.chunkstore.ChunkStoreWriterTx;
 import org.hestiastore.index.directory.MemDirectory;
@@ -15,6 +18,36 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class LargeFileReaderTest {
+    @Test
+    void parameterizedPagesKeepRootCodecAndRejectMissingOrMismatchedCodec() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[] { 3 }, 0);
+        final var ranked = new MemDirectory();
+        final var format = new SenkuStorageFormat(codec, Compression.none());
+        final var writer = new LargeFile(ranked, DATA_BLOCK_SIZE, 1, 0, format)
+                .openWriterTx();
+        final var position = writer.appendPage(page("ranked"), 1);
+        final int parts = writer.commit();
+        final var fileWithFormat = new LargeFile(ranked, DATA_BLOCK_SIZE, 1,
+                parts, format);
+        try (var reader = fileWithFormat.openReader(position)) {
+            assertEquals("ranked", text(reader.read()));
+            assertSame(codec, reader.keyCodec());
+        }
+        final var fileWithoutFormat = new LargeFile(ranked, DATA_BLOCK_SIZE, 1,
+                parts);
+        try (var reader = fileWithoutFormat.openReader()) {
+            assertThrows(IndexException.class, reader::read);
+        }
+        try (var reader = fileWithoutFormat.openReaderWithCodec(null,
+                KeyPageCodecs.longDeltaVarint())) {
+            assertThrows(IndexException.class, reader::read);
+        }
+        try (var reader = fileWithoutFormat.openReaderWithCodec(null, codec)) {
+            assertEquals("ranked", text(reader.read()));
+            assertSame(codec, reader.keyCodec());
+        }
+    }
 
     private MemDirectory directory;
     private LargeFilePosition secondPosition;
@@ -81,7 +114,7 @@ class LargeFileReaderTest {
                 .chunkStore(wrongVersionDirectory, DATA_BLOCK_SIZE, 0)
                 .openWriteTx();
         final ChunkStoreWriter writer = transaction.open();
-        writer.writeSequence(page("wrong"), 2);
+        writer.writeSequence(page("wrong"), 1);
         writer.close();
         transaction.commit();
         final LargeFile wrongVersionFile = new LargeFile(wrongVersionDirectory,

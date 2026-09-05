@@ -3,6 +3,9 @@ package org.hestiastore.index.senku;
 import java.util.function.ToIntFunction;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkentryfile.KeyPageCodec;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.senku.internal.SenkuRuntime;
@@ -27,6 +30,8 @@ public final class SenkuIndexBuilder<K, V> {
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SenkuMergeFunctionRegistry<K, V> functions;
 
+    private KeyPageCodec<K> keyPageCodec = KeyPageCodecs.prefix();
+    private Compression compression = Compression.zstd(3);
     private ToIntFunction<K> shardHashFunction;
     private Integer shardCount;
     private Integer maxInMemoryEntries;
@@ -75,8 +80,8 @@ public final class SenkuIndexBuilder<K, V> {
 
     /**
      * Sets the approximate distinct-key count per striped ingestion batch that
-     * triggers a synchronous flush. During a flush, one additional batch can
-     * be populated.
+     * triggers a synchronous flush. During a flush, one additional batch can be
+     * populated.
      *
      * @param value in-memory entry limit
      * @return this builder
@@ -94,8 +99,7 @@ public final class SenkuIndexBuilder<K, V> {
      * @return this builder
      */
     public SenkuIndexBuilder<K, V> maxKeysPerPage(final int value) {
-        maxKeysPerPage = Vldtn.requireGreaterThanZero(value,
-                "maxKeysPerPage");
+        maxKeysPerPage = Vldtn.requireGreaterThanZero(value, "maxKeysPerPage");
         return this;
     }
 
@@ -142,8 +146,7 @@ public final class SenkuIndexBuilder<K, V> {
      * @return this builder
      */
     public SenkuIndexBuilder<K, V> diskIoBufferSize(final int value) {
-        diskIoBufferSize = Vldtn.requireIoBufferSize(value,
-                "diskIoBufferSize");
+        diskIoBufferSize = Vldtn.requireIoBufferSize(value, "diskIoBufferSize");
         return this;
     }
 
@@ -171,12 +174,36 @@ public final class SenkuIndexBuilder<K, V> {
                 functions.requireFunction(), shardHashFunction, shardCount,
                 maxInMemoryEntries, initialMapCapacity(), maxKeysPerPage,
                 mergeFanIn, maintenanceThreads, maintenanceQueueSize,
-                diskIoBufferSize, maxEntriesPerPart);
+                diskIoBufferSize, maxEntriesPerPart, keyPageCodec, compression);
         functions.freeze();
         return writing;
     }
 
+    /**
+     * Selects a matched sorted-key encoder and decoder for every page.
+     *
+     * @param value built-in key encoding compatible with the key descriptor
+     * @return this builder
+     */
+    public SenkuIndexBuilder<K, V> keyPageCodec(final KeyPageCodec<K> value) {
+        keyPageCodec = Vldtn.requireNonNull(value, "keyPageCodec");
+        keyPageCodec.validate(keyTypeDescriptor);
+        return this;
+    }
+
+    /**
+     * Selects independent chunk compression; defaults to Zstd level 3.
+     *
+     * @param value Zstd setting or uncompressed payloads
+     * @return this builder
+     */
+    public SenkuIndexBuilder<K, V> compression(final Compression value) {
+        compression = Vldtn.requireNonNull(value, "compression");
+        return this;
+    }
+
     void validate() {
+        keyPageCodec.validate(keyTypeDescriptor);
         Vldtn.requireNonNull(shardHashFunction, "shardHashFunction");
         Vldtn.requireNonNull(shardCount, "shardCount");
         Vldtn.requireNonNull(maxInMemoryEntries, "maxInMemoryEntries");

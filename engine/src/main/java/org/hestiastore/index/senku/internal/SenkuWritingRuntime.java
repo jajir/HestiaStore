@@ -85,8 +85,7 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
      */
     void start() {
         periodicScan = controlExecutor.scheduleWithFixedDelay(this::tickSafely,
-                SCAN_INTERVAL_SECONDS, SCAN_INTERVAL_SECONDS,
-                TimeUnit.SECONDS);
+                SCAN_INTERVAL_SECONDS, SCAN_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
@@ -176,12 +175,14 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
     }
 
     /**
-     * Checks only terminal drain completion after a worker result.
+     * Requests a fresh drain scan after a worker result while finishing. The
+     * catalog can predate the last accepted flush even when stopping ingestion
+     * produces no tail flush. Only a tick that observed FINISHING and refreshed
+     * the catalog may publish readiness.
      */
     void completionProcessed() {
-        if (state == SenkuWritingState.FINISHING
-                && coordinator.isDrainComplete()) {
-            completeSuccess();
+        if (state == SenkuWritingState.FINISHING) {
+            wakeCoordinator();
         }
     }
 

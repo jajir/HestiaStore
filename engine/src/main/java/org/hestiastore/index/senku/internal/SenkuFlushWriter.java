@@ -22,6 +22,7 @@ final class SenkuFlushWriter<K, V> {
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
     private static final int MAX_LONG_KEY_BYTES = 2 + Long.BYTES;
 
+    private final SenkuStorageFormat format;
     private final Directory flushDirectory;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -37,6 +38,21 @@ final class SenkuFlushWriter<K, V> {
             final ToIntFunction<K> shardHashFunction, final int shardCount,
             final int maxKeysPerPage, final long maxEntriesPerPart,
             final DataBlockSize dataBlockSize) {
+        this(flushDirectory, keyTypeDescriptor, valueTypeDescriptor,
+                shardHashFunction, shardCount, maxKeysPerPage,
+                maxEntriesPerPart, dataBlockSize,
+                SenkuStorageFormat.createDefault());
+    }
+
+    /** Creates this component with the index's immutable storage format. */
+    SenkuFlushWriter(final Directory flushDirectory,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final ToIntFunction<K> shardHashFunction, final int shardCount,
+            final int maxKeysPerPage, final long maxEntriesPerPart,
+            final DataBlockSize dataBlockSize,
+            final SenkuStorageFormat format) {
+        this.format = Vldtn.requireNonNull(format, "format");
         this.flushDirectory = Vldtn.requireNonNull(flushDirectory,
                 "flushDirectory");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -49,8 +65,8 @@ final class SenkuFlushWriter<K, V> {
                 "shardCount");
         this.maxKeysPerPage = Vldtn.requireGreaterThanZero(maxKeysPerPage,
                 "maxKeysPerPage");
-        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(
-                maxEntriesPerPart, "maxEntriesPerPart");
+        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(maxEntriesPerPart,
+                "maxEntriesPerPart");
         Vldtn.requireTrue(maxEntriesPerPart >= maxKeysPerPage,
                 "maxEntriesPerPart must be greater than or equal to maxKeysPerPage");
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
@@ -65,8 +81,7 @@ final class SenkuFlushWriter<K, V> {
      * @param generation generation identifier
      * @param entries    non-empty aggregate of detached mutation stripes
      */
-    void write(final long generation,
-            final List<? extends Map<K, V>> entries) {
+    void write(final long generation, final List<? extends Map<K, V>> entries) {
         Vldtn.requireGreaterThanOrEqualToZero(generation, "generation");
         final List<? extends Map<K, V>> validatedEntries = Vldtn
                 .requireNonNull(entries, "entries");
@@ -82,14 +97,12 @@ final class SenkuFlushWriter<K, V> {
         final Directory generationDirectory = flushDirectory
                 .openSubDirectory(directoryName);
         try {
-            writeGeneration(generationDirectory, validatedEntries,
-                    entryCount);
+            writeGeneration(generationDirectory, validatedEntries, entryCount);
         } catch (IndexException e) {
             throw e;
         } catch (Exception e) {
             throw new IndexException(
-                    "Unable to write flush generation '" + directoryName
-                            + "'.",
+                    "Unable to write flush generation '" + directoryName + "'.",
                     e);
         }
     }
@@ -102,7 +115,7 @@ final class SenkuFlushWriter<K, V> {
                 entryCount);
         sortShards(ordered, starts, counts);
         final LargeFile largeFile = new LargeFile(generationDirectory,
-                dataBlockSize, maxEntriesPerPart, 0);
+                dataBlockSize, maxEntriesPerPart, 0, format);
         final LargeFileWriterTx writer = largeFile.openWriterTx();
         try {
             final long[] packedPositions = new long[shardCount];
@@ -120,7 +133,8 @@ final class SenkuFlushWriter<K, V> {
             }
             final int partCount = writer.commit();
             SenkuShardIndexCodec.write(generationDirectory, dataBlockSize,
-                    new SenkuShardIndex(packedPositions, recordCounts));
+                    new SenkuShardIndex(packedPositions, recordCounts),
+                    format.compression());
             SenkuMetadataCodec.publishFlushManifest(generationDirectory,
                     partCount);
         } catch (Exception e) {
@@ -147,8 +161,8 @@ final class SenkuFlushWriter<K, V> {
             final int remaining = to - pageStart;
             final int pageEnd = remaining <= maxKeysPerPage ? to
                     : pageStart + maxKeysPerPage;
-            final SingleChunkEntryWriterImpl<K, V> pageWriter =
-                    newPageWriter(pageEnd - pageStart);
+            final SingleChunkEntryWriterImpl<K, V> pageWriter = newPageWriter(
+                    pageEnd - pageStart);
             for (int index = pageStart; index < pageEnd; index++) {
                 if (entries.hasPrimitiveLongKeys()) {
                     pageWriter.putLongKey(entries.longKey(index),
@@ -171,7 +185,7 @@ final class SenkuFlushWriter<K, V> {
             final int recordCount) {
         if (keyTypeDescriptor.getClass() != TypeDescriptorLong.class) {
             return new SingleChunkEntryWriterImpl<>(keyTypeDescriptor,
-                    valueTypeDescriptor);
+                    valueTypeDescriptor, MAX_ARRAY_SIZE, format.keyCodec());
         }
         final int maxRecordBytes;
         if (valueTypeDescriptor.getClass() == TypeDescriptorNull.class) {
@@ -180,16 +194,15 @@ final class SenkuFlushWriter<K, V> {
             maxRecordBytes = MAX_LONG_KEY_BYTES + Long.BYTES;
         } else {
             return new SingleChunkEntryWriterImpl<>(keyTypeDescriptor,
-                    valueTypeDescriptor);
+                    valueTypeDescriptor, MAX_ARRAY_SIZE, format.keyCodec());
         }
         final int maxEncodedBytes = (int) Math.min(MAX_ARRAY_SIZE,
                 (long) recordCount * maxRecordBytes);
         return new SingleChunkEntryWriterImpl<>(keyTypeDescriptor,
-                valueTypeDescriptor, maxEncodedBytes);
+                valueTypeDescriptor, maxEncodedBytes, format.keyCodec());
     }
 
-    private int[] countShards(
-            final List<? extends Map<K, V>> entries) {
+    private int[] countShards(final List<? extends Map<K, V>> entries) {
         final int[] counts = new int[shardCount];
         for (final Map<K, V> stripe : entries) {
             stripe.forEach((key, value) -> counts[shardId(key)]++);
@@ -208,8 +221,8 @@ final class SenkuFlushWriter<K, V> {
     }
 
     private SenkuFlushOrder<K, V> orderByShard(
-            final List<? extends Map<K, V>> entries,
-            final int[] starts, final int entryCount) {
+            final List<? extends Map<K, V>> entries, final int[] starts,
+            final int entryCount) {
         final SenkuFlushOrder<K, V> ordered = new SenkuFlushOrder<>(
                 keyTypeDescriptor, valueTypeDescriptor, entryCount);
         final int[] next = starts.clone();

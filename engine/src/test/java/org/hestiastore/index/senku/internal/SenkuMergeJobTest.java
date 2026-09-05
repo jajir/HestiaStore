@@ -12,6 +12,8 @@ import java.util.List;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.directory.MemDirectory;
@@ -19,6 +21,33 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SenkuMergeJobTest {
+    @Test
+    void genericValueMergeReadsFixedWeightDomainWithoutReplacingLogicalKeys() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[0], 0);
+        final var format = new SenkuStorageFormat(codec, Compression.zstd(3));
+        final var directory = new MemDirectory();
+        final var entries = List.of(Entry.of(3L, 7), Entry.of(12L, 8));
+        final var manifest = new SenkuRunWriter<>(directory, values, keys, 1, 2,
+                DATA_BLOCK_SIZE, () -> true, format)
+                .write(new EntryIteratorList<>(entries));
+        final var source = SenkuMergeSource.run(new LargeFile(directory,
+                DATA_BLOCK_SIZE, 2, manifest.partCount()),
+                manifest.recordCount());
+        final var output = new MemDirectory();
+        final var result = new SenkuMergeJob<>(List.of(source, source), output,
+                0, 1, 0, values, keys, (key, left, right) -> left + right, 1, 2,
+                DATA_BLOCK_SIZE, () -> true, format).execute();
+        final var written = SenkuMergeSource.run(
+                new LargeFile(output, DATA_BLOCK_SIZE, 2,
+                        result.manifest().partCount()),
+                result.manifest().recordCount());
+        try (var reader = written.open(values, keys, codec)) {
+            assertEquals(Entry.of(3L, 14), reader.next());
+            assertEquals(Entry.of(12L, 16), reader.next());
+            assertFalse(reader.hasNext());
+        }
+    }
 
     private TypeDescriptorInteger keys;
     private TypeDescriptorLong values;
@@ -43,8 +72,9 @@ class SenkuMergeJobTest {
         assertEquals(7, completed.shardId());
         assertEquals(2, completed.level());
         assertEquals(11L, completed.runId());
-        assertEquals(List.of(Entry.of(1, 15L), Entry.of(2, 20L),
-                Entry.of(3, 30L)), read(output, completed.manifest()));
+        assertEquals(
+                List.of(Entry.of(1, 15L), Entry.of(2, 20L), Entry.of(3, 30L)),
+                read(output, completed.manifest()));
     }
 
     @Test
@@ -81,16 +111,16 @@ class SenkuMergeJobTest {
         output.touch(SenkuFileNames.partFile(0));
 
         assertThrows(IndexException.class,
-                () -> job(List.of(runSource(Entry.of(1, 1L))), output, 0, 0,
-                        0L).execute());
+                () -> job(List.of(runSource(Entry.of(1, 1L))), output, 0, 0, 0L)
+                        .execute());
         assertFalse(output.isFileExists(SenkuFileNames.MANIFEST_FILE));
     }
 
     @Test
     void constructorRejectsNullSourceAndInvalidOutputIdentity() {
         final MemDirectory output = new MemDirectory();
-        final List<SenkuMergeSource> nullSource = Arrays.asList(
-                (SenkuMergeSource) null);
+        final List<SenkuMergeSource> nullSource = Arrays
+                .asList((SenkuMergeSource) null);
 
         assertThrows(IllegalArgumentException.class,
                 () -> job(nullSource, output, 0, 0, 0L));
@@ -129,9 +159,8 @@ class SenkuMergeJobTest {
             final MemDirectory outputDirectory, final int shardId,
             final int level, final long runId) {
         return new SenkuMergeJob<>(sources, outputDirectory, shardId, level,
-                runId, keys, values,
-                (key, first, second) -> first + second, 2, 4L,
-                DATA_BLOCK_SIZE);
+                runId, keys, values, (key, first, second) -> first + second, 2,
+                4L, DATA_BLOCK_SIZE);
     }
 
     private SenkuMergeJob<Integer, Long> runJob(
@@ -162,11 +191,10 @@ class SenkuMergeJobTest {
 
     private List<Entry<Integer, Long>> read(final MemDirectory directory,
             final SenkuRunManifest manifest) {
-        final SenkuSourceEntryIterator<Integer, Long> iterator =
-                new SenkuSourceEntryIterator<>(
-                        new LargeFile(directory, DATA_BLOCK_SIZE, 4L,
-                                manifest.partCount()).openReader(),
-                        keys, values, manifest.recordCount(), true);
+        final SenkuSourceEntryIterator<Integer, Long> iterator = new SenkuSourceEntryIterator<>(
+                new LargeFile(directory, DATA_BLOCK_SIZE, 4L,
+                        manifest.partCount()).openReader(),
+                keys, values, manifest.recordCount(), true);
         final List<Entry<Integer, Long>> entries = new ArrayList<>();
         while (iterator.hasNext()) {
             entries.add(iterator.next());

@@ -91,7 +91,7 @@ class SenkuIndexIT {
 
         assertEquals(List.of(Entry.of(1, 10L), Entry.of(2, 20L),
                 Entry.of(3, 30L)), read(ready));
-        assertEquals(Set.of(".lock", "ready.properties", "flush",
+        assertEquals(Set.of(".lock", "ready.properties", "format.properties", "flush",
                 "shard-00000", "shard-00001", "shard-00002",
                 "shard-00003", "shard-00004", "shard-00005",
                 "shard-00006", "shard-00007"),

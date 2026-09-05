@@ -16,6 +16,9 @@ import java.util.function.ToIntFunction;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkentryfile.KeyPageCodec;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
+import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -40,8 +43,7 @@ public final class SenkuRuntime {
      * @param <V> value type
      * @return writing handle
      */
-    public static <K, V> SenkuWriting<K, V> create(
-            final Directory directory,
+    public static <K, V> SenkuWriting<K, V> create(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final SenkuMergeFunction<K, V> mergeFunction,
@@ -50,18 +52,47 @@ public final class SenkuRuntime {
             final int maxKeysPerPage, final int mergeFanIn,
             final int maintenanceThreads, final int maintenanceQueueSize,
             final int diskIoBufferSize, final long maxEntriesPerPart) {
+        return create(directory, keyTypeDescriptor, valueTypeDescriptor,
+                mergeFunction, shardHashFunction, shardCount,
+                maxInMemoryEntries, initialMapCapacity, maxKeysPerPage,
+                mergeFanIn, maintenanceThreads, maintenanceQueueSize,
+                diskIoBufferSize, maxEntriesPerPart, KeyPageCodecs.prefix(),
+                Compression.zstd(3));
+    }
+
+    /**
+     * Creates a runtime with a persisted key-page codec and chunk compression.
+     *
+     * @param <K>          key type
+     * @param <V>          value type
+     * @param keyPageCodec sorted-key encoding
+     * @param compression  chunk compression
+     * @return exclusive writing runtime
+     */
+    public static <K, V> SenkuWriting<K, V> create(final Directory directory,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final SenkuMergeFunction<K, V> mergeFunction,
+            final ToIntFunction<K> shardHashFunction, final int shardCount,
+            final int maxInMemoryEntries, final int initialMapCapacity,
+            final int maxKeysPerPage, final int mergeFanIn,
+            final int maintenanceThreads, final int maintenanceQueueSize,
+            final int diskIoBufferSize, final long maxEntriesPerPart,
+            final KeyPageCodec<K> keyPageCodec, final Compression compression) {
         final Directory root = Vldtn.requireNonNull(directory, "directory");
         final TypeDescriptor<K> keys = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
-        final TypeDescriptor<V> values = Vldtn.requireNonNull(
-                valueTypeDescriptor, "valueTypeDescriptor");
-        final SenkuMergeFunction<K, V> merge = Vldtn.requireNonNull(
-                mergeFunction, "mergeFunction");
+        final TypeDescriptor<V> values = Vldtn
+                .requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
+        final SenkuMergeFunction<K, V> merge = Vldtn
+                .requireNonNull(mergeFunction, "mergeFunction");
         final ToIntFunction<K> hash = Vldtn.requireNonNull(shardHashFunction,
                 "shardHashFunction");
-        final DataBlockSize blockSize = DataBlockSize.ofDataBlockSize(
-                Vldtn.requireIoBufferSize(diskIoBufferSize,
-                        "diskIoBufferSize"));
+        final DataBlockSize blockSize = DataBlockSize.ofDataBlockSize(Vldtn
+                .requireIoBufferSize(diskIoBufferSize, "diskIoBufferSize"));
+        Vldtn.requireNonNull(keyPageCodec, "keyPageCodec").validate(keys);
+        final SenkuStorageFormat format = new SenkuStorageFormat(keyPageCodec,
+                compression);
         FileLock fileLock = null;
         boolean lockAcquired = false;
         ThreadPoolExecutor workers = null;
@@ -71,15 +102,17 @@ public final class SenkuRuntime {
             fileLock.lock();
             lockAcquired = true;
             requireEmptyRoot(root);
+            SenkuMetadataCodec.publishStorageFormat(root, format);
             if (!root.mkdir(SenkuFileNames.FLUSH_DIRECTORY)) {
-                throw new IndexException("Senku flush directory already exists.");
+                throw new IndexException(
+                        "Senku flush directory already exists.");
             }
             final Directory flush = root
                     .openSubDirectory(SenkuFileNames.FLUSH_DIRECTORY);
             final ReentrantLock writingLock = new ReentrantLock();
             final SenkuFlushWriter<K, V> flushWriter = new SenkuFlushWriter<>(
                     flush, keys, values, hash, shardCount, maxKeysPerPage,
-                    maxEntriesPerPart, blockSize);
+                    maxEntriesPerPart, blockSize, format);
             final SenkuIngestor<K, V> ingestor = new SenkuIngestor<>(
                     new ReentrantLock(), merge, hash, flushWriter,
                     maxInMemoryEntries, initialMapCapacity);
@@ -90,17 +123,14 @@ public final class SenkuRuntime {
                     SenkuRuntime::enqueueAfterWorkerHandoff);
             control = Executors.newSingleThreadScheduledExecutor(
                     threadFactory("senku-coordinator-"));
-            final AtomicReference<IndexException> firstFailure =
-                    new AtomicReference<>();
-            final AtomicReference<SenkuWritingRuntime<K, V>> runtime =
-                    new AtomicReference<>();
-            final SenkuMaintenanceCoordinator<K, V> coordinator =
-                    new SenkuMaintenanceCoordinator<>(root, shardCount,
-                            mergeFanIn, keys, values, merge, maxKeysPerPage,
-                            maxEntriesPerPart, blockSize, workers, control,
-                            firstFailure, ingestor::setPaused,
-                            failure -> runtime.get().backgroundFailure(failure),
-                            () -> runtime.get().completionProcessed());
+            final AtomicReference<IndexException> firstFailure = new AtomicReference<>();
+            final AtomicReference<SenkuWritingRuntime<K, V>> runtime = new AtomicReference<>();
+            final SenkuMaintenanceCoordinator<K, V> coordinator = new SenkuMaintenanceCoordinator<>(
+                    root, shardCount, mergeFanIn, keys, values, merge,
+                    maxKeysPerPage, maxEntriesPerPart, blockSize, workers,
+                    control, firstFailure, ingestor::setPaused,
+                    failure -> runtime.get().backgroundFailure(failure),
+                    () -> runtime.get().completionProcessed(), format);
             final SenkuWritingRuntime<K, V> writing = new SenkuWritingRuntime<>(
                     root, keys, values, blockSize, shardCount, fileLock,
                     writingLock, ingestor, coordinator, control, workers,
@@ -122,19 +152,17 @@ public final class SenkuRuntime {
      * @param <V> value type
      * @return ready handle
      */
-    public static <K, V> SenkuReady<K, V> open(
-            final Directory directory,
+    public static <K, V> SenkuReady<K, V> open(final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final int diskIoBufferSize) {
         final Directory root = Vldtn.requireNonNull(directory, "directory");
         final TypeDescriptor<K> keys = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
-        final TypeDescriptor<V> values = Vldtn.requireNonNull(
-                valueTypeDescriptor, "valueTypeDescriptor");
-        final DataBlockSize blockSize = DataBlockSize.ofDataBlockSize(
-                Vldtn.requireIoBufferSize(diskIoBufferSize,
-                        "diskIoBufferSize"));
+        final TypeDescriptor<V> values = Vldtn
+                .requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
+        final DataBlockSize blockSize = DataBlockSize.ofDataBlockSize(Vldtn
+                .requireIoBufferSize(diskIoBufferSize, "diskIoBufferSize"));
         final FileLock fileLock = root.getLock(SenkuFileNames.LOCK_FILE);
         boolean lockAcquired = false;
         try {
@@ -155,11 +183,11 @@ public final class SenkuRuntime {
     }
 
     private static void requireEmptyRoot(final Directory root) {
-        final Set<String> names = new HashSet<>(
-                root.getFileNames().toList());
+        final Set<String> names = new HashSet<>(root.getFileNames().toList());
         names.remove(SenkuFileNames.LOCK_FILE);
         if (!names.isEmpty()) {
-            throw new IndexException("Senku create requires an empty directory.");
+            throw new IndexException(
+                    "Senku create requires an empty directory.");
         }
     }
 

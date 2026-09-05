@@ -20,6 +20,7 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
  */
 final class SenkuMergeJob<K, V> {
 
+    private final SenkuStorageFormat format;
     private final List<SenkuMergeSource> sources;
     private final Directory outputDirectory;
     private final int shardId;
@@ -37,17 +38,17 @@ final class SenkuMergeJob<K, V> {
     /**
      * Creates a job for one already-reserved output directory.
      *
-     * @param sources exact immutable input ranges
-     * @param outputDirectory unique empty output run directory
-     * @param shardId output shard ID
-     * @param outputLevel output numeric level
-     * @param outputRunId output run ID within the shard and level
-     * @param keyTypeDescriptor key codec and comparator
+     * @param sources             exact immutable input ranges
+     * @param outputDirectory     unique empty output run directory
+     * @param shardId             output shard ID
+     * @param outputLevel         output numeric level
+     * @param outputRunId         output run ID within the shard and level
+     * @param keyTypeDescriptor   key codec and comparator
      * @param valueTypeDescriptor value codec
-     * @param mergeFunction duplicate-key reducer
-     * @param maxKeysPerPage maximum output entries per page
-     * @param maxEntriesPerPart maximum output entries per physical part
-     * @param dataBlockSize chunk-store block size
+     * @param mergeFunction       duplicate-key reducer
+     * @param maxKeysPerPage      maximum output entries per page
+     * @param maxEntriesPerPart   maximum output entries per physical part
+     * @param dataBlockSize       chunk-store block size
      */
     SenkuMergeJob(final List<SenkuMergeSource> sources,
             final Directory outputDirectory, final int shardId,
@@ -71,6 +72,24 @@ final class SenkuMergeJob<K, V> {
             final int maxKeysPerPage, final long maxEntriesPerPart,
             final DataBlockSize dataBlockSize,
             final BooleanSupplier publicationAllowed) {
+        this(sources, outputDirectory, shardId, outputLevel, outputRunId,
+                keyTypeDescriptor, valueTypeDescriptor, mergeFunction,
+                maxKeysPerPage, maxEntriesPerPart, dataBlockSize,
+                publicationAllowed, SenkuStorageFormat.createDefault());
+    }
+
+    /** Creates this component with the index's immutable storage format. */
+    SenkuMergeJob(final List<SenkuMergeSource> sources,
+            final Directory outputDirectory, final int shardId,
+            final int outputLevel, final long outputRunId,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final SenkuMergeFunction<K, V> mergeFunction,
+            final int maxKeysPerPage, final long maxEntriesPerPart,
+            final DataBlockSize dataBlockSize,
+            final BooleanSupplier publicationAllowed,
+            final SenkuStorageFormat format) {
+        this.format = Vldtn.requireNonNull(format, "format");
         final List<SenkuMergeSource> validatedSources = Vldtn
                 .requireNonNull(sources, "sources");
         validatedSources
@@ -93,8 +112,8 @@ final class SenkuMergeJob<K, V> {
                 "mergeFunction");
         this.maxKeysPerPage = Vldtn.requireGreaterThanZero(maxKeysPerPage,
                 "maxKeysPerPage");
-        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(
-                maxEntriesPerPart, "maxEntriesPerPart");
+        this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(maxEntriesPerPart,
+                "maxEntriesPerPart");
         Vldtn.requireTrue(maxEntriesPerPart >= maxKeysPerPage,
                 "maxEntriesPerPart must be greater than or equal to maxKeysPerPage");
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
@@ -106,44 +125,59 @@ final class SenkuMergeJob<K, V> {
     /**
      * Creates one same-shard, same-level merge or one-input promotion job.
      *
-     * @param sources committed run sources; at least one is required
-     * @param outputDirectory unique empty output run directory
-     * @param outputRunId output run ID in the next level
-     * @param keyTypeDescriptor key codec and comparator
+     * @param sources             committed run sources; at least one is
+     *                            required
+     * @param outputDirectory     unique empty output run directory
+     * @param outputRunId         output run ID in the next level
+     * @param keyTypeDescriptor   key codec and comparator
      * @param valueTypeDescriptor value codec
-     * @param mergeFunction duplicate-key reducer
-     * @param maxKeysPerPage maximum output entries per page
-     * @param maxEntriesPerPart maximum output entries per physical part
-     * @param dataBlockSize chunk-store block size
+     * @param mergeFunction       duplicate-key reducer
+     * @param maxKeysPerPage      maximum output entries per page
+     * @param maxEntriesPerPart   maximum output entries per physical part
+     * @param dataBlockSize       chunk-store block size
      * @return validated merge job
      */
     static <K, V> SenkuMergeJob<K, V> forRuns(
-            final List<SenkuRunSource> sources,
-            final Directory outputDirectory, final long outputRunId,
-            final TypeDescriptor<K> keyTypeDescriptor,
+            final List<SenkuRunSource> sources, final Directory outputDirectory,
+            final long outputRunId, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final SenkuMergeFunction<K, V> mergeFunction,
             final int maxKeysPerPage, final long maxEntriesPerPart,
             final DataBlockSize dataBlockSize) {
-        return forRuns(sources, outputDirectory, outputRunId,
-                keyTypeDescriptor, valueTypeDescriptor, mergeFunction,
-                maxKeysPerPage, maxEntriesPerPart, dataBlockSize, () -> true);
+        return forRuns(sources, outputDirectory, outputRunId, keyTypeDescriptor,
+                valueTypeDescriptor, mergeFunction, maxKeysPerPage,
+                maxEntriesPerPart, dataBlockSize, () -> true);
     }
 
     static <K, V> SenkuMergeJob<K, V> forRuns(
-            final List<SenkuRunSource> sources,
-            final Directory outputDirectory, final long outputRunId,
-            final TypeDescriptor<K> keyTypeDescriptor,
+            final List<SenkuRunSource> sources, final Directory outputDirectory,
+            final long outputRunId, final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final SenkuMergeFunction<K, V> mergeFunction,
             final int maxKeysPerPage, final long maxEntriesPerPart,
             final DataBlockSize dataBlockSize,
             final BooleanSupplier publicationAllowed) {
+        return forRuns(sources, outputDirectory, outputRunId, keyTypeDescriptor,
+                valueTypeDescriptor, mergeFunction, maxKeysPerPage,
+                maxEntriesPerPart, dataBlockSize, publicationAllowed,
+                SenkuStorageFormat.createDefault());
+    }
+
+    /** Creates a format-aware merge of committed same-level runs. */
+    static <K, V> SenkuMergeJob<K, V> forRuns(
+            final List<SenkuRunSource> sources, final Directory outputDirectory,
+            final long outputRunId, final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final SenkuMergeFunction<K, V> mergeFunction,
+            final int maxKeysPerPage, final long maxEntriesPerPart,
+            final DataBlockSize dataBlockSize,
+            final BooleanSupplier publicationAllowed,
+            final SenkuStorageFormat format) {
         final List<SenkuRunSource> validatedSources = Vldtn
                 .requireNonNull(sources, "sources");
         Vldtn.requireGreaterThanZero(validatedSources.size(), "sourceCount");
-        final SenkuRunSource first = Vldtn.requireNonNull(
-                validatedSources.get(0), "source");
+        final SenkuRunSource first = Vldtn
+                .requireNonNull(validatedSources.get(0), "source");
         final List<SenkuMergeSource> mergeSources = new ArrayList<>(
                 validatedSources.size());
         for (final SenkuRunSource source : validatedSources) {
@@ -153,8 +187,8 @@ final class SenkuMergeJob<K, V> {
                     "Sorted-run merge sources must belong to one shard");
             Vldtn.requireTrue(validated.level() == first.level(),
                     "Sorted-run merge sources must belong to one level");
-            mergeSources.add(validated.mergeSource(dataBlockSize,
-                    maxEntriesPerPart));
+            mergeSources.add(
+                    validated.mergeSource(dataBlockSize, maxEntriesPerPart));
         }
         final int outputLevel;
         try {
@@ -165,7 +199,7 @@ final class SenkuMergeJob<K, V> {
         return new SenkuMergeJob<>(mergeSources, outputDirectory,
                 first.shardId(), outputLevel, outputRunId, keyTypeDescriptor,
                 valueTypeDescriptor, mergeFunction, maxKeysPerPage,
-                maxEntriesPerPart, dataBlockSize, publicationAllowed);
+                maxEntriesPerPart, dataBlockSize, publicationAllowed, format);
     }
 
     /**
@@ -175,11 +209,11 @@ final class SenkuMergeJob<K, V> {
      */
     SenkuCompletedRun execute() {
         if (usesPrimitiveLongKeyPath()) {
-            final SenkuRunManifest manifest = new SenkuLongMergeWriter<>(sources,
-                    outputDirectory, (TypeDescriptorLong) keyTypeDescriptor,
-                    valueTypeDescriptor, longKeyMergeFunction(),
-                    maxKeysPerPage, maxEntriesPerPart,
-                    dataBlockSize, publicationAllowed).write();
+            final SenkuRunManifest manifest = new SenkuLongMergeWriter<>(
+                    sources, outputDirectory,
+                    (TypeDescriptorLong) keyTypeDescriptor, valueTypeDescriptor,
+                    longKeyMergeFunction(), maxKeysPerPage, maxEntriesPerPart,
+                    dataBlockSize, publicationAllowed, format).write();
             return new SenkuCompletedRun(shardId, outputLevel, outputRunId,
                     manifest);
         }
@@ -194,7 +228,7 @@ final class SenkuMergeJob<K, V> {
         }
         final SenkuRunManifest manifest = new SenkuRunWriter<>(outputDirectory,
                 keyTypeDescriptor, valueTypeDescriptor, maxKeysPerPage,
-                maxEntriesPerPart, dataBlockSize, publicationAllowed)
+                maxEntriesPerPart, dataBlockSize, publicationAllowed, format)
                 .write(merged);
         return new SenkuCompletedRun(shardId, outputLevel, outputRunId,
                 manifest);
@@ -213,10 +247,12 @@ final class SenkuMergeJob<K, V> {
     }
 
     private List<EntryIterator<K, V>> openInputs() {
-        final List<EntryIterator<K, V>> inputs = new ArrayList<>(sources.size());
+        final List<EntryIterator<K, V>> inputs = new ArrayList<>(
+                sources.size());
         try {
             for (final SenkuMergeSource source : sources) {
-                inputs.add(source.open(keyTypeDescriptor, valueTypeDescriptor));
+                inputs.add(source.open(keyTypeDescriptor, valueTypeDescriptor,
+                        format.keyCodec()));
             }
             return inputs;
         } catch (Exception e) {
@@ -225,7 +261,8 @@ final class SenkuMergeJob<K, V> {
         }
     }
 
-    private static void closeInputs(final List<? extends EntryIterator<?, ?>> inputs,
+    private static void closeInputs(
+            final List<? extends EntryIterator<?, ?>> inputs,
             final Exception primary) {
         for (final EntryIterator<?, ?> input : inputs) {
             if (input.wasClosed()) {

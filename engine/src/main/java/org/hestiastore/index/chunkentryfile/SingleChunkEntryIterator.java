@@ -9,15 +9,15 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.MemFileReader;
-import org.hestiastore.index.sorteddatafile.DiffKeyReader;
 import org.hestiastore.index.unsorteddatafile.DataFileIterator;
 
 /**
  * It allows to iterate over all entries stored in one chunk.
  */
-public class SingleChunkEntryIterator<K, V>
-        extends AbstractCloseableResource implements EntryIteratorWithCurrent<K, V> {
+public class SingleChunkEntryIterator<K, V> extends AbstractCloseableResource
+        implements EntryIteratorWithCurrent<K, V> {
 
     private final EntryIteratorWithCurrent<K, V> iterator;
 
@@ -45,6 +45,22 @@ public class SingleChunkEntryIterator<K, V>
     public SingleChunkEntryIterator(final ByteSequence payload,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor) {
+        this(payload, keyTypeDescriptor, valueTypeDescriptor,
+                KeyPageCodecs.prefix());
+    }
+
+    /**
+     * Opens a page with the matching persisted key encoding.
+     *
+     * @param payload             decoded page bytes
+     * @param keyTypeDescriptor   logical keys
+     * @param valueTypeDescriptor value encoding
+     * @param keyPageCodec        selected key codec
+     */
+    public SingleChunkEntryIterator(final ByteSequence payload,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final KeyPageCodec<K> keyPageCodec) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
         final ByteSequence validatedPayload = Vldtn.requireNonNull(payload,
@@ -53,8 +69,9 @@ public class SingleChunkEntryIterator<K, V>
         // Fast path: iterate directly over chunk payload bytes without
         // constructing a Directory + SortedDataFile stack.
         final MemFileReader reader = new MemFileReader(validatedPayload);
-        final DiffKeyReader<K> keyReader = new DiffKeyReader<>(
-                keyTypeDescriptor.getTypeDecoder());
+        final TypeReader<K> keyReader = Vldtn
+                .requireNonNull(keyPageCodec, "keyPageCodec")
+                .createReader(keyTypeDescriptor);
         this.iterator = new DataFileIterator<>(keyReader,
                 valueTypeDescriptor.getTypeReader(), reader);
     }

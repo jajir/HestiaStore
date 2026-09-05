@@ -50,9 +50,9 @@ public class MemFileReader extends AbstractCloseableResource
         Vldtn.requireNonNull(bytes, "bytes");
         if (offset < 0 || length < 0 || offset > bytes.length
                 || offset + length > bytes.length) {
-            throw new IllegalArgumentException(String.format(
-                    "Range [%d, %d) exceeds array length %d", offset,
-                    offset + length, bytes.length));
+            throw new IllegalArgumentException(
+                    String.format("Range [%d, %d) exceeds array length %d",
+                            offset, offset + length, bytes.length));
         }
         if (length == 0) {
             return 0;
@@ -74,6 +74,11 @@ public class MemFileReader extends AbstractCloseableResource
 
     protected int getDataLength() {
         return data.length();
+    }
+
+    /** @return current byte offset, or -1 after close */
+    public int getPosition() {
+        return position;
     }
 
     protected void setPosition(final long position) {

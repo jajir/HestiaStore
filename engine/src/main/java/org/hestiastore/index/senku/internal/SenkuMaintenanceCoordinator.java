@@ -26,6 +26,7 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
  */
 final class SenkuMaintenanceCoordinator<K, V> {
 
+    private final SenkuStorageFormat format;
     private final Directory rootDirectory;
     private final Directory flushDirectory;
     private final int shardCount;
@@ -34,8 +35,7 @@ final class SenkuMaintenanceCoordinator<K, V> {
     private final Set<String> reservedInputPaths = new HashSet<>();
     private final Set<String> reservedOutputPaths = new HashSet<>();
     private final Set<Integer> activeSortedRunShards = new HashSet<>();
-    private final Map<String, SenkuMergeReservation<K, V>> submitted =
-            new LinkedHashMap<>();
+    private final Map<String, SenkuMergeReservation<K, V>> submitted = new LinkedHashMap<>();
     private final Map<String, Long> nextRunIds = new HashMap<>();
     private final Set<String> exhaustedRunIds = new HashSet<>();
 
@@ -59,8 +59,8 @@ final class SenkuMaintenanceCoordinator<K, V> {
      * Creates metadata-only coordinator state for an existing writing layout.
      *
      * @param rootDirectory Senku index root
-     * @param shardCount configured shard count
-     * @param mergeFanIn configured merge fan-in
+     * @param shardCount    configured shard count
+     * @param mergeFanIn    configured merge fan-in
      */
     SenkuMaintenanceCoordinator(final Directory rootDirectory,
             final int shardCount, final int mergeFanIn) {
@@ -77,18 +77,18 @@ final class SenkuMaintenanceCoordinator<K, V> {
     /**
      * Creates the full bounded maintenance scheduler.
      *
-     * @param rootDirectory Senku index root
-     * @param shardCount configured shard count
-     * @param mergeFanIn configured merge fan-in
-     * @param keyTypeDescriptor key codec and comparator
-     * @param valueTypeDescriptor value codec
-     * @param mergeFunction duplicate reducer
-     * @param maxKeysPerPage maximum output entries per page
-     * @param maxEntriesPerPart maximum entries per physical part
-     * @param dataBlockSize chunk-store block size
-     * @param workerExecutor fixed bounded maintenance executor
-     * @param controlExecutor serialized completion executor
-     * @param firstFailure runtime first-failure holder
+     * @param rootDirectory          Senku index root
+     * @param shardCount             configured shard count
+     * @param mergeFanIn             configured merge fan-in
+     * @param keyTypeDescriptor      key codec and comparator
+     * @param valueTypeDescriptor    value codec
+     * @param mergeFunction          duplicate reducer
+     * @param maxKeysPerPage         maximum output entries per page
+     * @param maxEntriesPerPart      maximum entries per physical part
+     * @param dataBlockSize          chunk-store block size
+     * @param workerExecutor         fixed bounded maintenance executor
+     * @param controlExecutor        serialized completion executor
+     * @param firstFailure           runtime first-failure holder
      * @param ingestionPauseConsumer high/low-water callback
      */
     SenkuMaintenanceCoordinator(final Directory rootDirectory,
@@ -116,7 +116,7 @@ final class SenkuMaintenanceCoordinator<K, V> {
     /**
      * Creates the full scheduler with lifecycle callbacks.
      *
-     * @param failureConsumer first background failure callback
+     * @param failureConsumer    first background failure callback
      * @param completionConsumer successful completion callback
      */
     SenkuMaintenanceCoordinator(final Directory rootDirectory,
@@ -132,6 +132,30 @@ final class SenkuMaintenanceCoordinator<K, V> {
             final Consumer<Boolean> ingestionPauseConsumer,
             final Consumer<IndexException> failureConsumer,
             final Runnable completionConsumer) {
+        this(rootDirectory, shardCount, mergeFanIn, keyTypeDescriptor,
+                valueTypeDescriptor, mergeFunction, maxKeysPerPage,
+                maxEntriesPerPart, dataBlockSize, workerExecutor,
+                controlExecutor, firstFailure, ingestionPauseConsumer,
+                failureConsumer, completionConsumer,
+                SenkuStorageFormat.createDefault());
+    }
+
+    /** Creates this component with the index's immutable storage format. */
+    SenkuMaintenanceCoordinator(final Directory rootDirectory,
+            final int shardCount, final int mergeFanIn,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final SenkuMergeFunction<K, V> mergeFunction,
+            final int maxKeysPerPage, final long maxEntriesPerPart,
+            final DataBlockSize dataBlockSize,
+            final ThreadPoolExecutor workerExecutor,
+            final Executor controlExecutor,
+            final AtomicReference<IndexException> firstFailure,
+            final Consumer<Boolean> ingestionPauseConsumer,
+            final Consumer<IndexException> failureConsumer,
+            final Runnable completionConsumer,
+            final SenkuStorageFormat format) {
+        this.format = Vldtn.requireNonNull(format, "format");
         this.rootDirectory = Vldtn.requireNonNull(rootDirectory,
                 "rootDirectory");
         this.shardCount = Vldtn.requireGreaterThanZero(shardCount,
@@ -249,8 +273,7 @@ final class SenkuMaintenanceCoordinator<K, V> {
             if (!source.isFileExists(SenkuFileNames.MANIFEST_FILE)) {
                 continue;
             }
-            final int partCount = SenkuMetadataCodec
-                    .readFlushPartCount(source);
+            final int partCount = SenkuMetadataCodec.readFlushPartCount(source);
             if (observed.put(flushId, partCount) != null) {
                 throw new IndexException("Duplicate flush ID " + flushId + ".");
             }
@@ -312,9 +335,8 @@ final class SenkuMaintenanceCoordinator<K, V> {
                 openRunDirectory(shardId, 0, runId), shardId, 0, runId,
                 keyTypeDescriptor, valueTypeDescriptor, mergeFunction,
                 maxKeysPerPage, maxEntriesPerPart, dataBlockSize,
-                () -> firstFailure.get() == null);
-        final List<String> inputs = Arrays
-                .stream(activeL0Batch.inputFlushIds())
+                () -> firstFailure.get() == null, format);
+        final List<String> inputs = Arrays.stream(activeL0Batch.inputFlushIds())
                 .mapToObj(SenkuSourceCatalog::flushPath).toList();
         submit(SenkuMergeReservation.l0(job, inputs, outputPath));
         return true;
@@ -342,12 +364,13 @@ final class SenkuMaintenanceCoordinator<K, V> {
                 openRunDirectory(first.shardId(), outputLevel, runId), runId,
                 keyTypeDescriptor, valueTypeDescriptor, mergeFunction,
                 maxKeysPerPage, maxEntriesPerPart, dataBlockSize,
-                () -> firstFailure.get() == null);
+                () -> firstFailure.get() == null, format);
         submit(SenkuMergeReservation.runs(guardedJob, runInputs, outputPath));
     }
 
     private void submit(final SenkuMergeReservation<K, V> reservation) {
-        if (submitted.putIfAbsent(reservation.outputPath(), reservation) != null) {
+        if (submitted.putIfAbsent(reservation.outputPath(),
+                reservation) != null) {
             throw new IndexException("Merge output is already submitted: "
                     + reservation.outputPath());
         }
@@ -355,8 +378,8 @@ final class SenkuMaintenanceCoordinator<K, V> {
             workerExecutor.execute(() -> execute(reservation));
         } catch (RejectedExecutionException e) {
             submitted.remove(reservation.outputPath());
-            throw new IndexException("Maintenance worker rejected a reserved job.",
-                    e);
+            throw new IndexException(
+                    "Maintenance worker rejected a reserved job.", e);
         }
     }
 
@@ -454,8 +477,7 @@ final class SenkuMaintenanceCoordinator<K, V> {
                 .remainingCapacity() == 0;
         final boolean pendingL0 = activeL0Batch != null
                 && activeL0Batch.hasPendingShard();
-        final boolean eligible = pendingL0
-                || eligibleFlushIds(drain).length > 0
+        final boolean eligible = pendingL0 || eligibleFlushIds(drain).length > 0
                 || !eligibleRunSources(drain).isEmpty();
         ingestionPauseConsumer.accept(queueFull && eligible);
     }
@@ -477,7 +499,7 @@ final class SenkuMaintenanceCoordinator<K, V> {
                         output, shardId, 0, runId, keyTypeDescriptor,
                         valueTypeDescriptor, mergeFunction, maxKeysPerPage,
                         maxEntriesPerPart, dataBlockSize,
-                        () -> firstFailure.get() == null);
+                        () -> firstFailure.get() == null, format);
                 submit(SenkuMergeReservation.runs(job, List.of(), outputPath));
                 return true;
             }
@@ -556,14 +578,15 @@ final class SenkuMaintenanceCoordinator<K, V> {
         final String name = SenkuFileNames.flushDirectory(flushId);
         deleteLeaf(flushDirectory.openSubDirectory(name));
         if (!flushDirectory.rmdir(name)) {
-            throw new IndexException("Missing obsolete flush directory '" + name
-                    + "'.");
+            throw new IndexException(
+                    "Missing obsolete flush directory '" + name + "'.");
         }
     }
 
     private void deleteRun(final SenkuRunSource source) {
         deleteLeaf(source.directory());
-        final String shardName = SenkuFileNames.shardDirectory(source.shardId());
+        final String shardName = SenkuFileNames
+                .shardDirectory(source.shardId());
         final Directory shard = rootDirectory.openSubDirectory(shardName);
         final String levelName = SenkuFileNames.levelDirectory(source.level());
         final Directory levelDirectory = shard.openSubDirectory(levelName);
@@ -583,8 +606,8 @@ final class SenkuMaintenanceCoordinator<K, V> {
     private static void deleteLeaf(final Directory directory) {
         for (final String fileName : directory.getFileNames().toList()) {
             if (!directory.deleteFile(fileName)) {
-                throw new IndexException("Missing obsolete source file '"
-                        + fileName + "'.");
+                throw new IndexException(
+                        "Missing obsolete source file '" + fileName + "'.");
             }
         }
     }
@@ -593,8 +616,8 @@ final class SenkuMaintenanceCoordinator<K, V> {
         for (final String path : paths) {
             if (reservedInputPaths.contains(path)
                     || reservedOutputPaths.contains(path)) {
-                throw new IndexException("Merge path is already reserved: "
-                        + path);
+                throw new IndexException(
+                        "Merge path is already reserved: " + path);
             }
         }
     }
@@ -610,7 +633,8 @@ final class SenkuMaintenanceCoordinator<K, V> {
 
     private void requireScheduler() {
         if (workerExecutor == null) {
-            throw new IndexException("Maintenance scheduler is not configured.");
+            throw new IndexException(
+                    "Maintenance scheduler is not configured.");
         }
     }
 
@@ -625,12 +649,14 @@ final class SenkuMaintenanceCoordinator<K, V> {
         final List<SenkuRunSource> observed = new ArrayList<>();
         for (final String rootName : rootDirectory.getFileNames().toList()) {
             if (SenkuFileNames.LOCK_FILE.equals(rootName)
-                    || SenkuFileNames.FLUSH_DIRECTORY.equals(rootName)) {
+                    || SenkuFileNames.FLUSH_DIRECTORY.equals(rootName)
+                    || SenkuFileNames.FORMAT_FILE.equals(rootName)) {
                 continue;
             }
             final int shardId = SenkuFileNames.parseShardDirectory(rootName);
             if (shardId >= shardCount) {
-                throw new IndexException("Unexpected shard ID " + shardId + ".");
+                throw new IndexException(
+                        "Unexpected shard ID " + shardId + ".");
             }
             scanShard(rootName, shardId, observed);
         }
@@ -643,14 +669,15 @@ final class SenkuMaintenanceCoordinator<K, V> {
         for (final String levelName : shard.getFileNames().toList()) {
             final int level = SenkuFileNames.parseLevelDirectory(levelName);
             final Directory levelDirectory = shard.openSubDirectory(levelName);
-            for (final String runName : levelDirectory.getFileNames().toList()) {
+            for (final String runName : levelDirectory.getFileNames()
+                    .toList()) {
                 final long runId = SenkuFileNames.parseRunDirectory(runName);
                 final Directory runDirectory = levelDirectory
                         .openSubDirectory(runName);
                 if (runDirectory.isFileExists(SenkuFileNames.MANIFEST_FILE)) {
                     observed.add(new SenkuRunSource(runDirectory, shardId,
-                            level, runId, SenkuMetadataCodec
-                                    .readRunManifest(runDirectory)));
+                            level, runId,
+                            SenkuMetadataCodec.readRunManifest(runDirectory)));
                 }
             }
         }

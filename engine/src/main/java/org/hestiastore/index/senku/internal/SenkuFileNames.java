@@ -14,6 +14,7 @@ final class SenkuFileNames {
     static final String FLUSH_DIRECTORY = "flush";
     static final String MANIFEST_FILE = "manifest.properties";
     static final String READY_FILE = "ready.properties";
+    static final String FORMAT_FILE = "format.properties";
     static final String SHARD_INDEX_FILE = "shard-index.dat";
     static final String TEMP_SUFFIX = ".tmp";
 
@@ -123,19 +124,15 @@ final class SenkuFileNames {
         try {
             parsed = Long.parseLong(numeric);
         } catch (NumberFormatException e) {
-            throw new IndexException(
-                    "Invalid canonical " + description + " name '"
-                            + validatedName + "'.",
-                    e);
+            throw new IndexException("Invalid canonical " + description
+                    + " name '" + validatedName + "'.", e);
         }
         final String canonical;
         try {
             canonical = formatLong(prefix, parsed, description, suffix);
         } catch (IllegalArgumentException e) {
-            throw new IndexException(
-                    "Invalid canonical " + description + " name '"
-                            + validatedName + "'.",
-                    e);
+            throw new IndexException("Invalid canonical " + description
+                    + " name '" + validatedName + "'.", e);
         }
         if (!validatedName.equals(canonical)) {
             throw invalidName(validatedName, description);
@@ -145,7 +142,7 @@ final class SenkuFileNames {
 
     private static IndexException invalidName(final String name,
             final String description) {
-        return new IndexException("Invalid canonical " + description
-                + " name '" + name + "'.");
+        return new IndexException(
+                "Invalid canonical " + description + " name '" + name + "'.");
     }
 }
