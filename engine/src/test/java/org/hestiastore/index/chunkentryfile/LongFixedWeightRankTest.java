@@ -1,8 +1,11 @@
 package org.hestiastore.index.chunkentryfile;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Random;
 import java.util.stream.LongStream;
@@ -11,6 +14,29 @@ import org.hestiastore.index.IndexException;
 import org.junit.jupiter.api.Test;
 
 class LongFixedWeightRankTest {
+
+    @Test
+    void rankValidationAndDomainEqualityDoNotRequireKeyReconstruction() {
+        final LongFixedWeightRank domain = new LongFixedWeightRank(4, 2,
+                new long[] { 3, 5 }, 1);
+        assertDoesNotThrow(() -> domain.validateRank(0));
+        final long lastRank = domain.domainSize() - 1;
+        assertDoesNotThrow(() -> domain.validateRank(lastRank));
+        assertThrows(IndexException.class, () -> domain.validateRank(-1));
+        final long outOfRange = domain.domainSize();
+        assertThrows(IndexException.class,
+                () -> domain.validateRank(outOfRange));
+        assertTrue(domain.hasSameDomain(
+                new LongFixedWeightRank(4, 2, new long[] { 3, 5 }, 1)));
+        assertFalse(domain.hasSameDomain(
+                new LongFixedWeightRank(5, 2, new long[] { 3, 5 }, 1)));
+        assertFalse(domain.hasSameDomain(
+                new LongFixedWeightRank(4, 1, new long[] { 3, 5 }, 1)));
+        assertFalse(domain.hasSameDomain(
+                new LongFixedWeightRank(4, 2, new long[] { 3, 5 }, 2)));
+        assertFalse(domain.hasSameDomain(
+                new LongFixedWeightRank(4, 2, new long[] { 5, 3 }, 1)));
+    }
 
     @Test
     void exhaustiveSmallDomainsAreDenseMonotoneAndExactlyReversible() {

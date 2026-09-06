@@ -19,6 +19,22 @@ final class LongKeyPageWriter {
     /** Writes a key without boxing or allocating a per-key byte array. */
     void write(final FileWriter writer, final long logicalKey) {
         final long key = codec.encodeLongKey(logicalKey);
+        writeKey(writer, key);
+    }
+
+    /**
+     * Transfers an already encoded key while checking its full source domain
+     * and range. The encoded value is not ranked a second time.
+     */
+    void writeEncoded(final FileWriter writer, final long encodedKey,
+            final KeyPageCodec<?> sourceCodec) {
+        Vldtn.requireTrue(codec.hasSameEncoding(sourceCodec),
+                "Encoded key source and target codec domains differ");
+        codec.validateEncodedLongKey(encodedKey);
+        writeKey(writer, encodedKey);
+    }
+
+    private void writeKey(final FileWriter writer, final long key) {
         if (hasPrevious && key <= previous) {
             throw new IllegalArgumentException(
                     "Long keys must be strictly increasing.");

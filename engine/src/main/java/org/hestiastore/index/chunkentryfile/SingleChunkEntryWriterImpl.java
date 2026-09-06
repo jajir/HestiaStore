@@ -126,6 +126,24 @@ public class SingleChunkEntryWriterImpl<K, V>
     }
 
     /**
+     * Writes an already encoded numeric key or fixed-weight rank and a generic
+     * value. The complete source codec must match this page's codec. Framing,
+     * rank bounds and strict ordering are checked as for logical-key writes.
+     * Existing logical-key methods are unaffected.
+     *
+     * @param encodedKey  encoded primitive key, not a logical board key
+     * @param value       value to write
+     * @param sourceCodec immutable domain that produced the encoded key
+     */
+    public void putEncodedLongKey(final long encodedKey, final V value,
+            final KeyPageCodec<?> sourceCodec) {
+        ensureOpen();
+        requirePrimitiveLongKey();
+        longKeyWriter.writeEncoded(fileWriter, encodedKey, sourceCodec);
+        valueWriter.write(fileWriter, value);
+    }
+
+    /**
      * Writes a primitive long key/value pair without allocating boxed values.
      * This method is available only when both configured descriptors are
      * exactly {@link TypeDescriptorLong}.
@@ -141,6 +159,28 @@ public class SingleChunkEntryWriterImpl<K, V>
                     "Primitive long values require TypeDescriptorLong");
         }
         writeLongKey(key);
+        writeLong(value, longBuffer);
+        fileWriter.write(longBuffer, 0, LONG_BYTES);
+    }
+
+    /**
+     * Writes an already encoded numeric key or fixed-weight rank and a
+     * primitive long value without boxing. Both descriptors must be exact
+     * built-in longs and the complete source codec must match this page.
+     *
+     * @param encodedKey  encoded primitive key, not a logical board key
+     * @param value       primitive long value
+     * @param sourceCodec immutable domain that produced the encoded key
+     */
+    public void putEncodedLongs(final long encodedKey, final long value,
+            final KeyPageCodec<?> sourceCodec) {
+        ensureOpen();
+        requirePrimitiveLongKey();
+        if (!primitiveLongValue) {
+            throw new IllegalStateException(
+                    "Primitive long values require TypeDescriptorLong");
+        }
+        longKeyWriter.writeEncoded(fileWriter, encodedKey, sourceCodec);
         writeLong(value, longBuffer);
         fileWriter.write(longBuffer, 0, LONG_BYTES);
     }

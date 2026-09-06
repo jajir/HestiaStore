@@ -1,5 +1,7 @@
 package org.hestiastore.index.chunkentryfile;
 
+import java.util.Arrays;
+
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 
@@ -67,6 +69,13 @@ final class LongFixedWeightRank {
         return domainSize;
     }
 
+    /** Compares all parameters that define the order-preserving rank map. */
+    boolean hasSameDomain(final LongFixedWeightRank other) {
+        return bitCount == other.bitCount && setBitCount == other.setBitCount
+                && paritySyndrome == other.paritySyndrome
+                && Arrays.equals(parityMasks, other.parityMasks);
+    }
+
     /** Maps a validated logical key to its zero-based numeric-order rank. */
     long rank(final long key) {
         validateKey(key);
@@ -85,10 +94,7 @@ final class LongFixedWeightRank {
 
     /** Reconstructs a logical key, rejecting every rank outside the domain. */
     long unrank(final long rank) {
-        if (rank < 0 || rank >= domainSize) {
-            throw new IndexException(
-                    "Fixed-weight rank is outside its domain.");
-        }
+        validateRank(rank);
         long remainingRank = rank;
         long key = 0;
         int remaining = setBitCount;
@@ -103,6 +109,14 @@ final class LongFixedWeightRank {
             }
         }
         return key;
+    }
+
+    /** Validates an encoded rank without reconstructing its logical key. */
+    void validateRank(final long rank) {
+        if (rank < 0 || rank >= domainSize) {
+            throw new IndexException(
+                    "Fixed-weight rank is outside its domain.");
+        }
     }
 
     private void validateKey(final long key) {

@@ -3,6 +3,7 @@ package org.hestiastore.index.senku.internal;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.chunkentryfile.KeyPageCodec;
 import org.hestiastore.index.chunkentryfile.LongKeyPageReader;
 import org.hestiastore.index.directory.MemFileReader;
 
@@ -26,6 +27,7 @@ final class SenkuLongSourceCursor implements AutoCloseable {
     private final int ordinal;
     private MemFileReader pageReader;
     private LongKeyPageReader keyReader;
+    private KeyPageCodec<?> currentCodec;
 
     private long remaining;
     private ByteSequence currentPage;
@@ -69,13 +71,32 @@ final class SenkuLongSourceCursor implements AutoCloseable {
     }
 
     /**
-     * Returns the current primitive key.
+     * Returns the current logical primitive key, decoding a stored rank only at
+     * this explicit logical-key boundary.
      *
      * @return current key
      */
     long key() {
         requireCurrent();
+        return currentCodec.decodeLongKey(currentKey);
+    }
+
+    /**
+     * Returns the validated encoded numeric key or rank for maintenance. The
+     * caller must establish complete codec compatibility before comparing or
+     * transferring encoded keys between sources.
+     *
+     * @return current encoded key
+     */
+    long encodedKey() {
+        requireCurrent();
         return currentKey;
+    }
+
+    /** Returns the full immutable codec of the current encoded key. */
+    KeyPageCodec<?> keyCodec() {
+        requireCurrent();
+        return currentCodec;
     }
 
     /**
@@ -145,7 +166,8 @@ final class SenkuLongSourceCursor implements AutoCloseable {
             pageOffset = 0;
             if (currentPage != null) {
                 pageReader = new MemFileReader(currentPage);
-                keyReader = new LongKeyPageReader(pages.keyCodec());
+                currentCodec = pages.keyCodec();
+                keyReader = new LongKeyPageReader(currentCodec);
             }
             if (currentPage == null) {
                 throw new IndexException(
@@ -158,7 +180,7 @@ final class SenkuLongSourceCursor implements AutoCloseable {
     }
 
     private void decodeCurrent() {
-        currentKey = keyReader.readLong(pageReader);
+        currentKey = keyReader.readEncodedLong(pageReader);
         pageOffset = pageReader.getPosition();
         requireRemaining(primitiveLongValue ? LONG_BYTES : 0, "long value");
         if (primitiveLongValue) {

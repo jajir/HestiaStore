@@ -7,12 +7,34 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Optional;
+import org.hestiastore.index.senku.SenkuLongKeySummary;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
 class SenkuSourceCatalogTest {
+
+    @Test
+    void reconciliationRejectsChangedCommittedSummaryWithIdenticalCounts() {
+        final SenkuSourceCatalog catalog = new SenkuSourceCatalog();
+        final SenkuRunSource first = new SenkuRunSource(new MemDirectory(), 0,
+                0, 0L,
+                new SenkuRunManifest(1, 2, Optional.of(SenkuLongKeySummary.of(2,
+                        new long[] { 3 }, new long[] { 2 }))));
+        catalog.reconcile(Map.of(), List.of(first), Set.of());
+        catalog.reconcile(Map.of(), List.of(first), Set.of());
+        final SenkuRunSource changed = new SenkuRunSource(new MemDirectory(), 0,
+                0, 0L,
+                new SenkuRunManifest(1, 2, Optional.of(SenkuLongKeySummary.of(2,
+                        new long[] { 4 }, new long[] { 2 }))));
+        assertThrows(IndexException.class,
+                () -> catalog.reconcile(Map.of(), List.of(changed), Set.of()));
+        final SenkuRunSource absent = run(0, 0, 0L, 1, 2L);
+        assertThrows(IndexException.class,
+                () -> catalog.reconcile(Map.of(), List.of(absent), Set.of()));
+    }
 
     @Test
     void reconcileAddsNewSourcesAndRejectsMissingOrChangedKnownSources() {
@@ -49,16 +71,14 @@ class SenkuSourceCatalogTest {
     @Test
     void flushSelectionUsesOldestIdsAndDrainAllowsPartialGroup() {
         final SenkuSourceCatalog catalog = new SenkuSourceCatalog();
-        catalog.reconcile(Map.of(7L, 1, 2L, 1, 5L, 1), List.of(),
-                Set.of());
+        catalog.reconcile(Map.of(7L, 1, 2L, 1, 5L, 1), List.of(), Set.of());
 
         assertArrayEquals(new long[] { 2L, 5L },
                 catalog.eligibleFlushIds(2, false, Set.of()));
-        assertArrayEquals(new long[0], catalog.eligibleFlushIds(4, false,
-                Set.of()));
-        assertArrayEquals(new long[] { 5L, 7L },
-                catalog.eligibleFlushIds(4, true,
-                        Set.of(SenkuSourceCatalog.flushPath(2L))));
+        assertArrayEquals(new long[0],
+                catalog.eligibleFlushIds(4, false, Set.of()));
+        assertArrayEquals(new long[] { 5L, 7L }, catalog.eligibleFlushIds(4,
+                true, Set.of(SenkuSourceCatalog.flushPath(2L))));
     }
 
     @Test
@@ -73,10 +93,10 @@ class SenkuSourceCatalogTest {
 
         assertEquals(List.of(shardOneOld, shardOneNew),
                 catalog.eligibleRunSources(2, false, Set.of(), Set.of()));
-        assertEquals(List.of(shardZeroLevelOne), catalog.eligibleRunSources(2,
-                true, Set.of(1), Set.of()));
-        assertEquals(List.of(), catalog.eligibleRunSources(2, false,
-                Set.of(1), Set.of()));
+        assertEquals(List.of(shardZeroLevelOne),
+                catalog.eligibleRunSources(2, true, Set.of(1), Set.of()));
+        assertEquals(List.of(),
+                catalog.eligibleRunSources(2, false, Set.of(1), Set.of()));
     }
 
     @Test

@@ -3,6 +3,7 @@ package org.hestiastore.index.senku.internal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,6 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.hestiastore.index.IndexException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +46,8 @@ class SenkuIngestionMapTest {
     @Test
     void precomputedHashAvoidsAnotherHashFunctionInvocation() {
         final AtomicInteger invocations = new AtomicInteger();
-        final SenkuIngestionMap<Integer, Long> countedMap =
-                new SenkuIngestionMap<>(4, key -> {
+        final SenkuIngestionMap<Integer, Long> countedMap = new SenkuIngestionMap<>(
+                4, key -> {
                     invocations.incrementAndGet();
                     return key;
                 });
@@ -51,6 +55,69 @@ class SenkuIngestionMapTest {
         assertNull(countedMap.putWithHash(1, 2L, 11));
         assertEquals(2L, countedMap.getWithHash(1, 11));
         assertEquals(0, invocations.get());
+    }
+
+    @Test
+    void mergeProbesOnceAndPassesTheIncomingLogicalKey() {
+        final SenkuIngestionMap<ProbeKey, Long> counted = new SenkuIngestionMap<>(
+                16, key -> {
+                    throw new AssertionError("Hash was already computed");
+                });
+        counted.mergeWithHash(new ProbeKey(1), 1L, 0,
+                (key, first, second) -> first + second);
+        counted.mergeWithHash(new ProbeKey(2), 2L, 0,
+                (key, first, second) -> first + second);
+        final ProbeKey inserted = new ProbeKey(3);
+        assertTrue(
+                counted.mergeWithHash(inserted, 3L, 0, (key, first, second) -> {
+                    throw new AssertionError("New key must not reduce");
+                }));
+        assertEquals(2, inserted.comparisons);
+        final ProbeKey incoming = new ProbeKey(3);
+        final AtomicReference<ProbeKey> callbackKey = new AtomicReference<>();
+        assertFalse(
+                counted.mergeWithHash(incoming, 4L, 0, (key, first, second) -> {
+                    callbackKey.set(key);
+                    return first + second;
+                }));
+        assertEquals(3, incoming.comparisons);
+        assertSame(incoming, callbackKey.get());
+        assertEquals(3, counted.size());
+        assertEquals(7L, counted.getWithHash(inserted, 0));
+    }
+
+    @Test
+    void mergeFailuresPreserveOldValueAndIndexExceptionIdentity() {
+        map.mergeWithHash(1, 2L, 1, (key, first, second) -> first + second);
+        final IndexException failure = new IndexException("expected");
+        assertSame(failure, assertThrows(IndexException.class,
+                () -> map.mergeWithHash(1, 3L, 1, (key, first, second) -> {
+                    throw failure;
+                })));
+        final IllegalStateException cause = new IllegalStateException(
+                "callback");
+        assertSame(cause, assertThrows(IndexException.class,
+                () -> map.mergeWithHash(1, 3L, 1, (key, first, second) -> {
+                    throw cause;
+                })).getCause());
+        assertThrows(IndexException.class, () -> map.mergeWithHash(1, 3L, 1,
+                (key, first, second) -> null));
+        assertEquals(2L, map.get(1));
+        assertEquals(1, map.size());
+        assertFalse(map.isLongSet());
+        assertThrows(IllegalStateException.class, () -> map.forEachLong(key -> {
+        }));
+    }
+
+    @Test
+    void singleProbeInsertionResizesAndRetainsEveryValue() {
+        for (int key = 0; key < 100; key++) {
+            assertTrue(map.mergeWithHash(key, (long) key, 0,
+                    (logicalKey, first, second) -> first + second));
+        }
+        for (int key = 0; key < 100; key++) {
+            assertEquals((long) key, map.getWithHash(key, 0));
+        }
     }
 
     @Test
@@ -126,8 +193,7 @@ class SenkuIngestionMapTest {
         assertTrue(iterator.hasNext());
         assertThrows(UnsupportedOperationException.class, iterator::remove);
         map.put(2, 2L);
-        assertThrows(ConcurrentModificationException.class,
-                iterator::hasNext);
+        assertThrows(ConcurrentModificationException.class, iterator::hasNext);
     }
 
     @Test
@@ -176,5 +242,26 @@ class SenkuIngestionMapTest {
         hashes.add(SenkuIngestionMap.tableHash(1));
         hashes.add(SenkuIngestionMap.tableHash(Integer.MAX_VALUE));
         return hashes;
+    }
+
+    private static final class ProbeKey {
+        private final int value;
+        private int comparisons;
+
+        private ProbeKey(final int value) {
+            this.value = value;
+        }
+
+        @Override
+        public boolean equals(final Object other) {
+            comparisons++;
+            return other instanceof ProbeKey
+                    && ((ProbeKey) other).value == value;
+        }
+
+        @Override
+        public int hashCode() {
+            return value;
+        }
     }
 }

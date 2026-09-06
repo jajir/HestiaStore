@@ -20,6 +20,19 @@ import org.junit.jupiter.api.Test;
 
 class SenkuRunWriterTest {
 
+    @Test
+    void longOutputPublishesBoundedWeightedSummaryWithItsManifest() {
+        final TypeDescriptorLong longs = new TypeDescriptorLong();
+        final SenkuRunManifest manifest = new SenkuRunWriter<>(directory, longs,
+                longs, 2, 4L, DATA_BLOCK_SIZE)
+                .write(new EntryIteratorList<>(List.of(Entry.of(1L, 10L),
+                        Entry.of(4L, 40L), Entry.of(8L, 80L))));
+        assertEquals(3, manifest.longKeySummary().orElseThrow().recordCount());
+        assertEquals(3, manifest.longKeySummary().orElseThrow().keys().length);
+        assertEquals(3, SenkuMetadataCodec.readRunManifest(directory)
+                .longKeySummary().orElseThrow().recordCount());
+    }
+
     private TypeDescriptorInteger keys;
     private TypeDescriptorLong values;
     private MemDirectory directory;
@@ -122,9 +135,8 @@ class SenkuRunWriterTest {
     private List<Entry<Integer, Long>> read(final SenkuRunManifest manifest) {
         final LargeFile file = new LargeFile(directory, DATA_BLOCK_SIZE, 4L,
                 manifest.partCount());
-        final SenkuSourceEntryIterator<Integer, Long> iterator =
-                new SenkuSourceEntryIterator<>(file.openReader(), keys, values,
-                        manifest.recordCount(), true);
+        final SenkuSourceEntryIterator<Integer, Long> iterator = new SenkuSourceEntryIterator<>(
+                file.openReader(), keys, values, manifest.recordCount(), true);
         final List<Entry<Integer, Long>> entries = new ArrayList<>();
         while (iterator.hasNext()) {
             entries.add(iterator.next());
@@ -133,8 +145,7 @@ class SenkuRunWriterTest {
         return entries;
     }
 
-    private static Entry<Integer, Long> entry(final int key,
-            final long value) {
+    private static Entry<Integer, Long> entry(final int key, final long value) {
         return Entry.of(key, value);
     }
 }

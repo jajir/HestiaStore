@@ -2,6 +2,7 @@ package org.hestiastore.index.senku.internal;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.LongToIntFunction;
 import java.util.function.ToIntFunction;
 
 import org.hestiastore.index.IndexException;
@@ -27,6 +28,7 @@ final class SenkuFlushWriter<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final ToIntFunction<K> shardHashFunction;
+    private final LongToIntFunction longShardHashFunction;
     private final int shardCount;
     private final int maxKeysPerPage;
     private final long maxEntriesPerPart;
@@ -52,6 +54,23 @@ final class SenkuFlushWriter<K, V> {
             final int maxKeysPerPage, final long maxEntriesPerPart,
             final DataBlockSize dataBlockSize,
             final SenkuStorageFormat format) {
+        this(flushDirectory, keyTypeDescriptor, valueTypeDescriptor,
+                shardHashFunction, shardCount, maxKeysPerPage,
+                maxEntriesPerPart, dataBlockSize, format, null);
+    }
+
+    /**
+     * Creates a flush writer with optional explicitly selected primitive
+     * routing.
+     */
+    SenkuFlushWriter(final Directory flushDirectory,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final ToIntFunction<K> shardHashFunction, final int shardCount,
+            final int maxKeysPerPage, final long maxEntriesPerPart,
+            final DataBlockSize dataBlockSize, final SenkuStorageFormat format,
+            final LongToIntFunction longShardHashFunction) {
+        this.longShardHashFunction = longShardHashFunction;
         this.format = Vldtn.requireNonNull(format, "format");
         this.flushDirectory = Vldtn.requireNonNull(flushDirectory,
                 "flushDirectory");
@@ -118,18 +137,29 @@ final class SenkuFlushWriter<K, V> {
                 dataBlockSize, maxEntriesPerPart, 0, format);
         final LargeFileWriterTx writer = largeFile.openWriterTx();
         try {
-            final long[] packedPositions = new long[shardCount];
             final long[] recordCounts = new long[shardCount];
             for (int shardId = 0; shardId < shardCount; shardId++) {
-                final int from = starts[shardId];
-                final int count = counts[shardId];
-                final int to = from + count;
-                recordCounts[shardId] = count;
-                if (count == 0) {
-                    continue;
+                recordCounts[shardId] = counts[shardId];
+            }
+            final long[] packedPositions;
+            final int recordBytes = fixedRecordBytes();
+            if (entryCount >= PARALLEL_SORT_MIN_ENTRIES && recordBytes > 0) {
+                packedPositions = new SenkuFlushPagePipeline<>(ordered,
+                        keyTypeDescriptor, valueTypeDescriptor, format,
+                        recordBytes, maxKeysPerPage)
+                        .write(writer, starts, counts);
+            } else {
+                packedPositions = new long[shardCount];
+                for (int shardId = 0; shardId < shardCount; shardId++) {
+                    final int from = starts[shardId];
+                    final int count = counts[shardId];
+                    final int to = from + count;
+                    if (count == 0) {
+                        continue;
+                    }
+                    packedPositions[shardId] = writeShard(writer, ordered, from,
+                            to).getPacked();
                 }
-                packedPositions[shardId] = writeShard(writer, ordered, from, to)
-                        .getPacked();
             }
             final int partCount = writer.commit();
             SenkuShardIndexCodec.write(generationDirectory, dataBlockSize,
@@ -141,6 +171,18 @@ final class SenkuFlushWriter<K, V> {
             writer.abort(e);
             throw e;
         }
+    }
+
+    private int fixedRecordBytes() {
+        if (keyTypeDescriptor.getClass() != TypeDescriptorLong.class) {
+            return 0;
+        }
+        if (valueTypeDescriptor.getClass() == TypeDescriptorNull.class) {
+            return MAX_LONG_KEY_BYTES;
+        }
+        return valueTypeDescriptor.getClass() == TypeDescriptorLong.class
+                ? MAX_LONG_KEY_BYTES + Long.BYTES
+                : 0;
     }
 
     /**
@@ -205,7 +247,12 @@ final class SenkuFlushWriter<K, V> {
     private int[] countShards(final List<? extends Map<K, V>> entries) {
         final int[] counts = new int[shardCount];
         for (final Map<K, V> stripe : entries) {
-            stripe.forEach((key, value) -> counts[shardId(key)]++);
+            if (stripe instanceof SenkuIngestionMap<?, ?> map
+                    && map.isLongSet()) {
+                map.forEachLong(key -> counts[longShardId(key)]++);
+            } else {
+                stripe.forEach((key, value) -> counts[shardId(key)]++);
+            }
         }
         return counts;
     }
@@ -227,10 +274,16 @@ final class SenkuFlushWriter<K, V> {
                 keyTypeDescriptor, valueTypeDescriptor, entryCount);
         final int[] next = starts.clone();
         for (final Map<K, V> stripe : entries) {
-            stripe.forEach((key, value) -> {
-                final int shardId = shardId(key);
-                ordered.set(next[shardId]++, key, value);
-            });
+            if (stripe instanceof SenkuIngestionMap<?, ?> map
+                    && map.isLongSet()) {
+                map.forEachLong(
+                        key -> ordered.setLong(next[longShardId(key)]++, key));
+            } else {
+                stripe.forEach((key, value) -> {
+                    final int shardId = shardId(key);
+                    ordered.set(next[shardId]++, key, value);
+                });
+            }
         }
         return ordered;
     }
@@ -255,5 +308,13 @@ final class SenkuFlushWriter<K, V> {
 
     private int shardId(final K key) {
         return Math.floorMod(shardHashFunction.applyAsInt(key), shardCount);
+    }
+
+    private int longShardId(final long key) {
+        return Math
+                .floorMod(
+                        Vldtn.requireNonNull(longShardHashFunction,
+                                "longShardHashFunction").applyAsInt(key),
+                        shardCount);
     }
 }

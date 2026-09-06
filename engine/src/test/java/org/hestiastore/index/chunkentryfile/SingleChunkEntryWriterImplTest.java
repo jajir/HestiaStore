@@ -17,6 +17,64 @@ import org.junit.jupiter.api.Test;
 
 class SingleChunkEntryWriterImplTest {
     @Test
+    void encodedRankMethodsPreserveGenericValuesAndLogicalReadContract() {
+        final var keys = new TypeDescriptorLong();
+        final var values = new TypeDescriptorInteger();
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[] { 3 }, 0);
+        final var page = new SingleChunkEntryWriterImpl<>(keys, values, 100,
+                codec);
+        page.putEncodedLongKey(0, 7, codec);
+        page.putEncodedLongKey(1, 8, codec);
+        try (var reader = new SingleChunkEntryIterator<>(page.closeSequence(),
+                keys, values, codec)) {
+            assertEquals(Entry.of(3L, 7), reader.next());
+            assertEquals(Entry.of(12L, 8), reader.next());
+            assertFalse(reader.hasNext());
+        }
+        assertThrows(IllegalStateException.class,
+                () -> page.putEncodedLongKey(1, 8, codec));
+    }
+
+    @Test
+    void encodedLongPairsMatchLogicalPagesAndRejectWrongDomains() {
+        final var keys = new TypeDescriptorLong();
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[] { 3 }, 0);
+        final var wrongDomain = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[] { 3 }, 1);
+        final var encoded = new SingleChunkEntryWriterImpl<>(keys, keys, 100,
+                codec);
+        final var logical = new SingleChunkEntryWriterImpl<>(keys, keys, 100,
+                codec);
+        assertThrows(IllegalArgumentException.class,
+                () -> encoded.putEncodedLongs(0, 99, wrongDomain));
+        assertThrows(IndexException.class,
+                () -> encoded.putEncodedLongs(2, 99, codec));
+        encoded.putEncodedLongs(0, 7, codec);
+        encoded.putEncodedLongs(1, -8, codec);
+        logical.putLongs(3, 7);
+        logical.putLongs(12, -8);
+        assertArrayEquals(logical.closeSequence().toByteArray(),
+                encoded.closeSequence().toByteArray());
+        assertThrows(IllegalStateException.class,
+                () -> encoded.putEncodedLongs(1, 0, codec));
+    }
+
+    @Test
+    void encodedMethodsRejectUnsupportedDescriptors() {
+        final var codec = KeyPageCodecs.<Long>prefix();
+        assertThrows(IllegalStateException.class,
+                () -> writer.putEncodedLongKey(0, 0L, codec));
+        assertThrows(IllegalStateException.class,
+                () -> writer.putEncodedLongs(0, 0, codec));
+        final var nullValues = new SingleChunkEntryWriterImpl<>(
+                new TypeDescriptorLong(), new TypeDescriptorNull());
+        assertThrows(IllegalStateException.class,
+                () -> nullValues.putEncodedLongs(0, 0, codec));
+    }
+
+    @Test
     void rankCodecPreservesPrimitiveAndGenericInterleavedValues() {
         final var keys = new TypeDescriptorLong();
         final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,

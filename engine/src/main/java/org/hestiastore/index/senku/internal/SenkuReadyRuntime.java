@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -14,9 +15,11 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.senku.SenkuReady;
+import org.hestiastore.index.senku.SenkuLongKeySummary;
 
 /**
  * Exclusive no-background-thread ready-index implementation.
@@ -33,6 +36,8 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
     private final DataBlockSize dataBlockSize;
     private final FileLock fileLock;
     private final List<SenkuRunSource> terminalRuns;
+    private final long recordCount;
+    private final Optional<SenkuLongKeySummary> longKeySummary;
     private final ReentrantLock lock = new ReentrantLock();
 
     private SenkuMergedEntryIterator<K, V> activeIterator;
@@ -64,6 +69,88 @@ final class SenkuReadyRuntime<K, V> implements SenkuReady<K, V> {
         format = SenkuMetadataCodec.readStorageFormat(rootDirectory);
         format.keyCodec().validate(keyTypeDescriptor);
         terminalRuns = validateReadyLayout();
+        recordCount = countTerminalRecords();
+        longKeySummary = summarizeTerminalRuns();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long recordCount() {
+        lock.lock();
+        try {
+            ensureOpen();
+            return recordCount;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Optional<SenkuLongKeySummary> longKeySummary() {
+        lock.lock();
+        try {
+            ensureOpen();
+            return longKeySummary;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private long countTerminalRecords() {
+        long total = 0L;
+        try {
+            for (final SenkuRunSource run : terminalRuns) {
+                total = Math.addExact(total, run.manifest().recordCount());
+            }
+        } catch (ArithmeticException overflow) {
+            throw new IndexException("Ready terminal record count overflow.",
+                    overflow);
+        }
+        return total;
+    }
+
+    private Optional<SenkuLongKeySummary> summarizeTerminalRuns() {
+        if (keyTypeDescriptor.getClass() != TypeDescriptorLong.class) {
+            return Optional.empty();
+        }
+        final List<SenkuLongKeySummary> summaries = new ArrayList<>();
+        for (final SenkuRunSource run : terminalRuns) {
+            final SenkuRunManifest manifest = run.manifest();
+            if (manifest.longKeySummary().isPresent()) {
+                final SenkuLongKeySummary summary = manifest.longKeySummary()
+                        .orElseThrow();
+                validateSummaryKeys(summary);
+                summaries.add(summary);
+            } else if (manifest.recordCount() != 0L) {
+                return Optional.empty();
+            }
+        }
+        return Optional.of(SenkuLongKeySummary.merge(summaries));
+    }
+
+    private void validateSummaryKeys(final SenkuLongKeySummary summary) {
+        if (!format.keyCodec().isLongFixedWeightDeltaVarint()) {
+            return;
+        }
+        final int bits = format.keyCodec().getFixedWeightBitCount();
+        final int population = format.keyCodec().getFixedWeightSetBitCount();
+        final long[] masks = format.keyCodec().getFixedWeightParityMasks();
+        final int expectedSyndrome = format.keyCodec()
+                .getFixedWeightParitySyndrome();
+        for (final long key : summary.keys()) {
+            int syndrome = 0;
+            for (int equation = 0; equation < masks.length; equation++) {
+                syndrome |= (Long.bitCount(key & masks[equation])
+                        & 1) << equation;
+            }
+            if (key < 0 || (key >>> bits) != 0L
+                    || Long.bitCount(key) != population
+                    || syndrome != expectedSyndrome) {
+                throw new IndexException(
+                        "Summary key is outside the persisted fixed-weight domain.");
+            }
+        }
     }
 
     @Override

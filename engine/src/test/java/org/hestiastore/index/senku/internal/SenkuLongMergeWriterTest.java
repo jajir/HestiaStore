@@ -4,6 +4,7 @@ import static org.hestiastore.index.senku.internal.LargeFileTestSupport.DATA_BLO
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,9 +18,56 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.senku.SenkuMergeFunctions;
 import org.junit.jupiter.api.Test;
 
 class SenkuLongMergeWriterTest {
+    @Test
+    void arbitraryRankedNullReducerStillReceivesLogicalKeyAndItsFailureWins() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[0], 0);
+        final var format = new SenkuStorageFormat(codec, Compression.zstd(3));
+        final var first = rankedNullSource(format, 3L, 12L);
+        final var second = rankedNullSource(format, 5L, 12L);
+        final var output = new MemDirectory();
+        final var expectedFailure = new IndexException("logical duplicate");
+        final List<Long> duplicateKeys = new ArrayList<>();
+        final var writer = new SenkuLongMergeWriter<>(List.of(first, second),
+                output, longs, new TypeDescriptorNull(), (key, left, right) -> {
+                    duplicateKeys.add(key);
+                    throw expectedFailure;
+                }, 1, 2, DATA_BLOCK_SIZE, () -> true, format);
+        assertSame(expectedFailure,
+                assertThrows(IndexException.class, writer::write));
+        assertEquals(List.of(12L), duplicateKeys);
+        assertFalse(output.isFileExists(SenkuFileNames.MANIFEST_FILE));
+    }
+
+    @Test
+    void explicitRankedLongSetDeduplicatesWithEncodedKeysAndLogicalReadback() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[0], 0);
+        final var format = new SenkuStorageFormat(codec, Compression.zstd(3));
+        final var output = new MemDirectory();
+        final var manifest = new SenkuLongMergeWriter<>(
+                List.of(rankedNullSource(format, 3, 6, 12),
+                        rankedNullSource(format, 5, 6, 10, 12)),
+                output, longs, new TypeDescriptorNull(),
+                SenkuMergeFunctions.longSet(), 2, 3, DATA_BLOCK_SIZE,
+                () -> true, format).write();
+        final var result = SenkuMergeSource.run(
+                new LargeFile(output, DATA_BLOCK_SIZE, 3, manifest.partCount()),
+                manifest.recordCount());
+        final List<Long> keys = new ArrayList<>();
+        try (var reader = result.open(longs, new TypeDescriptorNull(), codec)) {
+            while (reader.hasNext()) {
+                keys.add(reader.next().getKey());
+            }
+        }
+        assertEquals(List.of(3L, 5L, 6L, 10L, 12L), keys);
+        assertEquals(5, manifest.recordCount());
+    }
+
     @Test
     void rankedInputsReduceUsingLogicalKeysAndPersistRankedOutput() {
         final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
@@ -60,6 +108,20 @@ class SenkuLongMergeWriterTest {
     }
 
     private final TypeDescriptorLong longs = new TypeDescriptorLong();
+
+    private SenkuMergeSource rankedNullSource(final SenkuStorageFormat format,
+            final long... keys) {
+        final var directory = new MemDirectory();
+        final List<Entry<Long, NullValue>> entries = new ArrayList<>();
+        for (final long key : keys) {
+            entries.add(Entry.of(key, NullValue.NULL));
+        }
+        final var manifest = new SenkuRunWriter<>(directory, longs,
+                new TypeDescriptorNull(), 1, 2, DATA_BLOCK_SIZE, () -> true,
+                format).write(new EntryIteratorList<>(entries));
+        return SenkuMergeSource.run(new LargeFile(directory, DATA_BLOCK_SIZE, 2,
+                manifest.partCount()), manifest.recordCount());
+    }
 
     @Test
     void mergesWithoutBoxedIntermediateEntriesAndPreservesSourceOrder() {

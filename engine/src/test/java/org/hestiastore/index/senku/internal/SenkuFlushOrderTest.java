@@ -17,6 +17,25 @@ import org.junit.jupiter.api.Test;
 class SenkuFlushOrderTest {
 
     @Test
+    void explicitLongSetSetterRequiresPrimitiveKeysWithoutValueStorage() {
+        final SenkuFlushOrder<Long, NullValue> order = new SenkuFlushOrder<>(
+                new TypeDescriptorLong(), new TypeDescriptorNull(), 2);
+        order.setLong(0, Long.MAX_VALUE);
+        order.setLong(1, Long.MIN_VALUE);
+        order.sort(0, 2);
+        assertEquals(Long.MIN_VALUE, order.longKey(0));
+        assertEquals(Long.MAX_VALUE, order.longKey(1));
+        assertEquals(NULL, order.value(0));
+        final SenkuFlushOrder<Long, Long> withValues = new SenkuFlushOrder<>(
+                new TypeDescriptorLong(), new TypeDescriptorLong(), 1);
+        assertThrows(IllegalStateException.class,
+                () -> withValues.setLong(0, 1L));
+        final SenkuFlushOrder<Integer, NullValue> generic = new SenkuFlushOrder<>(
+                new TypeDescriptorInteger(), new TypeDescriptorNull(), 1);
+        assertThrows(IllegalStateException.class, () -> generic.setLong(0, 1L));
+    }
+
+    @Test
     void primitiveLongOrderSortsSignedKeysAndRetainsValues() {
         final SenkuFlushOrder<Long, Integer> order = new SenkuFlushOrder<>(
                 new TypeDescriptorLong(), new TypeDescriptorInteger(), 5);

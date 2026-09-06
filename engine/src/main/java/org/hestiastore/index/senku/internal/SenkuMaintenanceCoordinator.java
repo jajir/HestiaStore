@@ -292,7 +292,13 @@ final class SenkuMaintenanceCoordinator<K, V> {
             if (submitPendingL0()) {
                 continue;
             }
-            final List<SenkuRunSource> runInputs = eligibleRunSources(drain);
+            // A submitted L0 batch can still publish additional runs. Do not
+            // prematurely promote partial groups while those inputs are in
+            // flight; full fan-in compactions remain eligible throughout.
+            final boolean drainRuns = drain && activeL0Batch == null
+                    && catalog.flushCount() == 0;
+            final List<SenkuRunSource> runInputs = eligibleRunSources(
+                    drainRuns);
             if (runInputs.isEmpty()) {
                 if (drain && submitMissingEmptyShard()) {
                     continue;

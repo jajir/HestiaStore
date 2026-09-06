@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.ToIntFunction;
+import java.util.function.LongToIntFunction;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -14,9 +15,9 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
 
 /**
  * Owns striped active ingestion maps and rotates full batches for flushing
- * outside the mutation locks. Each stripe publishes its size at intervals;
- * the published total can lag the actual distinct-key count by less than 25
- * percent of the threshold without a shared increment on every put.
+ * outside the mutation locks. Each stripe publishes its size at intervals; the
+ * published total can lag the actual distinct-key count by less than 25 percent
+ * of the threshold without a shared increment on every put.
  */
 final class SenkuIngestor<K, V> {
 
@@ -25,11 +26,11 @@ final class SenkuIngestor<K, V> {
     private static final int STRIPE_MIX_MULTIPLIER_2 = 0x846ca68b;
 
     private final ReentrantLock controlLock;
-    private final ReentrantLock[] mutationLocks =
-            new ReentrantLock[INGESTION_STRIPE_COUNT];
+    private final ReentrantLock[] mutationLocks = new ReentrantLock[INGESTION_STRIPE_COUNT];
     private final Condition ingestionMayProceed;
     private final SenkuMergeFunction<K, V> mergeFunction;
     private final ToIntFunction<K> shardHashFunction;
+    private final LongToIntFunction longShardHashFunction;
     private final SenkuFlushWriter<K, V> flushWriter;
     private final int maxInMemoryEntries;
     private final int initialMapCapacity;
@@ -67,12 +68,35 @@ final class SenkuIngestor<K, V> {
             final ToIntFunction<K> shardHashFunction,
             final SenkuFlushWriter<K, V> flushWriter,
             final int maxInMemoryEntries, final int initialMapCapacity) {
+        this(controlLock, mergeFunction, shardHashFunction, flushWriter,
+                maxInMemoryEntries, initialMapCapacity, null);
+    }
+
+    /**
+     * Creates an ingestor with optional explicitly selected primitive storage.
+     * The assembly layer validates the key/value descriptors and set reducer.
+     *
+     * @param controlLock           lifecycle lock
+     * @param mergeFunction         duplicate reducer
+     * @param shardHashFunction     generic hash compatibility bridge
+     * @param flushWriter           persistent flush writer
+     * @param maxInMemoryEntries    rotation threshold
+     * @param initialMapCapacity    initial capacity across mutation stripes
+     * @param longShardHashFunction primitive hash, or null for generic storage
+     */
+    SenkuIngestor(final ReentrantLock controlLock,
+            final SenkuMergeFunction<K, V> mergeFunction,
+            final ToIntFunction<K> shardHashFunction,
+            final SenkuFlushWriter<K, V> flushWriter,
+            final int maxInMemoryEntries, final int initialMapCapacity,
+            final LongToIntFunction longShardHashFunction) {
         this.controlLock = Vldtn.requireNonNull(controlLock, "controlLock");
         ingestionMayProceed = controlLock.newCondition();
         this.mergeFunction = Vldtn.requireNonNull(mergeFunction,
                 "mergeFunction");
         this.shardHashFunction = Vldtn.requireNonNull(shardHashFunction,
                 "shardHashFunction");
+        this.longShardHashFunction = longShardHashFunction;
         this.flushWriter = Vldtn.requireNonNull(flushWriter, "flushWriter");
         this.maxInMemoryEntries = Vldtn.requireGreaterThanZero(
                 maxInMemoryEntries, "maxInMemoryEntries");
@@ -98,6 +122,33 @@ final class SenkuIngestor<K, V> {
         final K validatedKey = Vldtn.requireNonNull(key, "key");
         final V validatedValue = Vldtn.requireNonNull(value, "value");
         final int configuredHash = configuredHash(validatedKey);
+        putKey(validatedKey, validatedValue, 0L, false, configuredHash);
+    }
+
+    /**
+     * Adds one primitive key through the same mutation and lifecycle gates.
+     *
+     * @param key exact long key
+     */
+    void putLong(final long key) {
+        if (longShardHashFunction == null) {
+            throw new IllegalStateException(
+                    "Primitive long set is not available.");
+        }
+        final int hash;
+        try {
+            hash = longShardHashFunction.applyAsInt(key);
+        } catch (Exception e) {
+            if (e instanceof IndexException) {
+                throw (IndexException) e;
+            }
+            throw new IndexException("Senku shard hash function failed.", e);
+        }
+        putKey(null, null, key, true, hash);
+    }
+
+    private void putKey(final K key, final V value, final long primitiveKey,
+            final boolean primitive, final int configuredHash) {
         final int stripe = stripeFromHash(configuredHash);
         final ReentrantLock mutationLock = mutationLocks[stripe];
         boolean accepted = false;
@@ -112,17 +163,14 @@ final class SenkuIngestor<K, V> {
                 if (!paused && !rotationRequested) {
                     final SenkuIngestionMap<K, V> stripeEntries = ingestionMap(
                             stripe);
-                    final V current = stripeEntries.getWithHash(validatedKey,
-                            configuredHash);
-                    if (current == null) {
-                        stripeEntries.putWithHash(validatedKey, validatedValue,
-                                configuredHash);
+                    final boolean inserted = primitive
+                            ? ((SenkuLongSetMap) stripeEntries)
+                                    .addLong(primitiveKey, configuredHash)
+                            : stripeEntries.mergeWithHash(key, value,
+                                    configuredHash, mergeFunction);
+                    if (inserted) {
                         stripeEntryCounts[stripe]++;
                         sampleCount(stripe, stripeEntryCounts[stripe]);
-                    } else {
-                        stripeEntries.putWithHash(validatedKey,
-                                merge(validatedKey, current, validatedValue),
-                                configuredHash);
                     }
                     rotate = rotationRequested;
                     accepted = true;
@@ -324,18 +372,6 @@ final class SenkuIngestor<K, V> {
         }
     }
 
-    private V merge(final K key, final V first, final V second) {
-        try {
-            return Vldtn.requireNonNull(mergeFunction.apply(key, first, second),
-                    "mergedValue");
-        } catch (Exception e) {
-            if (e instanceof IndexException) {
-                throw (IndexException) e;
-            }
-            throw new IndexException("Senku merge function failed.", e);
-        }
-    }
-
     private void awaitFlushLocked() {
         while (flushing) {
             ingestionMayProceed.awaitUninterruptibly();
@@ -465,9 +501,18 @@ final class SenkuIngestor<K, V> {
         final List<SenkuIngestionMap<K, V>> maps = new ArrayList<>(
                 INGESTION_STRIPE_COUNT);
         for (int index = 0; index < INGESTION_STRIPE_COUNT; index++) {
-            maps.add(new SenkuIngestionMap<>(capacity, shardHashFunction));
+            maps.add(newMap(capacity));
         }
         return maps;
+    }
+
+    @SuppressWarnings("unchecked")
+    private SenkuIngestionMap<K, V> newMap(final int capacity) {
+        if (longShardHashFunction != null) {
+            return (SenkuIngestionMap<K, V>) new SenkuLongSetMap(capacity,
+                    longShardHashFunction);
+        }
+        return new SenkuIngestionMap<>(capacity, shardHashFunction);
     }
 
     private SenkuIngestionMap<K, V> ingestionMap(final int stripe) {

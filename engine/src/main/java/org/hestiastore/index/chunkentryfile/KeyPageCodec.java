@@ -69,11 +69,44 @@ public final class KeyPageCodec<K> {
     }
 
     /**
-     * Restores the logical primitive key before it reaches a merge or caller.
+     * Restores a logical primitive key at a caller or merge-function boundary.
+     * Maintenance may retain encoded keys internally when their full codec
+     * domains match. An encoded key is never a replacement for a public key.
+     *
+     * @param encodedKey validated numeric key or fixed-weight rank
+     * @return logical primitive key
      */
-    long decodeLongKey(final long encodedKey) {
+    public long decodeLongKey(final long encodedKey) {
         return fixedWeightRank == null ? encodedKey
                 : fixedWeightRank.unrank(encodedKey);
+    }
+
+    /**
+     * Compares the complete immutable encoding domain. Equal persisted IDs
+     * alone do not establish compatibility for fixed-weight rank pages.
+     *
+     * @param other source or target codec
+     * @return whether encoded primitive keys can be transferred unchanged
+     */
+    public boolean hasSameEncoding(final KeyPageCodec<?> other) {
+        Vldtn.requireNonNull(other, "keyPageCodec");
+        if (this == other) {
+            return true;
+        }
+        if (id != other.id) {
+            return false;
+        }
+        if (fixedWeightRank == null || other.fixedWeightRank == null) {
+            return fixedWeightRank == other.fixedWeightRank;
+        }
+        return fixedWeightRank.hasSameDomain(other.fixedWeightRank);
+    }
+
+    /** Checks the rank domain without paying for logical-key reconstruction. */
+    void validateEncodedLongKey(final long encodedKey) {
+        if (fixedWeightRank != null) {
+            fixedWeightRank.validateRank(encodedKey);
+        }
     }
 
     private LongFixedWeightRank requireFixedWeightRank() {

@@ -7,11 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
+import org.hestiastore.index.chunkstore.Compression;
+import org.hestiastore.index.senku.SenkuLongKeySummary;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.directory.Directory;
@@ -21,6 +25,72 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SenkuReadyRuntimeTest {
+
+    @Test
+    void exactCountAndWeightedSummaryRequireNoDataPageRead() {
+        final Directory run = createRunDirectory(0, 0, 0L);
+        run.touch(SenkuFileNames.partFile(0));
+        SenkuMetadataCodec.publishRunManifest(run,
+                new SenkuRunManifest(1, 12, Optional.of(SenkuLongKeySummary
+                        .of(12, new long[] { 3, 7 }, new long[] { 9, 3 }))));
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
+        SenkuMetadataCodec.publishReady(root, 1);
+        final SenkuReadyRuntime<Long, Long> ready = new SenkuReadyRuntime<>(
+                root, new TypeDescriptorLong(), values, DATA_BLOCK_SIZE,
+                fileLock);
+        assertEquals(12, ready.recordCount());
+        assertEquals(12, ready.longKeySummary().orElseThrow().recordCount());
+        assertThrows(IndexException.class, ready::openStream,
+                "The dummy empty part proves metadata access did not read data pages.");
+        ready.close();
+        assertThrows(IndexException.class, ready::recordCount);
+        assertThrows(IndexException.class, ready::longKeySummary);
+    }
+
+    @Test
+    void legacyTerminalManifestHasExactCountButNoLongDistribution() {
+        final Directory run = createRunDirectory(0, 0, 0L);
+        run.touch(SenkuFileNames.partFile(0));
+        SenkuMetadataCodec.publishRunManifest(run, new SenkuRunManifest(1, 9));
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
+        SenkuMetadataCodec.publishReady(root, 1);
+        try (var ready = new SenkuReadyRuntime<>(root, new TypeDescriptorLong(),
+                values, DATA_BLOCK_SIZE, fileLock)) {
+            assertEquals(9, ready.recordCount());
+            assertTrue(ready.longKeySummary().isEmpty());
+        }
+    }
+
+    @Test
+    void rejectsOverflowingExactTerminalCount() {
+        for (int shard = 0; shard < 2; shard++) {
+            final Directory run = createRunDirectory(shard, 0, 0L);
+            run.touch(SenkuFileNames.partFile(0));
+            SenkuMetadataCodec.publishRunManifest(run,
+                    new SenkuRunManifest(1, Long.MAX_VALUE));
+        }
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
+        SenkuMetadataCodec.publishReady(root, 2);
+        assertThrows(IndexException.class, this::ready);
+    }
+
+    @Test
+    void rejectsRepresentativeOutsidePersistedPopulationDomain() {
+        final Directory run = createRunDirectory(0, 0, 0L);
+        run.touch(SenkuFileNames.partFile(0));
+        SenkuMetadataCodec.publishRunManifest(run,
+                new SenkuRunManifest(1, 1, Optional.of(SenkuLongKeySummary.of(1,
+                        new long[] { 7 }, new long[] { 1 }))));
+        SenkuMetadataCodec.publishStorageFormat(root, new SenkuStorageFormat(
+                KeyPageCodecs.longFixedWeightDeltaVarint(4, 2, new long[0], 0),
+                Compression.none()));
+        SenkuMetadataCodec.publishReady(root, 1);
+        assertThrows(IndexException.class, () -> new SenkuReadyRuntime<>(root,
+                new TypeDescriptorLong(), values, DATA_BLOCK_SIZE, fileLock));
+    }
 
     private MemDirectory root;
     private TypeDescriptorInteger keys;
@@ -45,6 +115,9 @@ class SenkuReadyRuntimeTest {
                 SenkuStorageFormat.createDefault());
         SenkuMetadataCodec.publishReady(root, 2);
         final SenkuReadyRuntime<Integer, Long> ready = ready();
+
+        assertEquals(4, ready.recordCount());
+        assertTrue(ready.longKeySummary().isEmpty());
 
         try (Stream<Entry<Integer, Long>> stream = ready.openStream()) {
             assertEquals(

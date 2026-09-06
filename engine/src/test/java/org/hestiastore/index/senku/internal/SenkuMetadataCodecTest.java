@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Set;
+import java.util.Optional;
+import org.hestiastore.index.senku.SenkuLongKeySummary;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.IndexException;
@@ -20,6 +22,41 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SenkuMetadataCodecTest {
+
+    @Test
+    void summarizedManifestRoundTripsWeightsAndRejectsMalformedMetadata() {
+        final SenkuLongKeySummary summary = SenkuLongKeySummary.of(9,
+                new long[] { -1, 5 }, new long[] { 7, 2 });
+        SenkuMetadataCodec.publishRunManifest(directory,
+                new SenkuRunManifest(1, 9, Optional.of(summary)));
+        final SenkuLongKeySummary actual = SenkuMetadataCodec
+                .readRunManifest(directory).longKeySummary().orElseThrow();
+        assertArrayEquals(summary.keys(), actual.keys());
+        assertArrayEquals(summary.weights(), actual.weights());
+        final String valid = "partCount=1\nrecordCount=9\nlongSummaryVersion=1\n"
+                + "longSummaryKeys=-1,5\nlongSummaryWeights=7,2\n";
+        for (final String invalid : new String[] {
+                valid.replace("longSummaryVersion=1", "longSummaryVersion=2"),
+                valid.replace("longSummaryWeights=7,2\n", ""),
+                valid.replace("longSummaryKeys=-1,5", "longSummaryKeys=5,-1"),
+                valid.replace("longSummaryWeights=7,2",
+                        "longSummaryWeights=8,2"),
+                valid.replace("longSummaryWeights=7,2",
+                        "longSummaryWeights=7,0"),
+                valid.replace("longSummaryKeys=-1,5", "longSummaryKeys=-1,5,"),
+                valid + "unknown=1\n" }) {
+            final MemDirectory malformed = new MemDirectory();
+            writeProperties(malformed, SenkuFileNames.MANIFEST_FILE, invalid);
+            assertThrows(IndexException.class,
+                    () -> SenkuMetadataCodec.readRunManifest(malformed));
+        }
+        final MemDirectory empty = new MemDirectory();
+        SenkuMetadataCodec.publishRunManifest(empty,
+                new SenkuRunManifest(0, 0, Optional.of(
+                        SenkuLongKeySummary.of(0, new long[0], new long[0]))));
+        assertEquals(0, SenkuMetadataCodec.readRunManifest(empty)
+                .longKeySummary().orElseThrow().recordCount());
+    }
 
     private static final String RANK_FORMAT = "formatVersion=2\nkeyPageCodec=4\n"
             + "compression=zstd\ncompressionLevel=3\nfixedWeightBitCount=7\n"

@@ -1,6 +1,7 @@
 package org.hestiastore.index.senku.internal;
 
 import java.util.function.BooleanSupplier;
+import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -9,6 +10,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.SingleChunkEntryWriterImpl;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.directory.Directory;
 
 /**
@@ -92,6 +94,10 @@ final class SenkuRunWriter<K, V> {
                 .requireNonNull(entries, "entries");
         final LargeFileWriterTx writer = new LargeFile(directory, dataBlockSize,
                 maxEntriesPerPart, 0, format).openWriterTx();
+        final SenkuLongKeySampler sampler = keyTypeDescriptor
+                .getClass() == TypeDescriptorLong.class
+                        ? new SenkuLongKeySampler()
+                        : null;
         long recordCount = 0L;
         try {
             while (validatedEntries.hasNext()) {
@@ -104,6 +110,9 @@ final class SenkuRunWriter<K, V> {
                     final Entry<K, V> entry = Vldtn
                             .requireNonNull(validatedEntries.next(), "entry");
                     page.put(entry);
+                    if (sampler != null && sampler.selectNext()) {
+                        sampler.addSelectedKey((Long) entry.getKey());
+                    }
                     pageEntries++;
                     recordCount = Math.incrementExact(recordCount);
                 }
@@ -112,7 +121,8 @@ final class SenkuRunWriter<K, V> {
             final int partCount = writer.commit();
             closeInput(validatedEntries);
             final SenkuRunManifest manifest = new SenkuRunManifest(partCount,
-                    recordCount);
+                    recordCount, sampler == null ? Optional.empty()
+                            : Optional.of(sampler.snapshot()));
             Vldtn.requireTrue(publicationAllowed.getAsBoolean(),
                     "Senku run publication is no longer allowed");
             SenkuMetadataCodec.publishRunManifest(directory, manifest);

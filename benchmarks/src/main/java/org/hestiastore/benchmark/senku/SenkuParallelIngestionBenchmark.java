@@ -12,7 +12,10 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.hestiastore.index.directory.FsDirectory;
 import org.hestiastore.index.senku.SenkuIndex;
+import org.hestiastore.index.senku.SenkuIndexBuilder;
+import org.hestiastore.index.senku.SenkuLongSetWriting;
 import org.hestiastore.index.senku.SenkuMergeFunctionRegistry;
+import org.hestiastore.index.senku.SenkuMergeFunctions;
 import org.hestiastore.index.senku.SenkuReady;
 import org.hestiastore.index.senku.SenkuWriting;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -77,11 +80,15 @@ public class SenkuParallelIngestionBenchmark {
     @State(Scope.Benchmark)
     public static class IngestionState {
 
+        @Param({ "generic", "long-set" })
+        String api = "generic";
+
         @Param({ "10000000" })
         int rotationThreshold = 10_000_000;
 
         private File tempDirectory;
         private SenkuWriting<Long, NullValue> writing;
+        private SenkuLongSetWriting longSetWriting;
 
         /**
          * Creates one fresh index per fork. Warmup and measurement therefore
@@ -92,12 +99,17 @@ public class SenkuParallelIngestionBenchmark {
          */
         @Setup(Level.Trial)
         public void setup() throws IOException {
+            if (!"generic".equals(api) && !"long-set".equals(api)) {
+                throw new IllegalArgumentException(
+                        "Unknown ingestion API: " + api);
+            }
             tempDirectory = BenchmarkFileSupport
                     .createTempDir("senku-parallel-ingestion-");
-            final SenkuMergeFunctionRegistry<Long, NullValue> functions =
-                    new SenkuMergeFunctionRegistry<>();
-            functions.register((key, first, second) -> first);
-            writing = SenkuIndex
+            final SenkuMergeFunctionRegistry<Long, NullValue> functions = new SenkuMergeFunctionRegistry<>();
+            functions.register(
+                    "long-set".equals(api) ? SenkuMergeFunctions.longSet()
+                            : (key, first, second) -> first);
+            final SenkuIndexBuilder<Long, NullValue> builder = SenkuIndex
                     .builder(new FsDirectory(tempDirectory),
                             new TypeDescriptorLong(), new TypeDescriptorNull(),
                             functions)
@@ -105,8 +117,13 @@ public class SenkuParallelIngestionBenchmark {
                     .maxInMemoryEntries(rotationThreshold)
                     .maxKeysPerPage(1_000_000).mergeFanIn(64)
                     .maintenanceThreads(8).maintenanceQueueSize(120)
-                    .diskIoBufferSize(8_192)
-                    .maxEntriesPerPart(10_000_000L).create();
+                    .diskIoBufferSize(8_192).maxEntriesPerPart(10_000_000L);
+            if ("long-set".equals(api)) {
+                longSetWriting = builder.createLongSet(Long::hashCode);
+                writing = longSetWriting;
+            } else {
+                writing = builder.create();
+            }
         }
 
         /**
@@ -115,7 +132,11 @@ public class SenkuParallelIngestionBenchmark {
          * @param key unique key assigned to the calling benchmark thread
          */
         public void put(final long key) {
-            writing.put(Long.valueOf(key), NULL);
+            if (longSetWriting != null) {
+                longSetWriting.putLong(key);
+            } else {
+                writing.put(Long.valueOf(key), NULL);
+            }
         }
 
         /**
@@ -128,6 +149,7 @@ public class SenkuParallelIngestionBenchmark {
                         .finishWriting();
                 ready.close();
                 writing = null;
+                longSetWriting = null;
             }
             BenchmarkFileSupport.deleteRecursively(tempDirectory);
             tempDirectory = null;

@@ -57,11 +57,11 @@ class SenkuFlushWriterTest {
 
         final Directory generation = flushDirectory
                 .openSubDirectory("flush-00000");
-        assertEquals(Set.of("part-00000.chunk", "part-00001.chunk",
-                "shard-index.dat", "manifest.properties"),
+        assertEquals(
+                Set.of("part-00000.chunk", "part-00001.chunk",
+                        "shard-index.dat", "manifest.properties"),
                 generation.getFileNames().collect(Collectors.toSet()));
-        assertEquals(2,
-                SenkuMetadataCodec.readFlushPartCount(generation));
+        assertEquals(2, SenkuMetadataCodec.readFlushPartCount(generation));
     }
 
     @Test
@@ -80,13 +80,11 @@ class SenkuFlushWriterTest {
     @Test
     void writeRotatesAtEveryEntryWhenConfigured() {
         newWriter(value -> 0, 1, 1, 1L).write(0L,
-                List.of(Map.of(1, 10L), Map.of(),
-                        Map.of(2, 20L, 3, 30L)));
+                List.of(Map.of(1, 10L), Map.of(), Map.of(2, 20L, 3, 30L)));
 
         final Directory generation = flushDirectory
                 .openSubDirectory("flush-00000");
-        assertEquals(3,
-                SenkuMetadataCodec.readFlushPartCount(generation));
+        assertEquals(3, SenkuMetadataCodec.readFlushPartCount(generation));
     }
 
     @Test
@@ -105,9 +103,8 @@ class SenkuFlushWriterTest {
 
     @Test
     void writeConsumesMultipleDetachedStripeMaps() {
-        final List<Map<Integer, Long>> entries = List.of(
-                Map.of(7, 70L, 1, 10L), Map.of(),
-                Map.of(4, 40L, 2, 20L));
+        final List<Map<Integer, Long>> entries = List.of(Map.of(7, 70L, 1, 10L),
+                Map.of(), Map.of(4, 40L, 2, 20L));
 
         newWriter(value -> value, 2, 10, 10L).write(0L, entries);
 
@@ -149,39 +146,60 @@ class SenkuFlushWriterTest {
         entries.put(Long.MIN_VALUE, NULL);
         entries.put(-1L, NULL);
 
-        new SenkuFlushWriter<>(flushDirectory, keys, values, key -> 0, 1, 2,
-                4L, DATA_BLOCK_SIZE).write(0L, List.of(entries));
+        new SenkuFlushWriter<>(flushDirectory, keys, values, key -> 0, 1, 2, 4L,
+                DATA_BLOCK_SIZE).write(0L, List.of(entries));
 
-        assertEquals(List.of(Entry.of(Long.MIN_VALUE, NULL),
-                Entry.of(-1L, NULL), Entry.of(0L, NULL),
-                Entry.of(Long.MAX_VALUE, NULL)),
+        assertEquals(
+                List.of(Entry.of(Long.MIN_VALUE, NULL), Entry.of(-1L, NULL),
+                        Entry.of(0L, NULL), Entry.of(Long.MAX_VALUE, NULL)),
                 readShard(flushDirectory, 0L, 0, 1, 4L, keys, values));
+    }
+
+    @Test
+    void parallelPagesPreserveLongValuesAndShardPositions() {
+        final int count = 10_000;
+        final int shardCount = 8;
+        final TypeDescriptorLong keys = new TypeDescriptorLong();
+        final TypeDescriptorLong values = new TypeDescriptorLong();
+        final Map<Long, Long> entries = new HashMap<>();
+        for (long key = count - 1; key >= 0; key--) {
+            entries.put(key, -key);
+        }
+        new SenkuFlushWriter<>(flushDirectory, keys, values, Long::intValue,
+                shardCount, 200, 1000L, DATA_BLOCK_SIZE)
+                .write(0L, List.of(entries));
+        for (int shard = 0; shard < shardCount; shard++) {
+            final List<Entry<Long, Long>> expected = new ArrayList<>();
+            for (long key = shard; key < count; key += shardCount) {
+                expected.add(Entry.of(key, -key));
+            }
+            assertEquals(expected, readShard(flushDirectory, 0L, shard,
+                    shardCount, 1000L, keys, values));
+        }
     }
 
     @Test
     void writeRetainsUnsignedOrderingFromCustomLongDescriptor() {
         final TypeDescriptorLong keys = new UnsignedLongDescriptor();
         final TypeDescriptorLong values = new TypeDescriptorLong();
-        final Map<Long, Long> entries = Map.of(-1L, 1L, 0L, 2L,
-                Long.MIN_VALUE, 3L, Long.MAX_VALUE, 4L);
+        final Map<Long, Long> entries = Map.of(-1L, 1L, 0L, 2L, Long.MIN_VALUE,
+                3L, Long.MAX_VALUE, 4L);
 
-        new SenkuFlushWriter<>(flushDirectory, keys, values, key -> 0, 1, 4,
-                4L, DATA_BLOCK_SIZE).write(0L, List.of(entries));
+        new SenkuFlushWriter<>(flushDirectory, keys, values, key -> 0, 1, 4, 4L,
+                DATA_BLOCK_SIZE).write(0L, List.of(entries));
 
-        assertEquals(List.of(Entry.of(0L, 2L),
-                Entry.of(Long.MAX_VALUE, 4L), Entry.of(Long.MIN_VALUE, 3L),
-                Entry.of(-1L, 1L)), readShard(flushDirectory, 0L, 0, 1, 4L,
-                        keys, values));
+        assertEquals(
+                List.of(Entry.of(0L, 2L), Entry.of(Long.MAX_VALUE, 4L),
+                        Entry.of(Long.MIN_VALUE, 3L), Entry.of(-1L, 1L)),
+                readShard(flushDirectory, 0L, 0, 1, 4L, keys, values));
     }
 
     private SenkuFlushWriter<Integer, Long> newWriter(
-            final ToIntFunction<Integer> hash,
-            final int shardCount, final int maxKeysPerPage,
-            final long maxEntriesPerPart) {
+            final ToIntFunction<Integer> hash, final int shardCount,
+            final int maxKeysPerPage, final long maxEntriesPerPart) {
         return new SenkuFlushWriter<>(flushDirectory,
                 new TypeDescriptorInteger(), new TypeDescriptorLong(), hash,
-                shardCount, maxKeysPerPage, maxEntriesPerPart,
-                DATA_BLOCK_SIZE);
+                shardCount, maxKeysPerPage, maxEntriesPerPart, DATA_BLOCK_SIZE);
     }
 
     private static final class UnsignedLongDescriptor

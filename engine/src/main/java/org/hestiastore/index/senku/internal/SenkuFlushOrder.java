@@ -34,16 +34,16 @@ final class SenkuFlushOrder<K, V> {
     /**
      * Creates exactly sized ordering storage without retaining map entries.
      *
-     * @param keyTypeDescriptor key descriptor
+     * @param keyTypeDescriptor   key descriptor
      * @param valueTypeDescriptor value descriptor
-     * @param size entry count
+     * @param size                entry count
      */
     SenkuFlushOrder(final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor, final int size) {
         final TypeDescriptor<K> keys = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
-        final TypeDescriptor<V> valueDescriptor = Vldtn.requireNonNull(
-                valueTypeDescriptor, "valueTypeDescriptor");
+        final TypeDescriptor<V> valueDescriptor = Vldtn
+                .requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
         final int validatedSize = Vldtn.requireGreaterThanOrEqualToZero(size,
                 "size");
         keyComparator = keys.getComparator();
@@ -62,7 +62,7 @@ final class SenkuFlushOrder<K, V> {
      * Stores one mapping at its shard-partitioned position.
      *
      * @param index destination index
-     * @param key key
+     * @param key   key
      * @param value value
      */
     void set(final int index, final K key, final V value) {
@@ -77,10 +77,24 @@ final class SenkuFlushOrder<K, V> {
     }
 
     /**
+     * Stores one key from an explicitly selected primitive long set.
+     *
+     * @param index destination index
+     * @param key   primitive key
+     */
+    void setLong(final int index, final long key) {
+        if (longKeys == null || values != null) {
+            throw new IllegalStateException(
+                    "Primitive long set is not available.");
+        }
+        longKeys[index] = key;
+    }
+
+    /**
      * Sorts one half-open shard range in place while keeping values paired.
      *
      * @param fromInclusive first index
-     * @param toExclusive index after the last entry
+     * @param toExclusive   index after the last entry
      */
     void sort(final int fromInclusive, final int toExclusive) {
         if (toExclusive - fromInclusive < 2) {
@@ -193,8 +207,7 @@ final class SenkuFlushOrder<K, V> {
     private void insertionSortLongs(final int low, final int high) {
         for (int index = low + 1; index <= high; index++) {
             int current = index;
-            while (current > low
-                    && longKeys[current - 1] > longKeys[current]) {
+            while (current > low && longKeys[current - 1] > longKeys[current]) {
                 swapLongs(current - 1, current);
                 current--;
             }
@@ -307,8 +320,9 @@ final class SenkuFlushOrder<K, V> {
         int root = initialRoot;
         int child = 2 * root + 1;
         while (child < size) {
-            if (child + 1 < size && keyComparator.compare(
-                    objectKey(low + child), objectKey(low + child + 1)) < 0) {
+            if (child + 1 < size
+                    && keyComparator.compare(objectKey(low + child),
+                            objectKey(low + child + 1)) < 0) {
                 child++;
             }
             if (keyComparator.compare(objectKey(low + root),

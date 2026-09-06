@@ -25,7 +25,7 @@ public final class LongKeyPageReader implements TypeReader<Long> {
     @Override
     public Long read(final FileReader reader) {
         final int first = reader.read();
-        return first < 0 ? null : decode(reader, first);
+        return first < 0 ? null : codec.decodeLongKey(decode(reader, first));
     }
 
     /**
@@ -35,6 +35,19 @@ public final class LongKeyPageReader implements TypeReader<Long> {
      * @return decoded key, without boxing
      */
     public long readLong(final FileReader reader) {
+        return codec.decodeLongKey(readEncodedLong(reader));
+    }
+
+    /**
+     * Reads a required numeric key or fixed-weight rank without reconstructing
+     * the logical key. All framing, strict-order and rank-domain checks remain
+     * enabled. Callers must transfer this value only between matching complete
+     * codec domains and decode it before exposing a logical key.
+     *
+     * @param reader borrowed page byte source
+     * @return validated encoded primitive key
+     */
+    public long readEncodedLong(final FileReader reader) {
         return decode(reader, requiredByte(reader));
     }
 
@@ -60,10 +73,10 @@ public final class LongKeyPageReader implements TypeReader<Long> {
             throw new IndexException(
                     "Decoded long keys are not strictly increasing.");
         }
-        final long logicalKey = codec.decodeLongKey(key);
+        codec.validateEncodedLongKey(key);
         previous = key;
         hasPrevious = true;
-        return logicalKey;
+        return key;
     }
 
     private static long readGap(final FileReader reader, final int first) {

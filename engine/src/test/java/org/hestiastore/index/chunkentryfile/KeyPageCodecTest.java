@@ -3,8 +3,10 @@ package org.hestiastore.index.chunkentryfile;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -14,6 +16,31 @@ import org.hestiastore.index.directory.MemFileReader;
 import org.junit.jupiter.api.Test;
 
 class KeyPageCodecTest {
+
+    @Test
+    void encodedCompatibilityIncludesTheEntireRankDomain() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[] { 3 }, 0);
+        assertTrue(codec.hasSameEncoding(codec));
+        assertTrue(codec.hasSameEncoding(KeyPageCodecs
+                .longFixedWeightDeltaVarint(4, 2, new long[] { 3 }, 0)));
+        assertFalse(codec.hasSameEncoding(KeyPageCodecs
+                .longFixedWeightDeltaVarint(5, 2, new long[] { 3 }, 0)));
+        assertFalse(codec.hasSameEncoding(KeyPageCodecs
+                .longFixedWeightDeltaVarint(4, 1, new long[] { 3 }, 0)));
+        assertFalse(codec.hasSameEncoding(KeyPageCodecs
+                .longFixedWeightDeltaVarint(4, 2, new long[] { 3 }, 1)));
+        assertFalse(codec.hasSameEncoding(KeyPageCodecs
+                .longFixedWeightDeltaVarint(4, 2, new long[] { 5 }, 0)));
+        assertFalse(codec.hasSameEncoding(KeyPageCodecs.longDeltaVarint()));
+        assertTrue(KeyPageCodecs.longDeltaVarint().hasSameEncoding(
+                new KeyPageCodec<>(KeyPageCodecs.LONG_DELTA_VARINT_ID)));
+        assertThrows(IllegalArgumentException.class,
+                () -> codec.hasSameEncoding(null));
+        assertEquals(12, codec.decodeLongKey(1));
+        assertEquals(-12, KeyPageCodecs.longDeltaVarint().decodeLongKey(-12));
+    }
+
     @Test
     void fixedWeightParametersRemainImmutableAndRequireBuiltInLongs() {
         final long[] masks = { 3 };

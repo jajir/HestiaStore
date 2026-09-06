@@ -108,6 +108,24 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
     }
 
     /**
+     * Accepts a primitive set key through this runtime's existing writing gate.
+     *
+     * @param key exact primitive key
+     */
+    void putLong(final long key) {
+        requireWriting("put");
+        try {
+            ingestor.putLong(key);
+        } catch (IndexException e) {
+            if (finishRequested || state != SenkuWritingState.WRITING) {
+                requireWriting("put");
+            }
+            reportCallerFailure(e);
+            throw e;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

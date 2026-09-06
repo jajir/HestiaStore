@@ -3,6 +3,7 @@ package org.hestiastore.benchmark.senku;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,10 +25,19 @@ class SenkuParallelIngestionBenchmarkTest {
     }
 
     @Test
-    void filesystemStateCompletesRotationAndFinalization() {
-        final SenkuParallelIngestionBenchmark.IngestionState state =
-                new SenkuParallelIngestionBenchmark.IngestionState();
+    void genericFilesystemStateCompletesRotationAndFinalization() {
+        assertDoesNotThrow(() -> assertFilesystemLifecycle("generic"));
+    }
+
+    @Test
+    void primitiveFilesystemStateCompletesRotationAndFinalization() {
+        assertDoesNotThrow(() -> assertFilesystemLifecycle("long-set"));
+    }
+
+    private void assertFilesystemLifecycle(final String api) {
+        final SenkuParallelIngestionBenchmark.IngestionState state = new SenkuParallelIngestionBenchmark.IngestionState();
         state.rotationThreshold = 64;
+        state.api = api;
 
         assertDoesNotThrow(() -> {
             state.setup();
@@ -40,6 +50,13 @@ class SenkuParallelIngestionBenchmarkTest {
                 state.tearDown();
             }
         });
+    }
+
+    @Test
+    void invalidApiFailsBeforeCreatingResources() {
+        final SenkuParallelIngestionBenchmark.IngestionState state = new SenkuParallelIngestionBenchmark.IngestionState();
+        state.api = "implicit-null-specialization";
+        assertThrows(IllegalArgumentException.class, state::setup);
     }
 
     private static int oldStripe(final long key) {

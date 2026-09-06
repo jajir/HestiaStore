@@ -4,6 +4,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.chunkstore.CellPosition;
+import org.hestiastore.index.chunkstore.ChunkData;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.chunkstore.ChunkStoreWriterTx;
@@ -70,6 +71,40 @@ final class LargeFileWriterTx {
         } catch (Exception e) {
             closeAfterFailure(e);
             throw asIndexException("Unable to append large-file page.", e);
+        }
+    }
+
+    /**
+     * Appends a page already encoded with this index's immutable compression
+     * and key codec. This is the sole ordered append owner; page-preparation
+     * workers never access the transaction or its part writer.
+     */
+    LargeFilePosition appendPreparedPage(final ChunkData page,
+            final int entryCount) {
+        ensureOpen();
+        final ChunkData validated = Vldtn.requireNonNull(page, "page");
+        Vldtn.requireTrue(!validated.getPayloadSequence().isEmpty(),
+                "Prepared page must not be empty");
+        Vldtn.requireTrue(validated.getVersion() == format.keyCodec().getId(),
+                "Prepared page key codec does not match the index");
+        Vldtn.requireGreaterThanZero(entryCount, "entryCount");
+        Vldtn.requireTrue(entryCount <= maxEntriesPerPart,
+                "entryCount must not exceed maxEntriesPerPart");
+        try {
+            if (mustRotate(entryCount)) {
+                commitCurrentPart();
+            }
+            if (currentWriter == null) {
+                openNextPart();
+            }
+            final CellPosition position = currentWriter
+                    .writePreparedChunk(validated);
+            entriesInCurrentPart += entryCount;
+            return LargeFilePosition.of(currentPartNumber, position.getValue());
+        } catch (Exception e) {
+            closeAfterFailure(e);
+            throw asIndexException("Unable to append prepared large-file page.",
+                    e);
         }
     }
 

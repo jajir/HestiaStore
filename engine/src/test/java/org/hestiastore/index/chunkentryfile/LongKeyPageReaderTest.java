@@ -11,6 +11,47 @@ import org.hestiastore.index.directory.MemFileReader;
 import org.junit.jupiter.api.Test;
 
 class LongKeyPageReaderTest {
+
+    @Test
+    void encodedReadsRetainRanksAndShareFramingStateWithLogicalReads() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[0], 0);
+        final var decoder = new LongKeyPageReader(codec);
+        try (var input = new MemFileReader(
+                new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, 4 })) {
+            assertEquals(0, decoder.readEncodedLong(input));
+            assertEquals(5, decoder.readLong(input));
+            assertEquals(5, decoder.readEncodedLong(input));
+            assertNull(decoder.read(input));
+        }
+    }
+
+    @Test
+    void encodedReadsStillRejectInvalidRanksAndMalformedDeltas() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[0], 0);
+        for (final byte[] invalid : new byte[][] { { 0, 0, 0, 0, 0, 0, 0, 6 },
+                { (byte) 128, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0 } }) {
+            final var decoder = new LongKeyPageReader(codec);
+            try (var input = new MemFileReader(invalid)) {
+                assertThrows(IndexException.class,
+                        () -> decoder.readEncodedLong(input));
+            }
+        }
+        for (final byte[] tail : new byte[][] { { 0 }, { 1 }, { (byte) 128, 0 },
+                { (byte) 128 } }) {
+            final byte[] bytes = new byte[8 + tail.length];
+            bytes[7] = 5;
+            System.arraycopy(tail, 0, bytes, 8, tail.length);
+            final var decoder = new LongKeyPageReader(codec);
+            try (var input = new MemFileReader(bytes)) {
+                assertEquals(5, decoder.readEncodedLong(input));
+                assertThrows(IndexException.class,
+                        () -> decoder.readEncodedLong(input));
+            }
+        }
+    }
+
     @Test
     void fixedWeightReturnsLogicalKeysAndRejectsInvalidAbsoluteAndDeltaRanks() {
         final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,

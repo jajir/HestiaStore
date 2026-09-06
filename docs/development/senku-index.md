@@ -77,6 +77,8 @@ public final class SenkuIndexBuilder<K, V> {
     public SenkuIndexBuilder<K, V> compression(Compression compression);
 
     public SenkuWriting<K, V> create();
+
+    public SenkuLongSetWriting createLongSet(LongToIntFunction shardHashFunction);
 }
 
 public interface SenkuWriting<K, V> {
@@ -87,6 +89,10 @@ public interface SenkuWriting<K, V> {
 }
 
 public interface SenkuReady<K, V> extends AutoCloseable {
+
+    long recordCount();
+
+    Optional<SenkuLongKeySummary> longKeySummary();
 
     Stream<Entry<K, V>> openStream();
 
@@ -100,6 +106,16 @@ concurrently; puts for one key always use the same stripe lock and merge
 atomically. Operations on different keys or concurrent operations on the same
 key have no guaranteed order. Duplicate values for one key are merged rather
 than resolved by call order.
+For a pure natural-long set, register `SenkuMergeFunctions.longSet()` and call
+`createLongSet(LongToIntFunction)`. The builder requires the exact built-in long
+and null descriptors and this explicit reducer. The returned
+`SenkuLongSetWriting.putLong(long)` uses primitive keys, occupancy bits and no
+value array. Generic `NullValue` callbacks do not select set semantics: they
+still receive logical keys and execute for duplicates. Both entry points share
+the same ingestor, mutation locks, admission, rotation and failure handling.
+Generic ingestion searches a stripe table once to insert or merge; resizing
+may require a second probe. A failed reducer leaves the prior value unchanged.
+There is no array/batch submission API; each put retains its existing atomicity.
 `putIfAbsent` and conditional `replace` are intentionally excluded because they
 would add state-resolution work.
 
@@ -595,10 +611,23 @@ primitive signed ordering compatible with `TypeDescriptorLong`; generic
 descriptors use their comparator through an index-based introsort with a
 heapsort fallback.
 For a detached batch of at least 8,192 entries with more than one shard, ranges
-are sorted on a process-wide daemon fork-join pool capped at four workers.
-Smaller batches and single-shard indexes sort serially. Page encoding and
-directory writes remain sequential on the flushing caller and publish into a
-`flush/flush-N/` directory.
+are sorted on a process-wide daemon fork-join pool with target parallelism at
+most four. Smaller batches and single-shard indexes sort serially. For large
+batches with exact long keys and exact long or null values, independent page
+encoding and compression use that same pool. Generic serializers remain on the
+caller thread. `SenkuFlushPagePipeline` retains at most the configured pool
+parallelism in outstanding pages per flush and shares a 64 MiB reservation
+budget for Java page working bytes across indexes. Reservations include bounded
+buffer growth, input materialization and compressed output; native Zstd contexts
+are separately bounded by the worker count. Oversized configured pages are
+split to fit the reservation budget.
+
+The flushing caller alone appends prepared chunks through `LargeFileWriterTx`,
+in shard/page order, and publishes into `flush/flush-N/`. Prepared chunks carry
+the complete compression and magic-number flags and are not compressed again.
+On failure, outstanding preparation tasks are joined before releasing their
+reservations and detached input maps. Part commit, shard-index commit and final
+manifest publication remain ordered on the caller thread.
 A page never contains entries from two shards: the writer closes the current
 page when it reaches `maxKeysPerPage` or at every non-empty shard boundary,
 whichever comes first. Every page starts with fresh differential-key state so
@@ -861,6 +890,10 @@ Such an unfinished index is invalid and must be removed externally.
    output at the next level. If exactly one run remains at a level while another
    run exists at a higher level, perform a one-input promotion: rewrite that run
    alone at the next level. Repeat until exactly one run remains for the shard.
+   Partial groups and singleton promotions become eligible only after no
+   committed flushes and no active L0 batch remain. Full-fan-in run merges may
+   still proceed beside L0 work. This avoids promoting an incomplete visible
+   group immediately before the last L0 batch adds more runs.
 6. Carry an already-single run without rewriting it when no higher-level run
    exists for that shard.
 7. Delete every obsolete committed flush generation, non-terminal run, and
@@ -895,6 +928,25 @@ does not recover or resume that unfinished index.
 ![Senku finishWriting ready-marker publication](images/senku-finalization.png)
 
 ### Sorted Streaming
+
+`SenkuReady.recordCount()` sums the exact counts of validated terminal run
+manifests with overflow checks. It does not read data pages. Built-in natural
+long run writers also collect up to 256 representative logical keys while
+emitting their deduplicated output. Positive bucket weights sum to the run's
+exact count. The optional versioned summary is published with its run manifest;
+input summaries are never propagated across a deduplication merge.
+
+`longKeySummary()` merges only surviving terminal distributions into at most
+4,096 weighted representatives. These are approximate distribution bins, not
+exact global-ordinal samples or a membership index; no formal quantile-error
+bound is promised. Missing summaries in nonempty old runs produce
+`Optional.empty()`, allowing callers to fall back to scanning. Empty runs need
+no summary. Arbitrary descriptors do not enable the natural-long summary path.
+
+Metadata counts and distributions are not a data-integrity audit: they do not
+read every chunk, validate all decoded keys, or detect cross-shard duplicates.
+Applications requiring readback verification must consume a complete stream
+and compare its observed count with `recordCount()`.
 
 `open()` validates `ready.properties` and the complete terminal-run layout
 before returning `SenkuReady`. `openStream()` opens one sequential cursor for
@@ -1367,9 +1419,15 @@ Each bit of `paritySyndrome` specifies the required parity of the corresponding
 mask. An empty mask array and syndrome zero select the entire fixed-weight
 domain. An empty domain is invalid.
 
-Ranks preserve numeric key order, so gap encoding operates on ranks while
-ingestion, sharding, comparisons, duplicate reducers, and returned entries
-continue to use the original logical longs. The first rank in each page is
+Ranks preserve numeric key order. Ingestion, sharding, generic duplicate
+reducers and returned entries use logical longs. Primitive maintenance cursors,
+queue comparisons and page writes retain encoded ranks between identical codec
+domains, avoiding an unrank/rank pair per record. Domain matching checks bit
+width, population, ordered parity masks and syndrome, not just codec ID.
+Arbitrary duplicate reducers receive a lazily decoded logical key; the explicit
+long-set reducer needs no callback. Run sampling decodes only selected keys.
+Compressed pages are still decompressed and delta-varints decoded/re-encoded;
+this is not compressed-blob concatenation. The first rank in each page is
 eight-byte big-endian; subsequent ranks use canonical unsigned LEB128 gaps.
 Readers reject ranks outside the domain, and writers reject keys with wrong
 bit width, set-bit count, or parity. The immutable codec shares a bounded
@@ -1991,7 +2049,9 @@ consumption. The queue bound limits only submitted in-memory work; it neither
 bounds committed sources on disk nor fixes that starvation risk.
 
 During `finishWriting()`, the same coordinator enters drain mode. Drain mode may
-reserve a partial flush group and partial same-level run groups, but it never
+reserve a partial flush group. Partial same-level run groups and singleton
+promotions wait until all committed flushes and the active L0 batch are gone.
+Full-fan-in compactions remain eligible while L0 jobs are active. Drain never
 merges runs from different numeric levels. A lone run is promoted by a one-input
 rewrite when a higher-level run still exists. Every job still respects
 `mergeFanIn` and `maintenanceThreads`. Drain completes only after a scan that
@@ -2063,8 +2123,9 @@ for merge output are not represented by queue saturation.
   input distribution is not known in advance.
 - Move detached-batch publication off the caller thread if benchmarks show that
   one caller paying the complete flush cost harms producer scheduling.
-- Add primitive or batch ingestion and flatter in-memory storage if object and
-  map overhead dominates.
+- Consider bounded batch submission if measurements show per-call admission
+  overhead remains significant after primitive set ingestion. Specify array
+  ownership and partial acceptance on failure before introducing that API.
 - Refill executor capacity from the active L0 batch during ordinary `WRITING`
   completion handling if benchmarks show that waiting for the next three-second
   scan leaves workers idle. This refill needs no directory scan because the

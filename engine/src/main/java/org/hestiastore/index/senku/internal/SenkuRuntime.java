@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.ToIntFunction;
+import java.util.function.LongToIntFunction;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -21,6 +22,10 @@ import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
 import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeDescriptorLong;
+import org.hestiastore.index.datatype.TypeDescriptorNull;
+import org.hestiastore.index.senku.SenkuLongSetWriting;
+import org.hestiastore.index.senku.SenkuMergeFunctions;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.senku.SenkuMergeFunction;
@@ -79,6 +84,64 @@ public final class SenkuRuntime {
             final int maintenanceThreads, final int maintenanceQueueSize,
             final int diskIoBufferSize, final long maxEntriesPerPart,
             final KeyPageCodec<K> keyPageCodec, final Compression compression) {
+        return createRuntime(directory, keyTypeDescriptor, valueTypeDescriptor,
+                mergeFunction, shardHashFunction, shardCount,
+                maxInMemoryEntries, initialMapCapacity, maxKeysPerPage,
+                mergeFanIn, maintenanceThreads, maintenanceQueueSize,
+                diskIoBufferSize, maxEntriesPerPart, keyPageCodec, compression,
+                null);
+    }
+
+    /**
+     * Assembles an explicitly selected built-in primitive long set.
+     *
+     * @param directory             new index root
+     * @param longShardHashFunction primitive persistent-shard hash
+     * @param shardCount            fixed shard count
+     * @param maxInMemoryEntries    rotation threshold
+     * @param initialMapCapacity    capacity across mutation stripes
+     * @param maxKeysPerPage        page entry limit
+     * @param mergeFanIn            merge input limit
+     * @param maintenanceThreads    worker count
+     * @param maintenanceQueueSize  bounded queue size
+     * @param diskIoBufferSize      disk buffer size
+     * @param maxEntriesPerPart     part entry limit
+     * @param keyPageCodec          long-key encoding
+     * @param compression           chunk compression
+     * @return primitive view over one exclusive writing runtime
+     */
+    public static SenkuLongSetWriting createLongSet(final Directory directory,
+            final LongToIntFunction longShardHashFunction, final int shardCount,
+            final int maxInMemoryEntries, final int initialMapCapacity,
+            final int maxKeysPerPage, final int mergeFanIn,
+            final int maintenanceThreads, final int maintenanceQueueSize,
+            final int diskIoBufferSize, final long maxEntriesPerPart,
+            final KeyPageCodec<Long> keyPageCodec,
+            final Compression compression) {
+        final LongToIntFunction hash = Vldtn
+                .requireNonNull(longShardHashFunction, "longShardHashFunction");
+        return new SenkuLongSetWritingRuntime(
+                createRuntime(directory, new TypeDescriptorLong(),
+                        new TypeDescriptorNull(), SenkuMergeFunctions.longSet(),
+                        key -> hash.applyAsInt(key.longValue()), shardCount,
+                        maxInMemoryEntries, initialMapCapacity, maxKeysPerPage,
+                        mergeFanIn, maintenanceThreads, maintenanceQueueSize,
+                        diskIoBufferSize, maxEntriesPerPart, keyPageCodec,
+                        compression, hash));
+    }
+
+    private static <K, V> SenkuWritingRuntime<K, V> createRuntime(
+            final Directory directory,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final SenkuMergeFunction<K, V> mergeFunction,
+            final ToIntFunction<K> shardHashFunction, final int shardCount,
+            final int maxInMemoryEntries, final int initialMapCapacity,
+            final int maxKeysPerPage, final int mergeFanIn,
+            final int maintenanceThreads, final int maintenanceQueueSize,
+            final int diskIoBufferSize, final long maxEntriesPerPart,
+            final KeyPageCodec<K> keyPageCodec, final Compression compression,
+            final LongToIntFunction longShardHashFunction) {
         final Directory root = Vldtn.requireNonNull(directory, "directory");
         final TypeDescriptor<K> keys = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
@@ -112,10 +175,12 @@ public final class SenkuRuntime {
             final ReentrantLock writingLock = new ReentrantLock();
             final SenkuFlushWriter<K, V> flushWriter = new SenkuFlushWriter<>(
                     flush, keys, values, hash, shardCount, maxKeysPerPage,
-                    maxEntriesPerPart, blockSize, format);
+                    maxEntriesPerPart, blockSize, format,
+                    longShardHashFunction);
             final SenkuIngestor<K, V> ingestor = new SenkuIngestor<>(
                     new ReentrantLock(), merge, hash, flushWriter,
-                    maxInMemoryEntries, initialMapCapacity);
+                    maxInMemoryEntries, initialMapCapacity,
+                    longShardHashFunction);
             workers = new ThreadPoolExecutor(maintenanceThreads,
                     maintenanceThreads, 0L, TimeUnit.MILLISECONDS,
                     new ArrayBlockingQueue<>(maintenanceQueueSize),

@@ -8,27 +8,31 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.LongConsumer;
 import java.util.function.ToIntFunction;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.senku.SenkuMergeFunction;
 
 /**
  * Bounded open-addressed map used by one Senku mutation stripe. The configured
- * shard hash is independently avalanched before probing, so collision-heavy
- * key hash codes do not create {@link java.util.HashMap} tree bins. Keys and
- * values are stored in flat arrays without one node allocation per mapping.
+ * shard hash is independently avalanched before probing, so collision-heavy key
+ * hash codes do not create {@link java.util.HashMap} tree bins. Keys and values
+ * are stored in flat arrays without one node allocation per mapping.
  *
- * <p>The map accepts non-null keys and values and does not support removal.
+ * <p>
+ * The map accepts non-null keys and values and does not support removal.
  * Callers provide external synchronization while a batch is mutable; detached
- * batches can be traversed without synchronization.</p>
+ * batches can be traversed without synchronization.
+ * </p>
  *
  * @param <K> key type
  * @param <V> value type
  */
-final class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
+class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
 
-    private static final int MAXIMUM_CAPACITY = 1 << 30;
+    static final int MAXIMUM_CAPACITY = 1 << 30;
     private static final int MINIMUM_CAPACITY = 4;
     private static final int LOAD_FACTOR_NUMERATOR = 3;
     private static final int LOAD_FACTOR_DENOMINATOR = 4;
@@ -59,8 +63,7 @@ final class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
             final ToIntFunction<K> hashFunction) {
         initialCapacity = tableSizeFor(Vldtn.requireGreaterThanZero(
                 requestedCapacity, "requestedCapacity"));
-        this.hashFunction = Vldtn.requireNonNull(hashFunction,
-                "hashFunction");
+        this.hashFunction = Vldtn.requireNonNull(hashFunction, "hashFunction");
     }
 
     /** {@inheritDoc} */
@@ -99,8 +102,7 @@ final class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
     }
 
     /**
-     * Adds or replaces a mapping using a hash already computed by the
-     * ingestor.
+     * Adds or replaces a mapping using a hash already computed by the ingestor.
      *
      * @param key            non-null key
      * @param value          non-null value
@@ -126,6 +128,62 @@ final class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
         size++;
         modificationCount++;
         return null;
+    }
+
+    /**
+     * Inserts or reduces one mapping with one probe in the normal case. A
+     * failing reducer leaves the existing value untouched.
+     *
+     * @param key            non-null logical key
+     * @param value          non-null incoming value
+     * @param configuredHash previously computed shard hash
+     * @param mergeFunction  duplicate reducer
+     * @return true when a distinct key was inserted
+     */
+    boolean mergeWithHash(final K key, final V value, final int configuredHash,
+            final SenkuMergeFunction<K, V> mergeFunction) {
+        ensureAllocated();
+        final int tableHash = tableHash(configuredHash);
+        int slot = findSlot(key, tableHash, keys, hashes);
+        if (keys[slot] != null) {
+            final V merged;
+            try {
+                merged = Vldtn.requireNonNull(
+                        mergeFunction.apply(key, valueAt(slot), value),
+                        "mergedValue");
+            } catch (Exception e) {
+                if (e instanceof IndexException) {
+                    throw (IndexException) e;
+                }
+                throw new IndexException("Senku merge function failed.", e);
+            }
+            values[slot] = merged;
+            return false;
+        }
+        if (size >= resizeThreshold) {
+            resize();
+            slot = findSlot(key, tableHash, keys, hashes);
+        }
+        keys[slot] = key;
+        values[slot] = value;
+        hashes[slot] = tableHash;
+        size++;
+        modificationCount++;
+        return true;
+    }
+
+    /** @return whether this batch explicitly stores a primitive long set */
+    boolean isLongSet() {
+        return false;
+    }
+
+    /**
+     * Traverses an explicitly selected primitive long set without boxing.
+     *
+     * @param consumer primitive key consumer
+     */
+    void forEachLong(final LongConsumer consumer) {
+        throw new IllegalStateException("Primitive long set is not available.");
     }
 
     /** {@inheritDoc} */
@@ -154,8 +212,7 @@ final class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
 
     /** {@inheritDoc} */
     @Override
-    public void forEach(
-            final BiConsumer<? super K, ? super V> consumer) {
+    public void forEach(final BiConsumer<? super K, ? super V> consumer) {
         Vldtn.requireNonNull(consumer, "consumer");
         final int expectedModificationCount = modificationCount;
         for (int index = 0; index < keys.length; index++) {
@@ -169,9 +226,9 @@ final class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
     }
 
     /**
-     * Independently avalanches the configured hash for table probing. This
-     * must remain independent from mutation-stripe selection because every
-     * entry in one stripe shares the selector's low bits.
+     * Independently avalanches the configured hash for table probing. This must
+     * remain independent from mutation-stripe selection because every entry in
+     * one stripe shares the selector's low bits.
      *
      * @param configuredHash configured persistent-shard hash
      * @return mixed table hash
@@ -247,14 +304,26 @@ final class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
         return slot;
     }
 
-    private static int threshold(final int capacity) {
+    /**
+     * Calculates the bounded load threshold shared by both ingestion layouts.
+     *
+     * @param capacity normalized table capacity
+     * @return maximum size before growth is needed
+     */
+    static int threshold(final int capacity) {
         if (capacity == MAXIMUM_CAPACITY) {
             return MAXIMUM_CAPACITY - 1;
         }
         return capacity / LOAD_FACTOR_DENOMINATOR * LOAD_FACTOR_NUMERATOR;
     }
 
-    private static int tableSizeFor(final int requestedCapacity) {
+    /**
+     * Normalizes a validated requested capacity to the supported power of two.
+     *
+     * @param requestedCapacity positive requested table capacity
+     * @return bounded normalized capacity
+     */
+    static int tableSizeFor(final int requestedCapacity) {
         final int bounded = Math.max(MINIMUM_CAPACITY, requestedCapacity);
         if (bounded >= MAXIMUM_CAPACITY) {
             return MAXIMUM_CAPACITY;

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -19,6 +20,7 @@ import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.properties.PropertyMutationSession;
 import org.hestiastore.index.properties.PropertyStoreImpl;
 import org.hestiastore.index.properties.PropertyWriter;
+import org.hestiastore.index.senku.SenkuLongKeySummary;
 
 /**
  * Reads, validates, and publishes the first Senku property formats.
@@ -27,6 +29,9 @@ final class SenkuMetadataCodec {
 
     private static final String PART_COUNT = "partCount";
     private static final String RECORD_COUNT = "recordCount";
+    private static final String SUMMARY_VERSION = "longSummaryVersion";
+    private static final String SUMMARY_KEYS = "longSummaryKeys";
+    private static final String SUMMARY_WEIGHTS = "longSummaryWeights";
     private static final String SHARD_COUNT = "shardCount";
     private static final String FORMAT_VERSION = "formatVersion";
     private static final String KEY_CODEC = "keyPageCodec";
@@ -45,6 +50,8 @@ final class SenkuMetadataCodec {
     private static final Set<String> FLUSH_KEYS = Set.of(PART_COUNT);
     private static final Set<String> RUN_KEYS = Set.of(PART_COUNT,
             RECORD_COUNT);
+    private static final Set<String> SUMMARIZED_RUN_KEYS = Set.of(PART_COUNT,
+            RECORD_COUNT, SUMMARY_VERSION, SUMMARY_KEYS, SUMMARY_WEIGHTS);
     private static final Set<String> READY_KEYS = Set.of(SHARD_COUNT);
 
     private SenkuMetadataCodec() {
@@ -97,6 +104,13 @@ final class SenkuMetadataCodec {
                     Integer.toString(validated.partCount()));
             writer.setString(RECORD_COUNT,
                     Long.toString(validated.recordCount()));
+            validated.longKeySummary().ifPresent(summary -> {
+                writer.setString(SUMMARY_VERSION, "1");
+                writer.setString(SUMMARY_KEYS,
+                        encodeSummaryArray(summary.keys()));
+                writer.setString(SUMMARY_WEIGHTS,
+                        encodeSummaryArray(summary.weights()));
+            });
         });
     }
 
@@ -107,11 +121,26 @@ final class SenkuMetadataCodec {
      * @return validated run counts
      */
     static SenkuRunManifest readRunManifest(final Directory directory) {
-        final Properties properties = readExact(directory,
-                SenkuFileNames.MANIFEST_FILE, RUN_KEYS);
+        final Properties properties = readProperties(directory,
+                SenkuFileNames.MANIFEST_FILE);
+        final boolean summarized = properties.containsKey(SUMMARY_VERSION);
+        requireExactKeys(properties, SenkuFileNames.MANIFEST_FILE,
+                summarized ? SUMMARIZED_RUN_KEYS : RUN_KEYS);
         try {
-            return new SenkuRunManifest(parseInt(properties, PART_COUNT),
-                    parseLong(properties, RECORD_COUNT));
+            final long count = parseLong(properties, RECORD_COUNT);
+            final Optional<SenkuLongKeySummary> summary;
+            if (summarized) {
+                if (parseInt(properties, SUMMARY_VERSION) != 1) {
+                    throw invalidMetadata("Unsupported long summary version.");
+                }
+                summary = Optional.of(SenkuLongKeySummary.of(count,
+                        parseSummaryArray(properties, SUMMARY_KEYS),
+                        parseSummaryArray(properties, SUMMARY_WEIGHTS)));
+            } else {
+                summary = Optional.empty();
+            }
+            return new SenkuRunManifest(parseInt(properties, PART_COUNT), count,
+                    summary);
         } catch (IllegalArgumentException e) {
             throw new IndexException("Invalid sorted-run manifest.", e);
         }
@@ -284,11 +313,35 @@ final class SenkuMetadataCodec {
             final byte[] buffer = new byte[256];
             int count = reader.read(buffer);
             while (count != -1) {
+                if (output.size() + count > 262_144) {
+                    throw invalidMetadata(
+                            "Senku metadata exceeds its bounded size.");
+                }
                 output.write(buffer, 0, count);
                 count = reader.read(buffer);
             }
             return output.toByteArray();
         }
+    }
+
+    private static String encodeSummaryArray(final long[] values) {
+        return Arrays.stream(values).mapToObj(Long::toString)
+                .collect(Collectors.joining(","));
+    }
+
+    private static long[] parseSummaryArray(final Properties properties,
+            final String name) {
+        final String value = properties.getProperty(name);
+        final String[] fields = value.isEmpty() ? new String[0]
+                : value.split(",", SenkuLongKeySummary.MAX_SAMPLES + 1);
+        if (fields.length > SenkuLongKeySummary.MAX_SAMPLES) {
+            throw invalidMetadata("Too many long summary representatives.");
+        }
+        final long[] decoded = new long[fields.length];
+        for (int index = 0; index < fields.length; index++) {
+            decoded[index] = parseCanonicalLong(fields[index], name);
+        }
+        return decoded;
     }
 
     private static int parseInt(final Properties properties,

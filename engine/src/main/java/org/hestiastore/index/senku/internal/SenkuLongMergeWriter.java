@@ -2,11 +2,13 @@ package org.hestiastore.index.senku.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.function.BooleanSupplier;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkentryfile.KeyPageCodec;
 import org.hestiastore.index.chunkentryfile.SingleChunkEntryWriterImpl;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.NullValue;
@@ -15,6 +17,7 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.senku.SenkuMergeFunction;
+import org.hestiastore.index.senku.SenkuMergeFunctions;
 
 /**
  * Primitive-long-key sorted merge and run encoder for built-in long and null
@@ -30,12 +33,14 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
 final class SenkuLongMergeWriter<V> {
 
     private final SenkuStorageFormat format;
+    private final KeyPageCodec<Long> keyCodec;
     private final List<SenkuMergeSource> sources;
     private final Directory directory;
     private final TypeDescriptorLong keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final SenkuMergeFunction<Long, V> mergeFunction;
     private final boolean primitiveLongValue;
+    private final boolean longSet;
     private final int maxEncodedPageBytes;
     private final int maxKeysPerPage;
     private final long maxEntriesPerPart;
@@ -45,6 +50,8 @@ final class SenkuLongMergeWriter<V> {
             SenkuLongMergeWriter::compareCursors);
 
     private long mergedKey;
+    private long logicalMergedKey;
+    private boolean logicalMergedKeyAvailable;
     private long mergedLongValue;
     private V mergedValue;
 
@@ -85,6 +92,7 @@ final class SenkuLongMergeWriter<V> {
             final BooleanSupplier publicationAllowed,
             final SenkuStorageFormat format) {
         this.format = Vldtn.requireNonNull(format, "format");
+        keyCodec = format.keyCodec();
         this.sources = List.copyOf(Vldtn.requireNonNull(sources, "sources"));
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -104,6 +112,8 @@ final class SenkuLongMergeWriter<V> {
                 (long) this.maxKeysPerPage * maximumBytesPerEntry);
         this.mergeFunction = Vldtn.requireNonNull(mergeFunction,
                 "mergeFunction");
+        longSet = !primitiveLongValue
+                && mergeFunction == (Object) SenkuMergeFunctions.longSet();
         this.maxEntriesPerPart = Vldtn.requireGreaterThanZero(maxEntriesPerPart,
                 "maxEntriesPerPart");
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
@@ -121,6 +131,7 @@ final class SenkuLongMergeWriter<V> {
         final LargeFileWriterTx writer = new LargeFile(directory, dataBlockSize,
                 maxEntriesPerPart, 0, format).openWriterTx();
         long recordCount = 0L;
+        final SenkuLongKeySampler sampler = new SenkuLongKeySampler();
         try {
             openInputs();
             while (!queue.isEmpty()) {
@@ -130,6 +141,9 @@ final class SenkuLongMergeWriter<V> {
                 int pageEntries = 0;
                 while (pageEntries < maxKeysPerPage && mergeNext()) {
                     writeMerged(page);
+                    if (sampler.selectNext()) {
+                        sampler.addSelectedKey(logicalMergedKey());
+                    }
                     pageEntries++;
                     recordCount = Math.incrementExact(recordCount);
                 }
@@ -137,7 +151,7 @@ final class SenkuLongMergeWriter<V> {
             }
             final int partCount = writer.commit();
             final SenkuRunManifest manifest = new SenkuRunManifest(partCount,
-                    recordCount);
+                    recordCount, Optional.of(sampler.snapshot()));
             Vldtn.requireTrue(publicationAllowed.getAsBoolean(),
                     "Senku run publication is no longer allowed");
             SenkuMetadataCodec.publishRunManifest(directory, manifest);
@@ -163,6 +177,9 @@ final class SenkuLongMergeWriter<V> {
                                 primitiveLongValue, format.keyCodec());
                 opened.add(cursor);
                 if (cursor.hasCurrent()) {
+                    Vldtn.requireTrue(
+                            keyCodec.hasSameEncoding(cursor.keyCodec()),
+                            "Merge source and target codec domains differ");
                     queue.add(cursor);
                 }
             }
@@ -179,14 +196,15 @@ final class SenkuLongMergeWriter<V> {
         SenkuLongSourceCursor active = null;
         try {
             active = queue.remove();
-            mergedKey = active.key();
+            mergedKey = active.encodedKey();
+            logicalMergedKeyAvailable = false;
             if (primitiveLongValue) {
                 mergedLongValue = active.value();
             } else {
                 mergedValue = nullValue();
             }
             active.advance();
-            while (active.hasCurrent() && active.key() == mergedKey) {
+            while (active.hasCurrent() && active.encodedKey() == mergedKey) {
                 mergeCurrent(active);
                 active.advance();
             }
@@ -198,7 +216,8 @@ final class SenkuLongMergeWriter<V> {
                 do {
                     mergeCurrent(active);
                     active.advance();
-                } while (active.hasCurrent() && active.key() == mergedKey);
+                } while (active.hasCurrent()
+                        && active.encodedKey() == mergedKey);
                 if (active.hasCurrent()) {
                     queue.add(active);
                 }
@@ -219,24 +238,34 @@ final class SenkuLongMergeWriter<V> {
     }
 
     private void mergeCurrent(final SenkuLongSourceCursor cursor) {
-        if (primitiveLongValue) {
-            mergedLongValue = ((Long) Vldtn.requireNonNull(
-                    mergeFunction.apply(mergedKey, longValue(mergedLongValue),
-                            longValue(cursor.value())),
-                    "mergedValue")).longValue();
+        if (longSet) {
             return;
         }
-        mergedValue = Vldtn.requireNonNull(
-                mergeFunction.apply(mergedKey, mergedValue, nullValue()),
-                "mergedValue");
+        if (primitiveLongValue) {
+            mergedLongValue = ((Long) Vldtn.requireNonNull(mergeFunction.apply(
+                    logicalMergedKey(), longValue(mergedLongValue),
+                    longValue(cursor.value())), "mergedValue")).longValue();
+            return;
+        }
+        mergedValue = Vldtn.requireNonNull(mergeFunction.apply(
+                logicalMergedKey(), mergedValue, nullValue()), "mergedValue");
     }
 
     private void writeMerged(final SingleChunkEntryWriterImpl<Long, V> page) {
         if (primitiveLongValue) {
-            page.putLongs(mergedKey, mergedLongValue);
+            page.putEncodedLongs(mergedKey, mergedLongValue, keyCodec);
             return;
         }
-        page.putLongKey(mergedKey, mergedValue);
+        page.putEncodedLongKey(mergedKey, mergedValue, keyCodec);
+    }
+
+    /** Decodes at most once for duplicate callbacks or selected sample keys. */
+    private long logicalMergedKey() {
+        if (!logicalMergedKeyAvailable) {
+            logicalMergedKey = keyCodec.decodeLongKey(mergedKey);
+            logicalMergedKeyAvailable = true;
+        }
+        return logicalMergedKey;
     }
 
     @SuppressWarnings("unchecked")
@@ -251,7 +280,7 @@ final class SenkuLongMergeWriter<V> {
 
     private SenkuLongSourceCursor pollEqualKey() {
         final SenkuLongSourceCursor cursor = queue.peek();
-        if (cursor == null || cursor.key() != mergedKey) {
+        if (cursor == null || cursor.encodedKey() != mergedKey) {
             return null;
         }
         return queue.remove();
@@ -281,7 +310,8 @@ final class SenkuLongMergeWriter<V> {
 
     private static int compareCursors(final SenkuLongSourceCursor first,
             final SenkuLongSourceCursor second) {
-        final int compared = Long.compare(first.key(), second.key());
+        final int compared = Long.compare(first.encodedKey(),
+                second.encodedKey());
         return compared == 0
                 ? Integer.compare(first.ordinal(), second.ordinal())
                 : compared;

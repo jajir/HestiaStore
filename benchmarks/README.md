@@ -28,6 +28,19 @@ This produces a runnable JMH fat-jar:
 
 ## Run benchmarks
 
+The `senku-pipeline` profile checks encoded-rank maintenance, bounded parallel
+flush preparation, and generic versus explicitly selected primitive long-set
+ingestion. It includes repeat/fork settings and GC profiling. Compare matching
+parameter sets; checkpoint jars without an `api` parameter represent generic
+ingestion. Short sustained-ingestion results can vary with maintenance phases.
+Ready-summary metadata has measurable costs on small numeric-delta merges, so
+report those alongside ranked-key improvements rather than averaging the two.
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py --repo-root . \
+  --profile senku-pipeline --output-dir /tmp/hestia-bench/senku-pipeline
+```
+
 ```sh
 java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar ChunkStoreWriteBenchmark
 java -jar benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar ChunkStoreSteadyWriteBenchmark

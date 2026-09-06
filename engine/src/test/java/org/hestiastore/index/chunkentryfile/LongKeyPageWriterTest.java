@@ -7,6 +7,45 @@ import org.hestiastore.index.IndexException;
 import org.junit.jupiter.api.Test;
 
 class LongKeyPageWriterTest {
+
+    @Test
+    void encodedRanksMatchLogicalWritesWithoutBeingRankedAgain() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[0], 0);
+        final var encodedWriter = new LongKeyPageWriter(codec);
+        final var logicalWriter = new LongKeyPageWriter(codec);
+        final var encodedBytes = new InMemoryFileWriter();
+        final var logicalBytes = new InMemoryFileWriter();
+        for (long rank = 0; rank < 6; rank++) {
+            encodedWriter.writeEncoded(encodedBytes, rank, codec);
+            logicalWriter.write(logicalBytes, codec.decodeLongKey(rank));
+        }
+        assertArrayEquals(logicalBytes.closeSequence().toByteArray(),
+                encodedBytes.closeSequence().toByteArray());
+    }
+
+    @Test
+    void encodedWritesRejectWrongDomainsAndBoundsBeforeChangingPageState() {
+        final var codec = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[] { 3 }, 0);
+        final var otherDomain = KeyPageCodecs.longFixedWeightDeltaVarint(4, 2,
+                new long[] { 3 }, 1);
+        final var writer = new LongKeyPageWriter(codec);
+        final var bytes = new InMemoryFileWriter();
+        assertThrows(IllegalArgumentException.class,
+                () -> writer.writeEncoded(bytes, 0, otherDomain));
+        assertThrows(IndexException.class,
+                () -> writer.writeEncoded(bytes, -1, codec));
+        assertThrows(IndexException.class,
+                () -> writer.writeEncoded(bytes, 2, codec));
+        writer.writeEncoded(bytes, 0, codec);
+        assertThrows(IllegalArgumentException.class,
+                () -> writer.writeEncoded(bytes, 0, codec));
+        writer.write(bytes, 12);
+        assertArrayEquals(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+                bytes.closeSequence().toByteArray());
+    }
+
     @Test
     void fixedWeightWritesRanksAndRejectsInvalidKeysBeforeWritingBytes() {
         final var writer = new LongKeyPageWriter(

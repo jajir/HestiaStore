@@ -1,6 +1,7 @@
 package org.hestiastore.index.senku.internal;
 
 import java.util.Collection;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -27,17 +28,17 @@ final class SenkuSourceCatalog {
     /**
      * Reconciles one metadata-only hierarchy observation with known sources.
      *
-     * @param observedFlushes committed flush IDs and part counts
-     * @param observedRuns committed sorted runs
+     * @param observedFlushes     committed flush IDs and part counts
+     * @param observedRuns        committed sorted runs
      * @param reservedOutputPaths planned run paths not yet accepted
      */
     void reconcile(final Map<Long, Integer> observedFlushes,
             final Collection<SenkuRunSource> observedRuns,
             final Set<String> reservedOutputPaths) {
-        final Map<Long, Integer> flushes = Vldtn.requireNonNull(
-                observedFlushes, "observedFlushes");
-        final Collection<SenkuRunSource> runSources = Vldtn.requireNonNull(
-                observedRuns, "observedRuns");
+        final Map<Long, Integer> flushes = Vldtn.requireNonNull(observedFlushes,
+                "observedFlushes");
+        final Collection<SenkuRunSource> runSources = Vldtn
+                .requireNonNull(observedRuns, "observedRuns");
         final Set<String> outputs = Vldtn.requireNonNull(reservedOutputPaths,
                 "reservedOutputPaths");
         requireKnownFlushesUnchanged(flushes);
@@ -56,8 +57,8 @@ final class SenkuSourceCatalog {
     /**
      * Selects the oldest unreserved flush group.
      *
-     * @param mergeFanIn configured fan-in
-     * @param drain whether a partial group is eligible
+     * @param mergeFanIn         configured fan-in
+     * @param drain              whether a partial group is eligible
      * @param reservedInputPaths exact already-reserved inputs
      * @return selected IDs or an empty array
      */
@@ -78,10 +79,11 @@ final class SenkuSourceCatalog {
     /**
      * Selects the deterministic lowest-level unreserved sorted-run group.
      *
-     * @param mergeFanIn configured fan-in
-     * @param drain whether partial groups and promotion are eligible
+     * @param mergeFanIn            configured fan-in
+     * @param drain                 whether partial groups and promotion are
+     *                              eligible
      * @param activeSortedRunShards shards already queued or running
-     * @param reservedInputPaths exact already-reserved inputs
+     * @param reservedInputPaths    exact already-reserved inputs
      * @return selected sources or an empty list
      */
     List<SenkuRunSource> eligibleRunSources(final int mergeFanIn,
@@ -89,8 +91,8 @@ final class SenkuSourceCatalog {
             final Set<String> reservedInputPaths) {
         final int fanIn = Vldtn.requireGreaterThanZero(mergeFanIn,
                 "mergeFanIn");
-        final Set<Integer> activeShards = Vldtn.requireNonNull(
-                activeSortedRunShards, "activeSortedRunShards");
+        final Set<Integer> activeShards = Vldtn
+                .requireNonNull(activeSortedRunShards, "activeSortedRunShards");
         final Set<String> reserved = Vldtn.requireNonNull(reservedInputPaths,
                 "reservedInputPaths");
         final List<SenkuRunSource> available = runs.values().stream()
@@ -101,17 +103,16 @@ final class SenkuSourceCatalog {
         while (start < available.size()) {
             final SenkuRunSource first = available.get(start);
             int end = start + 1;
-            while (end < available.size() && sameGroup(first,
-                    available.get(end))) {
+            while (end < available.size()
+                    && sameGroup(first, available.get(end))) {
                 end++;
             }
             final int count = end - start;
             if (count >= fanIn) {
                 return List.copyOf(available.subList(start, start + fanIn));
             }
-            if (drain && (count > 1
-                    || hasHigherLevel(available, first.shardId(),
-                            first.level()))) {
+            if (drain && (count > 1 || hasHigherLevel(available,
+                    first.shardId(), first.level()))) {
                 return List.copyOf(available.subList(start, end));
             }
             start = end;
@@ -131,7 +132,7 @@ final class SenkuSourceCatalog {
      * Replaces accepted flush inputs with all completed L0 outputs.
      *
      * @param inputFlushIds exact accepted batch inputs
-     * @param outputs completed L0 run sources
+     * @param outputs       completed L0 run sources
      */
     void acceptL0(final long[] inputFlushIds,
             final Collection<SenkuRunSource> outputs) {
@@ -141,8 +142,8 @@ final class SenkuSourceCatalog {
                 .requireNonNull(outputs, "outputs");
         for (final long input : inputs) {
             if (!flushPartCounts.containsKey(input)) {
-                throw new IndexException("Unknown accepted flush input " + input
-                        + ".");
+                throw new IndexException(
+                        "Unknown accepted flush input " + input + ".");
             }
         }
         requireNewOutputs(completed);
@@ -165,8 +166,8 @@ final class SenkuSourceCatalog {
         for (final SenkuRunSource input : replaced) {
             final String path = runPath(Vldtn.requireNonNull(input, "input"));
             if (!runs.containsKey(path)) {
-                throw new IndexException("Unknown accepted run input '" + path
-                        + "'.");
+                throw new IndexException(
+                        "Unknown accepted run input '" + path + "'.");
             }
         }
         final List<SenkuRunSource> outputs = List
@@ -195,11 +196,14 @@ final class SenkuSourceCatalog {
 
     private void requireKnownFlushesUnchanged(
             final Map<Long, Integer> observed) {
-        for (final Map.Entry<Long, Integer> known : flushPartCounts.entrySet()) {
+        for (final Map.Entry<Long, Integer> known : flushPartCounts
+                .entrySet()) {
             final Integer observedPartCount = observed.get(known.getKey());
             if (!known.getValue().equals(observedPartCount)) {
-                throw new IndexException("Known flush source is missing or changed: "
-                        + SenkuFileNames.flushDirectory(known.getKey()));
+                throw new IndexException(
+                        "Known flush source is missing or changed: "
+                                + SenkuFileNames
+                                        .flushDirectory(known.getKey()));
             }
         }
     }
@@ -213,14 +217,13 @@ final class SenkuSourceCatalog {
         }
     }
 
-    private void requireNewOutputs(
-            final Collection<SenkuRunSource> outputs) {
+    private void requireNewOutputs(final Collection<SenkuRunSource> outputs) {
         final Set<String> newPaths = new HashSet<>();
         for (final SenkuRunSource output : outputs) {
             final String path = runPath(Vldtn.requireNonNull(output, "output"));
             if (runs.containsKey(path) || !newPaths.add(path)) {
-                throw new IndexException("Run output already exists in catalog: "
-                        + path);
+                throw new IndexException(
+                        "Run output already exists in catalog: " + path);
             }
         }
     }
@@ -229,18 +232,20 @@ final class SenkuSourceCatalog {
             final Collection<SenkuRunSource> observedSources) {
         final Map<String, SenkuRunSource> observed = new LinkedHashMap<>();
         for (final SenkuRunSource source : observedSources) {
-            final String path = runPath(Vldtn.requireNonNull(source,
-                    "runSource"));
+            final String path = runPath(
+                    Vldtn.requireNonNull(source, "runSource"));
             if (observed.put(path, source) != null) {
-                throw new IndexException("Duplicate run source '" + path + "'.");
+                throw new IndexException(
+                        "Duplicate run source '" + path + "'.");
             }
         }
         for (final Map.Entry<String, SenkuRunSource> known : runs.entrySet()) {
             final SenkuRunSource current = observed.get(known.getKey());
             if (current == null || !sameManifest(known.getValue().manifest(),
                     current.manifest())) {
-                throw new IndexException("Known run source is missing or changed: "
-                        + known.getKey());
+                throw new IndexException(
+                        "Known run source is missing or changed: "
+                                + known.getKey());
             }
         }
     }
@@ -248,7 +253,23 @@ final class SenkuSourceCatalog {
     private static boolean sameManifest(final SenkuRunManifest first,
             final SenkuRunManifest second) {
         return first.partCount() == second.partCount()
-                && first.recordCount() == second.recordCount();
+                && first.recordCount() == second.recordCount()
+                && sameSummary(first, second);
+    }
+
+    private static boolean sameSummary(final SenkuRunManifest first,
+            final SenkuRunManifest second) {
+        if (first.longKeySummary().isPresent() != second.longKeySummary()
+                .isPresent()) {
+            return false;
+        }
+        if (first.longKeySummary().isEmpty()) {
+            return true;
+        }
+        return Arrays.equals(first.longKeySummary().orElseThrow().keys(),
+                second.longKeySummary().orElseThrow().keys())
+                && Arrays.equals(first.longKeySummary().orElseThrow().weights(),
+                        second.longKeySummary().orElseThrow().weights());
     }
 
     private static boolean sameGroup(final SenkuRunSource first,

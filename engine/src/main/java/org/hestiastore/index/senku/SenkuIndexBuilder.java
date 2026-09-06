@@ -1,12 +1,15 @@
 package org.hestiastore.index.senku;
 
 import java.util.function.ToIntFunction;
+import java.util.function.LongToIntFunction;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.KeyPageCodec;
 import org.hestiastore.index.chunkentryfile.KeyPageCodecs;
 import org.hestiastore.index.chunkstore.Compression;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.datatype.TypeDescriptorLong;
+import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.senku.internal.SenkuRuntime;
 import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
@@ -180,6 +183,39 @@ public final class SenkuIndexBuilder<K, V> {
     }
 
     /**
+     * Creates an explicitly selected primitive long-key set. This requires
+     * exact built-in long and null descriptors and the identity-stable
+     * {@link SenkuMergeFunctions#longSet()} reducer. The supplied primitive
+     * hash replaces the generic hash setting for this writer. Validation occurs
+     * before creating files or starting maintenance threads.
+     *
+     * @param longShardHashFunction primitive persistent-shard hash
+     * @return primitive set handle with the normal Senku lifecycle
+     */
+    @SuppressWarnings("unchecked")
+    public SenkuLongSetWriting createLongSet(
+            final LongToIntFunction longShardHashFunction) {
+        Vldtn.requireNonNull(longShardHashFunction, "longShardHashFunction");
+        Vldtn.requireTrue(
+                keyTypeDescriptor.getClass() == TypeDescriptorLong.class
+                        && valueTypeDescriptor
+                                .getClass() == TypeDescriptorNull.class,
+                "Long sets require exact TypeDescriptorLong and TypeDescriptorNull descriptors");
+        Vldtn.requireTrue(
+                functions.requireFunction() == SenkuMergeFunctions.longSet(),
+                "Long sets require SenkuMergeFunctions.longSet()");
+        validate(false);
+        final SenkuLongSetWriting writing = SenkuRuntime.createLongSet(
+                directory, longShardHashFunction, shardCount,
+                maxInMemoryEntries, initialMapCapacity(), maxKeysPerPage,
+                mergeFanIn, maintenanceThreads, maintenanceQueueSize,
+                diskIoBufferSize, maxEntriesPerPart,
+                (KeyPageCodec<Long>) keyPageCodec, compression);
+        functions.freeze();
+        return writing;
+    }
+
+    /**
      * Selects a matched sorted-key encoder and decoder for every page.
      *
      * @param value built-in key encoding compatible with the key descriptor
@@ -203,8 +239,14 @@ public final class SenkuIndexBuilder<K, V> {
     }
 
     void validate() {
+        validate(true);
+    }
+
+    private void validate(final boolean genericHashRequired) {
         keyPageCodec.validate(keyTypeDescriptor);
-        Vldtn.requireNonNull(shardHashFunction, "shardHashFunction");
+        if (genericHashRequired) {
+            Vldtn.requireNonNull(shardHashFunction, "shardHashFunction");
+        }
         Vldtn.requireNonNull(shardCount, "shardCount");
         Vldtn.requireNonNull(maxInMemoryEntries, "maxInMemoryEntries");
         Vldtn.requireNonNull(mergeFanIn, "mergeFanIn");
