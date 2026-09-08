@@ -18,13 +18,13 @@
         "main": {
           "latestPointerPath": "history/segment-index-nightly/latest-main.json",
           "sha": "d3ef04d30386ff556237923d24a98745e3710b30",
-          "timestampUtc": "2026-09-07T03:10:44.055637+00:00"
+          "timestampUtc": "2026-09-08T03:09:50.538750+00:00"
         }
       },
       "latestChannel": "main",
       "latestPointerPath": "history/segment-index-nightly/latest-main.json",
       "sha": "d3ef04d30386ff556237923d24a98745e3710b30",
-      "timestampUtc": "2026-09-07T03:10:44.055637+00:00"
+      "timestampUtc": "2026-09-08T03:09:50.538750+00:00"
     },
     "segment-index-pr-smoke": {
       "channels": {
