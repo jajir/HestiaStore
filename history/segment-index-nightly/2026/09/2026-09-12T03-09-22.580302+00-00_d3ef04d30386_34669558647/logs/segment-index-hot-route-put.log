@@ -1,0 +1,79 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putHotRoute
+# Parameters: (contextLogging = false)
+
+# Run progress: 0.00% complete, ETA 00:00:28
+# Fork: 1 of 1
+# Warmup Iteration   1: 3433448.778 ops/s
+# Warmup Iteration   2: 4214037.837 ops/s
+Iteration   1: 4268415.301 ops/s
+Iteration   2: 4277595.022 ops/s
+Iteration   3: 4236761.753 ops/s
+Iteration   4: 4308080.332 ops/s
+Iteration   5: 4296414.300 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putHotRoute":
+  4277453.342 ±(99.9%) 106068.328 ops/s [Average]
+  (min, avg, max) = (4236761.753, 4277453.342, 4308080.332), stdev = 27545.608
+  CI (99.9%): [4171385.013, 4383521.670] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute
+# Parameters: (contextLogging = false)
+
+# Run progress: 50.00% complete, ETA 00:00:15
+# Fork: 1 of 1
+# Warmup Iteration   1: 1754510.702 ops/s
+# Warmup Iteration   2: 2148816.104 ops/s
+Iteration   1: 2171952.291 ops/s
+Iteration   2: 2176318.024 ops/s
+Iteration   3: 2197988.950 ops/s
+Iteration   4: 2172589.546 ops/s
+Iteration   5: 2169492.423 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute":
+  2177668.247 ±(99.9%) 44743.070 ops/s [Average]
+  (min, avg, max) = (2169492.423, 2177668.247, 2197988.950), stdev = 11619.633
+  CI (99.9%): [2132925.177, 2222411.317] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:31
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                            (contextLogging)   Mode  Cnt        Score        Error  Units
+SegmentIndexHotRoutePutBenchmark.putHotRoute                    false  thrpt    5  4277453.342 ± 106068.328  ops/s
+SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute             false  thrpt    5  2177668.247 ±  44743.070  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-hot-route-put.json
