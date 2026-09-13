@@ -30,6 +30,13 @@ final class SenkuLongSetWritingRuntime implements SenkuLongSetWriting {
 
     /** {@inheritDoc} */
     @Override
+    public void putLongs(final long[] keys, final int offset,
+            final int length) {
+        runtime.putLongs(keys, offset, length);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public SenkuReady<Long, NullValue> finishWriting() {
         return runtime.finishWriting();
     }

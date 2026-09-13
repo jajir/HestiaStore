@@ -1,9 +1,7 @@
 package org.hestiastore.index.senku.internal;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.PriorityQueue;
 import java.util.function.BooleanSupplier;
 
 import org.hestiastore.index.IndexException;
@@ -24,10 +22,12 @@ import org.hestiastore.index.senku.SenkuMergeFunctions;
  * values.
  *
  * <p>
- * One cursor is retained per source and one bounded-growth page buffer is
- * retained per active merge job. Distinct records remain primitive from page
- * decoding through output encoding; boxing is limited to actual duplicate calls
- * through the public generic merge-function contract.
+ * One cursor and one cached primitive heap entry are retained per source, and
+ * one bounded-growth page buffer is retained per active merge job. The heap
+ * updates only its root after consuming a source's equal-key group. Distinct
+ * records remain primitive from page decoding through output encoding; boxing
+ * is limited to actual duplicate calls through the public generic
+ * merge-function contract.
  * </p>
  */
 final class SenkuLongMergeWriter<V> {
@@ -46,8 +46,8 @@ final class SenkuLongMergeWriter<V> {
     private final long maxEntriesPerPart;
     private final DataBlockSize dataBlockSize;
     private final BooleanSupplier publicationAllowed;
-    private final PriorityQueue<SenkuLongSourceCursor> queue = new PriorityQueue<>(
-            SenkuLongMergeWriter::compareCursors);
+    private final SenkuLongSourceCursor[] cursors;
+    private final SenkuLongMergeHeap selector;
 
     private long mergedKey;
     private long logicalMergedKey;
@@ -94,6 +94,8 @@ final class SenkuLongMergeWriter<V> {
         this.format = Vldtn.requireNonNull(format, "format");
         keyCodec = format.keyCodec();
         this.sources = List.copyOf(Vldtn.requireNonNull(sources, "sources"));
+        cursors = new SenkuLongSourceCursor[this.sources.size()];
+        selector = new SenkuLongMergeHeap(this.sources.size());
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
@@ -134,7 +136,7 @@ final class SenkuLongMergeWriter<V> {
         final SenkuLongKeySampler sampler = new SenkuLongKeySampler();
         try {
             openInputs();
-            while (!queue.isEmpty()) {
+            while (!selector.isEmpty()) {
                 final SingleChunkEntryWriterImpl<Long, V> page = new SingleChunkEntryWriterImpl<>(
                         keyTypeDescriptor, valueTypeDescriptor,
                         maxEncodedPageBytes, format.keyCodec());
@@ -167,36 +169,35 @@ final class SenkuLongMergeWriter<V> {
     }
 
     private void openInputs() {
-        final List<SenkuLongSourceCursor> opened = new ArrayList<>(
-                sources.size());
         try {
-            int ordinal = 0;
-            for (final SenkuMergeSource source : sources) {
+            for (int ordinal = 0; ordinal < sources.size(); ordinal++) {
+                final SenkuMergeSource source = sources.get(ordinal);
                 final SenkuLongSourceCursor cursor = Vldtn
-                        .requireNonNull(source, "source").openLongs(ordinal++,
+                        .requireNonNull(source, "source").openLongs(ordinal,
                                 primitiveLongValue, format.keyCodec());
-                opened.add(cursor);
+                cursors[ordinal] = cursor;
                 if (cursor.hasCurrent()) {
                     Vldtn.requireTrue(
                             keyCodec.hasSameEncoding(cursor.keyCodec()),
                             "Merge source and target codec domains differ");
-                    queue.add(cursor);
+                    selector.add(cursor.encodedKey(), ordinal);
+                } else {
+                    cursors[ordinal] = null;
                 }
             }
         } catch (Exception e) {
-            closeCursors(opened, e);
+            closeInputs(e);
             throw e;
         }
     }
 
     private boolean mergeNext() {
-        if (queue.isEmpty()) {
+        if (selector.isEmpty()) {
             return false;
         }
-        SenkuLongSourceCursor active = null;
         try {
-            active = queue.remove();
-            mergedKey = active.encodedKey();
+            SenkuLongSourceCursor active = cursors[selector.ordinal()];
+            mergedKey = selector.key();
             logicalMergedKeyAvailable = false;
             if (primitiveLongValue) {
                 mergedLongValue = active.value();
@@ -208,26 +209,18 @@ final class SenkuLongMergeWriter<V> {
                 mergeCurrent(active);
                 active.advance();
             }
-            if (active.hasCurrent()) {
-                queue.add(active);
-            }
-            active = pollEqualKey();
-            while (active != null) {
+            refreshSelected(active);
+            while (!selector.isEmpty() && selector.key() == mergedKey) {
+                active = cursors[selector.ordinal()];
                 do {
                     mergeCurrent(active);
                     active.advance();
                 } while (active.hasCurrent()
                         && active.encodedKey() == mergedKey);
-                if (active.hasCurrent()) {
-                    queue.add(active);
-                }
-                active = pollEqualKey();
+                refreshSelected(active);
             }
             return true;
         } catch (Exception e) {
-            if (active != null) {
-                closeCursor(active, e);
-            }
             closeInputs(e);
             if (e instanceof IndexException) {
                 throw (IndexException) e;
@@ -278,25 +271,27 @@ final class SenkuLongMergeWriter<V> {
         return (V) NullValue.NULL;
     }
 
-    private SenkuLongSourceCursor pollEqualKey() {
-        final SenkuLongSourceCursor cursor = queue.peek();
-        if (cursor == null || cursor.encodedKey() != mergedKey) {
-            return null;
+    /**
+     * Refreshes the root only after its complete equal-key group is consumed.
+     */
+    private void refreshSelected(final SenkuLongSourceCursor cursor) {
+        if (cursor.hasCurrent()) {
+            selector.replaceRoot(cursor.encodedKey());
+        } else {
+            cursors[selector.ordinal()] = null;
+            selector.removeRoot();
         }
-        return queue.remove();
     }
 
     private void closeInputs(final Exception primary) {
-        while (!queue.isEmpty()) {
-            closeCursor(queue.remove(), primary);
+        for (int ordinal = 0; ordinal < cursors.length; ordinal++) {
+            final SenkuLongSourceCursor cursor = cursors[ordinal];
+            cursors[ordinal] = null;
+            if (cursor != null) {
+                closeCursor(cursor, primary);
+            }
         }
-    }
-
-    private static void closeCursors(final List<SenkuLongSourceCursor> cursors,
-            final Exception primary) {
-        for (final SenkuLongSourceCursor cursor : cursors) {
-            closeCursor(cursor, primary);
-        }
+        selector.clear();
     }
 
     private static void closeCursor(final SenkuLongSourceCursor cursor,
@@ -306,14 +301,5 @@ final class SenkuLongMergeWriter<V> {
         } catch (Exception cleanupFailure) {
             primary.addSuppressed(cleanupFailure);
         }
-    }
-
-    private static int compareCursors(final SenkuLongSourceCursor first,
-            final SenkuLongSourceCursor second) {
-        final int compared = Long.compare(first.encodedKey(),
-                second.encodedKey());
-        return compared == 0
-                ? Integer.compare(first.ordinal(), second.ordinal())
-                : compared;
     }
 }

@@ -11,7 +11,6 @@ import org.hestiastore.index.datatype.TypeDescriptorNull;
 
 /**
  * Compact, in-place sortable storage used while preparing one Senku flush.
- *
  * <p>
  * Exact {@link TypeDescriptorLong} keys use a primitive array. Other key types
  * retain their descriptor-defined ordering in a generic object array. Exact
@@ -114,6 +113,25 @@ final class SenkuFlushOrder<K, V> {
     }
 
     /**
+     * Splits oversized primitive-long/null ranges on the shared flush pool.
+     * Small ranges and all value-bearing or generic ranges retain their
+     * existing sequential sort. The caller exclusively owns the range until
+     * this method returns, including on failure.
+     *
+     * @param fromInclusive first index
+     * @param toExclusive   index after the last entry
+     */
+    void sortWithParallelRanges(final int fromInclusive,
+            final int toExclusive) {
+        if (longKeys != null && values == null
+                && toExclusive - fromInclusive > SenkuLongSortTask.LEAF_KEYS) {
+            SenkuLongSortTask.sort(longKeys, fromInclusive, toExclusive);
+            return;
+        }
+        sort(fromInclusive, toExclusive);
+    }
+
+    /**
      * Returns whether this order uses the primitive long-key path.
      *
      * @return {@code true} for exact {@link TypeDescriptorLong} keys
@@ -126,6 +144,7 @@ final class SenkuFlushOrder<K, V> {
      * Returns a primitive key from a specialized long order.
      *
      * @param index entry index
+     *
      * @return key
      */
     long longKey(final int index) {
@@ -140,6 +159,7 @@ final class SenkuFlushOrder<K, V> {
      * Returns a key from the generic order.
      *
      * @param index entry index
+     *
      * @return key
      */
     @SuppressWarnings("unchecked")
@@ -154,6 +174,7 @@ final class SenkuFlushOrder<K, V> {
      * Returns the value paired with an ordered key.
      *
      * @param index entry index
+     *
      * @return value, or the canonical null marker for a zero-byte value type
      */
     @SuppressWarnings("unchecked")

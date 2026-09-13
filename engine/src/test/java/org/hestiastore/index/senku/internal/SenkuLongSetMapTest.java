@@ -24,6 +24,28 @@ import org.junit.jupiter.api.Test;
 class SenkuLongSetMapTest {
 
     @Test
+    void traversalRetainsConfiguredHashesAcrossResizeWithoutRerouting() {
+        final SenkuLongSetMap map = new SenkuLongSetMap(4, key -> {
+            throw new AssertionError("Stored hash must be reused");
+        });
+        final Map<Long, Integer> expected = new HashMap<>();
+        for (long key = -300; key <= 300; key++) {
+            final int hash = key % 2 == 0 ? Integer.MIN_VALUE : (int) key;
+            expected.put(key, hash);
+            assertTrue(map.addLong(key, hash));
+        }
+        final Map<Long, Integer> actual = new HashMap<>();
+        map.forEachLongWithHash(actual::put);
+        assertEquals(expected, actual);
+        expected.forEach(
+                (key, hash) -> assertSame(NULL, map.getWithHash(key, hash)));
+        assertThrows(IllegalArgumentException.class,
+                () -> map.forEachLongWithHash(null));
+        assertThrows(ConcurrentModificationException.class, () -> map
+                .forEachLongWithHash((key, hash) -> map.addLong(1000L, 1000)));
+    }
+
+    @Test
     void zeroSignedExtremesAndCollisionsSurviveResizesWithoutFalsePositives() {
         final SenkuLongSetMap map = new SenkuLongSetMap(4, key -> 0);
         final Set<Long> expected = new HashSet<>();

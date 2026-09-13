@@ -46,8 +46,7 @@ class SenkuMaintenanceCoordinatorTest {
     void setUp() {
         root = new MemDirectory();
         root.mkdir(SenkuFileNames.FLUSH_DIRECTORY);
-        flushDirectory = root
-                .openSubDirectory(SenkuFileNames.FLUSH_DIRECTORY);
+        flushDirectory = root.openSubDirectory(SenkuFileNames.FLUSH_DIRECTORY);
     }
 
     @AfterEach
@@ -69,8 +68,7 @@ class SenkuMaintenanceCoordinatorTest {
         committedRun(0, 0, 0L, new SenkuRunManifest(0, 0L));
         incompleteRun(1, 0, 0L);
         root.touch(SenkuFileNames.LOCK_FILE);
-        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(2,
-                2);
+        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(2, 2);
 
         coordinator.scanOnce();
 
@@ -85,8 +83,7 @@ class SenkuMaintenanceCoordinatorTest {
         final Directory run = committedRun(0, 0, 0L,
                 new SenkuRunManifest(0, 0L));
         run.touch(SenkuFileNames.partFile(0));
-        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(1,
-                2);
+        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(1, 2);
 
         coordinator.scanOnce();
 
@@ -97,8 +94,7 @@ class SenkuMaintenanceCoordinatorTest {
     void repeatedScanIsStableAndMissingKnownSourceFailsFast() {
         final Directory run = committedRun(0, 0, 0L,
                 new SenkuRunManifest(0, 0L));
-        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(1,
-                2);
+        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(1, 2);
         coordinator.scanOnce();
         coordinator.scanOnce();
         run.deleteFile(SenkuFileNames.MANIFEST_FILE);
@@ -110,12 +106,10 @@ class SenkuMaintenanceCoordinatorTest {
     void changedAuthoritativeManifestFailsFast() {
         final Directory run = committedRun(0, 0, 0L,
                 new SenkuRunManifest(0, 0L));
-        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(1,
-                2);
+        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(1, 2);
         coordinator.scanOnce();
         run.deleteFile(SenkuFileNames.MANIFEST_FILE);
-        SenkuMetadataCodec.publishRunManifest(run,
-                new SenkuRunManifest(1, 1L));
+        SenkuMetadataCodec.publishRunManifest(run, new SenkuRunManifest(1, 1L));
 
         assertThrows(IndexException.class, coordinator::scanOnce);
     }
@@ -137,8 +131,7 @@ class SenkuMaintenanceCoordinatorTest {
         committedRun(1, 0, 3L, new SenkuRunManifest(0, 0L));
         committedRun(1, 0, 1L, new SenkuRunManifest(0, 0L));
         committedRun(0, 1, 0L, new SenkuRunManifest(0, 0L));
-        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(2,
-                2);
+        final SenkuMaintenanceCoordinator<?, ?> coordinator = coordinator(2, 2);
         coordinator.scanOnce();
 
         final List<SenkuRunSource> selected = coordinator
@@ -153,16 +146,14 @@ class SenkuMaintenanceCoordinatorTest {
         writeFlush(2, 0L, entries(0, 1L, 1, 2L));
         writeFlush(2, 1L, entries(0, 4L, 3, 8L));
         final AtomicReference<IndexException> failure = new AtomicReference<>();
-        final SenkuMaintenanceCoordinator<Integer, Long> coordinator =
-                scheduler(2, 2, 2, 2,
-                        (key, first, second) -> first + second, failure,
-                        ignored -> {
-                            // No backpressure assertion in this test.
-                        });
+        final SenkuMaintenanceCoordinator<Integer, Long> coordinator = scheduler(
+                2, 2, 2, 2, (key, first, second) -> first + second, failure,
+                ignored -> {
+                    // No backpressure assertion in this test.
+                });
 
         coordinator.scanAndScheduleOnce(false);
-        await(() -> !coordinator.hasActiveL0Batch()
-                || failure.get() != null);
+        await(() -> !coordinator.hasActiveL0Batch() || failure.get() != null);
 
         assertEquals(null, failure.get());
         assertEquals(0, coordinator.flushCount());
@@ -180,14 +171,14 @@ class SenkuMaintenanceCoordinatorTest {
         final CountDownLatch releaseMerge = new CountDownLatch(1);
         final Queue<Boolean> pauses = new ConcurrentLinkedQueue<>();
         final AtomicReference<IndexException> failure = new AtomicReference<>();
-        final SenkuMergeFunction<Integer, Long> blockingMerge =
-                (key, first, second) -> {
-                    mergeEntered.countDown();
-                    awaitLatch(releaseMerge);
-                    return first + second;
-                };
-        final SenkuMaintenanceCoordinator<Integer, Long> coordinator =
-                scheduler(3, 2, 1, 1, blockingMerge, failure, pauses::add);
+        final SenkuMergeFunction<Integer, Long> blockingMerge = (key, first,
+                second) -> {
+            mergeEntered.countDown();
+            awaitLatch(releaseMerge);
+            return first + second;
+        };
+        final SenkuMaintenanceCoordinator<Integer, Long> coordinator = scheduler(
+                3, 2, 1, 1, blockingMerge, failure, pauses::add);
 
         coordinator.scanAndScheduleOnce(false);
         awaitLatch(mergeEntered);
@@ -195,17 +186,15 @@ class SenkuMaintenanceCoordinatorTest {
         assertEquals(2, coordinator.submittedCount());
         assertEquals(Boolean.TRUE, pauses.peek());
         releaseMerge.countDown();
-        await(() -> coordinator.submittedCount() == 0
-                || failure.get() != null);
+        await(() -> coordinator.submittedCount() == 0 || failure.get() != null);
         assertTrue(coordinator.hasActiveL0Batch());
 
-        coordinator.scanAndScheduleOnce(false);
-        await(() -> !coordinator.hasActiveL0Batch()
-                || failure.get() != null);
+        coordinator.scheduleOnce(false);
+        await(() -> !coordinator.hasActiveL0Batch() || failure.get() != null);
 
         assertEquals(null, failure.get());
-        assertEquals(Boolean.FALSE, pauses.stream().reduce((a, b) -> b)
-                .orElseThrow());
+        assertEquals(Boolean.FALSE,
+                pauses.stream().reduce((a, b) -> b).orElseThrow());
     }
 
     @Test
@@ -217,8 +206,8 @@ class SenkuMaintenanceCoordinatorTest {
         final CountDownLatch mergeEntered = new CountDownLatch(1);
         final CountDownLatch releaseMerge = new CountDownLatch(1);
         final AtomicReference<IndexException> failure = new AtomicReference<>();
-        final SenkuMaintenanceCoordinator<Integer, Long> coordinator =
-                scheduler(1, 2, 2, 2, (key, first, second) -> {
+        final SenkuMaintenanceCoordinator<Integer, Long> coordinator = scheduler(
+                1, 2, 2, 2, (key, first, second) -> {
                     mergeEntered.countDown();
                     awaitLatch(releaseMerge);
                     return first + second;
@@ -231,8 +220,7 @@ class SenkuMaintenanceCoordinatorTest {
 
         assertEquals(1, coordinator.submittedCount());
         releaseMerge.countDown();
-        await(() -> coordinator.submittedCount() == 0
-                || failure.get() != null);
+        await(() -> coordinator.submittedCount() == 0 || failure.get() != null);
         assertEquals(null, failure.get());
     }
 

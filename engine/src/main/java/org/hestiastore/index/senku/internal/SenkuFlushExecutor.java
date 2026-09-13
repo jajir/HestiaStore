@@ -14,7 +14,10 @@ import org.hestiastore.index.IndexException;
  * this pool.
  */
 final class SenkuFlushExecutor {
-    static final int PAGE_BYTES_BUDGET = 64 * 1024 * 1024;
+    // Four unchanged one-million-key Long/NULL pages reserve about 153 MiB.
+    // This process-wide allowance covers Java preparation working bytes, not
+    // the detached ordering arrays, native Zstd contexts or total JVM memory.
+    static final int PAGE_BYTES_BUDGET = 192 * 1024 * 1024;
     private static final int PARALLELISM = Math.max(1,
             Math.min(4, Runtime.getRuntime().availableProcessors()));
     private static final AtomicInteger NEXT_WORKER_ID = new AtomicInteger(1);
@@ -34,6 +37,33 @@ final class SenkuFlushExecutor {
     /** Submits a CPU-only task; the caller retains lifecycle ownership. */
     static <T> ForkJoinTask<T> submit(final ForkJoinTask<T> task) {
         return POOL.submit(task);
+    }
+
+    /**
+     * Runs two disjoint sort tasks from inside the shared pool, joining both
+     * before returning even when either fails. Unlike cancellation, joining
+     * ensures no child continues mutating the detached sort storage afterward.
+     *
+     * @param first  task forked for another worker
+     * @param second task invoked by this worker
+     */
+    static void invokeSortPair(final ForkJoinTask<?> first,
+            final ForkJoinTask<?> second) {
+        first.fork();
+        try {
+            try {
+                second.invoke();
+            } finally {
+                first.quietlyJoin();
+            }
+        } catch (RuntimeException failure) {
+            final Throwable siblingFailure = first.getException();
+            if (siblingFailure != null && siblingFailure != failure) {
+                failure.addSuppressed(siblingFailure);
+            }
+            throw failure;
+        }
+        first.join();
     }
 
     /**

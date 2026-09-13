@@ -20,7 +20,6 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
  * shard hash is independently avalanched before probing, so collision-heavy key
  * hash codes do not create {@link java.util.HashMap} tree bins. Keys and values
  * are stored in flat arrays without one node allocation per mapping.
- *
  * <p>
  * The map accepts non-null keys and values and does not support removal.
  * Callers provide external synchronization while a batch is mutable; detached
@@ -82,6 +81,7 @@ class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
      *
      * @param key            non-null key
      * @param configuredHash configured persistent-shard hash
+     *
      * @return current value, or null when absent
      */
     V getWithHash(final K key, final int configuredHash) {
@@ -107,6 +107,7 @@ class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
      * @param key            non-null key
      * @param value          non-null value
      * @param configuredHash configured persistent-shard hash
+     *
      * @return previous value, or null when the key was absent
      */
     V putWithHash(final K key, final V value, final int configuredHash) {
@@ -138,6 +139,7 @@ class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
      * @param value          non-null incoming value
      * @param configuredHash previously computed shard hash
      * @param mergeFunction  duplicate reducer
+     *
      * @return true when a distinct key was inserted
      */
     boolean mergeWithHash(final K key, final V value, final int configuredHash,
@@ -186,6 +188,15 @@ class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
         throw new IllegalStateException("Primitive long set is not available.");
     }
 
+    /**
+     * Traverses primitive set keys and cached configured hashes without boxing.
+     *
+     * @param consumer primitive key/hash consumer
+     */
+    void forEachLongWithHash(final SenkuLongKeyHashConsumer consumer) {
+        throw new IllegalStateException("Primitive long set is not available.");
+    }
+
     /** {@inheritDoc} */
     @Override
     public int size() {
@@ -231,6 +242,7 @@ class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
      * one stripe shares the selector's low bits.
      *
      * @param configuredHash configured persistent-shard hash
+     *
      * @return mixed table hash
      */
     static int tableHash(final int configuredHash) {
@@ -285,6 +297,7 @@ class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
      * @param tableHash       independently mixed table hash
      * @param candidateKeys   power-of-two key table
      * @param candidateHashes hash table parallel to {@code candidateKeys}
+     *
      * @return matching or empty slot
      */
     static int findSlot(final Object key, final int tableHash,
@@ -308,6 +321,7 @@ class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
      * Calculates the bounded load threshold shared by both ingestion layouts.
      *
      * @param capacity normalized table capacity
+     *
      * @return maximum size before growth is needed
      */
     static int threshold(final int capacity) {
@@ -321,6 +335,7 @@ class SenkuIngestionMap<K, V> extends AbstractMap<K, V> {
      * Normalizes a validated requested capacity to the supported power of two.
      *
      * @param requestedCapacity positive requested table capacity
+     *
      * @return bounded normalized capacity
      */
     static int tableSizeFor(final int requestedCapacity) {

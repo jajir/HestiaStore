@@ -1,20 +1,38 @@
 package org.hestiastore.index.senku.internal;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
+import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.junit.jupiter.api.Test;
 
 class SenkuFlushSortTaskTest {
+
+    @Test
+    void oversizedSingleShardMatchesSerialOrder() {
+        final int count = 2 * SenkuLongSortTask.LEAF_KEYS + 11;
+        assertLargeShardSort(new int[] { 0 }, new int[] { count }, count);
+    }
+
+    @Test
+    void oversizedSkewedShardWithEmptyNeighborsMatchesSerialOrder() {
+        final int count = 2 * SenkuLongSortTask.LEAF_KEYS + 11;
+        assertLargeShardSort(new int[] { 0, 0, 2, count - 1, count - 1 },
+                new int[] { 0, 2, count - 3, 0, 1 }, count);
+    }
 
     @Test
     void parallelSortOwnsDisjointShardRanges() {
@@ -80,5 +98,26 @@ class SenkuFlushSortTaskTest {
             checksum += order.longKey(start);
         }
         return checksum;
+    }
+
+    private static void assertLargeShardSort(final int[] starts,
+            final int[] counts, final int count) {
+        final long[] expected = new Random(37L).longs(count).toArray();
+        final SenkuFlushOrder<Long, NullValue> order = new SenkuFlushOrder<>(
+                new TypeDescriptorLong(), new TypeDescriptorNull(), count);
+        for (int index = 0; index < count; index++) {
+            order.setLong(index, expected[index]);
+        }
+        for (int shard = 0; shard < starts.length; shard++) {
+            Arrays.sort(expected, starts[shard], starts[shard] + counts[shard]);
+        }
+
+        SenkuFlushSortTask.sortAll(order, starts, counts, true);
+
+        final long[] actual = new long[count];
+        for (int index = 0; index < count; index++) {
+            actual[index] = order.longKey(index);
+        }
+        assertArrayEquals(expected, actual);
     }
 }

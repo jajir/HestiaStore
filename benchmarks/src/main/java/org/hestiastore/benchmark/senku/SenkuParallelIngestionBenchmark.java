@@ -139,6 +139,14 @@ public class SenkuParallelIngestionBenchmark {
             }
         }
 
+        /** Submits one complete reusable array through the explicit set API. */
+        public void putLongs(final long[] keys) {
+            if (longSetWriting == null) {
+                throw new IllegalStateException("Batch requires long-set API");
+            }
+            longSetWriting.putLongs(keys, 0, keys.length);
+        }
+
         /**
          * Finalizes the index and removes its temporary files.
          */
@@ -200,6 +208,7 @@ public class SenkuParallelIngestionBenchmark {
      * bit-board-style 32-bit hash.
      *
      * @param sequence non-negative unique sequence
+     *
      * @return unique biased bit-board key
      */
     public static long biasedBoardKey(final long sequence) {

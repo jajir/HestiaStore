@@ -29,6 +29,7 @@ final class SenkuMaintenanceCoordinator<K, V> {
     private final SenkuStorageFormat format;
     private final Directory rootDirectory;
     private final Directory flushDirectory;
+    private final SenkuMetadataDiscovery discovery;
     private final int shardCount;
     private final int mergeFanIn;
     private final SenkuSourceCatalog catalog = new SenkuSourceCatalog();
@@ -167,6 +168,8 @@ final class SenkuMaintenanceCoordinator<K, V> {
         }
         flushDirectory = rootDirectory
                 .openSubDirectory(SenkuFileNames.FLUSH_DIRECTORY);
+        discovery = new SenkuMetadataDiscovery(rootDirectory, flushDirectory,
+                shardCount);
         this.keyTypeDescriptor = keyTypeDescriptor;
         this.valueTypeDescriptor = valueTypeDescriptor;
         this.mergeFunction = mergeFunction;
@@ -201,12 +204,15 @@ final class SenkuMaintenanceCoordinator<K, V> {
     }
 
     /**
-     * Scans only structural directories and committed property metadata.
+     * Strictly rereads committed metadata, including already known sources.
      */
     void scanOnce() {
-        final Map<Long, Integer> flushes = scanFlushes();
-        final List<SenkuRunSource> runs = scanRuns();
-        catalog.reconcile(flushes, runs, reservedOutputPaths);
+        discovery.reconcile(catalog, reservedOutputPaths, true);
+    }
+
+    /** Discovers new publications while reusing immutable known manifests. */
+    void discoverOnce() {
+        discovery.reconcile(catalog, reservedOutputPaths, false);
     }
 
     /**
@@ -249,6 +255,43 @@ final class SenkuMaintenanceCoordinator<K, V> {
         }
     }
 
+    /**
+     * Discovers new manifest-last sources and schedules from the updated
+     * catalog without reparsing unchanged committed manifests.
+     *
+     * @param drain whether finalization eligibility rules apply
+     */
+    void discoverAndScheduleOnce(final boolean drain) {
+        requireScheduler();
+        if (firstFailure.get() == null) {
+            try {
+                discoverOnce();
+                scheduleOnce(drain);
+            } catch (Exception e) {
+                reportFailure(e);
+            }
+        }
+    }
+
+    /**
+     * Refills available capacity and refreshes admission after completions,
+     * using only the coordinator-owned catalog. Does not discover new files or
+     * establish the fresh reconciliation required before readiness.
+     *
+     * @param drain whether finalization eligibility rules apply
+     */
+    void scheduleOnce(final boolean drain) {
+        requireScheduler();
+        if (firstFailure.get() == null) {
+            try {
+                fillCapacity(drain);
+                updateBackpressure(drain);
+            } catch (Exception e) {
+                reportFailure(e);
+            }
+        }
+    }
+
     int submittedCount() {
         return submitted.size();
     }
@@ -263,22 +306,6 @@ final class SenkuMaintenanceCoordinator<K, V> {
 
     int runCount() {
         return catalog.runCount();
-    }
-
-    private Map<Long, Integer> scanFlushes() {
-        final Map<Long, Integer> observed = new LinkedHashMap<>();
-        for (final String name : flushDirectory.getFileNames().toList()) {
-            final long flushId = SenkuFileNames.parseFlushDirectory(name);
-            final Directory source = flushDirectory.openSubDirectory(name);
-            if (!source.isFileExists(SenkuFileNames.MANIFEST_FILE)) {
-                continue;
-            }
-            final int partCount = SenkuMetadataCodec.readFlushPartCount(source);
-            if (observed.put(flushId, partCount) != null) {
-                throw new IndexException("Duplicate flush ID " + flushId + ".");
-            }
-        }
-        return observed;
     }
 
     private void fillCapacity(final boolean drain) {
@@ -453,10 +480,12 @@ final class SenkuMaintenanceCoordinator<K, V> {
         catalog.acceptL0(flushIds, outputs);
         for (final long flushId : flushIds) {
             deleteFlush(flushId);
+            discovery.forgetFlush(flushId);
             reservedInputPaths.remove(SenkuSourceCatalog.flushPath(flushId));
         }
         outputs.forEach(output -> reservedOutputPaths
                 .remove(SenkuSourceCatalog.runPath(output)));
+        outputs.forEach(discovery::rememberRun);
         activeL0Batch = null;
     }
 
@@ -471,11 +500,13 @@ final class SenkuMaintenanceCoordinator<K, V> {
         catalog.acceptRunMerge(reservation.runInputs(), output);
         for (final SenkuRunSource input : reservation.runInputs()) {
             deleteRun(input);
+            discovery.forgetRun(input);
             reservedInputPaths.remove(SenkuSourceCatalog.runPath(input));
         }
         reservedOutputPaths.remove(reservation.outputPath());
         activeSortedRunShards.remove(completed.shardId());
         submitted.remove(reservation.outputPath());
+        discovery.rememberRun(output);
     }
 
     private void updateBackpressure(final boolean drain) {
@@ -651,41 +682,4 @@ final class SenkuMaintenanceCoordinator<K, V> {
                 + SenkuFileNames.runDirectory(runId);
     }
 
-    private List<SenkuRunSource> scanRuns() {
-        final List<SenkuRunSource> observed = new ArrayList<>();
-        for (final String rootName : rootDirectory.getFileNames().toList()) {
-            if (SenkuFileNames.LOCK_FILE.equals(rootName)
-                    || SenkuFileNames.FLUSH_DIRECTORY.equals(rootName)
-                    || SenkuFileNames.FORMAT_FILE.equals(rootName)) {
-                continue;
-            }
-            final int shardId = SenkuFileNames.parseShardDirectory(rootName);
-            if (shardId >= shardCount) {
-                throw new IndexException(
-                        "Unexpected shard ID " + shardId + ".");
-            }
-            scanShard(rootName, shardId, observed);
-        }
-        return observed;
-    }
-
-    private void scanShard(final String shardName, final int shardId,
-            final List<SenkuRunSource> observed) {
-        final Directory shard = rootDirectory.openSubDirectory(shardName);
-        for (final String levelName : shard.getFileNames().toList()) {
-            final int level = SenkuFileNames.parseLevelDirectory(levelName);
-            final Directory levelDirectory = shard.openSubDirectory(levelName);
-            for (final String runName : levelDirectory.getFileNames()
-                    .toList()) {
-                final long runId = SenkuFileNames.parseRunDirectory(runName);
-                final Directory runDirectory = levelDirectory
-                        .openSubDirectory(runName);
-                if (runDirectory.isFileExists(SenkuFileNames.MANIFEST_FILE)) {
-                    observed.add(new SenkuRunSource(runDirectory, shardId,
-                            level, runId,
-                            SenkuMetadataCodec.readRunManifest(runDirectory)));
-                }
-            }
-        }
-    }
 }

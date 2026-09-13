@@ -28,6 +28,27 @@ import org.junit.jupiter.api.Test;
 
 class SenkuFlushWriterTest {
 
+    @Test
+    void primitiveFlushUsesCachedConfiguredHashesInBothTraversalPasses() {
+        final TypeDescriptorLong keys = new TypeDescriptorLong();
+        final TypeDescriptorNull values = new TypeDescriptorNull();
+        final SenkuLongSetMap entries = new SenkuLongSetMap(4, key -> {
+            throw new AssertionError("Do not reroute during flush");
+        });
+        entries.addLong(Long.MIN_VALUE, Integer.MIN_VALUE);
+        entries.addLong(0L, -1);
+        entries.addLong(Long.MAX_VALUE, 0);
+        new SenkuFlushWriter<>(flushDirectory, keys, values, key -> {
+            throw new AssertionError("Do not box and reroute during flush");
+        }, 3, 2, 4L, DATA_BLOCK_SIZE).write(0L, List.of(entries));
+        assertEquals(List.of(Entry.of(Long.MAX_VALUE, NULL)),
+                readShard(flushDirectory, 0L, 0, 3, 4L, keys, values));
+        assertEquals(List.of(Entry.of(Long.MIN_VALUE, NULL)),
+                readShard(flushDirectory, 0L, 1, 3, 4L, keys, values));
+        assertEquals(List.of(Entry.of(0L, NULL)),
+                readShard(flushDirectory, 0L, 2, 3, 4L, keys, values));
+    }
+
     private MemDirectory flushDirectory;
 
     @BeforeEach

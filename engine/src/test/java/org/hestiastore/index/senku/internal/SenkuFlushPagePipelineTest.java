@@ -31,6 +31,50 @@ import org.junit.jupiter.api.Test;
 
 class SenkuFlushPagePipelineTest {
     @Test
+    void millionKeyPageEncodersOverlapOnEveryAvailableWorker()
+            throws InterruptedException, ExecutionException, TimeoutException {
+        final int workers = SenkuFlushExecutor.parallelism();
+        final int pageKeys = 1_000_000;
+        final int totalKeys = workers * pageKeys;
+        final CountDownLatch encodersEntered = new CountDownLatch(workers);
+        final CountDownLatch releaseEncoders = new CountDownLatch(1);
+        final SenkuFlushOrder<Long, NullValue> order = new SenkuFlushOrder<>(
+                new TypeDescriptorLong(), new TypeDescriptorNull(), totalKeys);
+        for (int key = 0; key < totalKeys; key++) {
+            order.setLong(key, key);
+        }
+        final SenkuFlushPagePipeline<Long, NullValue> pipeline = new SenkuFlushPagePipeline<>(
+                order, new TypeDescriptorLong(),
+                new GatedNullDescriptor(encodersEntered, releaseEncoders),
+                format(), 10, pageKeys);
+        final FutureTask<Integer> task = new FutureTask<>(() -> {
+            final LargeFileWriterTx writer = new LargeFileWriterTx(
+                    new MemDirectory(), DATA_BLOCK_SIZE, totalKeys, format());
+            try {
+                pipeline.write(writer, new int[] { 0 },
+                        new int[] { totalKeys });
+                return writer.commit();
+            } catch (Exception failure) {
+                writer.abort(failure);
+                throw failure;
+            }
+        });
+        final Thread caller = new Thread(task, "senku-overlapping-pages");
+        try {
+            caller.start();
+            assertTrue(encodersEntered.await(10, TimeUnit.SECONDS),
+                    "Every available worker must encode a full-size page before any finishes");
+            assertFalse(task.isDone());
+            releaseEncoders.countDown();
+            assertTrue(task.get(10, TimeUnit.SECONDS) > 0);
+        } finally {
+            releaseEncoders.countDown();
+            stopThread(caller);
+        }
+        assertAllPermitsReturned();
+    }
+
+    @Test
     void bytePressureDrainsOwnedPagesBeforeReservingAnotherPage() {
         final int pageBytes = SenkuFlushPageTask.estimatedBytes(2, 10);
         final int heldBytes = SenkuFlushExecutor.PAGE_BYTES_BUDGET - pageBytes;
@@ -243,4 +287,5 @@ class SenkuFlushPagePipelineTest {
                 .tryReserve(SenkuFlushExecutor.PAGE_BYTES_BUDGET));
         SenkuFlushExecutor.release(SenkuFlushExecutor.PAGE_BYTES_BUDGET);
     }
+
 }

@@ -36,6 +36,33 @@ ingestion. Short sustained-ingestion results can vary with maintenance phases.
 Ready-summary metadata has measurable costs on small numeric-delta merges, so
 report those alongside ranked-key improvements rather than averaging the two.
 
+The `senku-maintenance-hotpaths` profile isolates repeated discovery of 8,192
+immutable run manifests (with zero or 256 summary buckets) and four/64-way
+primitive ranked set merges of one million input records (zero or 50 percent
+duplicates). Merge fixtures retain Zstd 3, 8 KiB blocks and one-million-key
+pages. Metadata fixtures contain manifests only and deliberately admit no merge
+jobs. Compare the old strict periodic path with cached discovery after priming
+the catalog; keep setup outside measurement. Use a quiet host for latency
+claims and retain allocation and exact persisted-output checks separately.
+
+```bash
+python3 benchmarks/scripts/run_jmh_profile.py --repo-root . \
+  --profile senku-maintenance-hotpaths --output-dir /tmp/hestia-bench/senku-maintenance
+```
+
+The `senku-batched-flush` profile adds four-million-key primitive ranked flushes
+with uniform routing and a 75-percent hot shard, while retaining one-million-key
+pages and Zstd 3. Its batch-ingestion comparison submits the same 4,096 generated
+keys individually or through `putLongs`; JMH scores are normalized per key, not
+per batch. Input generation is included identically in both ingestion modes.
+Run on a quiet host before making speedup claims; an active solver invalidates
+clean CPU comparisons. Compare final bytes/state and exact output separately.
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py --repo-root . \
+  --profile senku-batched-flush --output-dir /tmp/hestia-bench/senku-batched-flush
+```
+
 ```sh
 python3 benchmarks/scripts/run_jmh_profile.py --repo-root . \
   --profile senku-pipeline --output-dir /tmp/hestia-bench/senku-pipeline

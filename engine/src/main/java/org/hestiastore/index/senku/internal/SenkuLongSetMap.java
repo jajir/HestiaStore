@@ -51,23 +51,23 @@ final class SenkuLongSetMap extends SenkuIngestionMap<Long, NullValue> {
      *
      * @param key            exact primitive key
      * @param configuredHash configured shard hash
+     *
      * @return true only for a newly inserted key
      */
     boolean addLong(final long key, final int configuredHash) {
         if (keys.length == 0) {
             allocate(initialCapacity);
         }
-        final int hash = tableHash(configuredHash);
-        int slot = findSlot(key, hash, keys, hashes, occupied);
+        int slot = findSlot(key, configuredHash, keys, hashes, occupied);
         if (isOccupied(occupied, slot)) {
             return false;
         }
         if (size >= resizeThreshold) {
             resize();
-            slot = findSlot(key, hash, keys, hashes, occupied);
+            slot = findSlot(key, configuredHash, keys, hashes, occupied);
         }
         keys[slot] = key;
-        hashes[slot] = hash;
+        hashes[slot] = configuredHash;
         occupy(occupied, slot);
         size++;
         modificationCount++;
@@ -90,8 +90,8 @@ final class SenkuLongSetMap extends SenkuIngestionMap<Long, NullValue> {
         if (keys.length == 0) {
             return null;
         }
-        final int slot = findSlot(key.longValue(), tableHash(configuredHash),
-                keys, hashes, occupied);
+        final int slot = findSlot(key.longValue(), configuredHash, keys, hashes,
+                occupied);
         return isOccupied(occupied, slot) ? NullValue.NULL : null;
     }
 
@@ -146,6 +146,19 @@ final class SenkuLongSetMap extends SenkuIngestionMap<Long, NullValue> {
         for (int index = 0; index < keys.length; index++) {
             if (isOccupied(occupied, index)) {
                 consumer.accept(keys[index]);
+            }
+        }
+        checkModification(expected);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    void forEachLongWithHash(final SenkuLongKeyHashConsumer consumer) {
+        Vldtn.requireNonNull(consumer, "consumer");
+        final int expected = modificationCount;
+        for (int index = 0; index < keys.length; index++) {
+            if (isOccupied(occupied, index)) {
+                consumer.accept(keys[index], hashes[index]);
             }
         }
         checkModification(expected);
@@ -208,7 +221,7 @@ final class SenkuLongSetMap extends SenkuIngestionMap<Long, NullValue> {
             final long[] candidateKeys, final int[] candidateHashes,
             final long[] candidateOccupied) {
         final int mask = candidateKeys.length - 1;
-        int slot = hash & mask;
+        int slot = tableHash(hash) & mask;
         final int first = slot;
         while (isOccupied(candidateOccupied, slot)
                 && (candidateHashes[slot] != hash

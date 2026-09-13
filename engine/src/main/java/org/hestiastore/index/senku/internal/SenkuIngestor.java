@@ -21,7 +21,7 @@ import org.hestiastore.index.senku.SenkuMergeFunction;
  */
 final class SenkuIngestor<K, V> {
 
-    private static final int INGESTION_STRIPE_COUNT = 128;
+    private static final int INGESTION_STRIPE_COUNT = SenkuLongBatch.STRIPE_COUNT;
     private static final int STRIPE_MIX_MULTIPLIER_1 = 0x7feb352d;
     private static final int STRIPE_MIX_MULTIPLIER_2 = 0x846ca68b;
 
@@ -37,7 +37,6 @@ final class SenkuIngestor<K, V> {
     private final int countCheckInterval;
 
     private volatile List<SenkuIngestionMap<K, V>> entries;
-    private volatile int[] stripeEntryCounts;
     private volatile int[] publishedStripeSizes;
     private volatile AtomicInteger publishedEntryCount;
     private volatile int[] nextCountChecks;
@@ -147,6 +146,128 @@ final class SenkuIngestor<K, V> {
         putKey(null, null, key, true, hash);
     }
 
+    /**
+     * Groups bounded windows by mutation stripe before acquiring any lock. Each
+     * hold accepts at most MAX_GROUP_KEYS keys and stops early for rotation.
+     * Hashing, admission waits, and flushing remain outside mutation locks.
+     * Accepted subsets are not rolled back after an operational failure.
+     *
+     * @param keys   caller-owned input, valid until this synchronous call
+     *               returns
+     * @param offset first input key
+     * @param length selected key count
+     */
+    void putLongs(final long[] keys, final int offset, final int length) {
+        SenkuLongBatch.validateSlice(keys, offset, length);
+        if (longShardHashFunction == null) {
+            throw new IllegalStateException(
+                    "Primitive long set is not available.");
+        }
+        requireAccepting();
+        if (length == 0) {
+            return;
+        }
+        checkBatchInterrupted();
+        final SenkuLongBatch batch = new SenkuLongBatch(
+                Math.min(length, SenkuLongBatch.WINDOW_KEYS));
+        final int end = offset + length;
+        for (int from = offset; from < end;) {
+            checkBatchInterrupted();
+            requireAccepting();
+            final int count = Math.min(end - from, SenkuLongBatch.WINDOW_KEYS);
+            batch.load(keys, from, count, longShardHashFunction);
+            for (int stripe = 0; stripe < INGESTION_STRIPE_COUNT; stripe++) {
+                int index = batch.first(stripe);
+                while (index >= 0) {
+                    index = putLongGroup(batch, stripe, index);
+                }
+            }
+            from += count;
+        }
+    }
+
+    /**
+     * Accepts a bounded same-stripe group through the existing rotation gate.
+     */
+    private int putLongGroup(final SenkuLongBatch batch, final int stripe,
+            final int first) {
+        final ReentrantLock mutationLock = mutationLocks[stripe];
+        int next = first;
+        while (next == first) {
+            checkBatchInterrupted();
+            if (paused || rotationRequested) {
+                awaitBatchAdmission();
+            }
+            boolean rotate = false;
+            lockBatchMutation(mutationLock);
+            try {
+                requireAccepting();
+                if (!paused && !rotationRequested) {
+                    final SenkuLongSetMap map = (SenkuLongSetMap) ingestionMap(
+                            stripe);
+                    int processed = 0;
+                    while (next >= 0
+                            && processed < SenkuLongBatch.MAX_GROUP_KEYS
+                            && !rotationRequested) {
+                        if (map.addLong(batch.key(next), batch.hash(next))) {
+                            sampleCount(stripe, map.size());
+                        }
+                        next = batch.next(next);
+                        processed++;
+                    }
+                    rotate = rotationRequested;
+                }
+            } finally {
+                mutationLock.unlock();
+            }
+            if (rotate) {
+                rotateAndFlush();
+            }
+        }
+        return next;
+    }
+
+    /** Waits interruptibly for batch admission without owning a stripe. */
+    private void awaitBatchAdmission() {
+        try {
+            controlLock.lockInterruptibly();
+            try {
+                while ((paused || rotationRequested) && accepting) {
+                    ingestionMayProceed.await();
+                }
+                requireAccepting();
+            } finally {
+                controlLock.unlock();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted awaiting batch admission.",
+                    e);
+        }
+    }
+
+    /**
+     * Acquires only the selected mutation stripe and preserves interruption.
+     */
+    private static void lockBatchMutation(final ReentrantLock mutationLock) {
+        try {
+            mutationLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted acquiring batch stripe.", e);
+        }
+    }
+
+    /**
+     * Rejects interrupted batch callers without clearing their interrupt flag.
+     */
+    private static void checkBatchInterrupted() {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new IndexException("Primitive batch ingestion interrupted.",
+                    new InterruptedException("Batch caller was interrupted"));
+        }
+    }
+
     private void putKey(final K key, final V value, final long primitiveKey,
             final boolean primitive, final int configuredHash) {
         final int stripe = stripeFromHash(configuredHash);
@@ -169,8 +290,7 @@ final class SenkuIngestor<K, V> {
                             : stripeEntries.mergeWithHash(key, value,
                                     configuredHash, mergeFunction);
                     if (inserted) {
-                        stripeEntryCounts[stripe]++;
-                        sampleCount(stripe, stripeEntryCounts[stripe]);
+                        sampleCount(stripe, stripeEntries.size());
                     }
                     rotate = rotationRequested;
                     accepted = true;
@@ -408,6 +528,7 @@ final class SenkuIngestor<K, V> {
      * so conditioning a key on one stripe does not condition its table slot.
      *
      * @param hash configured persistent-shard hash
+     *
      * @return mutation stripe number
      */
     static int stripeFromHash(final int hash) {
@@ -420,6 +541,7 @@ final class SenkuIngestor<K, V> {
      *
      * @param hash        configured persistent-shard hash
      * @param stripeCount positive power-of-two stripe count
+     *
      * @return mutation stripe number
      */
     static int stripeFromHash(final int hash, final int stripeCount) {
@@ -480,7 +602,6 @@ final class SenkuIngestor<K, V> {
     }
 
     private void resetCountSampling() {
-        stripeEntryCounts = new int[INGESTION_STRIPE_COUNT];
         publishedStripeSizes = new int[INGESTION_STRIPE_COUNT];
         publishedEntryCount = new AtomicInteger();
         nextCountChecks = new int[INGESTION_STRIPE_COUNT];

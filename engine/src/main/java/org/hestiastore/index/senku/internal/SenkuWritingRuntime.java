@@ -43,11 +43,15 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
     private final AtomicReference<IndexException> firstFailure;
     private final CountDownLatch maintenanceFinished = new CountDownLatch(1);
     private final AtomicBoolean terminalized = new AtomicBoolean();
+    private final AtomicBoolean completionWakePending = new AtomicBoolean();
 
     private volatile SenkuWritingState state = SenkuWritingState.WRITING;
     private volatile SenkuReadyRuntime<K, V> ready;
     private volatile boolean finishRequested;
     private ScheduledFuture<?> periodicScan;
+    // Accessed only by the serialized control executor. No WRITING tick may
+    // establish this condition, even if finish starts while that tick runs.
+    private boolean finishingReconciled;
 
     SenkuWritingRuntime(final Directory rootDirectory,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -126,6 +130,29 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
     }
 
     /**
+     * Validates a complete primitive slice before entering the existing writing
+     * gate. Operational failures preserve the same first-failure ownership as
+     * individual puts; argument errors do not poison the writer.
+     *
+     * @param keys   caller-owned keys, not retained after return
+     * @param offset first selected key
+     * @param length selected key count
+     */
+    void putLongs(final long[] keys, final int offset, final int length) {
+        SenkuLongBatch.validateSlice(keys, offset, length);
+        requireWriting("putLongs");
+        try {
+            ingestor.putLongs(keys, offset, length);
+        } catch (IndexException e) {
+            if (finishRequested || state != SenkuWritingState.WRITING) {
+                requireWriting("putLongs");
+            }
+            reportCallerFailure(e);
+            throw e;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -193,14 +220,25 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
     }
 
     /**
-     * Requests a fresh drain scan after a worker result while finishing. The
-     * catalog can predate the last accepted flush even when stopping ingestion
-     * produces no tail flush. Only a tick that observed FINISHING and refreshed
-     * the catalog may publish readiness.
+     * Coalesces completion-driven scheduling on the serialized control
+     * executor. Writing completions refill capacity and refresh backpressure
+     * without a metadata scan. Finishing still requires fresh strict
+     * reconciliation after ingestion stops and again before readiness can be
+     * published.
      */
     void completionProcessed() {
-        if (state == SenkuWritingState.FINISHING) {
-            wakeCoordinator();
+        if (terminalized.get() || controlExecutor.isShutdown()
+                || !completionWakePending.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            controlExecutor.execute(() -> {
+                completionWakePending.set(false);
+                maintainSafely(false);
+            });
+        } catch (RejectedExecutionException e) {
+            completionWakePending.set(false);
+            recordWakeFailure(e);
         }
     }
 
@@ -209,6 +247,13 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
     }
 
     private void tickSafely() {
+        maintainSafely(true);
+    }
+
+    /**
+     * Runs discovery or completion scheduling under the sole lifecycle owner.
+     */
+    private void maintainSafely(final boolean discover) {
         if (terminalized.get()) {
             return;
         }
@@ -219,11 +264,26 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
                 return;
             }
             final boolean drain = state == SenkuWritingState.FINISHING;
-            coordinator.scanAndScheduleOnce(drain);
+            if (drain && !finishingReconciled) {
+                coordinator.scanAndScheduleOnce(true);
+                finishingReconciled = true;
+            } else if (discover) {
+                coordinator.discoverAndScheduleOnce(drain);
+            } else {
+                coordinator.scheduleOnce(drain);
+            }
             if (firstFailure.get() != null) {
                 shutdownFailure();
             } else if (drain && coordinator.isDrainComplete()) {
-                completeSuccess();
+                // The cached catalog alone never authorizes READY. This also
+                // detects modifications of surviving known manifests made
+                // after the first FINISHING reconciliation.
+                coordinator.scanAndScheduleOnce(true);
+                if (firstFailure.get() != null) {
+                    shutdownFailure();
+                } else if (coordinator.isDrainComplete()) {
+                    completeSuccess();
+                }
             }
         } catch (Exception e) {
             final IndexException failure = asIndexException(
@@ -302,11 +362,14 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
         try {
             controlExecutor.execute(this::tickSafely);
         } catch (RejectedExecutionException e) {
-            if (!terminalized.get()) {
-                final IndexException failure = new IndexException(
-                        "Unable to wake Senku coordinator.", e);
-                firstFailure.compareAndSet(null, failure);
-            }
+            recordWakeFailure(e);
+        }
+    }
+
+    private void recordWakeFailure(final RejectedExecutionException cause) {
+        if (!terminalized.get()) {
+            firstFailure.compareAndSet(null, new IndexException(
+                    "Unable to wake Senku coordinator.", cause));
         }
     }
 

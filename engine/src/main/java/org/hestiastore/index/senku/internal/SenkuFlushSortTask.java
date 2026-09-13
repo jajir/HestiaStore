@@ -4,7 +4,6 @@ import java.util.concurrent.RecursiveAction;
 
 /**
  * Sorts independent Senku shard ranges on a process-wide bounded executor.
- *
  * <p>
  * A shared pool caps aggregate flush sorting at four workers even when several
  * indexes flush concurrently. Its daemon workers do not extend application
@@ -46,7 +45,7 @@ final class SenkuFlushSortTask<K, V> extends RecursiveAction {
      */
     static <K, V> void sortAll(final SenkuFlushOrder<K, V> order,
             final int[] starts, final int[] counts, final boolean parallel) {
-        if (parallel && parallelism() > 1 && counts.length > 1) {
+        if (parallel && parallelism() > 1 && counts.length > 0) {
             SenkuFlushExecutor.submit(new SenkuFlushSortTask<>(order, starts,
                     counts, 0, counts.length)).join();
             return;
@@ -69,11 +68,11 @@ final class SenkuFlushSortTask<K, V> extends RecursiveAction {
     protected void compute() {
         if (toShard - fromShard <= 1) {
             final int from = starts[fromShard];
-            order.sort(from, from + counts[fromShard]);
+            order.sortWithParallelRanges(from, from + counts[fromShard]);
             return;
         }
         final int middle = (fromShard + toShard) >>> 1;
-        invokeAll(
+        SenkuFlushExecutor.invokeSortPair(
                 new SenkuFlushSortTask<>(order, starts, counts, fromShard,
                         middle),
                 new SenkuFlushSortTask<>(order, starts, counts, middle,

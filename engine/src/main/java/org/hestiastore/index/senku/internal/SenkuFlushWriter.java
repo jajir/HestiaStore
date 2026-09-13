@@ -2,7 +2,6 @@ package org.hestiastore.index.senku.internal;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.LongToIntFunction;
 import java.util.function.ToIntFunction;
 
 import org.hestiastore.index.IndexException;
@@ -28,7 +27,6 @@ final class SenkuFlushWriter<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final ToIntFunction<K> shardHashFunction;
-    private final LongToIntFunction longShardHashFunction;
     private final int shardCount;
     private final int maxKeysPerPage;
     private final long maxEntriesPerPart;
@@ -54,23 +52,6 @@ final class SenkuFlushWriter<K, V> {
             final int maxKeysPerPage, final long maxEntriesPerPart,
             final DataBlockSize dataBlockSize,
             final SenkuStorageFormat format) {
-        this(flushDirectory, keyTypeDescriptor, valueTypeDescriptor,
-                shardHashFunction, shardCount, maxKeysPerPage,
-                maxEntriesPerPart, dataBlockSize, format, null);
-    }
-
-    /**
-     * Creates a flush writer with optional explicitly selected primitive
-     * routing.
-     */
-    SenkuFlushWriter(final Directory flushDirectory,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final ToIntFunction<K> shardHashFunction, final int shardCount,
-            final int maxKeysPerPage, final long maxEntriesPerPart,
-            final DataBlockSize dataBlockSize, final SenkuStorageFormat format,
-            final LongToIntFunction longShardHashFunction) {
-        this.longShardHashFunction = longShardHashFunction;
         this.format = Vldtn.requireNonNull(format, "format");
         this.flushDirectory = Vldtn.requireNonNull(flushDirectory,
                 "flushDirectory");
@@ -249,7 +230,8 @@ final class SenkuFlushWriter<K, V> {
         for (final Map<K, V> stripe : entries) {
             if (stripe instanceof SenkuIngestionMap<?, ?> map
                     && map.isLongSet()) {
-                map.forEachLong(key -> counts[longShardId(key)]++);
+                map.forEachLongWithHash((key,
+                        hash) -> counts[Math.floorMod(hash, shardCount)]++);
             } else {
                 stripe.forEach((key, value) -> counts[shardId(key)]++);
             }
@@ -276,8 +258,8 @@ final class SenkuFlushWriter<K, V> {
         for (final Map<K, V> stripe : entries) {
             if (stripe instanceof SenkuIngestionMap<?, ?> map
                     && map.isLongSet()) {
-                map.forEachLong(
-                        key -> ordered.setLong(next[longShardId(key)]++, key));
+                map.forEachLongWithHash((key, hash) -> ordered
+                        .setLong(next[Math.floorMod(hash, shardCount)]++, key));
             } else {
                 stripe.forEach((key, value) -> {
                     final int shardId = shardId(key);
@@ -310,11 +292,4 @@ final class SenkuFlushWriter<K, V> {
         return Math.floorMod(shardHashFunction.applyAsInt(key), shardCount);
     }
 
-    private int longShardId(final long key) {
-        return Math
-                .floorMod(
-                        Vldtn.requireNonNull(longShardHashFunction,
-                                "longShardHashFunction").applyAsInt(key),
-                        shardCount);
-    }
 }

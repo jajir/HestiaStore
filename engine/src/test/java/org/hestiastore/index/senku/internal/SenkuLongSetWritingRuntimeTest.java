@@ -28,6 +28,9 @@ class SenkuLongSetWritingRuntimeTest {
                 runtime);
         writing.putLong(0L);
         verify(runtime).putLong(0L);
+        final long[] keys = { 9L, 0L, 3L };
+        writing.putLongs(keys, 1, 2);
+        verify(runtime).putLongs(keys, 1, 2);
         when(runtime.finishWriting()).thenReturn(ready);
         assertSame(ready, writing.finishWriting());
     }
@@ -40,5 +43,11 @@ class SenkuLongSetWritingRuntimeTest {
         doThrow(failure).when(runtime).putLong(1L);
         assertSame(failure, assertThrows(IndexException.class,
                 () -> new SenkuLongSetWritingRuntime(runtime).putLong(1L)));
+        final long[] keys = { 1L };
+        doThrow(failure).when(runtime).putLongs(keys, 0, 1);
+        final SenkuLongSetWritingRuntime writing = new SenkuLongSetWritingRuntime(
+                runtime);
+        assertSame(failure, assertThrows(IndexException.class,
+                () -> writing.putLongs(keys, 0, 1)));
     }
 }

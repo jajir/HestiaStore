@@ -1,12 +1,15 @@
 package org.hestiastore.index.senku.internal;
 
 import static org.hestiastore.index.datatype.NullValue.NULL;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Random;
 
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -15,6 +18,28 @@ import org.hestiastore.index.datatype.TypeDescriptorNull;
 import org.junit.jupiter.api.Test;
 
 class SenkuFlushOrderTest {
+
+    @Test
+    void parallelPrimitiveSortPreservesKeysAndSubrangeBoundaries() {
+        final long[] keys = new Random(73L)
+                .longs(SenkuLongSortTask.LEAF_KEYS + 17).toArray();
+        final SenkuFlushOrder<Long, NullValue> order = new SenkuFlushOrder<>(
+                new TypeDescriptorLong(), new TypeDescriptorNull(),
+                keys.length);
+        for (int index = 0; index < keys.length; index++) {
+            order.setLong(index, keys[index]);
+        }
+        Arrays.sort(keys, 1, keys.length - 1);
+
+        order.sortWithParallelRanges(1, keys.length - 1);
+
+        final long[] actual = new long[keys.length];
+        for (int index = 0; index < actual.length; index++) {
+            actual[index] = order.longKey(index);
+            assertEquals(NULL, order.value(index));
+        }
+        assertArrayEquals(keys, actual);
+    }
 
     @Test
     void explicitLongSetSetterRequiresPrimitiveKeysWithoutValueStorage() {
@@ -45,7 +70,7 @@ class SenkuFlushOrderTest {
         order.set(3, 0L, 4);
         order.set(4, Long.MAX_VALUE, 5);
 
-        order.sort(0, 5);
+        order.sortWithParallelRanges(0, 5);
 
         assertTrue(order.hasPrimitiveLongKeys());
         assertEquals(Long.MIN_VALUE, order.longKey(0));
@@ -72,7 +97,7 @@ class SenkuFlushOrderTest {
         order.set(4, Long.MAX_VALUE, 14);
         order.set(5, 7L, 15);
 
-        order.sort(1, 5);
+        order.sortWithParallelRanges(1, 5);
 
         assertFalse(order.hasPrimitiveLongKeys());
         assertEquals(-2L, order.key(0));

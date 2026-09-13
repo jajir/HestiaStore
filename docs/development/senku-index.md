@@ -115,7 +115,19 @@ still receive logical keys and execute for duplicates. Both entry points share
 the same ingestor, mutation locks, admission, rotation and failure handling.
 Generic ingestion searches a stripe table once to insert or merge; resizing
 may require a second probe. A failed reducer leaves the prior value unchanged.
-There is no array/batch submission API; each put retains its existing atomicity.
+`SenkuLongSetWriting.putLongs(long[], offset, length)` synchronously admits a
+primitive slice without retaining or modifying the caller's array. The caller
+must not mutate the selected slice until the call returns. The full slice is
+validated before mutation; a valid empty slice is a no-op only in `WRITING`.
+The implementation hashes bounded 2,048-key windows outside mutation locks and
+groups them by stripe. Each lock hold inserts at most 64 keys and stops early
+for rotation; no admission or flush wait holds a mutation stripe. Batch waits
+are interruptible and preserve the interrupt flag. A batch is not a transaction:
+an operational failure may leave an accepted subset, not necessarily an input
+prefix, and follows the same lifecycle failure handling as an individual put.
+A concurrent finish can reject remaining keys without undoing accepted keys or
+turning an otherwise successful finalization into a rollback.
+Single-key puts retain their atomicity; generic reducers have no batch API.
 `putIfAbsent` and conditional `replace` are intentionally excluded because they
 would add state-resolution work.
 
@@ -603,24 +615,36 @@ current flush publishes and the flushing caller detaches the next batch.
 
 `SenkuFlushWriter` counts entries for every persistent shard directly across
 the detached tables and computes the start offset of each shard in a compact
-order. A second traversal places exact built-in `Long` keys in a primitive
+order. Explicit primitive sets retain the configured routing hash in their
+existing per-slot hash array; both traversals reuse it instead of invoking the
+router again. Table probing still independently mixes that hash. Generic maps
+retain their configured callback path. A second traversal places exact built-in `Long` keys in a primitive
 `long[]`; generic keys use an `Object[]`; exact `NullValue` values require no
 per-entry array. No full `Map.Entry[]` or aggregate map is created. Each range
 is sorted independently. Exact `Long` keys avoid object-comparator calls and use
 primitive signed ordering compatible with `TypeDescriptorLong`; generic
 descriptors use their comparator through an index-based introsort with a
 heapsort fallback.
-For a detached batch of at least 8,192 entries with more than one shard, ranges
+For a detached batch of at least 8,192 entries, ranges
 are sorted on a process-wide daemon fork-join pool with target parallelism at
-most four. Smaller batches and single-shard indexes sort serially. For large
+most four. Oversized primitive long-set ranges are also partitioned within a
+single shard by `SenkuLongSortTask`, so a hot shard does not remain one indivisible
+sort task. Three-way in-place partitioning leaves equal keys together, with
+bounded JDK leaf sorts and an in-place heap-sort depth fallback. The complete
+task tree is joined on failure before the ordering storage is released. Small
+batches retain sequential sorting; generic and long/value ranges keep their
+existing per-shard sort. For large
 batches with exact long keys and exact long or null values, independent page
 encoding and compression use that same pool. Generic serializers remain on the
 caller thread. `SenkuFlushPagePipeline` retains at most the configured pool
-parallelism in outstanding pages per flush and shares a 64 MiB reservation
+parallelism in outstanding pages per flush and shares a 192 MiB reservation
 budget for Java page working bytes across indexes. Reservations include bounded
 buffer growth, input materialization and compressed output; native Zstd contexts
 are separately bounded by the worker count. Oversized configured pages are
-split to fit the reservation budget.
+split to fit the reservation budget. Four one-million-key long/null pages each
+reserve 40,004,096 bytes and fit concurrently without changing their page size,
+key codec or compression level. This allowance does not cover the ingestion
+maps, ordering arrays, total heap or native memory.
 
 The flushing caller alone appends prepared chunks through `LargeFileWriterTx`,
 in shard/page order, and publishes into `flush/flush-N/`. Prepared chunks carry
@@ -828,13 +852,18 @@ Maintenance workers dynamically consume shard merge jobs. The configured
 `maintenanceThreads` value must be benchmarked against the storage device;
 additional threads do not guarantee additional I/O throughput.
 
-Every maintenance job uses a `PriorityQueue` containing one reusable head node
-per input cursor. It removes the smallest key, drains every comparator-equal
-head (including an equal key exposed when a drained cursor advances), folds the
-values with the merge function, and writes one output entry. Advanced heads are
-reinserted. For `n` input entries and `k` sources this gives `O(n log k)` head
-selection and `O(k)` heap state, in addition to the current input and output
-pages; it does not allocate one heap node per entry.
+Generic maintenance jobs use a `PriorityQueue` containing one reusable head
+node per input cursor. The built-in primitive-long path instead uses
+`SenkuLongMergeHeap`: parallel primitive arrays cache each head's encoded key
+and source ordinal. After draining one source's equal-key group, it replaces
+the heap root and repairs downward once, rather than removing and reinserting
+the cursor. An exhausted source removes the root. Equal keys retain source
+ordinal ordering, and arbitrary reducers still receive logical keys; only the
+explicit built-in set reducer skips value callbacks. Both paths drain all
+equal heads and write one output entry, with `O(n log k)` selection and `O(k)`
+selector state for `n` input entries and `k` sources. No selector object is
+allocated per entry. Rank encoding, sampling, page boundaries, compression,
+and publication ordering are unchanged.
 
 New run part transactions write `part-N.chunk.tmp` while incomplete and commit
 them as `part-N.chunk`. A worker counts every output record with overflow-safe
@@ -955,7 +984,7 @@ merges those cursors, producing the complete dataset in configured comparator
 order. The stream must inspect the head of every cursor
 before emitting its first entry. Duplicate keys have already been folded during
 shard consolidation.
-It uses the same reusable-head `PriorityQueue` pattern as maintenance, but does
+It uses the reusable-head `PriorityQueue` pattern of generic maintenance, but does
 not invoke the merge function because no duplicate should remain in `READY`.
 
 Only one ready stream may be active for the exclusively locked index. A second
@@ -1096,7 +1125,7 @@ routing, monitoring, maintenance, or lifecycle orchestration.
   detached batch, and an additional `O(maxInMemoryEntries)` ordering-reference
   array can be live together.
 - Each active merge worker can retain up to `mergeFanIn` decompressed input
-  pages, one output page, priority-queue state, and transient compression
+  pages, one output page, selector state, and transient compression
   arrays. Ready streaming can retain one decompressed page for each non-empty
   shard. `maxKeysPerPage` does not bound those pages in bytes, so its product
   with actual encoded entry size, fan-in, worker count, and shard count must be
@@ -1421,7 +1450,7 @@ domain. An empty domain is invalid.
 
 Ranks preserve numeric key order. Ingestion, sharding, generic duplicate
 reducers and returned entries use logical longs. Primitive maintenance cursors,
-queue comparisons and page writes retain encoded ranks between identical codec
+selector comparisons and page writes retain encoded ranks between identical codec
 domains, avoiding an unrank/rank pair per record. Domain matching checks bit
 width, population, ordered parity masks and syndrome, not just codec ID.
 Arbitrary duplicate reducers receive a lazily decoded logical key; the explicit
@@ -1746,13 +1775,13 @@ important benchmark targets.
 
 ### Thread Ownership and Lifecycle
 
-Senku owns no ingestion thread. Public ingestion and ready streaming execute on
-their caller threads. The only Senku-owned background threads belong to
-maintenance:
+Senku owns no dedicated ingestion thread. Public ingestion and ready streaming
+execute on their caller threads. Flush CPU work uses a shared daemon pool;
+maintenance owns its separate lifecycle-bound non-daemon executors:
 
 | Component | Thread ownership | Lifetime |
 | --- | --- | --- |
-| `SenkuIngestor` | No owned thread; `put()`, rotation, page encoding, and writes execute on caller threads. Large multi-shard flushes use a process-wide daemon fork-join pool capped at four workers while sorting independent shard ranges. | `WRITING` |
+| `SenkuIngestor` | No owned thread; single and batched admission, rotation and ordered writes execute on caller threads. Large flushes use a process-wide daemon pool with target parallelism at most four for shard sorting, oversized long-set subranges, and page preparation. | `WRITING` |
 | `SenkuMaintenanceCoordinator` | One non-daemon scheduled control thread | `WRITING` through final drain or minimal failure shutdown |
 | Maintenance worker pool | Up to `maintenanceThreads` non-daemon threads, created lazily, with a bounded FIFO work queue | First submitted merge through final drain or minimal failure shutdown |
 | Ready stream | No owned thread; the merge executes on the `openStream()` caller | One active stream in `READY` |
@@ -1761,8 +1790,9 @@ Creation acquires the exclusive root `FileLock` and constructs 128 active lazy
 open-addressed tables, their mutation locks, the ingestion control lock, the
 lifecycle writing lock, coordinator, and worker pool before exposing the
 `WRITING` handle. The coordinator starts its three-second schedule only after
-initialization succeeds. All owned threads are non-daemon so their termination
-is explicit and controllable. A healthy writing handle that is not finished
+initialization succeeds. The index-owned maintenance threads are non-daemon so
+their termination is explicit and controllable; the shared flush workers are
+daemon threads. A healthy writing handle that is not finished
 will keep the JVM alive; this is an accepted first-version limitation.
 
 If `create()` fails before returning a handle, it cancels any started schedule,
@@ -1835,14 +1865,16 @@ lifecycle stays `WRITING` during that publication, but the ingestor rejects
 awakened or newly arriving puts. After the committed flush manifest is visible,
 `finishWriting()` changes the lifecycle to `FINISHING`, releases the lock,
 wakes the coordinator immediately, and switches it to drain mode. Drain mode
-bypasses the normal three-second delay and starts with one immediate logical-
-hierarchy scan. Later job completions process their results, release their
-reservations, and queue another immediate scan while the runtime is
-`FINISHING`. The completion callback never publishes readiness directly from
-cached counts. Each queued drain tick refreshes the catalog, fills available
-worker capacity, and checks for failure before deciding whether drain is
-complete. An available worker also takes the next job already in the executor
-queue. Ordinary `WRITING` completions keep the periodic scheduling policy.
+bypasses the normal three-second delay and starts with a strict reconciliation
+that rereads every committed manifest. In both `WRITING` and `FINISHING`, job
+completions process their results, release their reservations, and request a
+coalesced scheduling pass from the coordinator-owned catalog. This pass refills
+capacity and refreshes backpressure without discovering files. A periodic tick
+still discovers newly published sources. When the catalog suggests that drain
+is complete, the coordinator strictly rereads the hierarchy and all committed
+manifests again before allowing readiness. A completion never establishes
+readiness from cached counts alone. An available worker also takes the next job
+already in the executor queue.
 The coordinator and worker pool stop
 before the `SenkuReady` handle is returned; `READY` owns no background threads.
 The same exclusive root `FileLock` transfers to that handle without being
@@ -1961,26 +1993,37 @@ Every periodic scan traverses only the logical Senku directory hierarchy: the
 root, flush generations, shards, levels, and runs. It uses `getFileNames()` only
 on structural parent directories to discover their child directories. At a
 flush or run directory it checks the exact `manifest.properties` name with
-`isFileExists(...)` and reads that properties file directly. It never calls
+`isFileExists(...)`. `SenkuMetadataDiscovery` reads a newly committed properties
+file once and reuses its immutable parsed metadata on later periodic scans.
+The cache is coordinator-confined and bounded by live sources: successful
+worker results seed it, successful input deletion evicts entries, and a
+successful reconciliation replaces it with the current observation. Failed
+observations never replace the cache, and incomplete publications are not
+negatively cached. It never calls
 `getFileNames()` on a source directory, enumerates `part-N.chunk`, opens a data
 part, or reads `shard-index.dat` during the scan. After a flush group is
 selected, L0 batch preparation validates each selected flush's part layout and
 sparse index once before submitting shard jobs. A selected higher-level merge
 worker performs complete run validation when it opens its inputs;
 `SenkuIndex.open()` does the same for terminal runs. Temporary files are never
-valid inputs. The logical traversal every three seconds is accepted as a simple
-first implementation and must be benchmarked as the directory count grows.
+valid inputs. Structural directory traversal and manifest-existence checks
+still happen every three seconds and must be benchmarked as directory count
+grows; repeated parsing and copying of known run summaries do not.
 
 Property files remain authoritative during reconciliation. A newly discovered
 committed source is added to the catalog unless its ID is a reserved planned
 output still awaiting completion processing; that source remains reserved and
 unschedulable. A source directory without a published manifest is ignored as
 incomplete. A committed source already known or reserved by the coordinator but
-missing from disk, or committed metadata that conflicts with the catalog
-identity, fails immediately with `IndexException` and moves the writing handle
-to `ERROR`. The coordinator trusts the directory listing and performs no
-additional `isFileExists(...)` recheck. The coordinator does not repair,
-reconstruct, or silently skip inconsistent state.
+missing from disk fails discovery with `IndexException` and moves the writing
+handle to `ERROR`. Published metadata is immutable under the writing handle's
+exclusive ownership; external content mutation during writing is unsupported.
+Strict reconciliation rereads even cached manifests and rejects changed counts
+or summaries. It runs before the first drain scheduling pass and again before
+the successful readiness decision, including when finalization has no tail
+flush. The coordinator trusts the structural directory listing and performs
+no additional listing recheck. It does not repair, reconstruct, or silently
+skip inconsistent state.
 
 The active-source catalog is the coordinator's in-memory view of committed
 flush and sorted-run directories; it is not another persisted file. The
@@ -2012,8 +2055,8 @@ task-object identities. It allocates an output run ID unique within its
 destination shard and level and creates its directory path before submission.
 
 The executor queue is not the complete maintenance backlog. Immutable committed
-sources and coordinator-owned pending L0 batch state are the on-disk backlog. On
-every scan the coordinator:
+sources and coordinator-owned pending L0 batch state are the on-disk backlog.
+After discovery and after a coalesced completion wake, the coordinator:
 
 1. Continues the remaining shard jobs of an already-started L0 batch first, so
    its shared flush inputs can eventually be deleted.
@@ -2032,9 +2075,10 @@ every scan the coordinator:
 6. Accepts the published output, replaces the catalog entries, deletes every
    obsolete input file and empty input directory, and releases the reservation.
    It does not submit newly eligible work inline. An available worker takes the
-   next job already in the executor queue. During `WRITING`, new work waits for
-   the next scheduled scan; during `FINISHING`, completion queues an immediate
-   scan and eligibility pass.
+   next job already in the executor queue. Completions coalesce into at most one
+   pending immediate scheduling wake, which refills from the catalog in both
+   `WRITING` and `FINISHING` without a directory scan. New flush publications
+   remain discoverable on the next periodic tick.
 7. On failure, enters minimal writing shutdown without deleting any source or
    output path and without resubmitting the reservation.
 
@@ -2069,8 +2113,9 @@ lock, `put()` waits with `awaitUninterruptibly()` while ingestion is paused or a
 full batch awaits rotation, releasing the control lock during the wait and
 preserving the caller's interrupt status.
 
-After every logical-hierarchy scan, the coordinator fills available worker and
-queue slots from its known committed sources. It sets
+After every logical-hierarchy discovery and coalesced completion wake, the
+coordinator fills available worker and queue slots from its known committed
+sources. It sets
 `paused` to true only when the bounded queue is full and eligible work
 still remains unqueued on disk or in coordinator-owned L0 pending state. Queue
 fullness alone is not the high-water condition.
@@ -2126,11 +2171,6 @@ for merge output are not represented by queue saturation.
 - Consider bounded batch submission if measurements show per-call admission
   overhead remains significant after primitive set ingestion. Specify array
   ownership and partial acceptance on failure before introducing that API.
-- Refill executor capacity from the active L0 batch during ordinary `WRITING`
-  completion handling if benchmarks show that waiting for the next three-second
-  scan leaves workers idle. This refill needs no directory scan because the
-  pending shard jobs are already known to the coordinator. `FINISHING`
-  completions already request an immediate reconciliation and scheduling pass.
 - Skip forced terminal shard consolidation and lazily merge remaining sources
   if measurements show that `finishWriting()` latency matters more than bounded
   stream resources.

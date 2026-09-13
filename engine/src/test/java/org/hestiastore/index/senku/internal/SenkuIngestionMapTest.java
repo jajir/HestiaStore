@@ -105,6 +105,9 @@ class SenkuIngestionMapTest {
         assertEquals(2L, map.get(1));
         assertEquals(1, map.size());
         assertFalse(map.isLongSet());
+        assertThrows(IllegalStateException.class,
+                () -> map.forEachLongWithHash((key, hash) -> {
+                }));
         assertThrows(IllegalStateException.class, () -> map.forEachLong(key -> {
         }));
     }

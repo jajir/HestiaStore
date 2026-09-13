@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
@@ -17,6 +20,74 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
 class SenkuLongSetWritingTest {
+
+    @Test
+    void synchronousSlicesSupportCallerReuseDuplicatesExtremesAndInvalidRanges() {
+        final MemDirectory directory = new MemDirectory();
+        final AtomicInteger hashCalls = new AtomicInteger();
+        final SenkuLongSetWriting writing = builder(directory)
+                .maxInMemoryEntries(700).createLongSet(key -> {
+                    hashCalls.incrementAndGet();
+                    return Long.hashCode(key);
+                });
+        final long[] input = new long[6005];
+        for (int index = 0; index < 6000; index++)
+            input[index + 3] = index % 600;
+        assertThrows(IllegalArgumentException.class,
+                () -> writing.putLongs(null, 0, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> writing.putLongs(input, -1, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> writing.putLongs(input, 0, -1));
+        assertThrows(IllegalArgumentException.class,
+                () -> writing.putLongs(input, 3, input.length));
+        assertThrows(IllegalArgumentException.class, () -> writing
+                .putLongs(input, Integer.MAX_VALUE, Integer.MAX_VALUE));
+        writing.putLongs(input, input.length, 0);
+        assertEquals(0, hashCalls.get());
+        writing.putLongs(input, 3, 6000);
+        Arrays.fill(input, -999);
+        final long[] extremes = { Long.MIN_VALUE, 0, Long.MAX_VALUE, 0 };
+        writing.putLongs(extremes, 0, extremes.length);
+        Arrays.fill(extremes, -999);
+        final List<Long> expected = LongStream
+                .concat(LongStream.of(Long.MIN_VALUE),
+                        LongStream.concat(LongStream.range(0, 600),
+                                LongStream.of(Long.MAX_VALUE)))
+                .boxed().toList();
+        try (SenkuReady<Long, NullValue> ready = writing.finishWriting();
+                Stream<Entry<Long, NullValue>> entries = ready.openStream()) {
+            assertEquals(expected, entries.map(Entry::getKey).toList());
+            assertEquals(6004, hashCalls.get(),
+                    "Flush must reuse configured hashes");
+            assertThrows(IndexException.class,
+                    () -> writing.putLongs(input, 0, 0));
+            assertThrows(IndexException.class,
+                    () -> writing.putLongs(input, 0, 1));
+        }
+        try (SenkuReady<Long, NullValue> ready = SenkuIndex.open(directory,
+                new TypeDescriptorLong(), new TypeDescriptorNull(), 8192);
+                Stream<Entry<Long, NullValue>> entries = ready.openStream()) {
+            assertEquals(expected, entries.map(Entry::getKey).toList());
+        }
+    }
+
+    @Test
+    void operationalBatchHashFailurePoisonsWriterUnlikeArgumentErrors() {
+        final MemDirectory directory = new MemDirectory();
+        final IllegalStateException cause = new IllegalStateException(
+                "batch routing");
+        final SenkuLongSetWriting writing = builder(directory)
+                .createLongSet(key -> {
+                    throw cause;
+                });
+        final long[] input = { 0 };
+        final IndexException failure = assertThrows(IndexException.class,
+                () -> writing.putLongs(input, 0, 1));
+        assertEquals(cause, failure.getCause());
+        assertThrows(IndexException.class, () -> writing.putLongs(input, 0, 0));
+        assertThrows(IndexException.class, writing::finishWriting);
+    }
 
     @Test
     void primitiveAndCompatibilityPutsDeduplicateAcrossFlushesAndReopen() {

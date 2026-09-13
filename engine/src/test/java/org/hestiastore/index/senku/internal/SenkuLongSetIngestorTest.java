@@ -13,6 +13,8 @@ import static org.mockito.Mockito.doThrow;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.LongStream;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.LongToIntFunction;
 
@@ -29,6 +31,84 @@ class SenkuLongSetIngestorTest {
 
     @Mock
     private SenkuFlushWriter<Long, NullValue> flushWriter;
+
+    @Test
+    void multiWindowBatchRotatesAtBoundedThresholdAndHashesEachKeyOnce() {
+        final TreeSet<Long> flushedKeys = new TreeSet<>();
+        final List<Integer> sizes = new ArrayList<>();
+        doAnswer(invocation -> {
+            final List<SenkuIngestionMap<Long, NullValue>> maps = invocation
+                    .getArgument(1);
+            int size = 0;
+            for (final SenkuIngestionMap<Long, NullValue> map : maps) {
+                size += map.size();
+                map.forEachLong(flushedKeys::add);
+            }
+            sizes.add(size);
+            return null;
+        }).when(flushWriter).write(anyLong(), anyList());
+        final AtomicInteger hashes = new AtomicInteger();
+        final SenkuIngestor<Long, NullValue> ingestor = new SenkuIngestor<>(
+                new ReentrantLock(), SenkuMergeFunctions.longSet(),
+                key -> key.hashCode(), flushWriter, 257, 4, key -> {
+                    hashes.incrementAndGet();
+                    return 0; // One stripe also exercises the 64-key hold cap.
+                });
+        final long[] input = LongStream.range(-3, 5002).toArray();
+        ingestor.putLongs(input, 3, 5000);
+        assertEquals(5000, hashes.get());
+        assertTrue(ingestor.stopAcceptingAndFlush());
+        assertEquals(LongStream.range(0, 5000).boxed().toList(),
+                List.copyOf(flushedKeys));
+        assertTrue(sizes.size() > 1);
+        assertTrue(sizes.stream().allMatch(size -> size <= 257));
+        assertThrows(IndexException.class,
+                () -> ingestor.putLongs(input, 0, 0));
+    }
+
+    @Test
+    void batchMayAcceptEarlierWindowsBeforeRoutingFailureButInvalidSliceAcceptsNothing() {
+        final long[] input = LongStream.range(0, 4096).toArray();
+        final IndexException failure = new IndexException("second window");
+        final SenkuIngestor<Long, NullValue> ingestor = new SenkuIngestor<>(
+                new ReentrantLock(), SenkuMergeFunctions.longSet(),
+                key -> key.hashCode(), flushWriter, 10_000, 4, key -> {
+                    if (key == SenkuLongBatch.WINDOW_KEYS)
+                        throw failure;
+                    return Long.hashCode(key);
+                });
+        assertThrows(IllegalArgumentException.class,
+                () -> ingestor.putLongs(input, 1, input.length));
+        assertEquals(0, ingestor.size());
+        ingestor.putLongs(input, input.length, 0);
+        assertSame(failure, assertThrows(IndexException.class,
+                () -> ingestor.putLongs(input, 0, input.length)));
+        assertEquals(SenkuLongBatch.WINDOW_KEYS, ingestor.size());
+        ingestor.fail();
+    }
+
+    @Test
+    void batchFlushFailureAndPreexistingInterruptionPreserveFailureAndFlag() {
+        final SenkuIngestor<Long, NullValue> ingestor = newIngestor(
+                Long::hashCode);
+        final long[] input = { Long.MIN_VALUE, 0, Long.MAX_VALUE, 5 };
+        Thread.currentThread().interrupt();
+        try {
+            assertThrows(IndexException.class,
+                    () -> ingestor.putLongs(input, 0, input.length));
+            assertTrue(Thread.currentThread().isInterrupted());
+            assertEquals(0, ingestor.size());
+        } finally {
+            Thread.interrupted();
+        }
+        final IndexException failure = new IndexException("batch flush");
+        doThrow(failure).when(flushWriter).write(anyLong(), anyList());
+        assertSame(failure, assertThrows(IndexException.class,
+                () -> ingestor.putLongs(input, 0, input.length)));
+        assertSame(failure, assertThrows(IndexException.class,
+                () -> ingestor.putLongs(input, 0, 0)));
+        assertFalse(ingestor.isPaused());
+    }
 
     @Test
     void rotationDetachesPrimitiveBatchesAndNextBatchForgetsOldKeys() {
@@ -87,6 +167,9 @@ class SenkuLongSetIngestorTest {
                 new ReentrantLock(), (key, first, second) -> NullValue.NULL,
                 key -> key.hashCode(), flushWriter, 3, 4);
         assertThrows(IllegalStateException.class, () -> ingestor.putLong(0L));
+        final long[] keys = { 0L };
+        assertThrows(IllegalStateException.class,
+                () -> ingestor.putLongs(keys, 0, 1));
         assertEquals(0, ingestor.size());
     }
 

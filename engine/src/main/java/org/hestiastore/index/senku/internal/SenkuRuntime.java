@@ -46,6 +46,7 @@ public final class SenkuRuntime {
      *
      * @param <K> key type
      * @param <V> value type
+     *
      * @return writing handle
      */
     public static <K, V> SenkuWriting<K, V> create(final Directory directory,
@@ -72,6 +73,7 @@ public final class SenkuRuntime {
      * @param <V>          value type
      * @param keyPageCodec sorted-key encoding
      * @param compression  chunk compression
+     *
      * @return exclusive writing runtime
      */
     public static <K, V> SenkuWriting<K, V> create(final Directory directory,
@@ -108,6 +110,7 @@ public final class SenkuRuntime {
      * @param maxEntriesPerPart     part entry limit
      * @param keyPageCodec          long-key encoding
      * @param compression           chunk compression
+     *
      * @return primitive view over one exclusive writing runtime
      */
     public static SenkuLongSetWriting createLongSet(final Directory directory,
@@ -175,8 +178,7 @@ public final class SenkuRuntime {
             final ReentrantLock writingLock = new ReentrantLock();
             final SenkuFlushWriter<K, V> flushWriter = new SenkuFlushWriter<>(
                     flush, keys, values, hash, shardCount, maxKeysPerPage,
-                    maxEntriesPerPart, blockSize, format,
-                    longShardHashFunction);
+                    maxEntriesPerPart, blockSize, format);
             final SenkuIngestor<K, V> ingestor = new SenkuIngestor<>(
                     new ReentrantLock(), merge, hash, flushWriter,
                     maxInMemoryEntries, initialMapCapacity,
@@ -215,6 +217,7 @@ public final class SenkuRuntime {
      *
      * @param <K> key type
      * @param <V> value type
+     *
      * @return ready handle
      */
     public static <K, V> SenkuReady<K, V> open(final Directory directory,

@@ -49,7 +49,9 @@ final class SenkuSourceCatalog {
                     "runSource");
             final String path = runPath(validated);
             if (!outputs.contains(path)) {
-                runs.putIfAbsent(path, validated);
+                // Equality was checked above. Retain the observed immutable
+                // identity so later cached discoveries need no summary copies.
+                runs.put(path, validated);
             }
         }
     }
@@ -252,7 +254,7 @@ final class SenkuSourceCatalog {
 
     private static boolean sameManifest(final SenkuRunManifest first,
             final SenkuRunManifest second) {
-        return first.partCount() == second.partCount()
+        return first == second || first.partCount() == second.partCount()
                 && first.recordCount() == second.recordCount()
                 && sameSummary(first, second);
     }

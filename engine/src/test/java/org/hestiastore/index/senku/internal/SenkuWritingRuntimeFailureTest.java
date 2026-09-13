@@ -1,11 +1,14 @@
 package org.hestiastore.index.senku.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executors;
@@ -53,8 +56,8 @@ class SenkuWritingRuntimeFailureTest {
     void setUp() {
         firstFailure = new AtomicReference<>();
         controlExecutor = Executors.newSingleThreadScheduledExecutor();
-        workerExecutor = new ThreadPoolExecutor(1, 1, 0L,
-                TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1));
+        workerExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(1));
         writing = new SenkuWritingRuntime<>(directory,
                 new TypeDescriptorInteger(), new TypeDescriptorLong(),
                 DataBlockSize.ofDataBlockSize(1_024), 1, fileLock,
@@ -81,6 +84,27 @@ class SenkuWritingRuntimeFailureTest {
 
         assertSame(expected, thrown);
         assertSame(cause, thrown.getCause());
+    }
+
+    @Test
+    void batchFailurePreservesCauseAndTerminatesWorkersControlAndRootLock()
+            throws InterruptedException {
+        final long[] input = { 0, 1 };
+        final IndexException expected = new IndexException(
+                "batch ingestion failed");
+        doThrow(expected).when(ingestor).putLongs(input, 0, input.length);
+
+        assertSame(expected, assertThrows(IndexException.class,
+                () -> writing.putLongs(input, 0, input.length)));
+        assertTrue(controlExecutor.awaitTermination(10, TimeUnit.SECONDS));
+        assertTrue(workerExecutor.isTerminated());
+        verify(fileLock).unlock();
+        verify(ingestor).fail();
+        assertSame(expected, firstFailure.get());
+        assertSame(expected,
+                assertThrows(IndexException.class, writing::completedResult));
+        assertFalse(directory.isFileExists(SenkuFileNames.READY_FILE));
+        assertEquals(SenkuWritingState.ERROR, writing.state());
     }
 
     @Test

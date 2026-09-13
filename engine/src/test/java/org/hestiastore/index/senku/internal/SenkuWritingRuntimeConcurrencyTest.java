@@ -11,6 +11,8 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,10 +65,8 @@ class SenkuWritingRuntimeConcurrencyTest {
     private ThreadPoolExecutor workerExecutor;
 
     private final List<Long> generations = new CopyOnWriteArrayList<>();
-    private final List<Map<Integer, Long>> batches =
-            new CopyOnWriteArrayList<>();
-    private final List<Integer> batchStripeCounts =
-            new CopyOnWriteArrayList<>();
+    private final List<Map<Integer, Long>> batches = new CopyOnWriteArrayList<>();
+    private final List<Integer> batchStripeCounts = new CopyOnWriteArrayList<>();
 
     private CountDownLatch flushStarted;
     private CountDownLatch releaseFlush;
@@ -103,6 +104,26 @@ class SenkuWritingRuntimeConcurrencyTest {
     }
 
     @Test
+    void writingCompletionsCoalesceWithoutDiscoveryOrReadiness() {
+        writing.completionProcessed();
+        writing.completionProcessed();
+        writing.completionProcessed();
+        final ArgumentCaptor<Runnable> wake = ArgumentCaptor
+                .forClass(Runnable.class);
+        verify(controlExecutor).execute(wake.capture());
+
+        wake.getValue().run();
+
+        verify(coordinator).scheduleOnce(false);
+        verify(coordinator, never()).scanAndScheduleOnce(anyBoolean());
+        verify(coordinator, never()).discoverAndScheduleOnce(anyBoolean());
+        verify(coordinator, never()).isDrainComplete();
+        assertEquals(SenkuWritingState.WRITING, writing.state());
+        writing.completionProcessed();
+        verify(controlExecutor, times(2)).execute(wake.capture());
+    }
+
+    @Test
     void runtimeAcceptsOneActiveBatchDuringFlushThenAppliesBackpressure()
             throws Exception {
         stubBlockingFlush();
@@ -121,8 +142,7 @@ class SenkuWritingRuntimeConcurrencyTest {
 
             assertEquals(2, ingestor.size());
             assertThrows(TimeoutException.class,
-                    () -> blockedByFullNextMap.get(50,
-                            TimeUnit.MILLISECONDS));
+                    () -> blockedByFullNextMap.get(50, TimeUnit.MILLISECONDS));
             releaseFlush.countDown();
             blockedByFullNextMap.get(5, TimeUnit.SECONDS);
         } finally {
@@ -131,8 +151,8 @@ class SenkuWritingRuntimeConcurrencyTest {
         firstFlush.get(5, TimeUnit.SECONDS);
 
         assertEquals(List.of(0L, 1L), generations);
-        assertEquals(List.of(Map.of(1, 1L, 2, 2L),
-                Map.of(3, 3L, 4, 4L)), batches);
+        assertEquals(List.of(Map.of(1, 1L, 2, 2L), Map.of(3, 3L, 4, 4L)),
+                batches);
         assertEquals(List.of(128, 128), batchStripeCounts);
         verify(flushWriter, times(2)).write(anyLong(), anyList());
     }

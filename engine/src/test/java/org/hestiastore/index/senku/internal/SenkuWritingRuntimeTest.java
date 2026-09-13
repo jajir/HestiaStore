@@ -19,6 +19,24 @@ import org.junit.jupiter.api.Test;
 class SenkuWritingRuntimeTest {
 
     @Test
+    void primitiveBatchArgumentsAreRejectedBeforeTheLifecycleGateChanges() {
+        final MemDirectory directory = new MemDirectory();
+        final SenkuWritingRuntime<Integer, Long> writing = create(directory, 1,
+                10);
+        final long[] input = { 0 };
+        assertThrows(IllegalArgumentException.class,
+                () -> writing.putLongs(input, 1, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> writing.putLongs(null, 0, 0));
+        assertEquals(SenkuWritingState.WRITING, writing.state());
+        try (SenkuReady<Integer, Long> ready = writing.finishWriting()) {
+            assertEquals(0, ready.recordCount());
+            assertThrows(IndexException.class,
+                    () -> writing.putLongs(input, 0, 0));
+        }
+    }
+
+    @Test
     void emptyFinishCreatesOneTerminalRunPerShardAndTransfersHandle() {
         final MemDirectory directory = new MemDirectory();
         final SenkuWritingRuntime<Integer, Long> writing = create(directory, 3,
