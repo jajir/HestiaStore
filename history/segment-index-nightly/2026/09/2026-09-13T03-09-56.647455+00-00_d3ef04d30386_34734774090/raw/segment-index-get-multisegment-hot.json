@@ -1,0 +1,122 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitSync",
+        "mode" : "thrpt",
+        "threads" : 4,
+        "forks" : 1,
+        "jvm" : "/usr/lib/jvm/temurin-21-jdk-amd64/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.12.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.12.1+1-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "2 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "2 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "keyCount" : "32768",
+            "maxKeysInSegment" : "1024",
+            "maxSegmentsInCache" : "3",
+            "snappy" : "true",
+            "valueLength" : "64",
+            "workingSetMode" : "hot"
+        },
+        "primaryMetric" : {
+            "score" : 3208255.8595466935,
+            "scoreError" : 289728.4546221039,
+            "scoreConfidence" : [
+                2918527.4049245897,
+                3497984.3141687973
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3118267.043827129,
+                "50.0" : 3252800.907592232,
+                "90.0" : 3271365.715213773,
+                "95.0" : 3271365.715213773,
+                "99.0" : 3271365.715213773,
+                "99.9" : 3271365.715213773,
+                "99.99" : 3271365.715213773,
+                "99.999" : 3271365.715213773,
+                "99.9999" : 3271365.715213773,
+                "100.0" : 3271365.715213773
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    3134522.8090583133,
+                    3252800.907592232,
+                    3118267.043827129,
+                    3271365.715213773,
+                    3264322.822042018
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissSync",
+        "mode" : "thrpt",
+        "threads" : 4,
+        "forks" : 1,
+        "jvm" : "/usr/lib/jvm/temurin-21-jdk-amd64/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.12.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.12.1+1-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "2 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "2 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "keyCount" : "32768",
+            "maxKeysInSegment" : "1024",
+            "maxSegmentsInCache" : "3",
+            "snappy" : "true",
+            "valueLength" : "64",
+            "workingSetMode" : "hot"
+        },
+        "primaryMetric" : {
+            "score" : 4056091.411686355,
+            "scoreError" : 128455.71616338406,
+            "scoreConfidence" : [
+                3927635.6955229705,
+                4184547.127849739
+            ],
+            "scorePercentiles" : {
+                "0.0" : 4001915.4713114435,
+                "50.0" : 4059662.62488172,
+                "90.0" : 4091241.9278216027,
+                "95.0" : 4091241.9278216027,
+                "99.0" : 4091241.9278216027,
+                "99.9" : 4091241.9278216027,
+                "99.99" : 4091241.9278216027,
+                "99.999" : 4091241.9278216027,
+                "99.9999" : 4091241.9278216027,
+                "100.0" : 4091241.9278216027
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    4091241.9278216027,
+                    4055196.6012716386,
+                    4059662.62488172,
+                    4001915.4713114435,
+                    4072440.4331453717
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+
