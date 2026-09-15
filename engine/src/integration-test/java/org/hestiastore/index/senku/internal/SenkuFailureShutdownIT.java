@@ -124,7 +124,7 @@ class SenkuFailureShutdownIT {
         assertTrue(directory.isFileExists(SenkuFileNames.LOCK_FILE));
         final FileLock secondLock = directory
                 .getLock(SenkuFileNames.LOCK_FILE);
-        assertThrows(IndexException.class, secondLock::lock);
+        assertThrows(IllegalStateException.class, secondLock::lock);
         releaseFlush.countDown();
         if (finishing || flushFails) {
             assertThrows(ExecutionException.class,
