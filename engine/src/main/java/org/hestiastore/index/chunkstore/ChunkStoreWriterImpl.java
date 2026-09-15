@@ -29,7 +29,8 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
     /**
      * Creates a new instance of {@link ChunkStoreWriterImpl}.
      *
-     * @param cellStoreWriter required cell store writer to write chunk data to.
+     * @param cellStoreWriter      required cell store writer to write chunk
+     *                             data to.
      * @param encodingChunkFilters required encoding filters already resolved
      *                             for this runtime writer
      */
@@ -37,9 +38,8 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
             final List<ChunkFilter> encodingChunkFilters) {
         this.cellStoreWriter = Vldtn.requireNonNull(cellStoreWriter,
                 "cellStoreWriter");
-        this.encodingProcessor = new ChunkProcessor(List
-                .copyOf(Vldtn.requireNonNull(encodingChunkFilters,
-                        "encodingChunkFilters")));
+        this.encodingProcessor = new ChunkProcessor(List.copyOf(Vldtn
+                .requireNonNull(encodingChunkFilters, "encodingChunkFilters")));
     }
 
     @Override
@@ -58,6 +58,16 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
         if (chunkData.getMagicNumber() != ChunkHeader.MAGIC_NUMBER) {
             chunkData = chunkData.withMagicNumber(ChunkHeader.MAGIC_NUMBER);
         }
+        return writePreparedChunk(chunkData);
+    }
+
+    @Override
+    public CellPosition writePreparedChunk(final ChunkData chunk) {
+        final ChunkData chunkData = Vldtn.requireNonNull(chunk, "chunk");
+        Vldtn.requireTrue(!wasClosed(), "Chunk writer is closed");
+        Vldtn.requireTrue(
+                chunkData.getMagicNumber() == ChunkHeader.MAGIC_NUMBER,
+                "Prepared chunk has an invalid magic number");
         final ByteSequence encodedPayload = chunkData.getPayloadSequence();
         final ChunkHeader header = ChunkHeader.of(chunkData.getMagicNumber(),
                 chunkData.getVersion(), encodedPayload.length(),

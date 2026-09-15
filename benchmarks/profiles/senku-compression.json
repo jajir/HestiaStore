@@ -1,0 +1,14 @@
+{
+  "profile": "senku-compression",
+  "description": "Primitive Senku merge comparison of prefix/Zstd-3, delta-varint/Zstd-3, and raw delta-varint pages.",
+  "supportSources": ["benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuMergeEncodingBenchmark.java"],
+  "benchmarks": [
+    {
+      "label": "senku-compression",
+      "include": "org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark.merge"],
+      "expectedResultCount": 3,
+      "args": ["-p", "path=primitive", "-p", "storage=prefix-zstd,delta-zstd,delta-none", "-p", "dataBlockBytes=8192", "-prof", "gc"]
+    }
+  ]
+}

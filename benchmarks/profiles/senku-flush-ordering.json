@@ -1,0 +1,22 @@
+{
+  "profile": "senku-flush-ordering",
+  "description": "Former Map.Entry TimSort and compact primitive-long Senku flush ordering on collision-heavy keys.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuFlushOrderingBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "senku-flush-ordering",
+      "include": "org.hestiastore.index.senku.internal.SenkuFlushOrderingBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.senku.internal.SenkuFlushOrderingBenchmark.compactBoundedSort",
+        "org.hestiastore.index.senku.internal.SenkuFlushOrderingBenchmark.compactSerialSort",
+        "org.hestiastore.index.senku.internal.SenkuFlushOrderingBenchmark.entryArrayBoundedTimSort"
+      ],
+      "expectedResultCount": 3,
+      "args": [
+        "-prof", "gc"
+      ]
+    }
+  ]
+}

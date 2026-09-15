@@ -25,6 +25,7 @@ nav:
         - Overview: how-to-use/index.md
         - Install: how-to-use/install.md
         - Quick Start: how-to-use/quick-start.md
+        - Bulk Ingestion with Senku: how-to-use/senku-index.md
         - Troubleshooting: how-to-use/troubleshooting.md
         - API Reference ↗: https://javadoc.io/doc/org.hestiastore/engine
     - Configuration:
@@ -44,6 +45,7 @@ nav:
         - WAL Canary Runbook: operations/wal-canary-runbook.md
     - Architecture:
         - Overview: architecture/index.md
+        - Senku Index: architecture/senku-index.md
         - Data Block Format: architecture/datablock.md
         - Filters & Integrity: architecture/filters.md
         - Chunk Filter Provider Model: architecture/chunk-filter-provider-model.md

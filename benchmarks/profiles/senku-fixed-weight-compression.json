@@ -1,0 +1,14 @@
+{
+  "profile": "senku-fixed-weight-compression",
+  "description": "Like-for-like primitive merge of the same fixed-weight parity-class longs using numeric delta or fixed-weight rank delta pages, both with Zstd-3.",
+  "supportSources": ["benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuMergeEncodingBenchmark.java"],
+  "benchmarks": [
+    {
+      "label": "senku-fixed-weight-compression",
+      "include": "org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark.merge"],
+      "expectedResultCount": 2,
+      "args": ["-p", "path=primitive", "-p", "storage=delta-zstd,rank-zstd", "-p", "keyShape=fixed-weight", "-p", "dataBlockBytes=8192", "-prof", "gc"]
+    }
+  ]
+}

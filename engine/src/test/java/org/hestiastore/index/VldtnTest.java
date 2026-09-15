@@ -69,6 +69,26 @@ class VldtnTest {
     }
 
     @Test
+    void requireIoBufferSize_usesProvidedPropertyName() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireIoBufferSize(1000, "diskIoBufferSize"));
+
+        assertEquals(
+                "Propety 'diskIoBufferSize' must be divisible "
+                        + "by 1024 (e.g., 1024, 2048, 4096). Got: '1000'",
+                e.getMessage());
+    }
+
+    @Test
+    void requireIoBufferSize_rejectsNullPropertyName() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireIoBufferSize(1024, null));
+
+        assertEquals("Property 'propertyName' must not be null.",
+                e.getMessage());
+    }
+
+    @Test
     void test_requireBetween() {
         assertEquals(5, Vldtn.requireBetween(5, 1, 10, "testProperty"));
     }
@@ -212,6 +232,22 @@ class VldtnTest {
                 () -> Vldtn.requireGreaterThanOrEqualToZero(-1L, "revision"));
         assertEquals(
                 "Property 'revision' must be greater than or equal to 0",
+                e.getMessage());
+    }
+
+    @Test
+    void requireGreaterThanZero_supportsLongValues() {
+        assertEquals(1L, Vldtn.requireGreaterThanZero(1L, "longValue"));
+        assertEquals(Long.MAX_VALUE,
+                Vldtn.requireGreaterThanZero(Long.MAX_VALUE, "longValue"));
+    }
+
+    @Test
+    void requireGreaterThanZero_rejectsNonPositiveLong() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireGreaterThanZero(0L, "longValue"));
+
+        assertEquals("Property 'longValue' must be greater than 0",
                 e.getMessage());
     }
 

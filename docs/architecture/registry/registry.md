@@ -90,6 +90,13 @@ state machine and background-maintenance semantics. `flush()` and `compact()`
 on the handle block only until the request is accepted; they do not wait for
 the background maintenance work to reach `READY`.
 
+`BlockingSegment.getRuntime().getState()` observes a closed generation with
+one registry lookup. It refreshes the cached generation when a replacement is
+available and leaves the cached generation unchanged when the lookup returns
+`BUSY` or `CLOSED`. A concurrent refresh can still supply a newer generation.
+This lets maintenance observe completion after a split retires its parent.
+Data operations continue to use their bounded blocking reload policy.
+
 Single-attempt operations on `BlockingSegment` return the shared
 `OperationResult<T>`. Blocking handle operations retry retryable statuses and
 throw `IndexException` on timeout or terminal failure. The primary registry

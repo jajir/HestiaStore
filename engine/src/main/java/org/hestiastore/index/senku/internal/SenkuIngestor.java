@@ -1,0 +1,696 @@
+package org.hestiastore.index.senku.internal;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.ToIntFunction;
+import java.util.function.LongToIntFunction;
+
+import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.senku.SenkuMergeFunction;
+
+/**
+ * Owns striped active ingestion maps and rotates full batches for flushing
+ * outside the mutation locks. Each stripe publishes its size at intervals; the
+ * published total can lag the actual distinct-key count by less than 25 percent
+ * of the threshold without a shared increment on every put.
+ */
+final class SenkuIngestor<K, V> {
+
+    private static final int INGESTION_STRIPE_COUNT = SenkuLongBatch.STRIPE_COUNT;
+    private static final int STRIPE_MIX_MULTIPLIER_1 = 0x7feb352d;
+    private static final int STRIPE_MIX_MULTIPLIER_2 = 0x846ca68b;
+
+    private final ReentrantLock controlLock;
+    private final ReentrantLock[] mutationLocks = new ReentrantLock[INGESTION_STRIPE_COUNT];
+    private final Condition ingestionMayProceed;
+    private final SenkuMergeFunction<K, V> mergeFunction;
+    private final ToIntFunction<K> shardHashFunction;
+    private final LongToIntFunction longShardHashFunction;
+    private final SenkuFlushWriter<K, V> flushWriter;
+    private final int maxInMemoryEntries;
+    private final int initialMapCapacity;
+    private final int countCheckInterval;
+
+    private volatile List<SenkuIngestionMap<K, V>> entries;
+    private volatile int[] publishedStripeSizes;
+    private volatile AtomicInteger publishedEntryCount;
+    private volatile int[] nextCountChecks;
+    private List<SenkuIngestionMap<K, V>> flushingEntries;
+    private long flushingId;
+    private long nextFlushId;
+    private boolean flushIdsExhausted;
+    private boolean flushing;
+    private volatile boolean accepting = true;
+    private volatile boolean paused;
+    private volatile boolean rotationRequested;
+    private volatile IndexException flushFailure;
+
+    /**
+     * Creates an ingestor backed by one active striped batch and at most one
+     * batch being flushed. Independent mutation stripes allow parallel puts;
+     * taking every stripe makes batch rotation safe.
+     *
+     * @param controlLock        lifecycle, rotation, and backpressure lock
+     * @param mergeFunction      duplicate-key merge function
+     * @param shardHashFunction  configured persistent-shard hash function
+     * @param flushWriter        persistent flush writer
+     * @param maxInMemoryEntries approximate distinct-key rotation threshold
+     * @param initialMapCapacity total initial capacity of each rotated batch
+     */
+    SenkuIngestor(final ReentrantLock controlLock,
+            final SenkuMergeFunction<K, V> mergeFunction,
+            final ToIntFunction<K> shardHashFunction,
+            final SenkuFlushWriter<K, V> flushWriter,
+            final int maxInMemoryEntries, final int initialMapCapacity) {
+        this(controlLock, mergeFunction, shardHashFunction, flushWriter,
+                maxInMemoryEntries, initialMapCapacity, null);
+    }
+
+    /**
+     * Creates an ingestor with optional explicitly selected primitive storage.
+     * The assembly layer validates the key/value descriptors and set reducer.
+     *
+     * @param controlLock           lifecycle lock
+     * @param mergeFunction         duplicate reducer
+     * @param shardHashFunction     generic hash compatibility bridge
+     * @param flushWriter           persistent flush writer
+     * @param maxInMemoryEntries    rotation threshold
+     * @param initialMapCapacity    initial capacity across mutation stripes
+     * @param longShardHashFunction primitive hash, or null for generic storage
+     */
+    SenkuIngestor(final ReentrantLock controlLock,
+            final SenkuMergeFunction<K, V> mergeFunction,
+            final ToIntFunction<K> shardHashFunction,
+            final SenkuFlushWriter<K, V> flushWriter,
+            final int maxInMemoryEntries, final int initialMapCapacity,
+            final LongToIntFunction longShardHashFunction) {
+        this.controlLock = Vldtn.requireNonNull(controlLock, "controlLock");
+        ingestionMayProceed = controlLock.newCondition();
+        this.mergeFunction = Vldtn.requireNonNull(mergeFunction,
+                "mergeFunction");
+        this.shardHashFunction = Vldtn.requireNonNull(shardHashFunction,
+                "shardHashFunction");
+        this.longShardHashFunction = longShardHashFunction;
+        this.flushWriter = Vldtn.requireNonNull(flushWriter, "flushWriter");
+        this.maxInMemoryEntries = Vldtn.requireGreaterThanZero(
+                maxInMemoryEntries, "maxInMemoryEntries");
+        this.initialMapCapacity = Vldtn.requireGreaterThanZero(
+                initialMapCapacity, "initialMapCapacity");
+        countCheckInterval = Math.max(1,
+                maxInMemoryEntries / (INGESTION_STRIPE_COUNT * 4));
+        entries = newMaps();
+        resetCountSampling();
+        for (int index = 0; index < mutationLocks.length; index++) {
+            mutationLocks[index] = new ReentrantLock();
+        }
+    }
+
+    /**
+     * Atomically adds or merges an entry. Distinct keys on separate mutation
+     * stripes may proceed in parallel; one key is always merged serially.
+     *
+     * @param key   non-null key
+     * @param value non-null value
+     */
+    void put(final K key, final V value) {
+        final K validatedKey = Vldtn.requireNonNull(key, "key");
+        final V validatedValue = Vldtn.requireNonNull(value, "value");
+        final int configuredHash = configuredHash(validatedKey);
+        putKey(validatedKey, validatedValue, 0L, false, configuredHash);
+    }
+
+    /**
+     * Adds one primitive key through the same mutation and lifecycle gates.
+     *
+     * @param key exact long key
+     */
+    void putLong(final long key) {
+        if (longShardHashFunction == null) {
+            throw new IllegalStateException(
+                    "Primitive long set is not available.");
+        }
+        final int hash;
+        try {
+            hash = longShardHashFunction.applyAsInt(key);
+        } catch (Exception e) {
+            if (e instanceof IndexException) {
+                throw (IndexException) e;
+            }
+            throw new IndexException("Senku shard hash function failed.", e);
+        }
+        putKey(null, null, key, true, hash);
+    }
+
+    /**
+     * Groups bounded windows by mutation stripe before acquiring any lock. Each
+     * hold accepts at most MAX_GROUP_KEYS keys and stops early for rotation.
+     * Hashing, admission waits, and flushing remain outside mutation locks.
+     * Accepted subsets are not rolled back after an operational failure.
+     *
+     * @param keys   caller-owned input, valid until this synchronous call
+     *               returns
+     * @param offset first input key
+     * @param length selected key count
+     */
+    void putLongs(final long[] keys, final int offset, final int length) {
+        SenkuLongBatch.validateSlice(keys, offset, length);
+        if (longShardHashFunction == null) {
+            throw new IllegalStateException(
+                    "Primitive long set is not available.");
+        }
+        requireAccepting();
+        if (length == 0) {
+            return;
+        }
+        checkBatchInterrupted();
+        final SenkuLongBatch batch = new SenkuLongBatch(
+                Math.min(length, SenkuLongBatch.WINDOW_KEYS));
+        final int end = offset + length;
+        for (int from = offset; from < end;) {
+            checkBatchInterrupted();
+            requireAccepting();
+            final int count = Math.min(end - from, SenkuLongBatch.WINDOW_KEYS);
+            batch.load(keys, from, count, longShardHashFunction);
+            for (int stripe = 0; stripe < INGESTION_STRIPE_COUNT; stripe++) {
+                int index = batch.first(stripe);
+                while (index >= 0) {
+                    index = putLongGroup(batch, stripe, index);
+                }
+            }
+            from += count;
+        }
+    }
+
+    /**
+     * Accepts a bounded same-stripe group through the existing rotation gate.
+     */
+    private int putLongGroup(final SenkuLongBatch batch, final int stripe,
+            final int first) {
+        final ReentrantLock mutationLock = mutationLocks[stripe];
+        int next = first;
+        while (next == first) {
+            checkBatchInterrupted();
+            if (paused || rotationRequested) {
+                awaitBatchAdmission();
+            }
+            boolean rotate = false;
+            lockBatchMutation(mutationLock);
+            try {
+                requireAccepting();
+                if (!paused && !rotationRequested) {
+                    final SenkuLongSetMap map = (SenkuLongSetMap) ingestionMap(
+                            stripe);
+                    int processed = 0;
+                    while (next >= 0
+                            && processed < SenkuLongBatch.MAX_GROUP_KEYS
+                            && !rotationRequested) {
+                        if (map.addLong(batch.key(next), batch.hash(next))) {
+                            sampleCount(stripe, map.size());
+                        }
+                        next = batch.next(next);
+                        processed++;
+                    }
+                    rotate = rotationRequested;
+                }
+            } finally {
+                mutationLock.unlock();
+            }
+            if (rotate) {
+                rotateAndFlush();
+            }
+        }
+        return next;
+    }
+
+    /** Waits interruptibly for batch admission without owning a stripe. */
+    private void awaitBatchAdmission() {
+        try {
+            controlLock.lockInterruptibly();
+            try {
+                while ((paused || rotationRequested) && accepting) {
+                    ingestionMayProceed.await();
+                }
+                requireAccepting();
+            } finally {
+                controlLock.unlock();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted awaiting batch admission.",
+                    e);
+        }
+    }
+
+    /**
+     * Acquires only the selected mutation stripe and preserves interruption.
+     */
+    private static void lockBatchMutation(final ReentrantLock mutationLock) {
+        try {
+            mutationLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted acquiring batch stripe.", e);
+        }
+    }
+
+    /**
+     * Rejects interrupted batch callers without clearing their interrupt flag.
+     */
+    private static void checkBatchInterrupted() {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new IndexException("Primitive batch ingestion interrupted.",
+                    new InterruptedException("Batch caller was interrupted"));
+        }
+    }
+
+    private void putKey(final K key, final V value, final long primitiveKey,
+            final boolean primitive, final int configuredHash) {
+        final int stripe = stripeFromHash(configuredHash);
+        final ReentrantLock mutationLock = mutationLocks[stripe];
+        boolean accepted = false;
+        boolean rotate = false;
+        while (!accepted) {
+            if (paused || rotationRequested) {
+                awaitAdmission();
+            }
+            mutationLock.lock();
+            try {
+                requireAccepting();
+                if (!paused && !rotationRequested) {
+                    final SenkuIngestionMap<K, V> stripeEntries = ingestionMap(
+                            stripe);
+                    final boolean inserted = primitive
+                            ? ((SenkuLongSetMap) stripeEntries)
+                                    .addLong(primitiveKey, configuredHash)
+                            : stripeEntries.mergeWithHash(key, value,
+                                    configuredHash, mergeFunction);
+                    if (inserted) {
+                        sampleCount(stripe, stripeEntries.size());
+                    }
+                    rotate = rotationRequested;
+                    accepted = true;
+                }
+            } finally {
+                mutationLock.unlock();
+            }
+        }
+        if (rotate) {
+            rotateAndFlush();
+        }
+    }
+
+    /**
+     * Flushes the current partial map after any in-progress flush completes.
+     *
+     * @return true when a map was published
+     */
+    boolean flushRemaining() {
+        controlLock.lock();
+        try {
+            awaitFlushLocked();
+            rotationRequested = true;
+            lockAllMutations();
+            try {
+                if (entryCountLocked() == 0) {
+                    cancelRotationLocked();
+                    return false;
+                }
+                claimFlushLocked();
+            } finally {
+                unlockAllMutations();
+            }
+        } finally {
+            controlLock.unlock();
+        }
+        flushClaimed();
+        return true;
+    }
+
+    /**
+     * Changes queue-driven ingestion backpressure without directory I/O.
+     *
+     * @param value true to pause new puts; false to resume them
+     */
+    void setPaused(final boolean value) {
+        controlLock.lock();
+        try {
+            final boolean previous = paused;
+            paused = accepting && value;
+            if (previous && !paused) {
+                ingestionMayProceed.signalAll();
+            }
+        } finally {
+            controlLock.unlock();
+        }
+    }
+
+    /**
+     * Closes admission, waits for any detached-map flush, and flushes the final
+     * active map.
+     *
+     * @return true when a final flush was published
+     */
+    boolean stopAcceptingAndFlush() {
+        controlLock.lock();
+        try {
+            requireAccepting();
+            accepting = false;
+            paused = false;
+            ingestionMayProceed.signalAll();
+            awaitFlushLocked();
+            lockAllMutations();
+            try {
+                if (entryCountLocked() == 0) {
+                    return false;
+                }
+                claimFlushLocked();
+            } finally {
+                unlockAllMutations();
+            }
+        } finally {
+            controlLock.unlock();
+        }
+        flushClaimed();
+        return true;
+    }
+
+    /**
+     * Stops admission and wakes blocked callers after runtime failure.
+     */
+    void fail() {
+        controlLock.lock();
+        try {
+            accepting = false;
+            paused = false;
+            ingestionMayProceed.signalAll();
+        } finally {
+            controlLock.unlock();
+        }
+    }
+
+    /**
+     * Waits for the detached caller-owned flush to release its storage
+     * resources, including when that flush fails. Failure shutdown closes
+     * admission before calling this method and retains the original runtime
+     * failure separately. Interruption is preserved without releasing the
+     * root lock while a flush still owns storage resources.
+     */
+    void awaitFlushCompletion() {
+        controlLock.lock();
+        try {
+            awaitFlushCompletionLocked();
+        } finally {
+            controlLock.unlock();
+        }
+    }
+
+    /**
+     * Returns whether queue-driven ingestion is currently paused.
+     *
+     * @return true when new puts wait for a resume signal
+     */
+    boolean isPaused() {
+        return paused;
+    }
+
+    /**
+     * Returns the distinct-key count in the active striped batch.
+     *
+     * @return active batch size
+     */
+    int size() {
+        lockAllMutations();
+        try {
+            return entryCountLocked();
+        } finally {
+            unlockAllMutations();
+        }
+    }
+
+    private void awaitAdmission() {
+        controlLock.lock();
+        try {
+            while ((paused || rotationRequested) && accepting) {
+                ingestionMayProceed.awaitUninterruptibly();
+            }
+            requireAccepting();
+        } finally {
+            controlLock.unlock();
+        }
+    }
+
+    private void rotateAndFlush() {
+        boolean claimed = false;
+        controlLock.lock();
+        try {
+            if (accepting && rotationRequested && !flushing) {
+                lockAllMutations();
+                try {
+                    if (accepting && rotationRequested && !flushing) {
+                        claimFlushLocked();
+                        claimed = true;
+                    }
+                } finally {
+                    unlockAllMutations();
+                }
+            }
+        } finally {
+            controlLock.unlock();
+        }
+        if (claimed) {
+            flushClaimed();
+        }
+    }
+
+    private void flushClaimed() {
+        while (true) {
+            final List<SenkuIngestionMap<K, V>> batchMaps;
+            final long generation;
+            controlLock.lock();
+            try {
+                batchMaps = flushingEntries;
+                generation = flushingId;
+            } finally {
+                controlLock.unlock();
+            }
+            try {
+                flushWriter.write(generation, batchMaps);
+            } catch (Exception e) {
+                final IndexException failure = e instanceof IndexException
+                        ? (IndexException) e
+                        : new IndexException("Unable to flush Senku entries.",
+                                e);
+                recordFlushFailure(failure);
+                throw failure;
+            }
+
+            controlLock.lock();
+            try {
+                advanceFlushIdLocked();
+                if (accepting && rotationRequested) {
+                    lockAllMutations();
+                    try {
+                        claimNextFlushLocked();
+                    } catch (IndexException e) {
+                        recordFlushFailureLocked(e);
+                        throw e;
+                    } finally {
+                        unlockAllMutations();
+                    }
+                } else {
+                    finishFlushLocked();
+                    return;
+                }
+            } finally {
+                controlLock.unlock();
+            }
+        }
+    }
+
+    private void awaitFlushLocked() {
+        awaitFlushCompletionLocked();
+        if (flushFailure != null) {
+            throw flushFailure;
+        }
+    }
+
+    private void awaitFlushCompletionLocked() {
+        while (flushing) {
+            ingestionMayProceed.awaitUninterruptibly();
+        }
+    }
+
+    private void requireAccepting() {
+        final IndexException failure = flushFailure;
+        if (failure != null) {
+            throw failure;
+        }
+        if (!accepting) {
+            throw new IndexException("Senku index no longer accepts writes.");
+        }
+    }
+
+    private int configuredHash(final K key) {
+        try {
+            return shardHashFunction.applyAsInt(key);
+        } catch (Exception e) {
+            if (e instanceof IndexException) {
+                throw (IndexException) e;
+            }
+            throw new IndexException("Senku shard hash function failed.", e);
+        }
+    }
+
+    /**
+     * Independently avalanches the configured persistent-shard hash before
+     * selecting a mutation stripe. Table probing applies a separate avalanche
+     * so conditioning a key on one stripe does not condition its table slot.
+     *
+     * @param hash configured persistent-shard hash
+     *
+     * @return mutation stripe number
+     */
+    static int stripeFromHash(final int hash) {
+        return stripeFromHash(hash, INGESTION_STRIPE_COUNT);
+    }
+
+    /**
+     * Independently avalanches a configured hash for a selected power-of-two
+     * mutation-stripe count.
+     *
+     * @param hash        configured persistent-shard hash
+     * @param stripeCount positive power-of-two stripe count
+     *
+     * @return mutation stripe number
+     */
+    static int stripeFromHash(final int hash, final int stripeCount) {
+        int mixed = hash;
+        mixed ^= mixed >>> 16;
+        mixed *= STRIPE_MIX_MULTIPLIER_1;
+        mixed ^= mixed >>> 15;
+        mixed *= STRIPE_MIX_MULTIPLIER_2;
+        mixed ^= mixed >>> 16;
+        return mixed & (stripeCount - 1);
+    }
+
+    private void lockAllMutations() {
+        for (ReentrantLock mutationLock : mutationLocks) {
+            mutationLock.lock();
+        }
+    }
+
+    private void unlockAllMutations() {
+        for (int index = mutationLocks.length - 1; index >= 0; index--) {
+            mutationLocks[index].unlock();
+        }
+    }
+
+    private void cancelRotationLocked() {
+        rotationRequested = false;
+        ingestionMayProceed.signalAll();
+    }
+
+    private void claimFlushLocked() {
+        claimNextFlushLocked();
+        flushing = true;
+    }
+
+    private void claimNextFlushLocked() {
+        if (flushIdsExhausted) {
+            throw new IndexException("Senku flush ID sequence is exhausted.");
+        }
+        flushingEntries = entries;
+        flushingId = nextFlushId;
+        entries = newMaps();
+        resetCountSampling();
+        cancelRotationLocked();
+    }
+
+    private void sampleCount(final int stripe, final int stripeSize) {
+        if (stripeSize < nextCountChecks[stripe]) {
+            return;
+        }
+        final int previousSize = publishedStripeSizes[stripe];
+        publishedStripeSizes[stripe] = stripeSize;
+        nextCountChecks[stripe] = stripeSize + countCheckInterval;
+        final int approximateCount = publishedEntryCount
+                .addAndGet(stripeSize - previousSize);
+        if (approximateCount >= maxInMemoryEntries) {
+            rotationRequested = true;
+        }
+    }
+
+    private void resetCountSampling() {
+        publishedStripeSizes = new int[INGESTION_STRIPE_COUNT];
+        publishedEntryCount = new AtomicInteger();
+        nextCountChecks = new int[INGESTION_STRIPE_COUNT];
+        Arrays.fill(nextCountChecks, countCheckInterval);
+    }
+
+    private int entryCountLocked() {
+        int count = 0;
+        for (SenkuIngestionMap<K, V> map : entries) {
+            count = Math.addExact(count, map.size());
+        }
+        return count;
+    }
+
+    private List<SenkuIngestionMap<K, V>> newMaps() {
+        final int capacity = 1
+                + (initialMapCapacity - 1) / INGESTION_STRIPE_COUNT;
+        final List<SenkuIngestionMap<K, V>> maps = new ArrayList<>(
+                INGESTION_STRIPE_COUNT);
+        for (int index = 0; index < INGESTION_STRIPE_COUNT; index++) {
+            maps.add(newMap(capacity));
+        }
+        return maps;
+    }
+
+    @SuppressWarnings("unchecked")
+    private SenkuIngestionMap<K, V> newMap(final int capacity) {
+        if (longShardHashFunction != null) {
+            return (SenkuIngestionMap<K, V>) new SenkuLongSetMap(capacity,
+                    longShardHashFunction);
+        }
+        return new SenkuIngestionMap<>(capacity, shardHashFunction);
+    }
+
+    private SenkuIngestionMap<K, V> ingestionMap(final int stripe) {
+        return entries.get(stripe);
+    }
+
+    private void advanceFlushIdLocked() {
+        if (nextFlushId == Long.MAX_VALUE) {
+            flushIdsExhausted = true;
+        } else {
+            nextFlushId++;
+        }
+    }
+
+    private void finishFlushLocked() {
+        flushing = false;
+        flushingEntries = null;
+        ingestionMayProceed.signalAll();
+    }
+
+    private void recordFlushFailure(final IndexException failure) {
+        controlLock.lock();
+        try {
+            recordFlushFailureLocked(failure);
+        } finally {
+            controlLock.unlock();
+        }
+    }
+
+    private void recordFlushFailureLocked(final IndexException failure) {
+        flushFailure = failure;
+        accepting = false;
+        paused = false;
+        finishFlushLocked();
+    }
+}

@@ -1,0 +1,24 @@
+{
+  "profile": "senku-maintenance-hotpaths",
+  "description": "Repeated immutable metadata discovery and four/64-way ranked set merges, preserving Zstd 3, 8 KiB blocks and one-million-key pages. Run baseline and candidate on a quiet host for reliable latency conclusions; retain allocation and exact-output evidence separately.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuMetadataDiscoveryBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuMaintenanceMergeBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "immutable-metadata-discovery",
+      "include": "org.hestiastore.index.senku.internal.SenkuMetadataDiscoveryBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.index.senku.internal.SenkuMetadataDiscoveryBenchmark.scan"],
+      "expectedResultCount": 2,
+      "args": ["-p", "shardCount=128", "-p", "runsPerShard=64", "-p", "summarySize=0,256", "-wi", "2", "-i", "4", "-w", "500ms", "-r", "500ms", "-f", "2", "-prof", "gc"]
+    },
+    {
+      "label": "ranked-maintenance-merge",
+      "include": "org.hestiastore.index.senku.internal.SenkuMaintenanceMergeBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.index.senku.internal.SenkuMaintenanceMergeBenchmark.merge"],
+      "expectedResultCount": 4,
+      "args": ["-p", "entryCount=1000000", "-p", "sourceCount=4,64", "-p", "duplicatePercent=0,50", "-wi", "2", "-i", "4", "-w", "500ms", "-r", "500ms", "-f", "2", "-prof", "gc"]
+    }
+  ]
+}

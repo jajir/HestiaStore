@@ -111,6 +111,53 @@ class BenchmarkProfileContractTest {
     }
 
     @Test
+    void concatenatedPageProfileCoversFreshReadsAndRegressionControls()
+            throws Exception {
+        final BenchmarkProfile profile = loadProfiles().stream()
+                .filter(candidate -> "concatenated-page-read"
+                        .equals(candidate.profile()))
+                .findFirst().orElseThrow();
+        assertCanonicalProfileMetadata(profile);
+        final Map<String, BenchmarkEntry> byLabel = new LinkedHashMap<>();
+        for (final BenchmarkEntry entry : profile.benchmarks()) {
+            byLabel.put(entry.label(), entry);
+            assertOptionValue(entry, "-f", "3");
+            assertOptionValue(entry, "-prof", "gc");
+            assertOptionValue(entry, "-jvmArgsAppend",
+                    "-Xms1g -Xmx1g -XX:ActiveProcessorCount=4");
+        }
+        assertEquals(Set.of("fresh-slice-materialization",
+                "flat-view-materialization-control", "zstd-complete-chunk-read",
+                "cached-child-materialization-control",
+                "ranked-maintenance-merge", "steady-chunk-write-control"),
+                byLabel.keySet());
+        assertEntry(byLabel.get("fresh-slice-materialization"),
+                "org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.materialize",
+                Map.of("length", "65536", "leaves", "1,4,16", "leafType",
+                        "SLICE"));
+        assertEntry(byLabel.get("flat-view-materialization-control"),
+                "org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.materialize",
+                Map.of("length", "128,65536", "leaves", "2", "leafType",
+                        "VIEW"));
+        assertEntry(byLabel.get("cached-child-materialization-control"),
+                "org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.cachedChildren",
+                Map.of("length", "65536", "leaves", "16", "leafType",
+                        "SLICE"));
+        assertEntry(byLabel.get("zstd-complete-chunk-read"),
+                "org.hestiastore.benchmark.chunkstore.ChunkStoreZstdReadBenchmark",
+                Map.of("payloadSize", "4096,65536"));
+        assertEntry(byLabel.get("ranked-maintenance-merge"),
+                "org.hestiastore.index.senku.internal.SenkuMaintenanceMergeBenchmark",
+                Map.of("entryCount", "1000000", "sourceCount", "4,64",
+                        "duplicatePercent", "50"));
+        assertEntry(byLabel.get("steady-chunk-write-control"),
+                "org.hestiastore.benchmark.chunkstore.ChunkStoreSteadyWriteBenchmark",
+                Map.of("payloadSize", "4096"));
+        assertEquals(11, profile.benchmarks().stream()
+                .mapToInt(BenchmarkEntry::expectedResultCount).sum());
+    }
+
+    @Test
     void segmentIndexBenchmarkSourcesUseBackgroundMaintenanceBuilderName()
             throws Exception {
         try (Stream<Path> files = Files.walk(segmentIndexBenchmarkSourceRoot())) {
@@ -342,7 +389,9 @@ class BenchmarkProfileContractTest {
             for (final String expectedBenchmark : benchmark
                     .expectedBenchmarks()) {
                 assertTrue(
-                        expectedBenchmark.startsWith(benchmark.include() + "."),
+                        expectedBenchmark.equals(benchmark.include())
+                                || expectedBenchmark
+                                        .startsWith(benchmark.include() + "."),
                         () -> "Unexpected benchmark method "
                                 + expectedBenchmark + " for "
                                 + benchmark.label());
@@ -399,12 +448,18 @@ class BenchmarkProfileContractTest {
 
     private Class<?> loadBenchmarkClass(final String include)
             throws ClassNotFoundException {
-        return Class.forName(include);
+        try {
+            return Class.forName(include);
+        } catch (final ClassNotFoundException exception) {
+            return Class.forName(include.substring(0, include.lastIndexOf('.')));
+        }
     }
 
-    private Path sourcePathForInclude(final String include) {
+    private Path sourcePathForInclude(final String include)
+            throws ClassNotFoundException {
         return sourceRoot()
-                .resolve(include.replace('.', '/') + ".java");
+                .resolve(loadBenchmarkClass(include).getName().replace('.', '/')
+                        + ".java");
     }
 
     private Path segmentIndexBenchmarkSourceRoot() {

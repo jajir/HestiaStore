@@ -16,6 +16,10 @@
 
 	<!-- mvn jdeps:jdkinternals -->	
 	<dependencies>
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+        </dependency>
 		<!--
 			Production dependencies
 		-->

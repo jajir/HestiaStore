@@ -2,6 +2,7 @@ package org.hestiastore.index.bytes;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -17,6 +18,10 @@ class ConcatenatedByteSequenceTest {
 
         assertSame(one, ConcatenatedByteSequence.of(ByteSequence.EMPTY, one));
         assertSame(one, ConcatenatedByteSequence.of(one, ByteSequence.EMPTY));
+        assertArrayEquals(new byte[0], ConcatenatedByteSequence.of(
+                ByteSequence.EMPTY, new ZeroByteSequence(0)).toByteArray());
+        assertArrayEquals(new byte[0], ConcatenatedByteSequence.of(
+                ByteSequence.EMPTY, ByteSequence.EMPTY).toByteArray());
     }
 
     @Test
@@ -29,6 +34,49 @@ class ConcatenatedByteSequenceTest {
         assertEquals(1, concatenated.getByte(0));
         assertEquals(4, concatenated.getByte(3));
         assertArrayEquals(new byte[] { 1, 2, 3, 4 }, concatenated.toByteArrayCopy());
+    }
+
+    @Test
+    void test_materializes_nested_uneven_slices_and_zero_padding() {
+        final ByteSequence concatenated = ByteSequences.concat(List.of(
+                ByteSequence.EMPTY,
+                ByteSequences.viewOf(new byte[] { 9, 1, 2, 9 }, 1, 3),
+                ByteSequences.viewOf(new byte[] { 9, 9, 3, 9 }, 2, 3),
+                new ZeroByteSequence(2),
+                ByteSequences.viewOf(new byte[] { 9, 4, 5, 6, 9 }, 1, 4),
+                ByteSequence.EMPTY));
+
+        assertArrayEquals(new byte[] { 1, 2, 3, 0, 0, 4, 5, 6 },
+                concatenated.toByteArray());
+    }
+
+    @Test
+    void test_materialization_caches_result_and_keeps_defensive_copy_isolated() {
+        final ByteSequence concatenated = ConcatenatedByteSequence.of(
+                ByteSequences.viewOf(new byte[] { 9, 1, 2, 9 }, 1, 3),
+                ByteSequences.wrap(new byte[] { 3, 4 }));
+
+        final byte[] cached = concatenated.toByteArray();
+        final byte[] copy = concatenated.toByteArrayCopy();
+        copy[0] = 9;
+
+        assertSame(cached, concatenated.toByteArray());
+        assertNotSame(cached, copy);
+        assertArrayEquals(new byte[] { 1, 2, 3, 4 }, cached);
+        assertArrayEquals(new byte[] { 1, 2, 3, 4 },
+                concatenated.toByteArrayCopy());
+    }
+
+    @Test
+    void test_materializes_nested_concatenation_without_materializing_children() {
+        final ByteSequence concatenated = ByteSequences.concatNonEmpty(List.of(
+                new CopyOnlyByteSequence(new byte[] { 1, 2 }),
+                new CopyOnlyByteSequence(new byte[] { 3 }),
+                new CopyOnlyByteSequence(new byte[] { 4, 5, 6 }),
+                new CopyOnlyByteSequence(new byte[] { 7, 8 })));
+
+        assertArrayEquals(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 },
+                concatenated.toByteArray());
     }
 
     @Test

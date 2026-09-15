@@ -1,0 +1,25 @@
+{
+  "profile": "senku-batched-flush",
+  "description": "Compression-preserving flush concurrency with a 75-percent hot shard and real primitive batch admission. Run on a quiet host; key-normalized ingestion scores include generation and maintenance effects.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuSkewedFlushBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/benchmark/senku/SenkuBatchedIngestionBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/benchmark/senku/SenkuParallelIngestionBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "ranked-skewed-flush",
+      "include": "org.hestiastore.index.senku.internal.SenkuSkewedFlushBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.index.senku.internal.SenkuSkewedFlushBenchmark.write"],
+      "expectedResultCount": 2,
+      "args": ["-p", "entryCount=4000000", "-p", "distribution=uniform,hot75", "-wi", "2", "-i", "4", "-w", "1s", "-r", "1s", "-f", "2", "-prof", "gc"]
+    },
+    {
+      "label": "primitive-batch-admission",
+      "include": "org.hestiastore.benchmark.senku.SenkuBatchedIngestionBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.benchmark.senku.SenkuBatchedIngestionBenchmark.put"],
+      "expectedResultCount": 2,
+      "args": ["-p", "api=long-set", "-p", "submission=single,batch", "-p", "rotationThreshold=1000000", "-wi", "2", "-i", "4", "-w", "1s", "-r", "1s", "-f", "2", "-prof", "gc"]
+    }
+  ]
+}

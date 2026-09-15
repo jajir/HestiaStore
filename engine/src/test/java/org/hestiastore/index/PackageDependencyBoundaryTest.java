@@ -3,6 +3,8 @@ package org.hestiastore.index;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
+import java.util.Set;
+
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -19,7 +21,9 @@ class PackageDependencyBoundaryTest {
 
     private static final String INDEX_PACKAGES = "org.hestiastore.index..";
     private static final String INDEX_PACKAGE_PREFIX = "org.hestiastore.index.";
-    private static final String SEGMENT_INDEX_FACADE_PACKAGE = "org.hestiastore.index.segmentindex";
+    private static final Set<String> INDEX_FACADE_PACKAGES = Set.of(
+            "org.hestiastore.index.segmentindex",
+            "org.hestiastore.index.senku");
     private static final String SEGMENT_PACKAGES = "org.hestiastore.index.segment..";
     private static final String SORTED_DATA_FILE_PACKAGE = "org.hestiastore.index.sorteddatafile";
     private static final String CACHE_PACKAGES = "org.hestiastore.index.cache..";
@@ -65,7 +69,7 @@ class PackageDependencyBoundaryTest {
         @Override
         public SliceIdentifier getIdentifierOf(final JavaClass javaClass) {
             final String packageName = javaClass.getPackageName();
-            if (SEGMENT_INDEX_FACADE_PACKAGE.equals(packageName)
+            if (INDEX_FACADE_PACKAGES.contains(packageName)
                     || !packageName.startsWith(INDEX_PACKAGE_PREFIX)) {
                 return SliceIdentifier.ignore();
             }
@@ -75,7 +79,7 @@ class PackageDependencyBoundaryTest {
 
         @Override
         public String getDescription() {
-            return "index packages excluding the segmentindex facade";
+            return "index packages excluding public facade packages";
         }
     }
 }

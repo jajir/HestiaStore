@@ -14,6 +14,12 @@ fewest decisions possible.
 5. Use [Operations](../operations/index.md) once WAL, monitoring, backup, or
    tuning become relevant.
 
+## Bulk Ingestion
+
+For a finite load followed by immutable sorted scans, use
+[Bulk Ingestion with Senku](senku-index.md). Senku has a separate builder and
+lifecycle from `SegmentIndex`.
+
 ## Typical use cases
 
 - large local key-value datasets inside one Java service

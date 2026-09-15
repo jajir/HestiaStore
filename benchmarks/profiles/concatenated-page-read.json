@@ -1,0 +1,54 @@
+{
+  "profile": "concatenated-page-read",
+  "description": "Fresh sequence materialization, complete Zstd reads from immutable memory storage, ranked Senku maintenance merges, and a steady write control. Every run uses three forks, a fixed 1 GiB heap and four active processors. Allocation includes fresh sequence wrappers; read time includes reader lifecycle, block copies, CRC and decompression but excludes fixture construction. Compare all parameter combinations individually.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/benchmark/bytes/ByteSequenceMaterializationBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/benchmark/chunkstore/ChunkStoreZstdReadBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuMaintenanceMergeBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/benchmark/chunkstore/ChunkStoreSteadyWriteBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "fresh-slice-materialization",
+      "include": "org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.materialize",
+      "expectedBenchmarks": ["org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.materialize"],
+      "expectedResultCount": 3,
+      "args": ["-p", "length=65536", "-p", "leaves=1,4,16", "-p", "leafType=SLICE", "-wi", "3", "-i", "5", "-w", "500ms", "-r", "500ms", "-f", "3", "-t", "1", "-jvmArgsAppend", "-Xms1g -Xmx1g -XX:ActiveProcessorCount=4", "-prof", "gc"]
+    },
+    {
+      "label": "flat-view-materialization-control",
+      "include": "org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.materialize",
+      "expectedBenchmarks": ["org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.materialize"],
+      "expectedResultCount": 2,
+      "args": ["-p", "length=128,65536", "-p", "leaves=2", "-p", "leafType=VIEW", "-wi", "3", "-i", "5", "-w", "500ms", "-r", "500ms", "-f", "3", "-t", "1", "-jvmArgsAppend", "-Xms1g -Xmx1g -XX:ActiveProcessorCount=4", "-prof", "gc"]
+    },
+    {
+      "label": "cached-child-materialization-control",
+      "include": "org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.cachedChildren",
+      "expectedBenchmarks": ["org.hestiastore.benchmark.bytes.ByteSequenceMaterializationBenchmark.cachedChildren"],
+      "expectedResultCount": 1,
+      "args": ["-p", "length=65536", "-p", "leaves=16", "-p", "leafType=SLICE", "-wi", "3", "-i", "5", "-w", "500ms", "-r", "500ms", "-f", "3", "-t", "1", "-jvmArgsAppend", "-Xms1g -Xmx1g -XX:ActiveProcessorCount=4", "-prof", "gc"]
+    },
+    {
+      "label": "zstd-complete-chunk-read",
+      "include": "org.hestiastore.benchmark.chunkstore.ChunkStoreZstdReadBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.benchmark.chunkstore.ChunkStoreZstdReadBenchmark.read"],
+      "expectedResultCount": 2,
+      "args": ["-p", "payloadSize=4096,65536", "-wi", "3", "-i", "5", "-w", "500ms", "-r", "500ms", "-f", "3", "-t", "1", "-jvmArgsAppend", "-Xms1g -Xmx1g -XX:ActiveProcessorCount=4", "-prof", "gc"]
+    },
+    {
+      "label": "ranked-maintenance-merge",
+      "include": "org.hestiastore.index.senku.internal.SenkuMaintenanceMergeBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.index.senku.internal.SenkuMaintenanceMergeBenchmark.merge"],
+      "expectedResultCount": 2,
+      "args": ["-p", "entryCount=1000000", "-p", "sourceCount=4,64", "-p", "duplicatePercent=50", "-wi", "3", "-i", "5", "-w", "500ms", "-r", "500ms", "-f", "3", "-t", "1", "-jvmArgsAppend", "-Xms1g -Xmx1g -XX:ActiveProcessorCount=4", "-prof", "gc"]
+    },
+    {
+      "label": "steady-chunk-write-control",
+      "include": "org.hestiastore.benchmark.chunkstore.ChunkStoreSteadyWriteBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.benchmark.chunkstore.ChunkStoreSteadyWriteBenchmark.writeChunkSteadyState"],
+      "expectedResultCount": 1,
+      "args": ["-p", "payloadSize=4096", "-wi", "3", "-i", "5", "-w", "500ms", "-r", "500ms", "-f", "3", "-t", "1", "-jvmArgsAppend", "-Xms1g -Xmx1g -XX:ActiveProcessorCount=4", "-prof", "gc"]
+    }
+  ]
+}

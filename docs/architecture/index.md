@@ -9,7 +9,8 @@ indexes.
 HestiaStore is organized around a `SegmentIndex` orchestration layer that
 routes operations across stable segments, keeps hot segment state in memory, and
 exposes runtime metrics without letting monitoring code touch index files
-directly.
+directly. Senku is a separate bulk-ingestion index that shares low-level
+storage components and exposes a write-once, finalize-once lifecycle.
 
 ![HestiaStore high-level architecture](images/system-overview.png)
 
@@ -17,8 +18,10 @@ Source: [system-overview.plantuml](images/system-overview.plantuml)
 
 ## Main runtime components
 
-- **SegmentIndex** is the public engine entry point. It owns request routing,
-  direct routed writes, flush/compaction scheduling, split orchestration, and
+- **SenkuIndex** accepts concurrent bulk writes, merges duplicate values, and
+  finalizes immutable hash shards for globally sorted streaming.
+- **SegmentIndex** is the mutable key-value index entry point. It owns request
+  routing, direct routed writes, flush/compaction scheduling, split orchestration, and
   runtime metrics.
 - **Key-to-segment map** resolves which segment should serve a key range so the
   index can route reads and writes without scanning every segment.
@@ -60,6 +63,8 @@ Source: [system-overview.plantuml](images/system-overview.plantuml)
 
 ## Component sections
 
+- [Senku Index](senku-index.md) — bulk ingestion, duplicate reduction,
+  finalization, storage layout, and ready-stream ownership.
 - [Monitoring](monitoring/index.md) — runtime monitoring bridge and management
   API contracts.
 - [SegmentIndex](segmentindex/index.md) — top-level index orchestration:

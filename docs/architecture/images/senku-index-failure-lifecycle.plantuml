@@ -1,0 +1,38 @@
+@startuml senku-index-failure-lifecycle
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+skinparam state {
+  BackgroundColor #F7F9FC
+  BorderColor #34495E
+  FontColor #17202A
+}
+left to right direction
+
+title Senku Runtime Failure Transitions
+
+state "WRITING" as Writing
+state "READY" as Ready
+state "ERROR" as Error
+state "CLOSED" as Closed : Root lock released\nRepeated close is harmless
+
+Writing --> Error : write, maintenance,\nor finalization failure
+Ready --> Ready : stream failure reported\nexplicit stream close required
+Ready --> Closed : close(); attempt stream cleanup\nand release root lock
+
+note bottom of Error
+Ingestion is rejected. finishWriting() reports the
+recorded first failure. Background shutdown waits
+for workers and any caller-owned flush before
+releasing the root lock. It performs no explicit
+index cleanup and has no public cleanup retry.
+end note
+note bottom of Ready
+No retained ERROR state.
+Stream failure does not release the root lock.
+Close can retry a failed root-lock release.
+Callers serialize consumption with close.
+end note
+Closed --> [*]
+@enduml

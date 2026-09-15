@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.TestData;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.chunkstore.Chunk;
@@ -37,8 +38,7 @@ class SingleChunkEntryIteratorTest {
     Chunk makeChunkFromEntryList(final List<Entry<Integer, String>> entryList) {
         final SortedDataFile<Integer, String> sortedDataFile = SortedDataFile
                 .<Integer, String>builder() //
-                .withDirectory(
-                        directory) //
+                .withDirectory(directory) //
                 .withFileName(FILE_NAME)//
                 .withKeyTypeDescriptor(TestData.TYPE_DESCRIPTOR_INTEGER) //
                 .withValueTypeDescriptor(TestData.TYPE_DESCRIPTOR_STRING) //
@@ -50,8 +50,7 @@ class SingleChunkEntryIteratorTest {
 
         final ByteSequence fileBytes = directory.getFileSequence(FILE_NAME);
         return Chunk.of(ChunkHeader.of(ChunkHeader.MAGIC_NUMBER, 1,
-                fileBytes.length(), 321L),
-                fileBytes);
+                fileBytes.length(), 321L), fileBytes);
     }
 
     @Test
@@ -83,6 +82,21 @@ class SingleChunkEntryIteratorTest {
                 TestData.TYPE_DESCRIPTOR_STRING);
 
         AbstractDataTest.verifyIteratorData(TestData.ENTRY_LIST_3, iterator);
+    }
+
+    @Test
+    void rejectsMissingCodecAndIncompatibleDeltaDescriptor() {
+        final ByteSequence payload = makeChunkFromEntryList(
+                TestData.ENTRY_LIST_3).getPayloadSequence();
+        final var incompatible = KeyPageCodecs.<Integer>fromId(3);
+        assertThrows(IllegalArgumentException.class,
+                () -> new SingleChunkEntryIterator<>(payload,
+                        TestData.TYPE_DESCRIPTOR_INTEGER,
+                        TestData.TYPE_DESCRIPTOR_STRING, null));
+        assertThrows(IndexException.class,
+                () -> new SingleChunkEntryIterator<>(payload,
+                        TestData.TYPE_DESCRIPTOR_INTEGER,
+                        TestData.TYPE_DESCRIPTOR_STRING, incompatible));
     }
 
 }

@@ -1,0 +1,29 @@
+{
+  "profile": "senku-index-baseline",
+  "description": "First-version Senku ingestion, maintenance, and sorted-stream baseline using MemDirectory.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/benchmark/senku/SenkuIndexBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "senku-index-baseline",
+      "include": "org.hestiastore.benchmark.senku.SenkuIndexBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.benchmark.senku.SenkuIndexBenchmark.finishMaintenance",
+        "org.hestiastore.benchmark.senku.SenkuIndexBenchmark.ingest",
+        "org.hestiastore.benchmark.senku.SenkuIndexBenchmark.ingestToFirstSortedResult",
+        "org.hestiastore.benchmark.senku.SenkuIndexBenchmark.readyStream",
+        "org.hestiastore.benchmark.senku.SenkuIndexBenchmark.synchronousFlush"
+      ],
+      "expectedResultCount": 9,
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "200ms",
+        "-w", "200ms",
+        "-prof", "gc"
+      ]
+    }
+  ]
+}

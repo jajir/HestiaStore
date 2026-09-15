@@ -1,0 +1,32 @@
+{
+  "profile": "senku-pipeline",
+  "description": "Senku encoded-rank maintenance, bounded flush preparation and generic versus explicit long-set ingestion. Compare matching parameters; the checkpoint's missing api parameter denotes generic.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuMergeEncodingBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuFlushWriterBenchmark.java",
+    "benchmarks/src/main/java/org/hestiastore/benchmark/senku/SenkuParallelIngestionBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "ranked-maintenance",
+      "include": "org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.index.senku.internal.SenkuMergeEncodingBenchmark.merge"],
+      "expectedResultCount": 2,
+      "args": ["-p", "path=primitive", "-p", "storage=delta-zstd,rank-zstd", "-p", "keyShape=fixed-weight", "-p", "dataBlockBytes=8192", "-wi", "3", "-i", "5", "-w", "500ms", "-r", "500ms", "-f", "2", "-prof", "gc"]
+    },
+    {
+      "label": "bounded-flush",
+      "include": "org.hestiastore.index.senku.internal.SenkuFlushWriterBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.index.senku.internal.SenkuFlushWriterBenchmark.write"],
+      "expectedResultCount": 1,
+      "args": ["-p", "entryCount=1000000", "-p", "shardCount=128", "-wi", "2", "-i", "4", "-w", "500ms", "-r", "500ms", "-f", "2", "-prof", "gc"]
+    },
+    {
+      "label": "primitive-set-ingestion",
+      "include": "org.hestiastore.benchmark.senku.SenkuParallelIngestionBenchmark",
+      "expectedBenchmarks": ["org.hestiastore.benchmark.senku.SenkuParallelIngestionBenchmark.filesystemIngestThroughput"],
+      "expectedResultCount": 2,
+      "args": ["-e", ".*filesystemPutLatency", "-p", "rotationThreshold=1000000", "-p", "api=generic,long-set", "-wi", "2", "-i", "4", "-w", "1s", "-r", "1s", "-f", "2", "-prof", "gc"]
+    }
+  ]
+}

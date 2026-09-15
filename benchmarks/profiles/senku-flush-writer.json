@@ -1,0 +1,20 @@
+{
+  "profile": "senku-flush-writer",
+  "description": "One complete in-memory Senku flush after detached mutation maps have been populated.",
+  "supportSources": [
+    "benchmarks/src/main/java/org/hestiastore/index/senku/internal/SenkuFlushWriterBenchmark.java"
+  ],
+  "benchmarks": [
+    {
+      "label": "senku-flush-writer",
+      "include": "org.hestiastore.index.senku.internal.SenkuFlushWriterBenchmark",
+      "expectedBenchmarks": [
+        "org.hestiastore.index.senku.internal.SenkuFlushWriterBenchmark.write"
+      ],
+      "expectedResultCount": 1,
+      "args": [
+        "-prof", "gc"
+      ]
+    }
+  ]
+}
