@@ -124,6 +124,10 @@ final class SenkuLongSourceCursor implements AutoCloseable {
 
     /**
      * Advances to the next exact source record and closes on exhaustion.
+     * Validates logical key order across pages, whose encoders independently
+     * reset their delta or prefix state. Rank decoding is needed only at this
+     * boundary; the maintenance loop otherwise retains encoded keys. Equal
+     * boundary keys remain valid inputs for duplicate reduction.
      */
     void advance() {
         ensureOpen();
@@ -133,8 +137,16 @@ final class SenkuLongSourceCursor implements AutoCloseable {
                 hasCurrent = false;
                 return;
             }
+            final boolean pageBoundary = currentPage != null
+                    && pageOffset == currentPage.length();
+            final long previousKey = pageBoundary ? key() : 0L;
             ensurePage();
             decodeCurrent();
+            if (pageBoundary
+                    && currentCodec.decodeLongKey(currentKey) < previousKey) {
+                throw new IndexException(
+                        "Source keys must not descend across pages.");
+            }
             remaining--;
             hasCurrent = true;
         } catch (Exception e) {

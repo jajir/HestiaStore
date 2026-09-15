@@ -135,22 +135,23 @@ Coordinator -> Workers : clear queued jobs; shutdown\ndo not interrupt running j
 Workers -> Files : close owned resources\nperform no explicit file deletion
 Workers --> Coordinator : running jobs return
 Coordinator -> Coordinator : wait for worker termination\nno catalog or filesystem cleanup
+Coordinator -> Ingestor : await caller-owned detached flush\nrelease control lock while waiting
 Coordinator -> Runtime : release exclusive root .lock
 Coordinator -> Coordinator : shut down scheduled executor
 Coordinator -> Runtime : countDown maintenanceFinished
 Runtime --> Ingestor : if finishWriting is waiting, wake
 Ingestor -> Coordinator : if finishWriting is active,\nawait both executor terminations
-Ingestor --> Callers : if finishWriting was active,\nreport generic finalization failure
+Ingestor --> Callers : if finishWriting was active,\nreport original first failure
 
 note over Callers, Workers
 An active put() or flush does not poll firstFailure.
 Later ingestion calls receive only a generic ERROR-state failure.
-An active finishWriting() waits on the control-lock Condition.
-It reports a generic finalization failure without the worker cause.
+An active finishWriting() awaits maintenanceFinished.
+It preserves the recorded first failure and worker cause.
 If that waiting caller is interrupted, finish shutdown and restore its flag.
 Only the coordinator counts down maintenanceFinished.
-A SenkuReady in ERROR retains the root .lock until close completes.
-SenkuWriting minimal shutdown releases its root .lock after workers stop.
+A SenkuReady retains the root .lock until close releases it.
+Writing shutdown releases its root .lock after workers and caller flush stop.
 The invalid directory may contain partial artifacts
 and must be deleted externally.
 end note

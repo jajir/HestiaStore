@@ -23,7 +23,7 @@ process.
 - predictable local persistence with optional WAL-based crash recovery
 - point lookups plus ordered and bounded range scans over large key ranges
 - local uniqueness or compare-and-replace checks when WAL is disabled
-- teams that want a pure-Java dependency without native libraries
+- Java applications that need an embedded library rather than a database server
 
 ## What it is not trying to be
 
@@ -38,6 +38,8 @@ process.
   it matches your workload.
 - [Install](how-to-use/install.md) and [Quick Start](how-to-use/quick-start.md)
   if you want a working example immediately.
+- [Bulk Ingestion with Senku](how-to-use/senku-index.md) for a finite load with
+  duplicate reduction followed by immutable sorted scans.
 - [Configuration](configuration/index.md) if you need to tune directories,
   caching, filters, or custom data types.
 - [Operations](operations/index.md) if you need WAL, monitoring, backups, or
@@ -51,8 +53,9 @@ process.
 
 ## Key capabilities
 
-- Pure Java embedding with no native dependency requirement
+- Embedded Java API; selected compression codecs use native libraries
 - In-memory or filesystem-backed directories
+- Senku bulk ingestion with duplicate reduction and immutable sorted streaming
 - Strict UTF-8 keys and values for emoji and multilingual text
 - Custom key and value type descriptors
 - Bloom-filter assisted negative lookups

@@ -3,11 +3,13 @@ package org.hestiastore.index.chunkentryfile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorNull;
@@ -16,6 +18,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SingleChunkEntryWriterImplTest {
+    @Test
+    void repeatedCloseSequencePreservesCompletedPage() {
+        writer.put(1, 10L);
+        final ByteSequence payload = writer.closeSequence();
+
+        assertSame(payload, writer.closeSequence());
+        try (SingleChunkEntryIterator<Integer, Long> iterator = new SingleChunkEntryIterator<>(
+                payload, new TypeDescriptorInteger(), new TypeDescriptorLong())) {
+            assertEquals(Entry.of(1, 10L), iterator.next());
+            assertFalse(iterator.hasNext());
+        }
+    }
+
     @Test
     void encodedRankMethodsPreserveGenericValuesAndLogicalReadContract() {
         final var keys = new TypeDescriptorLong();

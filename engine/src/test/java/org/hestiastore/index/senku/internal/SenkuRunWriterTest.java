@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,52 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SenkuRunWriterTest {
+
+    @Test
+    void inputCloseFailurePreventsPublishingCompletedParts() {
+        final IndexException closeFailure = new IndexException("Input close failed");
+        final EntryIteratorList<Integer, Long> input = new EntryIteratorList<>(
+                List.of(entry(1, 10L))) {
+            @Override
+            protected void doClose() {
+                throw closeFailure;
+            }
+        };
+        final SenkuRunWriter<Integer, Long> runWriter = writer(1, 1);
+
+        assertSame(closeFailure,
+                assertThrows(IndexException.class, () -> runWriter.write(input)));
+        assertTrue(input.wasClosed());
+        assertTrue(directory.isFileExists(SenkuFileNames.partFile(0)));
+        assertFalse(directory.isFileExists(SenkuFileNames.MANIFEST_FILE));
+    }
+
+    @Test
+    void repeatedWriteClosesInputAndPreservesPublishedManifest() {
+        final SenkuRunWriter<Integer, Long> runWriter = writer(1, 1);
+        runWriter.write(new EntryIteratorList<>(List.of(entry(1, 10L))));
+        final EntryIteratorList<Integer, Long> nextInput = new EntryIteratorList<>(
+                List.of(entry(2, 20L)));
+
+        assertThrows(IndexException.class, () -> runWriter.write(nextInput));
+        assertTrue(nextInput.wasClosed());
+        assertEquals(List.of(entry(1, 10L)),
+                read(SenkuMetadataCodec.readRunManifest(directory)));
+    }
+
+    @Test
+    void rejectsDuplicateAndDescendingKeysAtNewPageBoundary() {
+        for (final int nextKey : new int[] { 1, 2 }) {
+            directory = new MemDirectory();
+            final SenkuRunWriter<Integer, Long> runWriter = writer(1, 1);
+            final EntryIteratorList<Integer, Long> input = new EntryIteratorList<>(
+                    List.of(entry(2, 20L), entry(nextKey, 10L)));
+
+            assertThrows(IndexException.class, () -> runWriter.write(input));
+            assertTrue(input.wasClosed());
+            assertFalse(directory.isFileExists(SenkuFileNames.MANIFEST_FILE));
+        }
+    }
 
     @Test
     void longOutputPublishesBoundedWeightedSummaryWithItsManifest() {

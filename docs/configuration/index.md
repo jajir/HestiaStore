@@ -1,7 +1,9 @@
 # Configuration
 
 Use `IndexConfiguration` to define storage behavior, memory limits, type
-handling, and selected runtime features for a `SegmentIndex`.
+handling, and selected runtime features for a `SegmentIndex`. Senku uses a
+separate flat builder; see [Bulk Ingestion with Senku](../how-to-use/senku-index.md)
+and its [builder reference](../architecture/senku-index.md#builder-configuration-summary).
 
 Persisted metadata, runtime tuning, and monitoring fields use canonical
 write-path names.

@@ -1,3 +1,4 @@
 # Internal planning context; the published tracker remains in MkDocs navigation.
 refactoring-context.md
+# Moved-page stub; current contracts are published under Architecture.
 development/senku-index.md

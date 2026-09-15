@@ -394,6 +394,22 @@ final class SenkuIngestor<K, V> {
     }
 
     /**
+     * Waits for the detached caller-owned flush to release its storage
+     * resources, including when that flush fails. Failure shutdown closes
+     * admission before calling this method and retains the original runtime
+     * failure separately. Interruption is preserved without releasing the
+     * root lock while a flush still owns storage resources.
+     */
+    void awaitFlushCompletion() {
+        controlLock.lock();
+        try {
+            awaitFlushCompletionLocked();
+        } finally {
+            controlLock.unlock();
+        }
+    }
+
+    /**
      * Returns whether queue-driven ingestion is currently paused.
      *
      * @return true when new puts wait for a resume signal
@@ -464,9 +480,13 @@ final class SenkuIngestor<K, V> {
             }
             try {
                 flushWriter.write(generation, batchMaps);
-            } catch (IndexException e) {
-                recordFlushFailure(e);
-                throw e;
+            } catch (Exception e) {
+                final IndexException failure = e instanceof IndexException
+                        ? (IndexException) e
+                        : new IndexException("Unable to flush Senku entries.",
+                                e);
+                recordFlushFailure(failure);
+                throw failure;
             }
 
             controlLock.lock();
@@ -493,11 +513,15 @@ final class SenkuIngestor<K, V> {
     }
 
     private void awaitFlushLocked() {
-        while (flushing) {
-            ingestionMayProceed.awaitUninterruptibly();
-        }
+        awaitFlushCompletionLocked();
         if (flushFailure != null) {
             throw flushFailure;
+        }
+    }
+
+    private void awaitFlushCompletionLocked() {
+        while (flushing) {
+            ingestionMayProceed.awaitUninterruptibly();
         }
     }
 

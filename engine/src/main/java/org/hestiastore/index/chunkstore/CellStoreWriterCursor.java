@@ -66,13 +66,18 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
         return currentCellPosition;
     }
 
+    /**
+     * Writes any final partial block and always closes the owned block writer.
+     * A close failure is suppressed when the final block write already failed.
+     */
     @Override
     protected void doClose() {
-        if (currentDataBlockPosition > 0) {
-            zeroOutRemainingDataBlockBytes();
-            dataBlockWriter.writeSequence(currentDataBlock);
+        try (DataBlockWriter writer = dataBlockWriter) {
+            if (currentDataBlockPosition > 0) {
+                zeroOutRemainingDataBlockBytes();
+                writer.writeSequence(currentDataBlock);
+            }
         }
-        dataBlockWriter.close();
     }
 
     /**

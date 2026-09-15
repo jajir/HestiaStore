@@ -185,6 +185,12 @@ public class SingleChunkEntryWriterImpl<K, V>
         fileWriter.write(longBuffer, 0, LONG_BYTES);
     }
 
+    /**
+     * Finishes this page and returns its encoded bytes. Repeated calls return
+     * the same sequence; subsequent writes are rejected.
+     *
+     * @return completed page payload
+     */
     @Override
     public ByteSequence closeSequence() {
         if (!closed) {

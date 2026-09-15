@@ -102,7 +102,7 @@ step.
 #### Senku Index implementation
 
 Item `101` implements the first version described by
-[`docs/development/senku-index.md`](development/senku-index.md). The sequence is
+[Senku architecture and contracts](architecture/senku-index.md). The sequence is
 top-down: freeze the public contract first, then add the minimum storage and
 merge machinery needed to make that contract executable, and finally prove the
 whole index through its public API. Open or link one implementation issue before
@@ -404,9 +404,9 @@ Testing rules for every item:
   every production class has its direct test, the public API and lifecycle have
   complete Javadocs, the actual package/layout/defaults match the architecture,
   and resolved implementation discoveries are incorporated without populating
-  speculative features. Guardrails: keep the `Open Points` heading in
-  `senku-index.md` even when empty; retain first-version limitations honestly;
-  remove unused code/imports and do not leave placeholder types. Validation:
+  speculative features. Guardrails: retain current limitations in the published
+  architecture; remove unused code/imports and do not leave placeholder types or
+  empty planning sections in published documentation. Validation:
   focused Senku tests, `mvn clean verify`, `mvn clean site`,
   `python3 scripts/check_docs_nav.py`, `mkdocs build --strict`, and
   `git diff --check`.

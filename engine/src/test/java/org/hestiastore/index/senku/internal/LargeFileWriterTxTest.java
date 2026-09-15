@@ -5,8 +5,10 @@ import static org.hestiastore.index.senku.internal.LargeFileTestSupport.page;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.IndexException;
@@ -20,6 +22,54 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class LargeFileWriterTxTest {
+
+    @Test
+    void commitFailureLeavesTemporaryPartAndEndsTransaction() {
+        final MemDirectory failingDirectory = new MemDirectory() {
+            @Override
+            public void renameFile(final String currentName,
+                    final String newName) {
+                throw new IndexException("Injected commit failure");
+            }
+        };
+        final LargeFileWriterTx writer = new LargeFile(failingDirectory,
+                DATA_BLOCK_SIZE, 1, 0).openWriterTx();
+        final ByteSequence payload = page("a");
+        writer.appendPage(payload, 1);
+
+        assertThrows(IndexException.class, writer::commit);
+        assertThrows(IndexException.class, writer::commit);
+        assertThrows(IndexException.class, () -> writer.appendPage(payload, 1));
+        assertEquals(List.of(SenkuFileNames.temporary(SenkuFileNames.partFile(0))),
+                failingDirectory.getFileNames().toList());
+    }
+
+    @Test
+    void appendFailurePermanentlyEndsTransactionAfterPartRotation() {
+        final LargeFileWriterTx writer = newWriter(1L);
+        final ByteSequence payload = page("a");
+        writer.appendPage(payload, 1);
+        directory.touch(SenkuFileNames.partFile(1));
+
+        assertThrows(IndexException.class, () -> writer.appendPage(payload, 1));
+        assertThrows(IndexException.class, writer::commit);
+        assertThrows(IndexException.class, () -> writer.appendPage(payload, 1));
+        assertFalse(directory.isFileExists(SenkuFileNames.MANIFEST_FILE));
+    }
+
+    @Test
+    void preparedAppendFailurePermanentlyEndsTransaction() {
+        final LargeFileWriterTx writer = newWriter(1L);
+        final ChunkData invalid = ChunkData.ofSequence(0, 0, 0,
+                SenkuStorageFormat.createDefault().keyCodec().getId(), page("a"));
+
+        assertThrows(IndexException.class,
+                () -> writer.appendPreparedPage(invalid, 1));
+        assertThrows(IndexException.class, writer::commit);
+        assertThrows(IndexException.class,
+                () -> writer.appendPreparedPage(invalid, 1));
+        assertFalse(directory.isFileExists(SenkuFileNames.partFile(0)));
+    }
 
     private MemDirectory directory;
 

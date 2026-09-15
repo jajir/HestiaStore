@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
@@ -21,20 +20,65 @@ import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemFileReader;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
 
+@ExtendWith(MockitoExtension.class)
 class DiffKeyReaderTest {
 
-    private final FileReader fileReader = mock(FileReader.class);
+    @Mock
+    private FileReader fileReader;
 
     private final TypeDescriptor<String> tds = new TypeDescriptorShortString();
+
+    @Test
+    void rejectsTruncatedHeaderInsteadOfTreatingItAsEndOfFile() {
+        final DiffKeyReader<String> reader = new DiffKeyReader<>(
+                tds.getTypeDecoder());
+        try (MemFileReader source = new MemFileReader(new byte[] { 0 })) {
+            assertThrows(IndexException.class, () -> reader.read(source));
+        }
+    }
+
+    @Test
+    void completesPartialHeaderReadsAndPreservesLegacyWireFormat() {
+        final DiffKeyWriter<String> writer = new DiffKeyWriter<>(
+                tds.getTypeEncoder(), tds.getComparator());
+        final byte[] encoded = concat(writeSingle(writer, "apple"),
+                writeSingle(writer, "apply"));
+        final DiffKeyReader<String> reader = new DiffKeyReader<>(
+                tds.getTypeDecoder());
+        try (MemFileReader source = new MemFileReader(encoded) {
+            @Override
+            public int read(final byte[] bytes, final int offset,
+                    final int length) {
+                return super.read(bytes, offset, Math.min(1, length));
+            }
+        }) {
+            assertEquals("apple", reader.read(source));
+            assertEquals("apply", reader.read(source));
+            assertNull(reader.read(source));
+        }
+    }
+
+    @Test
+    void rejectsReaderThatMakesNoHeaderProgress() {
+        final DiffKeyReader<String> reader = new DiffKeyReader<>(
+                tds.getTypeDecoder());
+        when(fileReader.read(any(byte[].class))).thenReturn(0);
+
+        assertThrows(IndexException.class, () -> reader.read(fileReader));
+    }
 
     @Test
     void test_reading_end_of_file() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
                 tds.getTypeDecoder());
 
-        // header not fully read => reader returns null
+        // No header bytes remain, so this is a clean end of stream.
         when(fileReader.read(any(byte[].class)))
                 .thenAnswer(invocation -> -1); // simulate EOF on header
         final String ret = reader.read(fileReader);
@@ -116,10 +160,10 @@ class DiffKeyReaderTest {
                 tds.getTypeDecoder());
 
         // Use stateful answer to simulate two records
-        when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+        when(fileReader.read(any(byte[].class))).thenAnswer(new Answer<Integer>() {
             int step = 0;
             @Override
-            public Integer answer(org.mockito.invocation.InvocationOnMock inv) {
+            public Integer answer(InvocationOnMock inv) {
                 final byte[] buf = (byte[]) inv.getArguments()[0];
                 if (buf.length == 2) {
                     if (step == 0) {
@@ -144,10 +188,10 @@ class DiffKeyReaderTest {
             }
         });
         when(fileReader.read(any(byte[].class), anyInt(), anyInt()))
-                .thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+                .thenAnswer(new Answer<Integer>() {
                     @Override
                     public Integer answer(
-                            org.mockito.invocation.InvocationOnMock inv) {
+                            InvocationOnMock inv) {
                         final byte[] buf = (byte[]) inv.getArguments()[0];
                         final int offset = (Integer) inv.getArguments()[1];
                         final int length = (Integer) inv.getArguments()[2];
@@ -173,10 +217,10 @@ class DiffKeyReaderTest {
                 tds.getTypeDecoder());
 
         // First full key
-        when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+        when(fileReader.read(any(byte[].class))).thenAnswer(new Answer<Integer>() {
             int step = 0;
             @Override
-            public Integer answer(org.mockito.invocation.InvocationOnMock inv) {
+            public Integer answer(InvocationOnMock inv) {
                 final byte[] buf = (byte[]) inv.getArguments()[0];
                 if (buf.length == 2) {
                     if (step == 0) {
@@ -208,10 +252,10 @@ class DiffKeyReaderTest {
                 tds.getTypeDecoder());
 
         // First full key
-        when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+        when(fileReader.read(any(byte[].class))).thenAnswer(new Answer<Integer>() {
             int step = 0;
             @Override
-            public Integer answer(org.mockito.invocation.InvocationOnMock inv) {
+            public Integer answer(InvocationOnMock inv) {
                 final byte[] buf = (byte[]) inv.getArguments()[0];
                 if (buf.length == 2) {
                     if (step == 0) {
@@ -232,10 +276,10 @@ class DiffKeyReaderTest {
             }
         });
         when(fileReader.read(any(byte[].class), anyInt(), anyInt()))
-                .thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+                .thenAnswer(new Answer<Integer>() {
                     @Override
                     public Integer answer(
-                            org.mockito.invocation.InvocationOnMock inv) {
+                            InvocationOnMock inv) {
                         final int length = (Integer) inv.getArguments()[2];
                         if (length == 5) {
                             return 3; // partial read for diff

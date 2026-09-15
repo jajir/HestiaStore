@@ -1,7 +1,7 @@
 package org.hestiastore.index.senku;
 
-import java.util.function.ToIntFunction;
 import java.util.function.LongToIntFunction;
+import java.util.function.ToIntFunction;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.KeyPageCodec;
@@ -59,6 +59,8 @@ public final class SenkuIndexBuilder<K, V> {
 
     /**
      * Sets the function used to select a fixed shard.
+     * The function must be deterministic and thread-safe. Keys considered
+     * equal by the key descriptor's comparator must have equal hashes.
      *
      * @param value required hash function
      * @return this builder
@@ -238,6 +240,7 @@ public final class SenkuIndexBuilder<K, V> {
         return this;
     }
 
+    /** Validates required settings and derived capacities before allocation. */
     void validate() {
         validate(true);
     }
@@ -258,6 +261,7 @@ public final class SenkuIndexBuilder<K, V> {
         shardIndexBytes();
     }
 
+    /** Returns the map capacity including load-factor headroom without overflow. */
     int initialMapCapacity() {
         final int entryLimit = Vldtn.requireNonNull(maxInMemoryEntries,
                 "maxInMemoryEntries");
@@ -267,6 +271,7 @@ public final class SenkuIndexBuilder<K, V> {
         return (int) requestedCapacity;
     }
 
+    /** Returns the validated byte length of the fixed-width shard index. */
     int shardIndexBytes() {
         final int configuredShardCount = Vldtn.requireNonNull(shardCount,
                 "shardCount");

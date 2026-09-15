@@ -5,6 +5,8 @@ This module isolates JMH dependencies from production modules.
 See also:
 
 - [Benchmark history and per-change comparison](./benchmark-history.md)
+- [Senku usage and lifecycle](../docs/how-to-use/senku-index.md)
+- [Senku architecture and contracts](../docs/architecture/senku-index.md)
 
 ## Why separate module
 
@@ -154,7 +156,7 @@ Run both persisted-mutation thread counts with otherwise identical parameters.
 The one-writer case protects latency-sensitive behavior; the 16-writer case
 exposes WAL queue admission and sync-batching contention.
 
-Senku's first-version baseline uses only `MemDirectory` and covers ingestion,
+Senku's in-memory baseline uses only `MemDirectory` and covers ingestion,
 synchronous flush, flush-to-L0, recursive run merge, complete ready streaming,
 and ingest-to-first-sorted-result latency. Its end-to-end cases include 0% and
 50% duplicates, balanced and skewed shards, and page/part boundary crossings:

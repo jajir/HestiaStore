@@ -51,8 +51,8 @@ public class DiffKeyReader<K> implements TypeReader<K> {
      * <p>
      * Behavior:
      * <ul>
-     * <li>If fewer than 2 bytes are available for the header, returns
-     * {@code null} (end of stream).</li>
+     * <li>If no header bytes remain, returns {@code null} (end of stream).
+     * Partial reads are completed; a truncated header is rejected.</li>
      * <li>If the header declares a non-zero shared prefix for the very first
      * key, an {@link IndexException} is thrown.</li>
      * <li>If the declared shared-prefix length exceeds the length of the
@@ -68,8 +68,15 @@ public class DiffKeyReader<K> implements TypeReader<K> {
      */
     @Override
     public K read(final FileReader fileReader) {
-        if (2 != fileReader.read(header)) {
+        final int headerBytes = fileReader.read(header);
+        if (headerBytes == -1) {
             return null;
+        }
+        if (headerBytes <= 0 || headerBytes > header.length) {
+            throw new IndexException("Unable to read differential key header.");
+        }
+        if (headerBytes < header.length) {
+            read(fileReader, header, headerBytes, header.length - headerBytes);
         }
         final int sharedByteLength = Byte.toUnsignedInt(header[0]);
         final int keyLengthInBytes = Byte.toUnsignedInt(header[1]);

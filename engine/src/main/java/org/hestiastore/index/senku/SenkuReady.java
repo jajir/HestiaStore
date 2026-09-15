@@ -1,7 +1,7 @@
 package org.hestiastore.index.senku;
 
-import java.util.stream.Stream;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 
@@ -32,13 +32,19 @@ public interface SenkuReady<K, V> extends AutoCloseable {
 
     /**
      * Opens the only active lazy globally sorted stream.
+     * Use try-with-resources to close it even after exhaustion or failure;
+     * explicit stream close releases the slot for a subsequent stream. Each
+     * stream has a single consumer. Coordinate consumption with stream and
+     * handle close so those operations do not run concurrently.
      *
      * @return sorted entry stream
      */
     Stream<Entry<K, V>> openStream();
 
     /**
-     * Closes the handle and any active stream.
+     * Closes the handle and any active stream, releasing the directory lock.
+     * Repeated calls are harmless after a successful close. The supplied
+     * directory remains owned by the caller.
      */
     @Override
     void close();

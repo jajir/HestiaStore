@@ -83,10 +83,15 @@ class InMemoryFileWriter extends AbstractCloseableResource
     /**
      * Closes this writer and returns the encoded bytes as one flat sequence.
      *
+     * Repeated calls return the same sequence without closing the resource
+     * again.
+     *
      * @return immutable encoded byte sequence
      */
     ByteSequence closeSequence() {
-        close();
+        if (!wasClosed()) {
+            close();
+        }
         if (encoded != null) {
             return encoded;
         }

@@ -45,8 +45,10 @@ were folded during terminal consolidation.
 Manifest-only empty runs contribute no cursor.
 The directory lock permits only one SenkuReady handle.
 That handle permits only one active stream.
-Exhaustion, stream close, or ready close releases every cursor.
-An internal cursor, storage, or cleanup failure
-moves SenkuReady to ERROR.
+Explicit stream close releases the active-stream slot,
+including after exhaustion or failure. Ready close
+also attempts to close every remaining cursor.
+Callers serialize consumption with close.
+Stream failures do not create a retained ERROR state.
 end note
 @enduml

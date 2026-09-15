@@ -84,7 +84,9 @@ final class SenkuRunWriter<K, V> {
     }
 
     /**
-     * Writes all sorted entries and publishes the run manifest last.
+     * Writes all strictly increasing entries and publishes the run manifest
+     * last. Duplicate or descending keys are rejected across page boundaries
+     * as well as within each page, leaving the run unpublished on failure.
      *
      * @param entries sorted input owned and closed by this method
      * @return published run manifest
@@ -99,6 +101,7 @@ final class SenkuRunWriter<K, V> {
                         ? new SenkuLongKeySampler()
                         : null;
         long recordCount = 0L;
+        K previousPageLastKey = null;
         try {
             while (validatedEntries.hasNext()) {
                 final SingleChunkEntryWriterImpl<K, V> page = new SingleChunkEntryWriterImpl<>(
@@ -109,7 +112,14 @@ final class SenkuRunWriter<K, V> {
                         && validatedEntries.hasNext()) {
                     final Entry<K, V> entry = Vldtn
                             .requireNonNull(validatedEntries.next(), "entry");
+                    if (pageEntries == 0 && previousPageLastKey != null
+                            && keyTypeDescriptor.getComparator().compare(
+                                    previousPageLastKey, entry.getKey()) >= 0) {
+                        throw new IndexException(
+                                "Sorted-run keys are not strictly increasing.");
+                    }
                     page.put(entry);
+                    previousPageLastKey = entry.getKey();
                     if (sampler != null && sampler.selectNext()) {
                         sampler.addSelectedKey((Long) entry.getKey());
                     }

@@ -1,13 +1,18 @@
 package org.hestiastore.index.chunkstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -17,11 +22,45 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class CellStoreWriterCursorTest {
+
+    @Test
+    void finalBlockFailureStillClosesWriterAndPreservesCleanupFailure() {
+        final IndexException writeFailure = new IndexException("Block write failed");
+        final IndexException closeFailure = new IndexException("Block close failed");
+        cursor.writeSequence(BYTES_16);
+        doThrow(writeFailure).when(dataBlockWriter)
+                .writeSequence(any(ByteSequence.class));
+        doThrow(closeFailure).when(dataBlockWriter).close();
+
+        assertSame(writeFailure,
+                assertThrows(IndexException.class, cursor::close));
+        assertEquals(1, writeFailure.getSuppressed().length);
+        assertSame(closeFailure, writeFailure.getSuppressed()[0]);
+        assertTrue(cursor.wasClosed());
+        final InOrder order = inOrder(dataBlockWriter);
+        order.verify(dataBlockWriter).writeSequence(any(ByteSequence.class));
+        order.verify(dataBlockWriter).close();
+        assertThrows(IllegalStateException.class, cursor::close);
+        verify(dataBlockWriter, times(1)).close();
+    }
+
+    @Test
+    void finalBlockFailureStillClosesWriterWhenCleanupSucceeds() {
+        final IndexException failure = new IndexException("Block write failed");
+        cursor.writeSequence(BYTES_16);
+        doThrow(failure).when(dataBlockWriter)
+                .writeSequence(any(ByteSequence.class));
+
+        assertSame(failure, assertThrows(IndexException.class, cursor::close));
+        assertEquals(0, failure.getSuppressed().length);
+        verify(dataBlockWriter).close();
+    }
 
     private static final DataBlockSize DATABLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);

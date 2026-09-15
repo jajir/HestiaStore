@@ -190,8 +190,31 @@ class SenkuReadyRuntimeTest {
 
         try (Stream<Entry<Integer, Long>> stream = ready.openStream()) {
             assertThrows(IndexException.class, stream::toList);
+            assertThrows(IndexException.class, ready::openStream,
+                    "A failed stream retains its slot until explicitly closed.");
+        }
+        try (Stream<Entry<Integer, Long>> retry = ready.openStream()) {
+            assertThrows(IndexException.class, retry::toList,
+                    "Closing the failed stream permits a fresh read attempt.");
         }
         ready.close();
+    }
+
+    @Test
+    void exhaustedStreamRetainsSlotUntilExplicitClose() {
+        writeRun(0, 0, 0L, Entry.of(1, 1L));
+        SenkuMetadataCodec.publishStorageFormat(root,
+                SenkuStorageFormat.createDefault());
+        SenkuMetadataCodec.publishReady(root, 1);
+        try (var ready = ready()) {
+            try (var stream = ready.openStream()) {
+                assertEquals(List.of(Entry.of(1, 1L)), stream.toList());
+                assertThrows(IndexException.class, ready::openStream);
+            }
+            try (var stream = ready.openStream()) {
+                assertEquals(List.of(Entry.of(1, 1L)), stream.toList());
+            }
+        }
     }
 
     @Test

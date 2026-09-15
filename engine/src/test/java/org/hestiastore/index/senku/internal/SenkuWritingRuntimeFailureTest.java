@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
@@ -99,7 +100,8 @@ class SenkuWritingRuntimeFailureTest {
         assertTrue(controlExecutor.awaitTermination(10, TimeUnit.SECONDS));
         assertTrue(workerExecutor.isTerminated());
         verify(fileLock).unlock();
-        verify(ingestor).fail();
+        verify(ingestor, atLeastOnce()).fail();
+        verify(ingestor).awaitFlushCompletion();
         assertSame(expected, firstFailure.get());
         assertSame(expected,
                 assertThrows(IndexException.class, writing::completedResult));

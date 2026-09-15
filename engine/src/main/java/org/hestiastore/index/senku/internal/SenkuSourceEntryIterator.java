@@ -1,6 +1,7 @@
 package org.hestiastore.index.senku.internal;
 
 import java.util.NoSuchElementException;
+import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -12,7 +13,10 @@ import org.hestiastore.index.chunkentryfile.SingleChunkEntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
 /**
- * Exact-record-count entry cursor over large-file entry pages.
+ * Exact-record-count entry cursor over large-file entry pages. Every decoded
+ * entry must have a value and keys must be nondecreasing across the complete
+ * source range, including page and part boundaries. Equal keys remain visible
+ * to the merge reader, which owns duplicate reduction.
  */
 final class SenkuSourceEntryIterator<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
@@ -22,10 +26,12 @@ final class SenkuSourceEntryIterator<K, V> extends AbstractCloseableResource
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final boolean requireSourceEof;
     private final int expectedCodecId;
+    private final Comparator<? super K> keyComparator;
 
     private long remaining;
     private SingleChunkEntryIterator<K, V> currentPage;
     private Entry<K, V> next;
+    private K previousKey;
 
     /**
      * Opens one exact persisted entry range.
@@ -56,6 +62,7 @@ final class SenkuSourceEntryIterator<K, V> extends AbstractCloseableResource
         this.pages = Vldtn.requireNonNull(pages, "pages");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
+        keyComparator = keyTypeDescriptor.getComparator();
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.remaining = Vldtn.requireGreaterThanOrEqualToZero(recordCount,
@@ -110,6 +117,7 @@ final class SenkuSourceEntryIterator<K, V> extends AbstractCloseableResource
                         pages.keyCodec());
             }
             next = Vldtn.requireNonNull(currentPage.next(), "entry");
+            validateEntry(next);
             remaining--;
         } catch (Exception e) {
             closeAfterFailure(e);
@@ -118,6 +126,17 @@ final class SenkuSourceEntryIterator<K, V> extends AbstractCloseableResource
             }
             throw new IndexException("Unable to read sorted source entry.", e);
         }
+    }
+
+    private void validateEntry(final Entry<K, V> entry) {
+        if (entry.getValue() == null) {
+            throw new IndexException("Source entry has no decoded value.");
+        }
+        final K key = Vldtn.requireNonNull(entry.getKey(), "key");
+        if (previousKey != null && keyComparator.compare(previousKey, key) > 0) {
+            throw new IndexException("Source keys are descending.");
+        }
+        previousKey = key;
     }
 
     private void validateBoundaryAndClose() {

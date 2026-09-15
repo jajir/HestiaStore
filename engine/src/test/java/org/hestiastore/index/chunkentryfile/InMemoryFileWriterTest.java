@@ -1,11 +1,27 @@
 package org.hestiastore.index.chunkentryfile;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
+import org.hestiastore.index.bytes.ByteSequence;
 
 class InMemoryFileWriterTest {
+
+    @Test
+    void repeatedCloseSequenceReturnsSamePayloadForEmptyAndNonEmptyPages() {
+        for (final byte[] payload : new byte[][] { {}, { 1, 2 } }) {
+            final InMemoryFileWriter writer = new InMemoryFileWriter(2);
+            writer.write(payload);
+            final ByteSequence result = writer.closeSequence();
+
+            assertSame(result, writer.closeSequence());
+            assertArrayEquals(payload, result.toByteArray());
+            assertThrows(IllegalStateException.class,
+                    () -> writer.write((byte) 3));
+        }
+    }
 
     @Test
     void writeByteArray_copiesSourceBuffer() {

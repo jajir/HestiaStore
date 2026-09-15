@@ -27,8 +27,9 @@ final class LargeFileWriterTx {
     private int currentPartNumber = -1;
     private int partCount;
     private long entriesInCurrentPart;
-    private boolean committed;
+    private boolean finished;
 
+    /** Creates a one-shot transaction with the default storage format. */
     LargeFileWriterTx(final Directory directory,
             final DataBlockSize dataBlockSize, final long maxEntriesPerPart) {
         this(directory, dataBlockSize, maxEntriesPerPart,
@@ -47,6 +48,11 @@ final class LargeFileWriterTx {
                 "maxEntriesPerPart");
     }
 
+    /**
+     * Encodes and appends one complete page, rotating parts at entry limits.
+     * An I/O or encoding failure permanently ends this transaction; partially
+     * written parts remain unpublished for the owner's cleanup.
+     */
     LargeFilePosition appendPage(final ByteSequence page,
             final int entryCount) {
         ensureOpen();
@@ -108,9 +114,10 @@ final class LargeFileWriterTx {
         }
     }
 
+    /** Commits every appended part once and returns the physical part count. */
     int commit() {
         ensureOpen();
-        committed = true;
+        finished = true;
         if (currentWriter == null) {
             return 0;
         }
@@ -123,9 +130,9 @@ final class LargeFileWriterTx {
         }
     }
 
+    /** Ends the transaction and attaches cleanup failures to the cause. */
     void abort(final Exception primary) {
         Vldtn.requireNonNull(primary, "primary");
-        committed = true;
         closeAfterFailure(primary);
     }
 
@@ -161,6 +168,7 @@ final class LargeFileWriterTx {
     }
 
     private void closeAfterFailure(final Exception primary) {
+        finished = true;
         final ChunkStoreWriter writer = currentWriter;
         currentWriter = null;
         currentTransaction = null;
@@ -182,8 +190,8 @@ final class LargeFileWriterTx {
     }
 
     private void ensureOpen() {
-        if (committed) {
-            throw new IndexException("Large-file writer is already committed.");
+        if (finished) {
+            throw new IndexException("Large-file writer is already finished.");
         }
     }
 

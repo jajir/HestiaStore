@@ -207,6 +207,17 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
      */
     void backgroundFailure(final IndexException failure) {
         Vldtn.requireNonNull(failure, "failure");
+        stopIngestionAfterFailure();
+        wakeCoordinator();
+    }
+
+    /**
+     * Closes ingestion under the lifecycle lock so a concurrent finalization
+     * cannot claim another flush after failure shutdown starts waiting for
+     * storage owners. The coordinator also applies this gate when it observes
+     * the first failure before its reporting thread reaches this transition.
+     */
+    private void stopIngestionAfterFailure() {
         writingLock.lock();
         try {
             if (state != SenkuWritingState.TRANSFERRED) {
@@ -216,7 +227,6 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
         } finally {
             writingLock.unlock();
         }
-        wakeCoordinator();
     }
 
     /**
@@ -327,9 +337,11 @@ final class SenkuWritingRuntime<K, V> implements SenkuWriting<K, V> {
             return;
         }
         cancelPeriodicScan();
+        stopIngestionAfterFailure();
         workerExecutor.getQueue().clear();
         workerExecutor.shutdown();
         awaitWorkers();
+        ingestor.awaitFlushCompletion();
         final IndexException primary = firstFailure.get();
         try {
             fileLock.unlock();

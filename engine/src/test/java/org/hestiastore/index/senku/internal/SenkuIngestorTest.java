@@ -455,6 +455,21 @@ class SenkuIngestorTest {
     }
 
     @Test
+    void failureFlushWaitDoesNotPublishBufferedEntries() {
+        final SenkuIngestor<Integer, Long> ingestor = newIngestor(10,
+                (key, first, second) -> first + second);
+        ingestor.put(1, 1L);
+
+        ingestor.fail();
+        ingestor.awaitFlushCompletion();
+        ingestor.awaitFlushCompletion();
+
+        assertEquals(1, ingestor.size());
+        assertEquals(Set.of(), names());
+        assertThrows(IndexException.class, () -> ingestor.put(2, 2L));
+    }
+
+    @Test
     void stripeMixerDistributesHashesWithFixedHashMapBucketBits() {
         final int[] counts = new int[INGESTION_STRIPE_COUNT];
         for (int value = 0; value < 32_768; value++) {
