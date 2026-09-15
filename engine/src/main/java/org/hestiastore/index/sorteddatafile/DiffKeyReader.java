@@ -69,14 +69,9 @@ public class DiffKeyReader<K> implements TypeReader<K> {
     @Override
     public K read(final FileReader fileReader) {
         final int headerBytes = fileReader.read(header);
-        if (headerBytes == -1) {
+        if (headerBytes != header.length
+                && !completeHeader(fileReader, headerBytes)) {
             return null;
-        }
-        if (headerBytes <= 0 || headerBytes > header.length) {
-            throw new IndexException("Unable to read differential key header.");
-        }
-        if (headerBytes < header.length) {
-            read(fileReader, header, headerBytes, header.length - headerBytes);
         }
         final int sharedByteLength = Byte.toUnsignedInt(header[0]);
         final int keyLengthInBytes = Byte.toUnsignedInt(header[1]);
@@ -106,6 +101,29 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         read(fileReader, keyBytes, sharedByteLength, keyLengthInBytes);
         previousKeyBytes = keyBytes;
         return keyConvertor.decode(keyBytes);
+    }
+
+    /**
+     * Handles an incomplete initial header read so complete headers reach the
+     * key decoder without repeating EOF and partial-read checks.
+     *
+     * @param fileReader source reader
+     * @param headerBytes result of the initial header read
+     * @return true when the header is complete, false for end of input before
+     *         any header bytes
+     * @throws IndexException when the read count is invalid or the remaining
+     *                        header bytes cannot be read
+     */
+    private boolean completeHeader(final FileReader fileReader,
+            final int headerBytes) {
+        if (headerBytes == -1) {
+            return false;
+        }
+        if (headerBytes <= 0 || headerBytes > header.length) {
+            throw new IndexException("Unable to read differential key header.");
+        }
+        read(fileReader, header, headerBytes, header.length - headerBytes);
+        return true;
     }
 
     /**
