@@ -92,7 +92,8 @@ the background maintenance work to reach `READY`.
 
 `BlockingSegment.getRuntime().getState()` observes a closed generation with
 one registry lookup. It refreshes the cached generation when a replacement is
-available and reports `CLOSED` when the lookup returns `BUSY` or `CLOSED`.
+available and leaves the cached generation unchanged when the lookup returns
+`BUSY` or `CLOSED`. A concurrent refresh can still supply a newer generation.
 This lets maintenance observe completion after a split retires its parent.
 Data operations continue to use their bounded blocking reload policy.
 
