@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -288,9 +289,26 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     private final class RuntimeView implements Runtime {
 
+        /**
+         * Observes lifecycle state without waiting for a closed generation to
+         * become loadable. A successful registry lookup still refreshes the
+         * cached generation; an unavailable or retired generation remains
+         * CLOSED so maintenance completion can finish after a split removes
+         * its parent. Data operations retain their blocking reload behavior.
+         */
         @Override
         public SegmentState getState() {
-            return currentSegment().getState();
+            final Segment<K, V> current = segment.get();
+            final SegmentState state = current.getState();
+            if (state != SegmentState.CLOSED) {
+                return state;
+            }
+            final Optional<Segment<K, V>> replacement = segmentRegistry
+                    .tryGetSegment(segmentId);
+            if (replacement.isPresent()) {
+                segment.compareAndSet(current, replacement.get());
+            }
+            return segment.get().getState();
         }
 
         @Override

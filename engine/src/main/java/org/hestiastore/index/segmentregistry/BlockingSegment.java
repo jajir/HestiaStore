@@ -223,7 +223,11 @@ public interface BlockingSegment<K, V> {
     interface Runtime {
 
         /**
-         * Returns the current segment lifecycle state.
+         * Returns the current segment lifecycle state. When the cached
+         * generation is closed, a single registry lookup may refresh it; an
+         * unavailable generation remains CLOSED after that lookup. This
+         * permits observing completion after a split retires the segment while
+         * data operations retain lazy reloading.
          *
          * @return current state
          */

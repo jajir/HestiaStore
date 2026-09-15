@@ -7,10 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
@@ -35,6 +38,12 @@ class DefaultBlockingSegmentTest {
 
     @Mock
     private Segment<Integer, String> segment;
+
+    @Mock
+    private Segment<Integer, String> replacementSegment;
+
+    @Mock
+    private Segment<Integer, String> concurrentReplacement;
 
     @Mock
     private SegmentRuntimeLimits runtimeLimits;
@@ -251,6 +260,67 @@ class DefaultBlockingSegmentTest {
 
         verify(segment).applyRuntimeLimits(runtimeLimits);
         verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void lifecycleStateReportsRetiredClosedGenerationWithoutReloadRetries() {
+        when(segment.getState()).thenReturn(SegmentState.CLOSED);
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID))
+                .thenReturn(Optional.empty());
+
+        assertEquals(SegmentState.CLOSED, handle.getRuntime().getState());
+        assertEquals(SegmentState.CLOSED, handle.getRuntime().getState());
+
+        verify(segmentRegistry, times(2)).tryGetSegment(SEGMENT_ID);
+        verify(segmentRegistry, never()).loadSegment(SEGMENT_ID);
+    }
+
+    @Test
+    void lifecycleStateRefreshesClosedGenerationWhenItBecomesAvailable() {
+        when(segment.getState()).thenReturn(SegmentState.CLOSED);
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(replacementSegment));
+        when(replacementSegment.getState()).thenReturn(SegmentState.READY);
+
+        assertEquals(SegmentState.CLOSED, handle.getRuntime().getState());
+        assertEquals(SegmentState.READY, handle.getRuntime().getState());
+        assertEquals(SegmentState.READY, handle.getRuntime().getState());
+        assertSame(replacementSegment, handle.getSegment());
+
+        verify(segmentRegistry, times(2)).tryGetSegment(SEGMENT_ID);
+        verify(segmentRegistry, never()).loadSegment(SEGMENT_ID);
+    }
+
+    @Test
+    void lifecycleStatePreservesRegistryLookupFailure() {
+        final IndexException failure = new IndexException(
+                "Unable to inspect segment storage.");
+        when(segment.getState()).thenReturn(SegmentState.CLOSED);
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID)).thenThrow(failure);
+
+        assertSame(failure, assertThrows(IndexException.class,
+                () -> handle.getRuntime().getState()));
+
+        verify(segmentRegistry).tryGetSegment(SEGMENT_ID);
+        verify(segmentRegistry, never()).loadSegment(SEGMENT_ID);
+    }
+
+    @Test
+    void lifecycleStateDoesNotOverwriteConcurrentGenerationRefresh() {
+        when(segment.getState()).thenReturn(SegmentState.CLOSED);
+        when(concurrentReplacement.getState()).thenReturn(SegmentState.READY);
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID)).thenAnswer(invocation -> {
+            ((DefaultBlockingSegment<Integer, String>) handle)
+                    .updateSegment(concurrentReplacement);
+            return Optional.of(replacementSegment);
+        });
+
+        assertEquals(SegmentState.READY, handle.getRuntime().getState());
+        assertSame(concurrentReplacement, handle.getSegment());
+
+        verifyNoInteractions(replacementSegment);
+        verify(segmentRegistry, never()).loadSegment(SEGMENT_ID);
     }
 
     @Test
