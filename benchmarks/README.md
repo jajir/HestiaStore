@@ -28,6 +28,21 @@ This produces a runnable JMH fat-jar:
 
 ## Run benchmarks
 
+The `concatenated-page-read` profile measures first materialization of fresh
+slice trees, complete single-block and multiblock Zstd chunk reads, and ranked
+Senku maintenance merges. It includes flat-array, cached-child, and steady-write
+controls. Each case uses three JVM forks, a fixed 1 GiB heap, four active
+processors, and GC profiling. Compare every parameter combination separately;
+lower time and allocated bytes per operation are better, while higher write
+throughput is better. The read fixtures use in-memory storage and include block
+reads, CRC validation, and decompression. Run both versions on a quiet host
+before drawing latency conclusions.
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py --repo-root . \
+  --profile concatenated-page-read --output-dir /tmp/hestia-bench/page-read
+```
+
 The `senku-pipeline` profile checks encoded-rank maintenance, bounded parallel
 flush preparation, and generic versus explicitly selected primitive long-set
 ingestion. It includes repeat/fork settings and GC profiling. Compare matching

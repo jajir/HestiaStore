@@ -80,15 +80,16 @@ public final class ConcatenatedByteSequence extends ByteSequenceCaching {
                 targetOffset + firstCopyLength, length - firstCopyLength);
     }
 
+    /**
+     * Materializes this sequence in one destination array, copying directly
+     * from the underlying sequences without materializing child arrays.
+     *
+     * @return the combined byte array
+     */
     @Override
     protected byte[] computeByteArray() {
-        final byte[] firstBytes = first.toByteArray();
-        final byte[] secondBytes = second.toByteArray();
-        final byte[] combined = new byte[firstBytes.length
-                + secondBytes.length];
-        System.arraycopy(firstBytes, 0, combined, 0, firstBytes.length);
-        System.arraycopy(secondBytes, 0, combined, firstBytes.length,
-                secondBytes.length);
+        final byte[] combined = new byte[totalLength];
+        copyTo(0, combined, 0, totalLength);
         return combined;
     }
 
