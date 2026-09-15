@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class SenkuIngestionLockBenchmarkTest {
 
@@ -26,27 +26,30 @@ class SenkuIngestionLockBenchmarkTest {
         cursor.reset(7);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = { "hash-map", "mixed-open-addressed" })
-    void measuredUpdatesCountEveryOperationWithoutGrowingMaps(
-            final String implementation) {
-        final SenkuIngestionMapBenchmark.ExistingEntryState state =
-                new SenkuIngestionMapBenchmark.ExistingEntryState();
-        state.distribution = "collision-heavy";
-        state.implementation = implementation;
-        state.stripeCount = 64;
-        state.entryCount = ENTRY_COUNT;
-        state.setup();
+    @Test
+    void measuredUpdatesCountEveryOperationWithoutGrowingMaps() {
+        for (final String implementation : List.of("hash-map",
+                "mixed-open-addressed")) {
+            final SenkuIngestionMapBenchmark.ExistingEntryState state =
+                    new SenkuIngestionMapBenchmark.ExistingEntryState();
+            state.distribution = "collision-heavy";
+            state.implementation = implementation;
+            state.stripeCount = 64;
+            state.entryCount = ENTRY_COUNT;
+            state.setup();
+            counters.reset();
+            cursor.reset(7);
 
-        for (int operation = 0; operation < 2 * ENTRY_COUNT; operation++) {
-            assertSame(NULL,
-                    benchmark.updateExistingEntry(state, cursor, counters));
+            for (int operation = 0; operation < 2 * ENTRY_COUNT; operation++) {
+                assertSame(NULL, benchmark.updateExistingEntry(state, cursor,
+                        counters));
+            }
+
+            assertEquals(ENTRY_COUNT, state.size());
+            assertEquals(2 * ENTRY_COUNT, counters.operationCount());
+            assertTrue(counters.lockWaitNanoseconds >= 0L);
+            assertTrue(counters.lockHoldNanoseconds >= 0L);
         }
-
-        assertEquals(ENTRY_COUNT, state.size());
-        assertEquals(2 * ENTRY_COUNT, counters.operationCount());
-        assertTrue(counters.lockWaitNanoseconds >= 0L);
-        assertTrue(counters.lockHoldNanoseconds >= 0L);
     }
 
     @Test
