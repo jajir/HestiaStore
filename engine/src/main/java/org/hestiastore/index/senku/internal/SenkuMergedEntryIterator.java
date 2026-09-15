@@ -42,6 +42,13 @@ final class SenkuMergedEntryIterator<K, V> extends AbstractCloseableResource
         return !wasClosed() && !queue.isEmpty();
     }
 
+    /**
+     * Returns the next reduced key, seeding its value from the first input
+     * entry. Only subsequent equal-key entries invoke the merge function;
+     * the accumulated value is never represented by a null sentinel.
+     *
+     * @return next merged entry
+     */
     @Override
     public Entry<K, V> next() {
         if (!hasNext()) {
@@ -51,7 +58,8 @@ final class SenkuMergedEntryIterator<K, V> extends AbstractCloseableResource
         try {
             activeCursor = queue.remove();
             final K key = activeCursor.current().getKey();
-            V value = null;
+            V value = activeCursor.current().getValue();
+            activeCursor.advance();
             while (activeCursor != null) {
                 value = drainKey(activeCursor, key, value);
                 if (activeCursor.current() != null) {
@@ -102,7 +110,7 @@ final class SenkuMergedEntryIterator<K, V> extends AbstractCloseableResource
         while (cursor.current() != null && keyComparator
                 .compare(cursor.current().getKey(), key) == 0) {
             final V currentValue = cursor.current().getValue();
-            value = value == null ? currentValue : Vldtn.requireNonNull(
+            value = Vldtn.requireNonNull(
                     mergeFunction.apply(key, value, currentValue),
                     "mergedValue");
             cursor.advance();

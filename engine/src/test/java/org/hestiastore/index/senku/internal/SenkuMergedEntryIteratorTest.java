@@ -20,6 +20,34 @@ import org.junit.jupiter.api.Test;
 class SenkuMergedEntryIteratorTest {
 
     @Test
+    void singletonPreservesItsValueWithoutCallingReducer() {
+        final EntryIteratorList<Integer, Integer> input = iterator(entry(1, 7));
+        try (var merged = new SenkuMergedEntryIterator<>(List.of(input),
+                Comparator.<Integer>naturalOrder(), (key, first, second) -> {
+                    throw new AssertionError("A singleton has no duplicate.");
+                })) {
+            assertEquals(entry(1, 7), merged.next());
+            assertFalse(merged.hasNext());
+            assertTrue(input.wasClosed());
+        }
+    }
+
+    @Test
+    void nullSourceValueIsRejectedBeforeReductionAndClosesInputs() {
+        final EntryIteratorList<Integer, Integer> invalid = iterator(
+                Entry.of(1, null));
+        final EntryIteratorList<Integer, Integer> remaining = iterator(
+                entry(2, 2));
+        final List<EntryIterator<Integer, Integer>> inputs = List.of(invalid,
+                remaining);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> merge(inputs));
+        assertTrue(invalid.wasClosed());
+        assertTrue(remaining.wasClosed());
+    }
+
+    @Test
     void mergeHandlesZeroAndEmptyInputs() {
         final EntryIteratorList<Integer, Integer> empty = iterator();
         final SenkuMergedEntryIterator<Integer, Integer> merged = merge(

@@ -137,16 +137,7 @@ final class SenkuLongSourceCursor implements AutoCloseable {
                 hasCurrent = false;
                 return;
             }
-            final boolean pageBoundary = currentPage != null
-                    && pageOffset == currentPage.length();
-            final long previousKey = pageBoundary ? key() : 0L;
-            ensurePage();
-            decodeCurrent();
-            if (pageBoundary
-                    && currentCodec.decodeLongKey(currentKey) < previousKey) {
-                throw new IndexException(
-                        "Source keys must not descend across pages.");
-            }
+            decodeNext();
             remaining--;
             hasCurrent = true;
         } catch (Exception e) {
@@ -188,6 +179,23 @@ final class SenkuLongSourceCursor implements AutoCloseable {
             if (!currentPage.isEmpty()) {
                 return;
             }
+        }
+    }
+
+    /** Keeps cross-page validation outside the ordinary in-page decode path. */
+    private void decodeNext() {
+        if (currentPage != null && pageOffset != currentPage.length()) {
+            decodeCurrent();
+            return;
+        }
+        final boolean pageBoundary = hasCurrent;
+        final long previousKey = pageBoundary ? key() : 0L;
+        ensurePage();
+        decodeCurrent();
+        if (pageBoundary
+                && currentCodec.decodeLongKey(currentKey) < previousKey) {
+            throw new IndexException(
+                    "Source keys must not descend across pages.");
         }
     }
 

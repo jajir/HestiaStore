@@ -63,7 +63,7 @@ final class SenkuLongSetMap extends SenkuIngestionMap<Long, NullValue> {
             return false;
         }
         if (size >= resizeThreshold) {
-            resize();
+            growLongTable();
             slot = findSlot(key, configuredHash, keys, hashes, occupied);
         }
         keys[slot] = key;
@@ -197,7 +197,8 @@ final class SenkuLongSetMap extends SenkuIngestionMap<Long, NullValue> {
         resizeThreshold = threshold(capacity);
     }
 
-    private void resize() {
+    /** Rebuilds the primitive set at double capacity using retained hashes. */
+    private void growLongTable() {
         if (keys.length == MAXIMUM_CAPACITY) {
             throw new IndexException(
                     "Senku ingestion map capacity is exhausted.");

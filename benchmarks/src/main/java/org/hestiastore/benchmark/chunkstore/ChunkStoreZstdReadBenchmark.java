@@ -59,8 +59,13 @@ public class ChunkStoreZstdReadBenchmark {
     int compressedBytes;
     byte[] persistedBytes;
 
-    /** Writes a deterministic half-repeated payload and verifies the fixture. */
+    /**
+     * Writes a deterministic half-repeated payload and verifies the fixture.
+     * The seeded generator provides repeatable compression input and has no
+     * security-sensitive use.
+     */
     @Setup
+    @SuppressWarnings("java:S2245")
     public void setup() {
         if (payloadSize != 4096 && payloadSize != 65536) {
             throw new IllegalArgumentException("Unsupported Zstd fixture size");
