@@ -1,0 +1,27 @@
+@startuml senku-index-lifecycle
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+skinparam state {
+  BackgroundColor #F7F9FC
+  BorderColor #34495E
+  FontColor #17202A
+}
+left to right direction
+
+title Senku Normal Runtime Handle Lifecycle
+
+state "WRITING" as Writing : SenkuIngestor accepts put\nExclusive directory .lock held
+state "READY" as Ready : Sorted streams available\nDirectory lock held
+state "CLOSED" as Closed : Resources and directory lock released\nRepeated close is harmless
+
+[*] --> Writing : create()\nacquire directory .lock
+[*] --> Ready : open()\nacquire directory lock\nvalidate ready.properties and layout
+
+Writing --> Ready : finishWriting()\nready.properties published\ntransfer same directory lock
+
+Ready --> Closed : close()\nclose active stream first
+
+Closed --> [*]
+@enduml

@@ -1,0 +1,57 @@
+@startuml senku-sorted-run-levels
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultTextAlignment center
+top to bottom direction
+
+title Senku Shard Maintenance and Sorted-Run Levels
+
+artifact "mergeFanIn committed flush generations\nEach contains shards S000 ... S(m-1)" as Flushes
+component "Shard-parallel maintenance\n\nCreate one job per shard\nMerge configured fan-in\nFold duplicate keys" as InitialMerge
+
+frame "Level 0: one sorted run per shard and maintenance batch" {
+  folder "shard-00000/level-00000/run-00001/\nmanifest.properties + ordered chunk parts" as L0S0
+  folder "shard-00001/level-00000/run-00001/\nmanifest.properties + ordered chunk parts" as L0S1
+  artifact "..." as L0More
+  folder "shard-(m-1)/level-00000/run-00001/\nmanifest.properties + ordered chunk parts" as L0Sm
+}
+
+frame "Recursive promotion for shard S001" {
+  artifact "mergeFanIn level-0 sorted runs\nshard S001 only" as NL0
+  component "Merge configured fan-in" as MergeL0
+  folder "one logical level-1 sorted run\nshard-00001/level-00001/run-00001/\nmanifest.properties + ordered chunk parts" as L1
+
+  artifact "mergeFanIn level-1 sorted runs\nshard S001 only" as NL1
+  component "Merge configured fan-in" as MergeL1
+  folder "one logical level-2 sorted run\nshard-00001/level-00002/run-00001/\nmanifest.properties + ordered chunk parts" as L2
+}
+
+Flushes --> InitialMerge
+InitialMerge --> L0S0
+InitialMerge --> L0S1
+InitialMerge --> L0More
+InitialMerge --> L0Sm
+
+L0S1 --> NL0 : maintenance batches accumulate
+NL0 --> MergeL0
+MergeL0 --> L1
+L1 --> NL1 : level-1 runs accumulate
+NL1 --> MergeL1
+MergeL1 --> L2
+L2 --> L2 : repeat for higher levels
+
+note right of L1
+The same hierarchy exists independently
+for every shard. Normal maintenance merges
+only the same shard and level. finishWriting()
+keeps that rule, permits partial same-level groups,
+and rewrites a lone lower run one level upward
+when a higher run still exists. It never directly
+merges different numeric levels. Terminal numeric
+levels may differ between shards.
+The maintenance worker still publishes an empty output run
+with partCount=0, recordCount=0, and no data part.
+end note
+@enduml
