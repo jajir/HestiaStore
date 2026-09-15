@@ -1281,8 +1281,8 @@
         "355": {
           "channel": "pr-355",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-355/latest.json",
-          "sha": "927b12bd5887e6bdcfc45404e71b5cfe8522acc2",
-          "timestampUtc": "2026-09-15T06:12:09.364379+00:00"
+          "sha": "9502d73d397c1440a3a93bfd6e7f8a16930ba015",
+          "timestampUtc": "2026-09-15T06:27:45.260181+00:00"
         }
       },
       "sha": "d3ef04d30386ff556237923d24a98745e3710b30",
