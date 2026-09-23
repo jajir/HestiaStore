@@ -1,0 +1,56 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark.readSequentialFile",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/usr/lib/jvm/temurin-21-jdk-amd64/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.12.1",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.12.1+1-LTS",
+        "warmupIterations" : 1,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "diskIoBufferSizeBytes" : "32768"
+        },
+        "primaryMetric" : {
+            "score" : 53.07817498245614,
+            "scoreError" : 4.646934013032121,
+            "scoreConfidence" : [
+                48.43124096942402,
+                57.72510899548826
+            ],
+            "scorePercentiles" : {
+                "0.0" : 52.920256421052635,
+                "50.0" : 52.94224921052631,
+                "90.0" : 53.37201931578947,
+                "95.0" : 53.37201931578947,
+                "99.0" : 53.37201931578947,
+                "99.9" : 53.37201931578947,
+                "99.99" : 53.37201931578947,
+                "99.999" : 53.37201931578947,
+                "99.9999" : 53.37201931578947,
+                "100.0" : 53.37201931578947
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    52.920256421052635,
+                    52.94224921052631,
+                    53.37201931578947
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+
