@@ -1,0 +1,79 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitSync
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, maxSegmentsInCache = 3, snappy = true, valueLength = 64, workingSetMode = hot)
+
+# Run progress: 0.00% complete, ETA 00:00:28
+# Fork: 1 of 1
+# Warmup Iteration   1: 1663891.481 ops/s
+# Warmup Iteration   2: 2427227.708 ops/s
+Iteration   1: 2370593.202 ops/s
+Iteration   2: 2366711.430 ops/s
+Iteration   3: 2387323.447 ops/s
+Iteration   4: 2384792.659 ops/s
+Iteration   5: 2370774.945 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitSync":
+  2376039.137 ±(99.9%) 35933.741 ops/s [Average]
+  (min, avg, max) = (2366711.430, 2376039.137, 2387323.447), stdev = 9331.878
+  CI (99.9%): [2340105.395, 2411972.878] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.12.1, OpenJDK 64-Bit Server VM, 21.0.12.1+1-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissSync
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, maxSegmentsInCache = 3, snappy = true, valueLength = 64, workingSetMode = hot)
+
+# Run progress: 50.00% complete, ETA 00:00:16
+# Fork: 1 of 1
+# Warmup Iteration   1: 2760824.653 ops/s
+# Warmup Iteration   2: 3171313.440 ops/s
+Iteration   1: 3107903.785 ops/s
+Iteration   2: 3016908.799 ops/s
+Iteration   3: 3025549.773 ops/s
+Iteration   4: 3035624.546 ops/s
+Iteration   5: 3046859.453 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissSync":
+  3046569.271 ±(99.9%) 138881.744 ops/s [Average]
+  (min, avg, max) = (3016908.799, 3046569.271, 3107903.785), stdev = 36067.148
+  CI (99.9%): [2907687.527, 3185451.015] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:33
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                         (keyCount)  (maxKeysInSegment)  (maxSegmentsInCache)  (snappy)  (valueLength)  (workingSetMode)   Mode  Cnt        Score        Error  Units
+SegmentIndexMultiSegmentGetBenchmark.getHitSync        32768                1024                     3      true             64               hot  thrpt    5  2376039.137 ±  35933.741  ops/s
+SegmentIndexMultiSegmentGetBenchmark.getMissSync       32768                1024                     3      true             64               hot  thrpt    5  3046569.271 ± 138881.744  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-get-multisegment-hot.json
