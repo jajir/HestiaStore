@@ -1,0 +1,263 @@
+{
+  "benchmarks": [
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "diskIoBufferSizeBytes=1024"
+      ],
+      "include": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+      "label": "diskio-sequential-write-1k",
+      "log": "logs/diskio-sequential-write-1k.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark.writeSequentialFile",
+            "jdkVersion": "21.0.13",
+            "mode": "avgt",
+            "params": {
+              "diskIoBufferSizeBytes": "1024"
+            },
+            "primaryMetric": {
+              "score": 36.19512826181353,
+              "scoreError": 32.49526024726096,
+              "scoreUnit": "ms/op"
+            },
+            "secondaryMetrics": {},
+            "threads": 1,
+            "vmVersion": "21.0.13+9-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/diskio-sequential-write-1k.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "diskIoBufferSizeBytes=4096"
+      ],
+      "include": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+      "label": "diskio-sequential-write-4k",
+      "log": "logs/diskio-sequential-write-4k.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark.writeSequentialFile",
+            "jdkVersion": "21.0.13",
+            "mode": "avgt",
+            "params": {
+              "diskIoBufferSizeBytes": "4096"
+            },
+            "primaryMetric": {
+              "score": 45.66698395925002,
+              "scoreError": 246.15123646274964,
+              "scoreUnit": "ms/op"
+            },
+            "secondaryMetrics": {},
+            "threads": 1,
+            "vmVersion": "21.0.13+9-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/diskio-sequential-write-4k.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "diskIoBufferSizeBytes=32768"
+      ],
+      "include": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+      "label": "diskio-sequential-write-32k",
+      "log": "logs/diskio-sequential-write-32k.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark.writeSequentialFile",
+            "jdkVersion": "21.0.13",
+            "mode": "avgt",
+            "params": {
+              "diskIoBufferSizeBytes": "32768"
+            },
+            "primaryMetric": {
+              "score": 35.683753270634924,
+              "scoreError": 35.24828944339955,
+              "scoreUnit": "ms/op"
+            },
+            "secondaryMetrics": {},
+            "threads": 1,
+            "vmVersion": "21.0.13+9-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/diskio-sequential-write-32k.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "diskIoBufferSizeBytes=1024"
+      ],
+      "include": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+      "label": "diskio-sequential-read-1k",
+      "log": "logs/diskio-sequential-read-1k.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark.readSequentialFile",
+            "jdkVersion": "21.0.13",
+            "mode": "avgt",
+            "params": {
+              "diskIoBufferSizeBytes": "1024"
+            },
+            "primaryMetric": {
+              "score": 73.1823974047619,
+              "scoreError": 8.217941694776592,
+              "scoreUnit": "ms/op"
+            },
+            "secondaryMetrics": {},
+            "threads": 1,
+            "vmVersion": "21.0.13+9-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/diskio-sequential-read-1k.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "diskIoBufferSizeBytes=4096"
+      ],
+      "include": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+      "label": "diskio-sequential-read-4k",
+      "log": "logs/diskio-sequential-read-4k.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark.readSequentialFile",
+            "jdkVersion": "21.0.13",
+            "mode": "avgt",
+            "params": {
+              "diskIoBufferSizeBytes": "4096"
+            },
+            "primaryMetric": {
+              "score": 56.787908314814814,
+              "scoreError": 21.225973497003448,
+              "scoreUnit": "ms/op"
+            },
+            "secondaryMetrics": {},
+            "threads": 1,
+            "vmVersion": "21.0.13+9-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/diskio-sequential-read-4k.json"
+    },
+    {
+      "args": [
+        "-wi",
+        "1",
+        "-i",
+        "3",
+        "-f",
+        "1",
+        "-r",
+        "1s",
+        "-w",
+        "1s",
+        "-p",
+        "diskIoBufferSizeBytes=32768"
+      ],
+      "include": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+      "label": "diskio-sequential-read-32k",
+      "log": "logs/diskio-sequential-read-32k.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark.readSequentialFile",
+            "jdkVersion": "21.0.13",
+            "mode": "avgt",
+            "params": {
+              "diskIoBufferSizeBytes": "32768"
+            },
+            "primaryMetric": {
+              "score": 50.30768271666667,
+              "scoreError": 12.36618263746514,
+              "scoreUnit": "ms/op"
+            },
+            "secondaryMetrics": {},
+            "threads": 1,
+            "vmVersion": "21.0.13+9-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/diskio-sequential-read-32k.json"
+    }
+  ],
+  "description": "Nightly filesystem-backed disk I/O benchmark set for buffer-size trend tracking.",
+  "git": {
+    "branch": "HEAD",
+    "dirty": false,
+    "mergeBaseFriendlyRef": "release-1.1.0-53-g6da25f8d2",
+    "sha": "6da25f8d2edfcb35fc090cb0bcf177026066b7a3"
+  },
+  "host": {
+    "hostname": "runnervm7aw5e",
+    "machine": "x86_64",
+    "os": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  },
+  "jar": "/home/runner/work/_temp/benchmark-candidate/benchmarks/target/benchmarks-1.1.1-SNAPSHOT.jar",
+  "profile": "diskio-nightly",
+  "profileFingerprint": "5df3bcfb60666982901c979e28003b42883af57f2ea8989c6ee0617118ca6766",
+  "repoRoot": "/home/runner/work/_temp/benchmark-candidate",
+  "timestampUtc": "2026-11-12T03:16:37.772041+00:00"
+}
